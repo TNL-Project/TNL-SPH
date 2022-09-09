@@ -6,6 +6,8 @@
 #include "Particles/Particles.h"
 #include "ParticlesConfig.h"
 
+#include "Particles/neighbourSearch.h"
+
 
 using namespace TNL;
 
@@ -69,6 +71,25 @@ int main( int argc, char* argv[] )
   myParticleSystem.sortParticles();
   std::cout << "SORTED particle cell indices: " << myParticleSystem.getParticleCellIndices() << std::endl;
   std::cout << "SORTED particle system points: " << myParticleSystem.getPoints() << std::endl;
+
+  /**
+   * Init neighbor search.
+   * Show initial empty negihborSearch array with first and last particle in each cell.
+   */
+  std::cout << "\nNeighbor search." << std::endl;
+  ParticleSystem::NeighborSearch< ParticleSystem::ParticleSystemConfig,
+                                  ParticleSystem::Particles< ParticleSystem::ParticleSystemConfig,
+                                                             Devices::Host >> myNeighborSearch(myParticleSystem, 100);
+  std::cout << "First cell index: " << myNeighborSearch.getCellFirstParticleList() << std::endl;
+  std::cout << "Last cell idnex: " << myNeighborSearch.getCellLastParticleList() << std::endl;
+
+  /**
+   * Assign particles to neighborSearch arrays.
+   * Show filled negihborSearch array with first and last particle in each cell.
+   */
+  myNeighborSearch.particlesToCells();
+  std::cout << "First cell index after update: " << myNeighborSearch.getCellFirstParticleList() << std::endl;
+  std::cout << "Last cell idnex after update: " << myNeighborSearch.getCellLastParticleList() << std::endl;
 
   std::cout << "\nDone ... " << std::endl;
 
