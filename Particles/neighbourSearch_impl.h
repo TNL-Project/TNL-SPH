@@ -48,8 +48,10 @@ NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
-      view_firstCellParticle[  particles.getParticleCellIndex( i ) ] = (particles.getParticleCellIndex( i ) != particles.getParticleCellIndex( i-1 )) ? i : -1;
-      view_lastCellParticle[  particles.getParticleCellIndex( i ) ] = (particles.getParticleCellIndex( i ) != particles.getParticleCellIndex( i+1 )) ? i : -1;
+     if(particles.getParticleCellIndex( i ) != particles.getParticleCellIndex( i-1 ))
+       view_firstCellParticle[  particles.getParticleCellIndex( i ) ] = i ;
+     if(particles.getParticleCellIndex( i ) != particles.getParticleCellIndex( i+1 ))
+       view_lastCellParticle[  particles.getParticleCellIndex( i ) ] =  i ;
    };
    Algorithms::ParallelFor< DeviceType >::exec( 1, this->particles.getNumberOfParticles() -1, init );
 
@@ -68,13 +70,10 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
 (LocalIndexType centralCell, LocalIndexType neighborCell)
 {
 
-  /*
    auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j ) mutable
    {
-     //cells[ j*_numberOfCells + i ] = j*_numberOfCells + i;
-     //compare
-     particles.getPoint(i);
-     particles.getPoint(j);
+     //if(l2Norm(particles.getPoint(i) - particles.getPoint(j)))
+     //add to neighbor list
    };
 
    Algorithms::ParallelFor2D< DeviceType, Algorithms::AsynchronousMode >::exec(
@@ -83,7 +82,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
        ( LocalIndexType ) lastCellParticle[ neighborCell ],
        ( LocalIndexType ) lastCellParticle[ centralCell ],
        f );
-   */
 
 }
 
