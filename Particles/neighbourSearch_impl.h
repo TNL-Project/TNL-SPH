@@ -72,8 +72,8 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
 
    auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j ) mutable
    {
-     //if(l2Norm(particles.getPoint(i) - particles.getPoint(j)))
-     //add to neighbor list
+     if(l2Norm(particles.getPoint(i) - particles.getPoint(j)) < this->particles.getSearchRadius())
+       this->particles.setNeighbor(i, j);
    };
 
    Algorithms::ParallelFor2D< DeviceType, Algorithms::AsynchronousMode >::exec(

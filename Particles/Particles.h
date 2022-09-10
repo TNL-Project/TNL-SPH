@@ -71,6 +71,13 @@ public:
   getParticleDimension();
 
   /**
+   * Get search radius.
+   */
+  __cuda_callable__
+  RealType
+  getSearchRadius() const;
+
+  /**
    * Get number of particles in particle system.
    */
   __cuda_callable__
@@ -155,6 +162,37 @@ public:
 
   /* general */
   void GetParticlesInformations();
+
+  /* NEIGHBOR LIST RELATED TOOL */
+
+  /**
+   * Return jth neighbor of particle i.
+   */
+  __cuda_callable__
+  const GlobalIndexType&
+  getNeighbor(GlobalIndexType i, GlobalIndexType j) const;
+
+  __cuda_callable__
+  GlobalIndexType&
+  getNeighbor(GlobalIndexType i, GlobalIndexType j);
+
+  /**
+   * Return number of neighbors of particle i.
+   */
+  __cuda_callable__
+  const LocalIndexType&
+  getNeighborsCount(GlobalIndexType i) const;
+
+  __cuda_callable__
+  LocalIndexType&
+  getNeighborsCount(GlobalIndexType i);
+
+  /**
+   * Set j as neighbor for particle i.
+   */
+  __cuda_callable__
+  void
+  setNeighbor(GlobalIndexType i, GlobalIndexType j);
 
 
 protected:
