@@ -216,7 +216,7 @@ __cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
 Particles< ParticleConfig, DeviceType >::getNeighbor(GlobalIndexType i, GlobalIndexType j) const
 {
-  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle + 1)*i + j];
+  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle )*i + 1 + j];
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -224,7 +224,7 @@ __cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
 Particles< ParticleConfig, DeviceType >::getNeighbor(GlobalIndexType i, GlobalIndexType j)
 {
-  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle + 1)*i + j];
+  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle )*i + 1 +j];
 }
 
 template < typename ParticleConfig, typename DeviceType >
