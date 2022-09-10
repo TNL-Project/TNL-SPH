@@ -15,6 +15,7 @@ template < typename ParticleConfig, typename DeviceType >
 class Particles{
 public:
 
+  using Device = DeviceType;
   using Config = ParticleConfig;
   using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
 
@@ -39,6 +40,9 @@ public:
   using GridType = typename ParticleTraitsType::GridType;
   using GridPointer = typename ParticleTraitsType::GridPointer;
 
+  //temp
+  using myCell = Meshes::GridEntity< GridType, 2, Meshes::GridEntityCrossStencilStorage<  > >;
+
   /**
    * Constructors.
    */
@@ -51,7 +55,7 @@ public:
   }
 
   Particles(GlobalIndexType size, RealType radius)
-  : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize) // grid(size, size)
+  : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
   {
     grid->setSpaceSteps({Config::searchRadius, Config::searchRadius});
     grid->setDimensions( Config::gridXsize, Config::gridYsize);
@@ -170,29 +174,44 @@ public:
    */
   __cuda_callable__
   const GlobalIndexType&
-  getNeighbor(GlobalIndexType i, GlobalIndexType j) const;
+  getNeighbor( GlobalIndexType i, GlobalIndexType j ) const;
 
   __cuda_callable__
   GlobalIndexType&
-  getNeighbor(GlobalIndexType i, GlobalIndexType j);
+  getNeighbor( GlobalIndexType i, GlobalIndexType j );
 
   /**
    * Return number of neighbors of particle i.
    */
   __cuda_callable__
   const LocalIndexType&
-  getNeighborsCount(GlobalIndexType i) const;
+  getNeighborsCount( GlobalIndexType i ) const;
 
   __cuda_callable__
   LocalIndexType&
-  getNeighborsCount(GlobalIndexType i);
+  getNeighborsCount( GlobalIndexType i );
 
   /**
    * Set j as neighbor for particle i.
    */
   __cuda_callable__
   void
-  setNeighbor(GlobalIndexType i, GlobalIndexType j);
+  setNeighbor( GlobalIndexType i, GlobalIndexType j );
+
+  /* gird related */
+  GridPointer grid; //temporarily moved outside protected
+
+  /* NEIGHBOR LIST RELATED TEMP TOOL */
+  //temp
+  __cuda_callable__
+  myCell&
+  getCell( GlobalIndexType i );
+
+  /**
+   * Print/save neighbor whole neighbor list.
+   */
+  void
+  saveNeighborList(std::string neigborListFile);
 
 
 protected:
@@ -209,8 +228,6 @@ protected:
   PointArrayType points;
   CellIndexArrayType particleCellInidices;
 
-  /* gird related */
-  GridPointer grid;
 
   CellIndexArrayType gridCellIndices;
 

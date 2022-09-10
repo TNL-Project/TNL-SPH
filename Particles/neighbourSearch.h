@@ -11,7 +11,7 @@ class NeighborSearch
 public:
 
   /* common */
-  using DeviceType = typename ParticleConfig::DeviceType; //mh
+  using DeviceType = typename ParticleSystem::Device; //mh
 
   using LocalIndexType = typename ParticleSystem::LocalIndexType;
   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
@@ -22,7 +22,9 @@ public:
   using GridType = typename ParticleSystem::GridType;
   using GridPointer = typename ParticleSystem::GridPointer;
 
-  using Cell = typename GridType::Cell;
+  using myCell = typename ParticleSystem::myCell;
+  //temp
+  using GridCell = typename ParticleSystem::GridType::Cell;
 
   /**
    * Constructors.
@@ -91,7 +93,8 @@ public:
 
 protected:
 
-  const ParticleSystem& particles;
+  //const ParticleSystem& particles;
+  ParticleSystem& particles;
 
   CellIndexArrayType firstCellParticle;
   CellIndexArrayType lastCellParticle;

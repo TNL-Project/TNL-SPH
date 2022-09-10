@@ -1,0 +1,112 @@
+if( centralCell.isBoundaryEntity() == false )
+{
+  const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mp);
+  const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zp);
+  const LocalIndexType pp = neighborEntities.template getEntityIndex< 1, 1 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pp);
+  const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mz);
+  const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zz);
+  const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pz);
+  const LocalIndexType mm = neighborEntities.template getEntityIndex< -1, -1 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mm);
+  const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
+  const LocalIndexType pm = neighborEntities.template getEntityIndex< 1, -1 >();
+  NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pm);
+  printf("[%d, %d, %d, %d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz, mm, zm, pm);
+}
+/*
+else
+{
+  if(centralCell.getCoordinates()[0] == 0)
+  {
+    if(centralCell.getCoordinates()[1] == 0)
+    {
+      printf( " /0,0/ " );
+      const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
+      const LocalIndexType pp = neighborEntities.template getEntityIndex< 1, 1 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
+      printf("[%d, %d, %d, %d]\n", zp, pp, zz, pz);
+    }
+    else if(centralCell.getCoordinates()[1] == 8)
+    {
+      printf(" /0,9/ ");
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType zp = neighborEntities.template getEntityIndex< 1, 0 >();
+      const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
+      const LocalIndexType mm = neighborEntities.template getEntityIndex< 1, -1 >();
+      printf("[%d, %d, %d, %d]\n", zz, zp, zm, mm);
+    }
+    else
+    {
+      const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
+      const LocalIndexType pp = neighborEntities.template getEntityIndex< 1, 1 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
+      const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
+      const LocalIndexType pm = neighborEntities.template getEntityIndex< 1, -1 >();
+      printf("[%d, %d, %d, %d, %d, %d]\n", zp, pp, zz, pz, zm, pm);
+    }
+  }
+  else if(centralCell.getCoordinates()[0] == 7)
+  {
+    if(centralCell.getCoordinates()[1] == 0)
+    {
+      printf(" /9,0/ ");
+      const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
+      const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
+      const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      printf("[%d, %d, %d, %d]\n", mp, zp, mz, zz);
+    }
+    else if(centralCell.getCoordinates()[1] == 7)
+    {
+      printf(" /9,9/ ");
+      const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType mm = neighborEntities.template getEntityIndex< -1, -1 >();
+      const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
+      printf("[%d, %d, %d, %d]\n", mz, zz, mm, zm);
+    }
+    else
+    {
+      const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
+      const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
+      const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType mm = neighborEntities.template getEntityIndex< -1, -1 >();
+      const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
+      printf("[%d, %d, %d, %d, %d, %d]\n", mp, zp, mz, zz, mm, zm);
+    }
+  }
+  else
+  {
+    if(centralCell.getCoordinates()[1] == 0)
+    {
+      const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
+      const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
+      const LocalIndexType pp = neighborEntities.template getEntityIndex< 1, 1 >();
+      const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
+      printf("[%d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz);
+    }
+    else
+    {
+      const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
+      const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
+      const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
+      const LocalIndexType mm = neighborEntities.template getEntityIndex< -1, -1 >();
+      const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
+      const LocalIndexType pm = neighborEntities.template getEntityIndex< 1, -1 >();
+      printf("[%d, %d, %d, %d, %d, %d]\n", mz, zz, pz, mm, zm, pm);
+    }
+  }
+}
+*/

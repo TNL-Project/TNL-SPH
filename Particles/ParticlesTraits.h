@@ -17,7 +17,7 @@ class ParticlesTraits
   using GlobalIndexType = typename ParticleConfig::GlobalIndexType;
   using LocalIndexType = typename ParticleConfig::LocalIndexType;
   using CellIndexType = typename ParticleConfig::CellIndexType;
-  using RealType = typename ParticleConfig::GlobalIndexType;
+  using RealType = typename ParticleConfig::RealType;
 
   /* particle related */
   using PointType = Containers::StaticVector< spaceDimension, RealType >;

@@ -70,19 +70,23 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
 (LocalIndexType centralCell, LocalIndexType neighborCell)
 {
 
-   auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j ) mutable
+   if(firstCellParticle[ neighborCell ] != -1)
    {
-     if(l2Norm(particles.getPoint(i) - particles.getPoint(j)) < this->particles.getSearchRadius())
-       this->particles.setNeighbor(i, j);
-   };
+    auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j ) mutable
+    {
+      if((l2Norm(particles.getPoint(i) - particles.getPoint(j)) < this->particles.getSearchRadius()) && (i != j))
+      this->particles.setNeighbor(static_cast< LocalIndexType>( i ), static_cast< LocalIndexType> ( j ) );
+      //printf("Particle i: %f, %f particle j: %f, %f, l2Norm: %f\n", particles.getPoint(i)[0], particles.getPoint(i)[1], particles.getPoint(j)[0], particles.getPoint(j)[1], l2Norm(particles.getPoint(i) - particles.getPoint(j)));
 
-   Algorithms::ParallelFor2D< DeviceType, Algorithms::AsynchronousMode >::exec(
-       ( LocalIndexType ) firstCellParticle[ neighborCell ],
-       ( LocalIndexType ) firstCellParticle[ centralCell ],
-       ( LocalIndexType ) lastCellParticle[ neighborCell ],
-       ( LocalIndexType ) lastCellParticle[ centralCell ],
-       f );
+    };
 
+    Algorithms::ParallelFor2D< DeviceType, Algorithms::AsynchronousMode >::exec(
+        ( LocalIndexType ) firstCellParticle[ neighborCell ],
+        ( LocalIndexType ) firstCellParticle[ centralCell ],
+        ( LocalIndexType ) lastCellParticle[ neighborCell ] + 1,
+        ( LocalIndexType ) lastCellParticle[ centralCell ] + 1,
+        f );
+    }
 }
 
 template< typename ParticleConfig, typename ParticleSystem >
@@ -93,9 +97,16 @@ NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid()
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
+     if(firstCellParticle[ i ] != -1)
+     {
+        myCell centralCell = particles.grid->template getEntity<GridCell>( i );
+        centralCell.refresh();
+        const typename myCell::template NeighborEntities< 2 >& neighborEntities = centralCell.getNeighborEntities();
+        #include "somethingNotNice.h"
+      }
 
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, 100, init );
+   Algorithms::ParallelFor< DeviceType >::exec( 0, 64, init );
 
 }
 
@@ -104,6 +115,8 @@ __cuda_callable__
 void
 NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighbors()
 {
+
+   NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells();
 
 }
 

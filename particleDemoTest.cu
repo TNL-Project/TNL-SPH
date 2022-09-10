@@ -91,6 +91,16 @@ int main( int argc, char* argv[] )
   std::cout << "First cell index after update: " << myNeighborSearch.getCellFirstParticleList() << std::endl;
   std::cout << "Last cell idnex after update: " << myNeighborSearch.getCellLastParticleList() << std::endl;
 
+  /*** TEMP TEST ***/
+  std::cout << "\nCycle over internal cells." << std::endl;
+  myNeighborSearch.runCycleOverGrid();
+
+  /**
+   * Print neihbor list.
+   */
+  #include "printNeighborList.h"
+
+
   std::cout << "\nDone ... " << std::endl;
 
 

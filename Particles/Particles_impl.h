@@ -133,8 +133,8 @@ Particles< ParticleConfig, DeviceType >::generateRandomParticles()
 {
   typename Particles< ParticleConfig, DeviceType>::PointArrayType aux_points(this->numberOfParticles);
   aux_points.forAllElements( [=] __cuda_callable__ ( LocalIndexType i, PointType& value )
-      { value[0] = static_cast< RealType >( std::rand() / static_cast< RealType >( RAND_MAX / ( 8 - 0 ) ));
-        value[1] = static_cast< RealType >( std::rand() / static_cast< RealType >( RAND_MAX / ( 8 - 0 ) )); });
+      { value[0] = static_cast < RealType > ( rand()) /( static_cast < RealType > ( RAND_MAX/( 8-0 ) ));
+        value[1] = static_cast < RealType > ( rand()) /( static_cast < RealType > ( RAND_MAX/( 8-0 ) )); });
   this->points = aux_points;
 
 }
@@ -249,10 +249,26 @@ __cuda_callable__
 void
 Particles< ParticleConfig, DeviceType >::setNeighbor(GlobalIndexType i, GlobalIndexType j)
 {
-  TNL_ASSERT_LT( neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]++, ParticleConfig::maxOfNeigborsPerParticle, "number of neighbors is reached" );
+  //TNL_ASSERT_LT( neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]++, ParticleConfig::maxOfNeigborsPerParticle, "number of neighbors is reached" );
 
   neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]++;
   neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i + neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]] = j;
+}
+
+//:template < typename ParticleConfig, typename DeviceType >
+//:__cuda_callable__
+//:typename Particles< ParticleConfig, DeviceType>::Cell&
+//:Particles< ParticleConfig, DeviceType >::getCell( GlobalIndexType i )
+//:{
+//:  //return grid->getEntity< typename Particles< ParticleConfig, DeviceType >::GridType::Cell >( i );
+//:  return NULL;
+//:}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::saveNeighborList(std::string neigborListFile)
+{
+  points.save( neigborListFile );
 }
 
 
