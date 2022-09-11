@@ -133,8 +133,8 @@ Particles< ParticleConfig, DeviceType >::generateRandomParticles()
 {
   typename Particles< ParticleConfig, DeviceType>::PointArrayType aux_points(this->numberOfParticles);
   aux_points.forAllElements( [=] __cuda_callable__ ( LocalIndexType i, PointType& value )
-      { value[0] = static_cast < RealType > ( rand()) /( static_cast < RealType > ( RAND_MAX/( 8-0 ) ));
-        value[1] = static_cast < RealType > ( rand()) /( static_cast < RealType > ( RAND_MAX/( 8-0 ) )); });
+      { value[0] = static_cast < RealType > ( rand()) /( static_cast < RealType > ( RAND_MAX/( ParticleConfig::gridXsize-0 ) ));
+        value[1] = static_cast < RealType > ( rand()) /( static_cast < RealType > ( RAND_MAX/( ParticleConfig::gridYsize-0 ) )); });
   this->points = aux_points;
 
 }

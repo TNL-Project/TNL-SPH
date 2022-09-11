@@ -75,7 +75,8 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
     auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j ) mutable
     {
       if((l2Norm(particles.getPoint(i) - particles.getPoint(j)) < this->particles.getSearchRadius()) && (i != j))
-      this->particles.setNeighbor(static_cast< LocalIndexType>( i ), static_cast< LocalIndexType> ( j ) );
+      this->particles.setNeighbor(static_cast< LocalIndexType>( j ), static_cast< LocalIndexType> ( i ) ); //i is nbs, j is central!
+
       //printf("Particle i: %f, %f particle j: %f, %f, l2Norm: %f\n", particles.getPoint(i)[0], particles.getPoint(i)[1], particles.getPoint(j)[0], particles.getPoint(j)[1], l2Norm(particles.getPoint(i) - particles.getPoint(j)));
 
     };
@@ -106,7 +107,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid()
       }
 
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, 64, init );
+   Algorithms::ParallelFor< DeviceType >::exec( 0, ParticleConfig::gridXsize*ParticleConfig::gridYsize, init );
 
 }
 
@@ -117,6 +118,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighbors()
 {
 
    NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells();
+   NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid();
 
 }
 
