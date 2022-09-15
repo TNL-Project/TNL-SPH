@@ -109,6 +109,13 @@ public:
   getPoint( GlobalIndexType particleIndex );
 
   /**
+   * Set position of given particle.
+   */
+  __cuda_callable__
+  void
+  setPoint( GlobalIndexType particleIndex, PointType point);
+
+  /**
    * Get particle cell indices.
    */
   const typename ParticleTraitsType::CellIndexArrayType& // -> using..

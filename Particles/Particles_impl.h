@@ -63,6 +63,14 @@ Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex)
 }
 
 template < typename ParticleConfig, typename DeviceType >
+__cuda_callable__
+void
+Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, PointType point)
+{
+  this->points[ particleIndex ] = point;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
 Particles< ParticleConfig, DeviceType >::getParticleCellIndices() const
 {
@@ -95,6 +103,7 @@ Particles< ParticleConfig, DeviceType >::getParticleCellIndex(GlobalIndexType pa
   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
   return this->particleCellInidices[ particleIndex ];
 }
+
 
 template < typename ParticleConfig, typename DeviceType >
 void

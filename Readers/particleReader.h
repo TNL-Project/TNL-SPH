@@ -3,8 +3,9 @@
 #include <string>
 #include <utility>
 #include <vector>
-//: #include <TNL/3rdparty/mpark/variant.hpp>  // backport of std::variant from C++17
-#include "variant.hpp"
+//#include <TNL/3rdparty/mpark/variant.hpp>  // backport of std::variant from C++17
+//#include "variant.hpp"
+#include <mpark/variant.hpp>
 
 namespace TNL {
 namespace ParticleSystem {
@@ -67,21 +68,22 @@ public:
       using PointType = typename ParticleType::PointType;
 
       // assign points
-      //:visit(
-      //:   [ &particles ]( auto&& array )
-      //:   {
-      //:      PointType p;
-      //:      std::size_t i = 0;
-      //:      for( auto c : array ) {
-      //:         int dim = i++ % 3;
-      //:         if( dim >= PointType::getSize() )
-      //:            continue;
-      //:         p[ dim ] = c;
-      //:         if( dim == PointType::getSize() - 1 )
-      //:            particles.setPoint( ( i - 1 ) / 3, p );
-      //:      }
-      //:   },
-      //:   pointsArray );
+      using mpark::visit;
+      visit(
+         [ &particles ]( auto&& array )
+         {
+            PointType p;
+            std::size_t i = 0;
+            for( auto c : array ) {
+               int dim = i++ % 3;
+               if( dim >= PointType::getSize() )
+                  continue;
+               p[ dim ] = c;
+               if( dim == PointType::getSize() - 1 )
+                  particles.setPoint( ( i - 1 ) / 3, p );
+            }
+         },
+         pointsArray );
 
 
 
