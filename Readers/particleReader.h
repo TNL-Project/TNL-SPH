@@ -7,9 +7,18 @@
 //#include "variant.hpp"
 #include <mpark/variant.hpp>
 
+#include "VTKTraits.h"
+
 namespace TNL {
 namespace ParticleSystem {
 namespace Readers {
+
+struct ParticleReaderError : public std::runtime_error
+{
+   ParticleReaderError( const std::string& readerName, const std::string& msg )
+   : std::runtime_error( readerName + " error: " + msg )
+   {}
+};
 
 class ParticleReader
 {
@@ -111,7 +120,8 @@ protected:
    std::string forcedLocalIndexType = "short int";  // not stored in any file format
 
    // points
-   std::vector< std::int32_t > pointsArray; // ... -> VariantVector pointsArray;
+   //std::vector< std::int32_t > pointsArray; // ... -> VariantVector pointsArray;
+   VariantVector pointsArray; // ... -> VariantVector pointsArray;
 
    // string representation of each array's value type
    std::string pointsType, connectivityType, offsetsType, typesType;

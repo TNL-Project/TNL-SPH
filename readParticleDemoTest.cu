@@ -37,11 +37,17 @@ int main( int argc, char* argv[] )
   /**
    * Define VTKReader
    */
-  const std::string inputFileName="Reader/samples/cleanup_polydataAsciiNoField.vtk";
+  std::cout << "\nRead particles." << std::endl;
+  const std::string inputFileName="/home/tomas/Documents/codes/tnl/myTNLProject/Readers/samples/ccleanup_polydataAsciiNoField.vtk";
   ParticleSystem::Readers::VTKReader myVTKReader(inputFileName);
   //ParticleSystem::Readers::ParticleReader myVTKReader(inputFileName);
 
-  myVTKReader.template loadParticle< ParticleType >( myParticleSystem );
+  myVTKReader.detectParticleSystem();
+  //myVTKReader.template loadParticle< ParticleType >( myParticleSystem );
+
+  std::cout << "Particle system dimension: " << myParticleSystem.getParticleDimension() << std::endl;
+  std::cout << "Particle system points: " << myParticleSystem.getPoints() << std::endl;
+  std::cout << "Particle system points - point with idx 1: " << myParticleSystem.getPoint(1) << std::endl;
 
   std::cout << "\nreadParticleDEmoTest.cu: Done ... " << std::endl;
 
