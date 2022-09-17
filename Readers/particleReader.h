@@ -85,11 +85,13 @@ public:
             std::size_t i = 0;
             for( auto c : array ) {
                int dim = i++ % 3;
+               //int dim = i++ % 2;
                if( dim >= PointType::getSize() )
                   continue;
                p[ dim ] = c;
                if( dim == PointType::getSize() - 1 )
                   particles.setPoint( ( i - 1 ) / 3, p );
+                  //particles.setPoint( ( i - 1 ) / 2, p );
             }
          },
          pointsArray );
@@ -97,6 +99,12 @@ public:
 
 
    }
+
+   //void
+   //TEST_coutPointsArray()
+   //{
+   //  std::cout << "PointsArray: " << pointsArray[0][0] << std::endl;
+   //}
 
    int
    getSpaceDimension() const
