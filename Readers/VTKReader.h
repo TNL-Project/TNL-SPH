@@ -244,41 +244,36 @@ protected:
          }
          else if( name == "VERTICES" ) {
             sectionPositions.insert( { "VERTICES", currentPosition } );
-            std::cout << "Vertices found!" << std::endl;
 
-            std::string lineN;
-            std::string lineSize;
-            iss >> lineN >> lineSize;
-            //std::cout << "line: " << line << " points_count:" << points_count << std::endl;
-            std::cout << "lineN: " << lineN << " lineSize: " << lineSize << std::endl;
+            //OFFSETS follow VERTICES, skip them
+            getline( str, line );
+            iss.clear();
+            iss.str( line );
+            std::string aux;
+            std::string datatype;
+            iss >> aux >> datatype;
 
-           for( std::int32_t j = 0; j < 1 * points_count + 1; j++ )
+            if( aux != "OFFSETS" )
+              throw ParticleReaderError( "VTKReader", "expected OFFSETS section, found '" + aux + "'" );
+
+            //next, skip VERTICES, we don't need them for particles
+            for( std::int32_t j = 0; j < 1 * points_count + 1; j++ )
                skipValue( dataFormat, str, "vtktypeint64" );
+
             str >> std::ws;
 
-            const std::ios::pos_type connectivityPosition = str.tellg();
-            //skip connectivity By hand
-               str >> std::ws;
-               getline( str, line );
-               iss.clear();
-               iss.str( line );
-               std::string aux;
-               std::string datatype;
+            //follows connectivity, we don't need that either
+            str >> std::ws;
+            getline( str, line );
+            iss.clear();
+            iss.str( line );
+            iss >> aux >> datatype;
 
-               iss >> aux >> datatype;
-               if( aux != "CONNECTIVITY" )
-                  throw ParticleReaderError( "VTKReader", "expected CONNECTIVITY section, found '" + aux + "'" );
-               sectionPositions.insert( { "CONNECTIVITY", connectivityPosition } );
-               if( datatype == "vtktypeint32" )
-                  connectivityType = "std::int32_t";
-               else if( datatype == "vtktypeint64" )
-                  connectivityType = "std::int64_t";
-               else
-                  throw ParticleReaderError( "VTKReader", "unsupported datatype for CONNECTIVITY: " + datatype );
-               for( std::int32_t j = 0; j < points_count; j++ )
-                  skipValue( dataFormat, str, datatype );
+            if( aux != "CONNECTIVITY" )
+               throw ParticleReaderError( "VTKReader", "expected CONNECTIVITY section, found '" + aux + "'" );
 
-
+            for( std::int32_t j = 0; j < points_count; j++ )
+               skipValue( dataFormat, str, datatype );
 
          }
          else if( name == "POINT_DATA" ) { //we can remove cell data

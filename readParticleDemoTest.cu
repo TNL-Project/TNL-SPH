@@ -19,7 +19,8 @@ int main( int argc, char* argv[] )
   /**
    * Number of particles
    */
-  unsigned int nptcs = 8;
+  //unsigned int nptcs = 2447; //particleSample_binary.vtk
+  unsigned int nptcs = 16; //particleSample_simpleAscii.vtk
 
   /**
    * Create particle system
@@ -38,9 +39,9 @@ int main( int argc, char* argv[] )
    * Define VTKReader
    */
   std::cout << "\nRead particles." << std::endl;
-  const std::string inputFileName="/home/tomas/Documents/codes/tnl/myTNLProject/Readers/samples/ccleanup_polydataAsciiNoField_XY.vtk";
+  //const std::string inputFileName="/home/tomas/Documents/codes/tnl/myTNLProject/playground/particleSample_binary.vtk";
+  const std::string inputFileName="/home/tomas/Documents/codes/tnl/myTNLProject/playground/particleSample_simpleAscii.vtk";
   ParticleSystem::Readers::VTKReader myVTKReader(inputFileName);
-  //ParticleSystem::Readers::ParticleReader myVTKReader(inputFileName);
 
   myVTKReader.detectParticleSystem();
   myVTKReader.template loadParticle< ParticleType >( myParticleSystem );
