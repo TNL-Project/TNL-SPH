@@ -11,7 +11,7 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template < typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 class SPHSimulation
 {
 public:
@@ -27,56 +27,23 @@ public:
 
 
 //protected:
-  void PerformNeighborSearch()
-  {
-     /**
-      * Compute gird nad partice cell indices.
-      */
-     particles.computeGridCellIndices(); //I DONT NEED TO REPEAT THIS!
-     particles.computeParticleCellIndices();
 
-     /**
-      * Assign particles to neighborSearch arrays.
-      */
-     neighborSearch.particlesToCells();
+  /**
+   * Perform neighbors search and fill neighborsList in Particle system variable.
+   */
+  void PerformNeighborSearch();
 
-     /**
-      * TEMP
-      * Find neigbors.
-      */
-     neighborSearch.runCycleOverGrid();
-  }
+  /**
+   * Proces one particle (i.e. loop over all its neighbors and perform interactions).
+   */
+  void ProcessOneParticle(GlobalIndexType index_i);
 
-  void ProcessOneParticle(GlobalIndexType index_i)
-  {
+  /**
+   * Perform cycle over all particles. For each of them load  all the neighbors and
+   * perform the interactions.
+   */
+  void Interact();
 
-    const LocalIndexType numberOfNeigbors = particles.getNeighborsCount( index_i );
-    printf(" Particle i: %d has %d of nbs.", index_i, numberOfNeigbors);
-
-    auto fetch = [=] __cuda_callable__ ( int i ) -> double { return particles.getNeighbor( index_i, i ); };
-    auto reduction = [] __cuda_callable__ ( const double& a, const double& b ) { return a + b; };
-
-    vars.p[index_i] = Algorithms::reduce< DeviceType >( 0, numberOfNeigbors, fetch, reduction, 0.0 );
-
-  }
-
-  //INTERACET
-  // - cycle over the neighbors
-  void Interact()
-  {
-
-    // - for ALL PTCS
-    //    - for ALL NBCS of PTC
-
-    auto init = [=] __cuda_callable__ ( int i ) mutable
-    {
-       ProcessOneParticle( i );
-    };
-    Algorithms::ParallelFor< DeviceType >::exec( 0, particles.getNumberOfParticles(), init );
-
-  }
-
-  //Particles
 
   ParticleSystem particles;
   NeighborSearch neighborSearch;
@@ -90,3 +57,5 @@ private:
 } // SPH
 } // ParticleSystem
 } // TNL
+
+#include "SPH_impl.h"
