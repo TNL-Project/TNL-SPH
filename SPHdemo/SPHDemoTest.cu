@@ -23,10 +23,45 @@ int main( int argc, char* argv[] )
   unsigned int nptcs = 32;
   using ParticleSystem = typename ParticleSystem::Particles< ParticleSystem::ParticleSystemConfig, Devices::Host >;
   using Variables = typename TNL::ParticleSystem::SPH::SPHFluidVariables< TNL::ParticleSystem::SPH::SPHFluidConfig < Devices::Host > >;
+  using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< TNL::ParticleSystem::ParticleSystemConfig, ParticleSystem >;
 
-  TNL::ParticleSystem::SPH::SPHSimulation< Variables, ParticleSystem > mySPHSimulation(nptcs, 1);
+  TNL::ParticleSystem::SPH::SPHSimulation< Variables, ParticleSystem, NeighborSearch > mySPHSimulation( nptcs, 1 );
 
-  std::cout << "mySPHsimulation variables - velocity of particle with idx 1: " << mySPHSimulation.vars.v[1] << std::endl;
+  std::cout << "mySPHSimulation variables - velocity of particle with idx 1: " << mySPHSimulation.vars.v[ 1 ] << std::endl;
+  std::cout << "mySPHSimulation velocity field: " << mySPHSimulation.vars.v << std::endl;
+  std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.vars.p << std::endl;
+
+  /**
+   * Generate random particles.
+   */
+  std::cout << "\nGenerate random particle positions." << std::endl;
+  mySPHSimulation.particles.generateRandomParticles();
+  std::cout << "Particle points: " << mySPHSimulation.particles.getPoints() << std::endl;
+
+  //:: /**
+  //::  * Compute gird nad partice cell indices and show them.
+  //::  */
+  //:: std::cout << "\nCompute grid cell indices." << std::endl;
+  //:: mySPHSimulation.particles.computeGridCellIndices();
+  //:: std::cout << "Grid cell indices: " << mySPHSimulation.particles.getGridCellIndices() << std::endl;
+
+  //:: std::cout << "\nCompute particle cell index." << std::endl;
+  //:: mySPHSimulation.particles.computeParticleCellIndices();
+  //:: std::cout << "Particle cell indices: " << mySPHSimulation.particles.getParticleCellIndices() << std::endl;
+
+  /**
+   * Find neighbors within the SPH simulation.
+   */
+  std::cout << "\nFind neighbros within the SPH simulation." << std::endl;
+  mySPHSimulation.PerformNeighborSearch();
+
+  /**
+   * Test the loop over particle neighbors.
+   */
+  std::cout << "\nTest the loop over particle neighbros." << std::endl;
+  mySPHSimulation.Interact();
+  std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.vars.p << std::endl;
+
 
   //: /**
   //:  * Create particle system
