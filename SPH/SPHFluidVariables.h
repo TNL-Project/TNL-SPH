@@ -38,7 +38,7 @@ class SPHFluidVariables
   InteractionResultTypeArrayType DrhoDv;
 
   /* Variables - constans */
-  RealType h;
+  RealType h, m;
 
 
 };
