@@ -11,6 +11,7 @@
 #include "../SPH/SPH.h"
 #include "../SPH/SPHFluidVariables.h"
 #include "../SPH/SPHConfig.h"
+#include "../SPH/SPHInteractions.h"
 
 using namespace TNL;
 
@@ -24,12 +25,13 @@ int main( int argc, char* argv[] )
   using ParticleSystem = typename ParticleSystem::Particles< ParticleSystem::ParticleSystemConfig, Devices::Host >;
   using Variables = typename TNL::ParticleSystem::SPH::SPHFluidVariables< TNL::ParticleSystem::SPH::SPHFluidConfig < Devices::Host > >;
   using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< TNL::ParticleSystem::ParticleSystemConfig, ParticleSystem >;
+  using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, TNL::ParticleSystem::SPH::SPHFluidConfig < Devices::Host >>;
 
-  TNL::ParticleSystem::SPH::SPHSimulation< Variables, ParticleSystem, NeighborSearch > mySPHSimulation( nptcs, 1 );
+  TNL::ParticleSystem::SPH::SPHSimulation< SPHModel, ParticleSystem, NeighborSearch > mySPHSimulation( nptcs, 1 );
 
-  std::cout << "mySPHSimulation variables - velocity of particle with idx 1: " << mySPHSimulation.vars.v[ 1 ] << std::endl;
-  std::cout << "mySPHSimulation velocity field: " << mySPHSimulation.vars.v << std::endl;
-  std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.vars.p << std::endl;
+  std::cout << "mySPHSimulation variables - velocity of particle with idx 1: " << mySPHSimulation.model.vars.v[ 1 ] << std::endl;
+  std::cout << "mySPHSimulation velocity field: " << mySPHSimulation.model.vars.v << std::endl;
+  std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.model.vars.p << std::endl;
 
   /**
    * Generate random particles.
@@ -60,8 +62,14 @@ int main( int argc, char* argv[] )
    */
   std::cout << "\nTest the loop over particle neighbros." << std::endl;
   mySPHSimulation.Interact();
-  std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.vars.p << std::endl;
+  std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.model.vars.p << std::endl;
 
+  /**
+   * Test particle positions -> model points bridge.
+   */
+  std::cout << "\nTest particle positions -> model points bridge." << std::endl;
+  std::cout << mySPHSimulation.model.points << std::endl; //For some reason this works,...
+  std::cout << "Particle points bridge - point with idx 1: " << mySPHSimulation.model.points[1] << std::endl;
 
   //: /**
   //:  * Create particle system

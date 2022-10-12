@@ -6,12 +6,14 @@
 #include "../Particles/Particles.h"
 
 #include "SPHFluidTraits.h"
+#include "SPHFluidVariables.h"
+#include "SPHInteractions.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Model, typename ParticleSystem, typename NeighborSearch >
 class SPHSimulation
 {
 public:
@@ -20,11 +22,12 @@ public:
   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
   using DeviceType = typename ParticleSystem::Device;
 
+  using RealType = typename ParticleSystem::RealType;
+
   SPHSimulation() = default;
 
   SPHSimulation(GlobalIndexType size, float h)
-  : particles(size, h), neighborSearch(particles, 100), vars(size) {};
-
+  : particles(size, h), neighborSearch(particles, 100), model(size, particles.getPoints()) {};
 
 //protected:
 
@@ -44,11 +47,9 @@ public:
    */
   void Interact();
 
-
   ParticleSystem particles;
   NeighborSearch neighborSearch;
-
-  Variables vars;
+  Model model;
 
 private:
 

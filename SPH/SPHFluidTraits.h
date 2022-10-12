@@ -30,6 +30,10 @@ class SPHFluidTraits
   using VectorType = Containers::StaticVector< spaceDimension, RealType >;
   using VectorArrayType = Containers::Array< VectorType, DeviceType, GlobalIndexType >;
 
+  /* ? */
+  using InteractionResultType = Containers::StaticVector< spaceDimension + 1, RealType >;
+  using InteractionResultTypeArray = Containers::Array< InteractionResultType, DeviceType, GlobalIndexType >;
+
 
 };
 

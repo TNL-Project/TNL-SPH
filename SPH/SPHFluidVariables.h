@@ -13,19 +13,39 @@ class SPHFluidVariables
   public:
 
   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+
+  using RealType = typename SPHFluidTraitsType::RealType;
+
   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+
   using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
+  using InteractionResultTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
 
   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
 
   SPHFluidVariables(GlobalIndexType size)
-  : rho(size), p(size), a(size), v(size) {}
+  : rho(size), p(size), v(size), type(size), DrhoDv(size) {}
+
+  /* Variables - Fields */
+
+  ParticleTypeArrayType type;
 
   ScalarArrayType rho;
   ScalarArrayType p;
   VectorArrayType v;
-  VectorArrayType a;
+
+  InteractionResultTypeArrayType DrhoDv;
+
+  /* Variables - constans */
+  RealType h;
+
+
+};
+
+template< typename SPHFluidConfig >
+class SPHFluidConstantVariables
+{
 
 };
 
