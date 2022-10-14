@@ -27,8 +27,9 @@ public:
   using PointType = typename Particles::PointArrayType;
   using PointArrayType = typename Particles::PointArrayType;
 
-  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref ) : vars( size ), points( points_ref ) {};
+  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref ) : vars( size ), points( points_ref ), particles( particles_ref ) {};
 
+  /*
   template< typename SPHKernel >
   InteractionResultType PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j )
   {
@@ -46,6 +47,7 @@ public:
 
     return { drs.x, a[ 0 ], a[ 1 ] };
   }
+  */
 
   template< typename SPHKernel >
   InteractionResultType PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j )
@@ -63,6 +65,9 @@ public:
   Variables vars;
   //PointArrayTypeView points;
   PointArrayType& points;
+
+  Particles& particles;
+
 
 };
 

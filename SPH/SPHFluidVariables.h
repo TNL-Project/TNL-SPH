@@ -24,8 +24,8 @@ class SPHFluidVariables
 
   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
 
-  SPHFluidVariables(GlobalIndexType size)
-  : rho(size), p(size), v(size), type(size), DrhoDv(size) {}
+  SPHFluidVariables( GlobalIndexType size )
+  : rho( size ), p( size ), v( size ), type( size ), DrhoDv( size ) {}
 
   /* Variables - Fields */
 

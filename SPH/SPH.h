@@ -26,8 +26,8 @@ public:
 
   SPHSimulation() = default;
 
-  SPHSimulation(GlobalIndexType size, float h)
-  : particles(size, h), neighborSearch(particles, 100), model(size, particles.getPoints()) {};
+  SPHSimulation( GlobalIndexType size, float h )
+  : particles( size, h ), neighborSearch( particles, 100 ), model( size, particles.getPoints(), particles ) {};
 
 //protected:
 
