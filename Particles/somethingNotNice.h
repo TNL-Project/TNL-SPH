@@ -1,3 +1,13 @@
+//GlobalIndexType localBeginX = 0;
+//GlobalIndexType localBeginY = 0;
+//GlobalIndexType interiorEndX = 7;
+//GlobalIndexType interiorEndY = 7;
+
+GlobalIndexType localBeginX = 0;
+GlobalIndexType localBeginY = 0;
+GlobalIndexType interiorEndX = particles.grid->getInteriorEnd()[0];
+GlobalIndexType interiorEndY = particles.grid->getInteriorEnd()[1];
+
 if( centralCell.isBoundaryEntity() == false )
 {
   const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
@@ -18,15 +28,15 @@ if( centralCell.isBoundaryEntity() == false )
   NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
   const LocalIndexType pm = neighborEntities.template getEntityIndex< 1, -1 >();
   NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pm);
-  printf("[%d, %d, %d, %d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz, mm, zm, pm);
+  //printf("[%d, %d, %d, %d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz, mm, zm, pm);
 }
 else
 {
-  if(centralCell.getCoordinates()[0] == 0)
+  if(centralCell.getCoordinates()[0] == localBeginX)
   {
-    if(centralCell.getCoordinates()[1] == 0)
+    if(centralCell.getCoordinates()[1] == localBeginY)
     {
-      printf( " /0,0/ " );
+      //printf( " /0,0/ " );
       const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zp);
       const LocalIndexType pp = neighborEntities.template getEntityIndex< 1, 1 >();
@@ -35,11 +45,12 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zz);
       const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pz);
-      printf("[%d, %d, %d, %d]\n", zp, pp, zz, pz);
+      //printf("[%d, %d, %d, %d]\n", zp, pp, zz, pz);
     }
-    else if(centralCell.getCoordinates()[1] == 7)
+    // else if(centralCell.getCoordinates()[1] == 7)
+    else if(centralCell.getCoordinates()[1] == interiorEndY)
     {
-      printf(" /0,9/ ");
+      //printf(" /0,9/ ");
       const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zz);
       const LocalIndexType zp = neighborEntities.template getEntityIndex< 1, 0 >();
@@ -48,7 +59,7 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
       const LocalIndexType mm = neighborEntities.template getEntityIndex< 1, -1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mm);
-      printf("[%d, %d, %d, %d]\n", zz, zp, zm, mm);
+      //printf("[%d, %d, %d, %d]\n", zz, zp, zm, mm);
     }
     else
     {
@@ -64,14 +75,14 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
       const LocalIndexType pm = neighborEntities.template getEntityIndex< 1, -1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pm);
-      printf("[%d, %d, %d, %d, %d, %d]\n", zp, pp, zz, pz, zm, pm);
+      //printf("[%d, %d, %d, %d, %d, %d]\n", zp, pp, zz, pz, zm, pm);
     }
   }
-  else if(centralCell.getCoordinates()[0] == 7)
+  else if(centralCell.getCoordinates()[0] == interiorEndX)
   {
-    if(centralCell.getCoordinates()[1] == 0)
+    if(centralCell.getCoordinates()[1] == localBeginY)
     {
-      printf(" /9,0/ ");
+      //printf(" /9,0/ ");
       const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mp);
       const LocalIndexType zp = neighborEntities.template getEntityIndex< 0, 1 >();
@@ -80,11 +91,11 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mz);
       const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zz);
-      printf("[%d, %d, %d, %d]\n", mp, zp, mz, zz);
+      //printf("[%d, %d, %d, %d]\n", mp, zp, mz, zz);
     }
-    else if(centralCell.getCoordinates()[1] == 7)
+    else if(centralCell.getCoordinates()[1] == interiorEndY)
     {
-      printf(" /9,9/ ");
+      //printf(" /9,9/ ");
       const LocalIndexType mz = neighborEntities.template getEntityIndex< -1, 0 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mz);
       const LocalIndexType zz = neighborEntities.template getEntityIndex< 0, 0 >();
@@ -93,7 +104,7 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mm);
       const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
-      printf("[%d, %d, %d, %d]\n", mz, zz, mm, zm);
+      //printf("[%d, %d, %d, %d]\n", mz, zz, mm, zm);
     }
     else
     {
@@ -109,12 +120,12 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mm);
       const LocalIndexType zm = neighborEntities.template getEntityIndex< 0, -1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
-      printf("[%d, %d, %d, %d, %d, %d]\n", mp, zp, mz, zz, mm, zm);
+      //printf("[%d, %d, %d, %d, %d, %d]\n", mp, zp, mz, zz, mm, zm);
     }
   }
   else
   {
-    if(centralCell.getCoordinates()[1] == 0)
+    if(centralCell.getCoordinates()[1] == localBeginY)
     {
       const LocalIndexType mp = neighborEntities.template getEntityIndex< -1, 1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mp);
@@ -128,7 +139,7 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zz);
       const LocalIndexType pz = neighborEntities.template getEntityIndex< 1, 0 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pz);
-      printf("[%d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz);
+      //printf("[%d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz);
     }
     else
     {
@@ -144,7 +155,7 @@ else
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
       const LocalIndexType pm = neighborEntities.template getEntityIndex< 1, -1 >();
       NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pm);
-      printf("[%d, %d, %d, %d, %d, %d]\n", mz, zz, pz, mm, zm, pm);
+      //printf("[%d, %d, %d, %d, %d, %d]\n", mz, zz, pz, mm, zm, pm);
     }
   }
 }

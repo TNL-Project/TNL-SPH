@@ -57,10 +57,13 @@ public:
   Particles(GlobalIndexType size, RealType radius)
   : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
   {
-    grid->setSpaceSteps({Config::searchRadius, Config::searchRadius});
+    //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
     grid->setDimensions( Config::gridXsize, Config::gridYsize);
+
     //gridCellIndices(grid->template getEntitiesCount<2>());
     //particleCellInidices = 0; //reset
+
+    //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
 
     neighborsList.setSegmentsSizes(size, Config::maxOfNeigborsPerParticle);
 

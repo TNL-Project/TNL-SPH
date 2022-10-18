@@ -39,7 +39,9 @@ class SimpleCellIndex
     auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
     {
       //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
-      view_particeCellIndices[ i ] = TNL::floor(view_points[ i ][ 0 ]) + TNL::floor(view_points[ i ][ 1 ])*_numberOfCells;
+      //view_particeCellIndices[ i ] = TNL::floor(view_points[ i ][ 0 ]) + TNL::floor(view_points[ i ][ 1 ])*_numberOfCells; //remove
+      view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 0 ] - ParticleConfig::gridXbegin)/ ParticleConfig::searchRadius) + TNL::floor((view_points[ i ][ 1 ] - ParticleConfig::gridYbegin)/ ParticleConfig::searchRadius)*_numberOfCells;
+
     };
 
     Algorithms::ParallelFor< DeviceType, Algorithms::AsynchronousMode >::exec(
