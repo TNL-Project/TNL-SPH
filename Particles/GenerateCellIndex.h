@@ -16,7 +16,8 @@ class SimpleCellIndex
   using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
   using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
 
-  static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridYsize;
+  //static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridYsize; // ...remove
+  static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridXsize;
 
   static void ComputeCellIndex( CellIndexView cells, PointsView points )
   {
@@ -39,7 +40,7 @@ class SimpleCellIndex
     auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
     {
       //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
-      //view_particeCellIndices[ i ] = TNL::floor(view_points[ i ][ 0 ]) + TNL::floor(view_points[ i ][ 1 ])*_numberOfCells; //remove
+      //view_particeCellIndices[ i ] = TNL::floor(view_points[ i ][ 0 ]) + TNL::floor(view_points[ i ][ 1 ])*_numberOfCells; // ...remove
       view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 0 ] - ParticleConfig::gridXbegin)/ ParticleConfig::searchRadius) + TNL::floor((view_points[ i ][ 1 ] - ParticleConfig::gridYbegin)/ ParticleConfig::searchRadius)*_numberOfCells;
 
     };
