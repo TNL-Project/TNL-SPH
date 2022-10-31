@@ -25,42 +25,26 @@ public:
   using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
 
   using DeviceType = typename Particles::Device;
-  using PointType = typename Particles::PointArrayType;
+  using PointType = typename Particles::PointType;
   using PointArrayType = typename Particles::PointArrayType;
 
+  //using PointArrayTypeView = Containers::ArrayView< PointType >; /*temp-test*/
+
   WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref ) : vars( size ), points( points_ref ), particles( particles_ref ) {};
+  //WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref,  PointArrayTypeView points_view ) : vars( size ), points( points_ref ), particles( particles_ref ),
+  //points_view( points_view ) {};
 
-  /*
-  template< typename SPHKernel >
-  InteractionResultType PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j )
-  {
-    const PointType dr = points[ i ] - points[ j ];
-    const PointType dv = vars.v[ i ] - vars.v[ j ];
+  template< typename SPHKernelFunction >
+  __cuda_callable__
+  InteractionResultType PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
 
-    const RealType drs = l2Norm( dr );
-    const RealType F = SPHKernel::F( drs, vars.h );
-    const PointType gradW = dr*F;
+  template< typename SPHKernelFunction >
+  __cuda_callable__
+  InteractionResultType PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
 
-    const RealType drho = ( dv, gradW )*vars.m;
-
-    const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / (vars.rho [ i ] * vars.rho[ j ]);
-    const PointType a = p_term * gradW * vars.m;
-
-    return { drs.x, a[ 0 ], a[ 1 ] };
-  }
-  */
-
-  template< typename SPHKernel >
-  InteractionResultType PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j )
-  {
-
-  }
-
-  template< typename SPHKernel >
-  InteractionResultType PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j )
-  {
-
-  }
+  template< typename SPHKernelFunction >
+  __cuda_callable__
+  InteractionResultType PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j );
 
   void sortParticlesAndVariables();
 
@@ -75,8 +59,9 @@ public:
 
 
   Variables vars;
-  //PointArrayTypeView points;
+  //PointArrayTypeView pointss;
   PointArrayType& points;
+  //PointArrayType_ptr points;
 
   Particles& particles;
 

@@ -9,6 +9,8 @@
 #include "SPHFluidVariables.h"
 #include "SPHInteractions.h"
 
+#include "SPHKernels.h"
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -23,6 +25,7 @@ public:
   using DeviceType = typename ParticleSystem::Device;
 
   using RealType = typename ParticleSystem::RealType;
+  using InteractionResultType = typename Model::InteractionResultType;
 
   SPHSimulation() = default;
 

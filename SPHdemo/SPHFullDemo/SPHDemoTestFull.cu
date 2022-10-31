@@ -95,11 +95,11 @@ int main( int argc, char* argv[] )
   std::cout << "\nFind neighbros within the SPH simulation." << std::endl;
   mySPHSimulation.PerformNeighborSearch();
 
-  //:: /**
-  //::  * Test the loop over particle neighbors.
-  //::  */
-  //:: std::cout << "\nTest the loop over particle neighbros." << std::endl;
-  //:: mySPHSimulation.Interact();
+  /**
+   * Test the loop over particle neighbors.
+   */
+  std::cout << "\nTest the loop over particle neighbros." << std::endl;
+  mySPHSimulation.Interact();
   //:: std::cout << "mySPHSimulation inices-types: " << mySPHSimulation.model.vars.type << std::endl;
   //:: std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.model.vars.p << std::endl;
 
