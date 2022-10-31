@@ -36,6 +36,10 @@ public:
 
       // parse the file, find the starting positions of all relevant sections
       findSections( inputFile );
+      for(const auto& elem : sectionPositions) //debug
+      {
+         std::cout << elem.first << " " << elem.second << "\n";
+      }
 
       std::string line;
       std::string aux;
@@ -45,7 +49,7 @@ public:
       if( sectionPositions.count( "POINTS" ) == 0 )
          throw ParticleReaderError( "VTKReader", "unable to find the POINTS section, the file may be invalid or corrupted" );
       inputFile.seekg( sectionPositions[ "POINTS" ] );
-      getline( inputFile, line );
+      if(getline( inputFile, line )) {std::cout << "Reading done." << std::endl;}
       iss.clear();
       iss.str( line );
       iss >> aux;
@@ -178,9 +182,13 @@ protected:
    {
       while( str ) {
          // drop all whitespace (empty lines etc) before saving a position and reading a line
+
          str >> std::ws;
-         if( str.eof() )
+         if( str.eof() ){
+            str.clear();                   //debug
+            //str.seekg(0, std::ios::beg); //debug
             break;
+         }
 
          // read a line which should contain the following section header
          const std::ios::pos_type currentPosition = str.tellg();
@@ -287,7 +295,7 @@ protected:
 
             while( str ) {
                // drop all whitespace (empty lines etc) before saving a position and reading a line
-               str >> std::ws;
+               //str >> std::ws; //debug, this should be on
                if( str.eof() )
                   break;
 
@@ -375,7 +383,7 @@ protected:
                      str >> std::ws;
                   }
                   continue;
-               }
+               } // FIELD
                else if( type == "METADATA" ) {
                   skip_meta( str );
                   continue;
@@ -392,13 +400,11 @@ protected:
                // skip end of line (or any whitespace)
                str >> std::ws;
             }
-         }
+         } //pointdata
          else
             throw ParticleReaderError( "VTKReader",
                                    "parsing error: unexpected section start at byte " + std::to_string( currentPosition )
                                       + " (section name is '" + name + "')" );
-
-
 
       } //while loop
    } //find Sections
@@ -412,10 +418,14 @@ protected:
          readValue< std::int32_t >( format, str );
       else if( datatype == "vtktypeint64" )  // vtk DataFile Version 5.1
          readValue< std::int64_t >( format, str );
+      else if( datatype == "unsigned_int" )
+         readValue< unsigned int >( format, str );
       else if( datatype == "float" )
          readValue< float >( format, str );
       else if( datatype == "double" )
          readValue< double >( format, str );
+      else if( datatype == "unsigned_char" )
+         readValue< unsigned int >( format, str );
       else
          throw ParticleReaderError( "VTKReader", "found data type which is not implemented in the reader: " + datatype );
    }

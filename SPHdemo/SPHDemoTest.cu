@@ -39,6 +39,8 @@ int main( int argc, char* argv[] )
   std::cout << "\nGenerate random particle positions." << std::endl;
   mySPHSimulation.particles.generateRandomParticles();
   std::cout << "Particle points: " << mySPHSimulation.particles.getPoints() << std::endl;
+  mySPHSimulation.model.FillParticleTypeWithInts();
+  std::cout << "mySPHSimulation inices-types: " << mySPHSimulation.model.vars.type << std::endl;
 
   //:: /**
   //::  * Compute gird nad partice cell indices and show them.
@@ -62,6 +64,7 @@ int main( int argc, char* argv[] )
    */
   std::cout << "\nTest the loop over particle neighbros." << std::endl;
   mySPHSimulation.Interact();
+  std::cout << "mySPHSimulation inices-types: " << mySPHSimulation.model.vars.type << std::endl;
   std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.model.vars.p << std::endl;
 
   /**

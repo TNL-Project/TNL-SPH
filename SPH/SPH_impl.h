@@ -13,17 +13,13 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    particles.computeGridCellIndices(); //I DONT NEED TO REPEAT THIS!
    particles.computeParticleCellIndices();
+   model.sortParticlesAndVariables(); //I DONT NEED TO DO THIS IN EACH STEP!
+   //particles.sortParticles();
 
    /**
-    * Assign particles to neighborSearch arrays.
-    */
-   neighborSearch.particlesToCells();
-
-   /**
-    * TEMP
     * Find neigbors.
     */
-   neighborSearch.runCycleOverGrid();
+   neighborSearch.searchForNeighbors();
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >

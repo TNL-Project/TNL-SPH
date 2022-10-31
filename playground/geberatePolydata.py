@@ -6,13 +6,17 @@ dp = 0.2 #initial particle distance
 outputFileName = 'blockOfParticles.vtk'
 r = []; v = []; rho = []; p = []
 
+counter = 0;
 for x in range(int(0.9/dp)):
     for y in range(int(0.9/dp)):
         r.append([x*dp, y*dp, 0])
+        rho.append(counter)
+        counter += 1;
 
 np_r = np.array(r)
+np_rho = np.array(rho)
 
-def create_pointcloud_polydata(points, velocity=None, density=None, pressure=None):
+def create_pointcloud_polydata(points, density=None, velocity=None, pressure=None):
     vpoints = vtk.vtkPoints()
     vpoints.SetNumberOfPoints(points.shape[0])
     for i in range(points.shape[0]):
@@ -97,5 +101,5 @@ def save_polydata(polydata, file_name, binary=False, color_array_name=None):
 
 
 #myData = create_pointcloud_polydata(r, v, rho, p)
-myData = create_pointcloud_polydata(np_r)
+myData = create_pointcloud_polydata(np_r, rho)
 save_polydata(myData, outputFileName)

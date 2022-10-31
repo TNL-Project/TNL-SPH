@@ -24,6 +24,7 @@ public:
   using RealType = typename SPHFluidTraitsType::RealType;
   using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
 
+  using DeviceType = typename Particles::Device;
   using PointType = typename Particles::PointArrayType;
   using PointArrayType = typename Particles::PointArrayType;
 
@@ -61,6 +62,17 @@ public:
 
   }
 
+  void sortParticlesAndVariables();
+
+  /* TEMP, TEST */
+  void FillParticleTypeWithInts()
+  {
+     auto view_type = vars.type.getView();
+
+     for( int i = 0; i < particles.getNumberOfParticles(); i++ )
+        view_type[ i ] = i;
+  }
+
 
   Variables vars;
   //PointArrayTypeView points;
@@ -68,9 +80,10 @@ public:
 
   Particles& particles;
 
-
 };
 
 } // SPH
 } // ParticleSystem
 } // TNL
+
+#include "SPHInteractions_impl.h"
