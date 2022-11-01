@@ -20,7 +20,7 @@ class SPHFluidVariables
   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
   using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
-  using InteractionResultTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
+  using InteractionResultTypeArrayType = typename SPHFluidTraitsType::InteractionResultTypeArray;
 
   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
 

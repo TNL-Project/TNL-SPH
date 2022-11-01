@@ -57,7 +57,6 @@ public:
         view_type[ i ] = i;
   }
 
-
   Variables vars;
   //PointArrayTypeView pointss;
   PointArrayType& points;
