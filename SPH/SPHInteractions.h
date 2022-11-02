@@ -9,6 +9,8 @@
 #include "SPHFluidVariables.h"
 #include "../Particles/ParticlesTraits.h"
 
+#include "SPHKernels.h"
+
 #include "SPHInteractionsIntegrator.h"
 
 namespace TNL {
@@ -40,15 +42,15 @@ public:
 
   __cuda_callable__
   void
-  ProcessOneParticle( GlobalIndexType i );
+  ProcessOneParticle( GlobalIndexType index_i );
 
   __cuda_callable__
   void
-  ProcessOneFluidParticle( GlobalIndexType i  );
+  ProcessOneFluidParticle( GlobalIndexType index_i  );
 
   __cuda_callable__
   void
-  ProcessOneBoundaryParticle( GlobalIndexType i );
+  ProcessOneBoundaryParticle( GlobalIndexType index_i );
 
   template< typename SPHKernelFunction >
   __cuda_callable__

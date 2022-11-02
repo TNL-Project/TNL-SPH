@@ -22,33 +22,32 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    neighborSearch.searchForNeighbors();
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-void
-SPHSimulation< Variables, ParticleSystem, NeighborSearch >::ProcessOneParticle(GlobalIndexType index_i)
-{
-  const LocalIndexType numberOfNeigbors = particles.getNeighborsCount( index_i );
-  printf(" Particle i: %d has %d of nbs.\n", index_i, numberOfNeigbors);
-
-  auto fetch = [=] __cuda_callable__ ( int i ) -> InteractionResultType
-  {
-
-    //This has to be moved smehod to model site. (The function processOneParticle should be in model class.)
-    GlobalIndexType index_j = particles.getNeighbor( index_i, i );
-
-    if( model.vars.type[ index_j ] == 0 )
-      return model.template PerformParticleInteractionFF< WendlandKernel >( index_i , index_j);
-    else
-      return model.template PerformParticleInteractionFB< WendlandKernel >( index_i , index_j);
-
-  };
-
-  auto reduction = [] __cuda_callable__ ( const InteractionResultType& a, const InteractionResultType& b )
-  {
-     return a + b;
-  };
-
-  model.vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, numberOfNeigbors, fetch, reduction, {0., 0., -9.81} );
-}
+//{ dep }: template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+//{ dep }: void
+//{ dep }: SPHSimulation< Variables, ParticleSystem, NeighborSearch >::ProcessOneParticle(GlobalIndexType index_i)
+//{ dep }: {
+//{ dep }:   const LocalIndexType numberOfNeigbors = particles.getNeighborsCount( index_i );
+//{ dep }:   printf(" Particle i: %d has %d of nbs.\n", index_i, numberOfNeigbors);
+//{ dep }:
+//{ dep }:   auto fetch = [=] __cuda_callable__ ( int i ) -> InteractionResultType
+//{ dep }:   {
+//{ dep }:
+//{ dep }:     GlobalIndexType index_j = particles.getNeighbor( index_i, i );
+//{ dep }:
+//{ dep }:     if( model.vars.type[ index_j ] == 0 )
+//{ dep }:       return model.template PerformParticleInteractionFF< WendlandKernel >( index_i , index_j);
+//{ dep }:     else
+//{ dep }:       return model.template PerformParticleInteractionFB< WendlandKernel >( index_i , index_j);
+//{ dep }:
+//{ dep }:   };
+//{ dep }:
+//{ dep }:   auto reduction = [] __cuda_callable__ ( const InteractionResultType& a, const InteractionResultType& b )
+//{ dep }:   {
+//{ dep }:      return a + b;
+//{ dep }:   };
+//{ dep }:
+//{ dep }:   model.vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, numberOfNeigbors, fetch, reduction, {0., 0., -9.81} );
+//{ deprecated }: }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
@@ -56,7 +55,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
     auto init = [=] __cuda_callable__ ( int i ) mutable
     {
-       ProcessOneParticle( i );
+       model.ProcessOneParticle( i );
     };
     Algorithms::ParallelFor< DeviceType >::exec( 0, particles.getNumberOfParticles(), init );
 }

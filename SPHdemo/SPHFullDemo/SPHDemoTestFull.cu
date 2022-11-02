@@ -99,7 +99,6 @@ int main( int argc, char* argv[] )
    * Test the loop over particle neighbors.
    */
   std::cout << "\nTest the loop over particle neighbros." << std::endl;
-  //std::cout << "mySPHSimulation pre-interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
   mySPHSimulation.Interact();
   std::cout << std::endl;
   std::cout << "mySPHSimulation interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;

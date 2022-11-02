@@ -34,9 +34,56 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneParticle( GlobalIndexType i )
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneParticle( GlobalIndexType index_i )
 {
+  if( vars.type[ index_i ] == 0 )
+    ProcessOneFluidParticle( index_i );
+  else
+    ProcessOneBoundaryParticle( index_i );
+}
 
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneFluidParticle( GlobalIndexType index_i )
+{
+  auto fetch = [=] __cuda_callable__ ( int i ) -> InteractionResultType
+  {
+    GlobalIndexType index_j = particles.getNeighbor( index_i, i );
+
+    if( vars.type[ index_j ] == 0 )
+      return PerformParticleInteractionFF< WendlandKernel >( index_i , index_j );
+    else
+      return PerformParticleInteractionFB< WendlandKernel >( index_i , index_j );
+  };
+
+  auto reduction = [] __cuda_callable__ ( const InteractionResultType& a, const InteractionResultType& b )
+  {
+     return a + b;
+  };
+
+  vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, particles.getNeighborsCount( index_i ), fetch, reduction, { 0., 0., -9.81 } );
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneBoundaryParticle( GlobalIndexType index_i )
+{
+  auto fetch = [=] __cuda_callable__ ( int i ) -> InteractionResultType
+  {
+    GlobalIndexType index_j = particles.getNeighbor( index_i, i );
+
+    if( vars.type[ index_j ] == 0 )
+      return PerformParticleInteractionFF< WendlandKernel >( index_i , index_j );
+    else
+      return PerformParticleInteractionFB< WendlandKernel >( index_i , index_j );
+  };
+
+  auto reduction = [] __cuda_callable__ ( const InteractionResultType& a, const InteractionResultType& b )
+  {
+     return a + b;
+  };
+
+  vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, particles.getNeighborsCount( index_i ), fetch, reduction, { 0., 0., 0. } );
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
