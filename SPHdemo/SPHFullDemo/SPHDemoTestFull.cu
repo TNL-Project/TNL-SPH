@@ -60,17 +60,17 @@ int main( int argc, char* argv[] )
         ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 4. ) ||
         ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) )
     {
-      mySPHSimulation.model.vars.type[ p ] == 1.;
+      mySPHSimulation.model.vars.type[ p ] = 1.;
     }
     else
     {
-      mySPHSimulation.model.vars.type[ p ] == 0.;
+      mySPHSimulation.model.vars.type[ p ] = 0.;
 
     }
 
-      mySPHSimulation.model.vars.rho[ p ] == 1000.;
-      mySPHSimulation.model.vars.rho[ p ] == 1000.;
-      mySPHSimulation.model.vars.v[ p ] == 0.;
+      mySPHSimulation.model.vars.rho[ p ] = 1000.;
+      mySPHSimulation.model.vars.rho[ p ] = 1000.;
+      mySPHSimulation.model.vars.v[ p ] = 0.;
 
   }
 
@@ -99,9 +99,10 @@ int main( int argc, char* argv[] )
    * Test the loop over particle neighbors.
    */
   std::cout << "\nTest the loop over particle neighbros." << std::endl;
+  //std::cout << "mySPHSimulation pre-interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
   mySPHSimulation.Interact();
-  //:: std::cout << "mySPHSimulation inices-types: " << mySPHSimulation.model.vars.type << std::endl;
-  //:: std::cout << "mySPHSimulation pressure field: " << mySPHSimulation.model.vars.p << std::endl;
+  std::cout << std::endl;
+  std::cout << "mySPHSimulation interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
 
   //:: /**
   //::  * Test particle positions -> model points bridge.

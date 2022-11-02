@@ -9,6 +9,8 @@
 #include "SPHFluidVariables.h"
 #include "../Particles/ParticlesTraits.h"
 
+#include "SPHInteractionsIntegrator.h"
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -28,11 +30,25 @@ public:
   using PointType = typename Particles::PointType;
   using PointArrayType = typename Particles::PointArrayType;
 
+  using Integrator = VerletIntegrator< SPHFluidConfig, Variables >;
+
   //using PointArrayTypeView = Containers::ArrayView< PointType >; /*temp-test*/
 
-  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref ) : vars( size ), points( points_ref ), particles( particles_ref ) {};
+  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref ) : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars ) {};
   //WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref,  PointArrayTypeView points_view ) : vars( size ), points( points_ref ), particles( particles_ref ),
   //points_view( points_view ) {};
+
+  __cuda_callable__
+  void
+  ProcessOneParticle( GlobalIndexType i );
+
+  __cuda_callable__
+  void
+  ProcessOneFluidParticle( GlobalIndexType i  );
+
+  __cuda_callable__
+  void
+  ProcessOneBoundaryParticle( GlobalIndexType i );
 
   template< typename SPHKernelFunction >
   __cuda_callable__
@@ -48,21 +64,15 @@ public:
 
   void sortParticlesAndVariables();
 
-  /* TEMP, TEST */
-  void FillParticleTypeWithInts()
-  {
-     auto view_type = vars.type.getView();
-
-     for( int i = 0; i < particles.getNumberOfParticles(); i++ )
-        view_type[ i ] = i;
-  }
-
   Variables vars;
   //PointArrayTypeView pointss;
   PointArrayType& points;
   //PointArrayType_ptr points;
 
   Particles& particles;
+
+  //DRAFT Integrator
+  Integrator integrator;
 
 };
 

@@ -42,7 +42,9 @@ public:
   /**
    * Proces one particle (i.e. loop over all its neighbors and perform interactions).
    */
+  //Move to model, add one additional layer
   void ProcessOneParticle(GlobalIndexType index_i);
+  //void ProcessOneBoundaryParticle(GlobalIndexType index_i);
 
   /**
    * Perform cycle over all particles. For each of them load  all the neighbors and

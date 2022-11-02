@@ -37,6 +37,8 @@ class SPHFluidVariables
 
   InteractionResultTypeArrayType DrhoDv;
 
+  /* Integrator */
+
   /* Variables - constans */
   RealType h, m;
 

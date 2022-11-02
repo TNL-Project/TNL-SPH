@@ -47,7 +47,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::ProcessOneParticle(G
      return a + b;
   };
 
-  model.vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, numberOfNeigbors, fetch, reduction, {0., 0., 0.} );
+  model.vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, numberOfNeigbors, fetch, reduction, {0., 0., -9.81} );
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >

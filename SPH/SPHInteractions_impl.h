@@ -33,6 +33,13 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneParticle( GlobalIndexType i )
+{
+
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename SPHKernelFunction >
 __cuda_callable__
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::InteractionResultType
@@ -92,7 +99,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionBF(
 
   return { drho, a[ 0 ], a[ 1 ] };
 }
-
 
 } // SPH
 } // ParticleSystem
