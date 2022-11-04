@@ -40,7 +40,7 @@ class SPHFluidVariables
   /* Integrator */
 
   /* Variables - constans */
-  RealType h, m;
+  RealType h, m, speedOfSound, coefB, rho0;
 
 
 };

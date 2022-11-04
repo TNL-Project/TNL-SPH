@@ -32,11 +32,12 @@ public:
   using PointType = typename Particles::PointType;
   using PointArrayType = typename Particles::PointArrayType;
 
-  using Integrator = VerletIntegrator< SPHFluidConfig, Variables >;
+  using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >;
 
   //using PointArrayTypeView = Containers::ArrayView< PointType >; /*temp-test*/
 
-  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref ) : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars ) {};
+  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref )
+  : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars, points ) {};
   //WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref,  PointArrayTypeView points_view ) : vars( size ), points( points_ref ), particles( particles_ref ),
   //points_view( points_view ) {};
 
@@ -54,17 +55,24 @@ public:
 
   template< typename SPHKernelFunction >
   __cuda_callable__
-  InteractionResultType PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
+  InteractionResultType
+  PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
 
   template< typename SPHKernelFunction >
   __cuda_callable__
-  InteractionResultType PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
+  InteractionResultType
+  PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
 
   template< typename SPHKernelFunction >
   __cuda_callable__
-  InteractionResultType PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j );
+  InteractionResultType
+  PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j );
 
   void sortParticlesAndVariables();
+
+  template< typename EquationOfState >
+  void
+  ComputePressureFromDensity();
 
   Variables vars;
   //PointArrayTypeView pointss;

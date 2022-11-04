@@ -7,6 +7,7 @@
 
 //#include "../../ParticlesConfig.h"
 #include "ParticlesConfig.h"
+#include "SPHCaseConfig.h"
 
 #include "../../Particles/neighbourSearch.h"
 
@@ -26,6 +27,7 @@ int main( int argc, char* argv[] )
    * Number of particles
    */
   using ParticlesConfig = ParticleSystemConfig;
+  using SPHConfig = SPH::SPHCaseConfig;
   using Device = Devices::Host;
 
   using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
@@ -41,6 +43,13 @@ int main( int argc, char* argv[] )
    * Create the simulation.
    */
   SPHSimulation mySPHSimulation( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+
+  /*** TEMP ***/
+  mySPHSimulation.model.vars.h = ParticlesConfig::searchRadius;
+  mySPHSimulation.model.vars.m = SPHConfig::mass;
+  mySPHSimulation.model.vars.speedOfSound = SPHConfig::speedOfSound;
+  mySPHSimulation.model.vars.coefB = SPHConfig::coefB;
+  mySPHSimulation.model.vars.rho0 = SPHConfig::rho0;
 
   /***
    * Read the particle file.
@@ -72,6 +81,13 @@ int main( int argc, char* argv[] )
       mySPHSimulation.model.vars.rho[ p ] = 1000.;
       mySPHSimulation.model.vars.v[ p ] = 0.;
 
+      //fill in integrator arrays
+      mySPHSimulation.model.integrator.rhoO[ p ] = 1000.;
+      mySPHSimulation.model.integrator.rhoOO[ p ] = 1000.;
+
+      mySPHSimulation.model.integrator.vO[ p ] = 0.;
+      mySPHSimulation.model.integrator.vOO[ p ] = 0.;
+
   }
 
   //std::cout << "mySPHSimulation particle positions: " << mySPHSimulation.model.points << std::endl;
@@ -102,6 +118,36 @@ int main( int argc, char* argv[] )
   mySPHSimulation.Interact();
   std::cout << std::endl;
   std::cout << "mySPHSimulation interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
+
+  std::cout << "\nTest one step of integration." << std::endl;
+  mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+  //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+
+  std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
+  std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
+
+  for( unsigned int time = 0; time < 500; time ++ )
+  {
+
+    mySPHSimulation.PerformNeighborSearch();
+    std::cout << "search... done." << std::endl;
+
+    mySPHSimulation.Interact();
+    std::cout << "interact... done." << std::endl;
+
+    mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+    std::cout << "integrate... done." << std::endl;
+
+    //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
+    std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
+    std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
+    std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.v << std::endl;
+  }
+
+  //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
+  //std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
+
+  //std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
 
   //:: /**
   //::  * Test particle positions -> model points bridge.
