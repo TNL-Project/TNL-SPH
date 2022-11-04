@@ -20,18 +20,23 @@ class ParticleSystemConfig
 
   static constexpr int spaceDimension = 2;
   //static constexpr int numberOfParticles = 21001;
-  static constexpr int numberOfParticles = 301;
+  static constexpr int numberOfParticles = 1961;
   static constexpr int maxOfNeigborsPerParticle = 150;
 
   using CoordinatesType = Containers::StaticVector< 2, int >;
 
-  static constexpr RealType searchRadius = 0.1*2;
-  static constexpr int gridXsize = 20;
-  static constexpr int gridYsize = 20;
+  static constexpr RealType searchRadius = 0.07071068;
+  static constexpr int gridXsize = 60; /* 20 */
+  static constexpr int gridYsize = 60; /* 20 */
 
   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-  static constexpr int gridXbegin = 0;
-  static constexpr int gridYbegin = 0;
+  /*
+  static constexpr int gridXbegin = -1;
+  static constexpr int gridYbegin = -1;
+  */
+
+  static constexpr RealType gridXbegin = -0.1;
+  static constexpr RealType gridYbegin = -0.1;
 
   // ... set particle system ...
 

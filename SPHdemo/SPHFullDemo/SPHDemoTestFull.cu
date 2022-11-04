@@ -16,6 +16,8 @@
 #include "../../SPH/SPHConfig.h"
 #include "../../SPH/SPHInteractions.h"
 
+#include "../../SPH/SPHequationOfState.h"
+
 #include "../../Readers/VTKReader.h"
 
 using namespace TNL;
@@ -54,7 +56,7 @@ int main( int argc, char* argv[] )
   /***
    * Read the particle file.
    */
-  const std::string inputFileName="./CaseDamBreak_DEMO.vtk";
+  const std::string inputFileName="./dambreak.vtk";
   Reader myReader( inputFileName );
   myReader.detectParticleSystem();
   myReader.template loadParticle< ParticleSystem >( mySPHSimulation.particles );
@@ -66,15 +68,20 @@ int main( int argc, char* argv[] )
   {
 
     if( ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 4. ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) )
+        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.025 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.05 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.025 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.05 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 3.9 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 3.875 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 3.85 ) )
     {
       mySPHSimulation.model.vars.type[ p ] = 1.;
     }
     else
     {
       mySPHSimulation.model.vars.type[ p ] = 0.;
-
     }
 
       mySPHSimulation.model.vars.rho[ p ] = 1000.;
@@ -126,6 +133,9 @@ int main( int argc, char* argv[] )
   std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
   std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
 
+
+  using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS; //move this inside model
+
   for( unsigned int time = 0; time < 500; time ++ )
   {
 
@@ -135,13 +145,17 @@ int main( int argc, char* argv[] )
     mySPHSimulation.Interact();
     std::cout << "interact... done." << std::endl;
 
-    mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+    mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00001 );
     std::cout << "integrate... done." << std::endl;
 
-    //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
-    std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
-    std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
-    std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.v << std::endl;
+    mySPHSimulation.model.template ComputePressureFromDensity< EOS >();
+    std::cout << "compute pressure... done." << std::endl;
+
+
+    std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
+    std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
+    std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
+    std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
   }
 
   //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;

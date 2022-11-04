@@ -101,7 +101,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFF(
 
   const RealType drho = ( dv, gradW )*vars.m;
 
-  const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / (vars.rho [ i ] * vars.rho[ j ]);
+  const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / ( vars.rho [ i ] * vars.rho[ j ] );
   const PointType a = p_term * gradW * vars.m;
 
   return { drho, a[ 0 ], a[ 1 ] };
@@ -122,7 +122,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFB(
 
   const RealType drho = ( dv, gradW )*vars.m;
 
-  const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / (vars.rho [ i ] * vars.rho[ j ]);
+  const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / ( vars.rho [ i ] * vars.rho[ j ] );
   const PointType a = p_term * gradW * vars.m;
 
   return { drho, a[ 0 ], a[ 1 ] };
@@ -146,6 +146,22 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionBF(
 
   return { drho, a[ 0 ], a[ 1 ] };
 }
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename EquationOfState >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
+{
+  auto view_rho = vars.rho.getView();
+  auto view_p = vars.p.getView();
+
+  auto init = [=] __cuda_callable__ ( int i ) mutable
+  {
+     view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
+  };
+  Algorithms::ParallelFor< DeviceType >::exec( 0, particles.getNumberOfParticles(), init );
+}
+
 
 } // SPH
 } // ParticleSystem

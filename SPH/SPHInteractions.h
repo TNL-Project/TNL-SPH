@@ -9,6 +9,8 @@
 #include "SPHFluidVariables.h"
 #include "../Particles/ParticlesTraits.h"
 
+#include "SPHequationOfState.h"
+
 #include "SPHKernels.h"
 
 #include "SPHInteractionsIntegrator.h"
@@ -70,7 +72,7 @@ public:
 
   void sortParticlesAndVariables();
 
-  template< typename EquationOfState >
+  template< typename EquationOfState = TaitWeaklyCompressibleEOS >
   void
   ComputePressureFromDensity();
 
