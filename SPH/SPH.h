@@ -7,9 +7,6 @@
 
 #include "Kernels.h"
 
-//Model
-#include "SPHTraits.h"
-
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {

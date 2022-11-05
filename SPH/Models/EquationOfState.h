@@ -4,6 +4,7 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
+//template< typename SPHCaseConfig >
 class TaitWeaklyCompressibleEOS
 {
   public:
@@ -13,14 +14,14 @@ class TaitWeaklyCompressibleEOS
   static RealType
   DensityToPressure( RealType rho )
   {
-    const RealType gamma = 7.;
-    const RealType rho0 = 1000.;
+    const RealType gamma = 7.; //fix this
+    const RealType rho0 = 1000.; //fix this
+    const RealType coefB = 1107129; //fix this
+
     const RealType relativeDensity = rho / rho0;
-    const RealType coefB = 1107129;
 
     return  coefB * ( pow( relativeDensity, gamma ) - 1 );
   }
-
 };
 
 } // SPH

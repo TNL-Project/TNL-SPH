@@ -19,7 +19,6 @@ class SPHFluidTraits
   using CellIndexType = typename SPHFluidConfig::CellIndexType;
   using RealType = typename SPHFluidConfig::RealType;
 
-
   /* particle related */
   using ParticleType = unsigned short int; //kuk
   using ParticleTypeArrayType = Containers::Array< ParticleType, DeviceType, GlobalIndexType >;
@@ -33,8 +32,6 @@ class SPHFluidTraits
   /* ? */
   using InteractionResultType = Containers::StaticVector< spaceDimension + 1, RealType >;
   using InteractionResultTypeArray = Containers::Array< InteractionResultType, DeviceType, GlobalIndexType >;
-
-
 };
 
 } // SPH

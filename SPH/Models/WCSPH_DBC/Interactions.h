@@ -22,46 +22,64 @@ class WCSPH_DBC
 public:
 
   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+  using DeviceType = typename Particles::Device; //?
 
-  using GlobalIndexType = typename Variables::SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
-  using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
+  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType; //Particles::?
+  using RealType = typename SPHFluidTraitsType::RealType; //Particles::?
 
-  using DeviceType = typename Particles::Device;
   using PointType = typename Particles::PointType;
   using PointArrayType = typename Particles::PointArrayType;
 
+  using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
+
   using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >;
 
-  //using PointArrayTypeView = Containers::ArrayView< PointType >; /*temp-test*/
-
+  /**
+   * Constructor.
+   **/
   WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref )
   : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars, points ) {};
-  //WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref,  PointArrayTypeView points_view ) : vars( size ), points( points_ref ), particles( particles_ref ),
-  //points_view( points_view ) {};
 
+  /**
+   * Process one general parcile with index i.
+   */
   __cuda_callable__
   void
   ProcessOneParticle( GlobalIndexType index_i );
 
+  /**
+   * Process one fluid particle with index i.
+   */
   __cuda_callable__
   void
   ProcessOneFluidParticle( GlobalIndexType index_i  );
 
+  /**
+   * Process one boundary particle with index i.
+   */
   __cuda_callable__
   void
   ProcessOneBoundaryParticle( GlobalIndexType index_i );
 
+  /**
+   * Evaluate interaction between fluid particle i and fluid particle j.
+   */
   template< typename SPHKernelFunction >
   __cuda_callable__
   InteractionResultType
   PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
 
+  /**
+   * Evaluate interaction between fluid particle i and boundary particle j.
+   */
   template< typename SPHKernelFunction >
   __cuda_callable__
   InteractionResultType
   PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
 
+  /**
+   * Evaluate interaction between boundary particle i and fluid particle j.
+   */
   template< typename SPHKernelFunction >
   __cuda_callable__
   InteractionResultType
@@ -73,15 +91,17 @@ public:
   void
   ComputePressureFromDensity();
 
+//protected:
+
   Variables vars;
-  //PointArrayTypeView pointss;
   PointArrayType& points;
-  //PointArrayType_ptr points;
+
+  //PointArrayTypeView pointss; //mby like this?
+  //PointArrayType_ptr points; //mby like this?
 
   Particles& particles;
 
-  //DRAFT Integrator
-  Integrator integrator;
+  Integrator integrator; //temp
 
 };
 
