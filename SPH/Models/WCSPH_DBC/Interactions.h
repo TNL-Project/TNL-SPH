@@ -3,17 +3,14 @@
 #include <TNL/Containers/Array.h>
 #include <TNL/Containers/ArrayView.h>
 
-#include "SPHFluidTraits.h"
-#include "SPHFluidVariables.h"
+#include "../../SPHTraits.h"
+#include "Variables.h"
 
-#include "SPHFluidVariables.h"
-#include "../Particles/ParticlesTraits.h"
-
-#include "SPHequationOfState.h"
-
-#include "SPHKernels.h"
-
-#include "SPHInteractionsIntegrator.h"
+/**
+ * Modules used as default.
+ **/
+#include "../EquationOfState.h"
+#include "Integrator.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -92,4 +89,4 @@ public:
 } // ParticleSystem
 } // TNL
 
-#include "SPHInteractions_impl.h"
+#include "Interactions_impl.h"

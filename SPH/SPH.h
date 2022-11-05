@@ -5,11 +5,10 @@
 
 #include "../Particles/Particles.h"
 
-#include "SPHFluidTraits.h"
-#include "SPHFluidVariables.h"
-#include "SPHInteractions.h"
+#include "Kernels.h"
 
-#include "SPHKernels.h"
+//Model
+#include "SPHTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -20,10 +19,10 @@ class SPHSimulation
 {
 public:
 
-  using LocalIndexType = typename ParticleSystem::LocalIndexType;
-  using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
   using DeviceType = typename ParticleSystem::Device;
 
+  using LocalIndexType = typename ParticleSystem::LocalIndexType;
+  using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
   using RealType = typename ParticleSystem::RealType;
   using InteractionResultType = typename Model::InteractionResultType;
 
@@ -42,9 +41,7 @@ public:
   /**
    * Proces one particle (i.e. loop over all its neighbors and perform interactions).
    */
-  //Move to model, add one additional layer
-  void ProcessOneParticle(GlobalIndexType index_i);
-  //void ProcessOneBoundaryParticle(GlobalIndexType index_i);
+  void ProcessOneParticle( GlobalIndexType index_i );
 
   /**
    * Perform cycle over all particles. For each of them load  all the neighbors and

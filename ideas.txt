@@ -1,1 +1,7 @@
 - Simplify sorting of all arrays with variables.
+
+Problems:
+
+- Move SPHFluitTriats (SPHTraits) somewhere, this is not good
+
+TODO/Optimisation:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SPHFluidTraits.h"
+#include "SPHTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {

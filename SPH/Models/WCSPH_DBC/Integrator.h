@@ -3,8 +3,8 @@
 #include <TNL/Containers/Array.h>
 #include <TNL/Containers/ArrayView.h>
 
-#include "SPHFluidVariables.h"
-#include "SPHFluidTraits.h"
+#include "Variables.h"
+#include "../../SPHTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {

@@ -1,4 +1,4 @@
-#include "SPHInteractions.h"
+#include "Interactions.h"
 
 namespace TNL {
 namespace ParticleSystem {

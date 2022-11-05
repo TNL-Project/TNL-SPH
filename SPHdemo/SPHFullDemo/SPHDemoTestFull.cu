@@ -3,22 +3,35 @@
 #include <TNL/Devices/Host.h>
 #include <TNL/Devices/Cuda.h>
 
+/**
+ * Particle system.
+ */
 #include "../../Particles/Particles.h"
+#include "../../Particles/neighbourSearch.h"
 
-//#include "../../ParticlesConfig.h"
+/**
+ * Particle system reader.
+ **/
+#include "../../Readers/VTKReader.h"
+
+/**
+ * Case configuration
+ * One configuration for particle system, one for SPH.
+ */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
 
-#include "../../Particles/neighbourSearch.h"
-
+/**
+ * SPH general toolds.
+ */
 #include "../../SPH/SPH.h"
-#include "../../SPH/SPHFluidVariables.h"
-#include "../../SPH/SPHConfig.h"
-#include "../../SPH/SPHInteractions.h"
 
-#include "../../SPH/SPHequationOfState.h"
-
-#include "../../Readers/VTKReader.h"
+/**
+ * SPH model.
+ */
+#include "../../SPH/Models/WCSPH_DBC/Variables.h"
+#include "../../SPH/Models/WCSPH_DBC/Interactions.h"
+#include "../../SPH/Models/EquationOfState.h"
 
 using namespace TNL;
 
@@ -29,14 +42,14 @@ int main( int argc, char* argv[] )
    * Number of particles
    */
   using ParticlesConfig = ParticleSystemConfig;
-  using SPHConfig = SPH::SPHCaseConfig;
   using Device = Devices::Host;
+  using SPHConfig = SPH::SPHCaseConfig< Device >;
 
   using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
-  using Variables = typename TNL::ParticleSystem::SPH::SPHFluidVariables< TNL::ParticleSystem::SPH::SPHFluidConfig < Device > >;
+  using Variables = typename TNL::ParticleSystem::SPH::SPHFluidVariables< SPHConfig >;
   using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
 
-  using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, TNL::ParticleSystem::SPH::SPHFluidConfig < Device >>;
+  using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimulation< SPHModel, ParticleSystem, NeighborSearch >;
 
   using Reader = TNL::ParticleSystem::Readers::VTKReader;

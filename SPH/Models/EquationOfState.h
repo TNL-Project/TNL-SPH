@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPHFluidTraits.h"
-
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
