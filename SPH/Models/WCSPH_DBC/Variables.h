@@ -35,7 +35,7 @@ class SPHFluidVariables
   InteractionResultTypeArrayType DrhoDv;
 
   /* Variables - constans */
-  RealType h, m, speedOfSound, coefB, rho0;
+  RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
 };
 

@@ -10,6 +10,8 @@
  * Modules used as default.
  **/
 #include "../EquationOfState.h"
+#include "../DiffusiveTerms.h"
+#include "../VisousTerms.h"
 #include "Integrator.h"
 
 namespace TNL {
@@ -32,7 +34,9 @@ public:
 
   using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
 
-  using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >;
+  using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >; //-> template
+  using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
+  using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
   /**
    * Constructor.
@@ -64,7 +68,7 @@ public:
   /**
    * Evaluate interaction between fluid particle i and fluid particle j.
    */
-  template< typename SPHKernelFunction >
+  template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
   __cuda_callable__
   InteractionResultType
   PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
@@ -72,7 +76,7 @@ public:
   /**
    * Evaluate interaction between fluid particle i and boundary particle j.
    */
-  template< typename SPHKernelFunction >
+  template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
   __cuda_callable__
   InteractionResultType
   PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );

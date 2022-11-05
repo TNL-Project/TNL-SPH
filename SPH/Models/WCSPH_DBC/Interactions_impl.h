@@ -51,9 +51,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneFluidParticle( Glob
     GlobalIndexType index_j = particles.getNeighbor( index_i, i );
 
     if( vars.type[ index_j ] == 0 )
-      return PerformParticleInteractionFF< WendlandKernel >( index_i , index_j );
+      return PerformParticleInteractionFF< WendlandKernel, DiffusiveTerm, ViscousTerm >( index_i , index_j );
     else
-      return PerformParticleInteractionFB< WendlandKernel >( index_i , index_j );
+      return PerformParticleInteractionFB< WendlandKernel, DiffusiveTerm, ViscousTerm >( index_i , index_j );
   };
 
   auto reduction = [] __cuda_callable__ ( const InteractionResultType& a, const InteractionResultType& b )
@@ -73,9 +73,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneBoundaryParticle( G
     GlobalIndexType index_j = particles.getNeighbor( index_i, i );
 
     if( vars.type[ index_j ] == 0 )
-      return PerformParticleInteractionFF< WendlandKernel >( index_i , index_j );
+      return PerformParticleInteractionBF< WendlandKernel >( index_i , index_j );
     else
-      return PerformParticleInteractionFB< WendlandKernel >( index_i , index_j );
+      return {0., 0., 0.};
   };
 
   auto reduction = [] __cuda_callable__ ( const InteractionResultType& a, const InteractionResultType& b )
@@ -87,7 +87,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneBoundaryParticle( G
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-template< typename SPHKernelFunction >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
 __cuda_callable__
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::InteractionResultType
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j )
@@ -97,18 +97,19 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFF(
 
   const RealType drs = l2Norm( dr );
   const RealType F = SPHKernelFunction::F( drs, vars.h );
-  const PointType gradW = dr*F;
+  const PointType gradW = dr * F;
 
-  const RealType drho = ( dv, gradW )*vars.m;
+  const RealType drho = ( dv, gradW ) * vars.m + DiffusiveTerm::Psi( vars.rho[ i ], vars.rho[ j ], drs );
 
   const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / ( vars.rho [ i ] * vars.rho[ j ] );
-  const PointType a = p_term * gradW * vars.m;
+  const RealType visco =  ViscousTerm::Pi( vars.rho[ i ], vars.rho[ j ], drs, ( dr, dv ) );
+  const PointType a = ( p_term + visco )* gradW * vars.m;
 
   return { drho, a[ 0 ], a[ 1 ] };
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-template< typename SPHKernelFunction >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
 __cuda_callable__
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::InteractionResultType
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j )
@@ -120,10 +121,11 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFB(
   const RealType F = SPHKernelFunction::F( drs, vars.h );
   const PointType gradW = dr*F;
 
-  const RealType drho = ( dv, gradW )*vars.m;
+  const RealType drho = ( dv, gradW ) * vars.m + DiffusiveTerm::Psi( vars.rho[ i ], vars.rho[ j ], drs );
 
   const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / ( vars.rho [ i ] * vars.rho[ j ] );
-  const PointType a = p_term * gradW * vars.m;
+  const RealType visco =  ViscousTerm::Pi( vars.rho[ i ], vars.rho[ j ], drs, ( dr, dv ) );
+  const PointType a = ( p_term + visco ) * gradW * vars.m;
 
   return { drho, a[ 0 ], a[ 1 ] };
 }
