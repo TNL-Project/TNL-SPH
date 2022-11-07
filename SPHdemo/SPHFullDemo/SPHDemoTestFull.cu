@@ -81,14 +81,14 @@ int main( int argc, char* argv[] )
   {
 
     if( ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.025 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.05 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.005 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.01 ) ||
         ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.025 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.05 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 3.9 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 3.875 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 3.85 ) )
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.005 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.01 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.605 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.61 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.615 ) )
     {
       mySPHSimulation.model.vars.type[ p ] = 1.;
     }
@@ -140,14 +140,14 @@ int main( int argc, char* argv[] )
   std::cout << "mySPHSimulation interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
 
   std::cout << "\nTest one step of integration." << std::endl;
-  mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+  mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
   //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
 
   std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
-  std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
+  //std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
 
 
-  using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS; //move this inside model
+  using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
   for( unsigned int time = 0; time < 500; time ++ )
   {
@@ -165,10 +165,24 @@ int main( int argc, char* argv[] )
     std::cout << "compute pressure... done." << std::endl;
 
 
-    std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
-    std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
-    std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
-    std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
+    for( unsigned int p = 0; p < mySPHSimulation.particles.getNumberOfParticles(); p ++ )
+    {
+
+      if( ( ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) &&
+          ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) ) ||
+          ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) &&
+          ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) ) )
+
+        std::cout << " jackopt!" << std::endl;
+
+
+
+
+    }
+    //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
+    //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
+    //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
+    //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
   }
 
   //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;

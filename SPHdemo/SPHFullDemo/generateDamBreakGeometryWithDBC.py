@@ -3,22 +3,22 @@ TestCase Dambreak
 
 """
 
+boxL = 1.61
+boxH = 0.8
 
-dp = 0.025
+fluidL = 0.6
+fluidH = 0.3
+
+dp = 0.01
+#dp = 0.1
 rho0 = 1000.
 p0 = 0.
 n_layers = 3
 
-boxL = 4.0 - 6*dp
-boxH = 3.0 - 6*dp
-
-fluidL = 1.0
-fluidH = 0.5
-
 import numpy as np
 
-boxL_n = round(boxL/dp)+1
-boxH_n = round(boxH/dp)+1
+boxL_n = round(boxL/dp)
+boxH_n = round(boxH/dp)
 
 fluidL_n = round(fluidL/dp)
 fluidH_n = round(fluidH/dp)

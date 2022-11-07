@@ -91,7 +91,7 @@ public:
 
   void sortParticlesAndVariables();
 
-  template< typename EquationOfState = TaitWeaklyCompressibleEOS >
+  template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
   void
   ComputePressureFromDensity();
 

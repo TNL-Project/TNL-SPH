@@ -19,7 +19,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
    //particles.sortParticles();
 
-   std::cout << particles.getParticleCellIndices() << std::endl; //debug
+   //std::cout << particles.getParticleCellIndices() << std::endl; //debug
 
    /**
     * Find neigbors.
