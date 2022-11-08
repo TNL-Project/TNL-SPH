@@ -81,14 +81,14 @@ int main( int argc, char* argv[] )
   {
 
     if( ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.005 ) ||
         ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.01 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 0 ] == -0.02 ) ||
         ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.005 ) ||
         ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.01 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.605 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == -0.02 ) ||
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.6 ) ||
         ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.61 ) ||
-        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.615 ) )
+        ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 1.62 ) )
     {
       mySPHSimulation.model.vars.type[ p ] = 1.;
     }
@@ -125,25 +125,30 @@ int main( int argc, char* argv[] )
   //:debug std::cout << "Particle cell indices: " << mySPHSimulation.particles.getParticleCellIndices() << std::endl;
 
 
-  /**
-   * Find neighbors within the SPH simulation.
-   */
-  std::cout << "\nFind neighbros within the SPH simulation." << std::endl;
-  mySPHSimulation.PerformNeighborSearch();
+  //test: /**
+  //test:  * Find neighbors within the SPH simulation.
+  //test:  */
+  //test: std::cout << "\nFind neighbros within the SPH simulation." << std::endl;
+  //test: mySPHSimulation.PerformNeighborSearch();
 
-  /**
-   * Test the loop over particle neighbors.
-   */
-  std::cout << "\nTest the loop over particle neighbros." << std::endl;
-  mySPHSimulation.Interact();
-  std::cout << std::endl;
-  std::cout << "mySPHSimulation interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
+  //test: /**
+  //test:  * Test the loop over particle neighbors.
+  //test:  */
+  //test: std::cout << "\nTest the loop over particle neighbros." << std::endl;
+  //test: mySPHSimulation.Interact();
+  //test: std::cout << std::endl;
+  //test: //std::cout << "mySPHSimulation interaction values: " << mySPHSimulation.model.vars.DrhoDv << std::endl;
 
-  std::cout << "\nTest one step of integration." << std::endl;
-  mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
-  //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
 
-  std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
+  //test: double eps = 0.0001;
+  //test: #include "outputForDebug.h"
+
+
+  //test: std::cout << "\nTest one step of integration." << std::endl;
+  //test: mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+  //test: //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+
+  //std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
   //std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
 
 
@@ -152,33 +157,24 @@ int main( int argc, char* argv[] )
   for( unsigned int time = 0; time < 500; time ++ )
   {
 
+    std::cout << "STEP: " << time << std::endl;
     mySPHSimulation.PerformNeighborSearch();
     std::cout << "search... done." << std::endl;
 
     mySPHSimulation.Interact();
     std::cout << "interact... done." << std::endl;
 
-    mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00001 );
+    double eps = 0.0001;
+    #include "outputForDebug.h"
+
+    mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
     std::cout << "integrate... done." << std::endl;
 
     mySPHSimulation.model.template ComputePressureFromDensity< EOS >();
     std::cout << "compute pressure... done." << std::endl;
 
 
-    for( unsigned int p = 0; p < mySPHSimulation.particles.getNumberOfParticles(); p ++ )
-    {
 
-      if( ( ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) &&
-          ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) ) ||
-          ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] == 0. ) &&
-          ( mySPHSimulation.particles.getPoint( p )[ 0 ] == 0. ) ) )
-
-        std::cout << " jackopt!" << std::endl;
-
-
-
-
-    }
     //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
     //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
     //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
