@@ -60,7 +60,7 @@ int main( int argc, char* argv[] )
   SPHSimulation mySPHSimulation( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
 
   /*** TEMP ***/
-  mySPHSimulation.model.vars.h = ParticlesConfig::searchRadius;
+  mySPHSimulation.model.vars.h = SPHConfig::h;
   mySPHSimulation.model.vars.m = SPHConfig::mass;
   mySPHSimulation.model.vars.speedOfSound = SPHConfig::speedOfSound;
   mySPHSimulation.model.vars.coefB = SPHConfig::coefB;
