@@ -11,6 +11,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    /**
     * Compute gird nad partice cell indices.
     */
+   particles.resetNeighborList();
    particles.computeGridCellIndices(); //I DONT NEED TO REPEAT THIS!
    std::cout << "SPHSimulation::PerformNeighborSearch(): ... OK" << std::endl; //debug
    particles.computeParticleCellIndices();

@@ -208,6 +208,12 @@ public:
   void
   setNeighbor( GlobalIndexType i, GlobalIndexType j );
 
+  /**
+   * Remove all neighbors and clear the neighbor list.
+   */
+  void
+  resetNeighborList();
+
   /* gird related */
   GridPointer grid; //temporarily moved outside protected
 

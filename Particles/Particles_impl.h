@@ -275,6 +275,13 @@ Particles< ParticleConfig, DeviceType >::setNeighbor(GlobalIndexType i, GlobalIn
 
 template < typename ParticleConfig, typename DeviceType >
 void
+Particles< ParticleConfig, DeviceType >::resetNeighborList()
+{
+  neighbors = 0;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
 Particles< ParticleConfig, DeviceType >::saveNeighborList(std::string neigborListFile)
 {
   points.save( neigborListFile );
