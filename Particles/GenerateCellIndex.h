@@ -26,7 +26,7 @@ class SimpleCellIndex
         cells[ j*_numberOfCells + i ] = j*_numberOfCells + i;
       };
 
-      Algorithms::ParallelFor2D< DeviceType, Algorithms::AsynchronousMode >::exec(
+      Algorithms::ParallelFor2D< DeviceType >::exec(
           ( LocalIndexType ) 0,
           ( LocalIndexType ) 0,
           ( LocalIndexType ) ParticleConfig::gridXsize,
@@ -45,7 +45,7 @@ class SimpleCellIndex
 
     };
 
-    Algorithms::ParallelFor< DeviceType, Algorithms::AsynchronousMode >::exec(
+    Algorithms::ParallelFor< DeviceType >::exec(
         ( LocalIndexType ) 0,
          _numberOfParticles,
         f );

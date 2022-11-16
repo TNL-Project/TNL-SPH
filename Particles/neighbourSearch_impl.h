@@ -81,7 +81,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
 
     };
 
-    Algorithms::ParallelFor2D< DeviceType, Algorithms::AsynchronousMode >::exec(
+    Algorithms::ParallelFor2D< DeviceType >::exec(
         ( LocalIndexType ) firstCellParticle[ neighborCell ],
         ( LocalIndexType ) firstCellParticle[ centralCell ],
         ( LocalIndexType ) lastCellParticle[ neighborCell ] + 1,
@@ -101,8 +101,8 @@ NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid()
      if(firstCellParticle[ i ] != -1)
      {
         myCell centralCell = particles.grid->template getEntity<GridCell>( i );
-        centralCell.refresh();
-        const typename myCell::template NeighborEntities< 2 >& neighborEntities = centralCell.getNeighborEntities();
+        //old: centralCell.refresh();
+        //old: const typename myCell::template NeighborEntities< 2 >& neighborEntities = centralCell.getNeighborEntities();
         #include "somethingNotNice.h"
       }
 

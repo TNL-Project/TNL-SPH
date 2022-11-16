@@ -41,7 +41,8 @@ public:
   using GridPointer = typename ParticleTraitsType::GridPointer;
 
   //temp
-  using myCell = Meshes::GridEntity< GridType, 2, Meshes::GridEntityCrossStencilStorage<  > >;
+  //old using myCell = Meshes::GridEntity< GridType, 2, Meshes::GridEntityCrossStencilStorage<  > >;
+  using myCell = Meshes::GridEntity< GridType, 2 >;
 
   /**
    * Constructors.
@@ -256,3 +257,4 @@ protected:
 } //namespace TNL
 
 #include "Particles_impl.h"
+
