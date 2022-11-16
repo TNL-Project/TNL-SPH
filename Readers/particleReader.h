@@ -5,7 +5,8 @@
 #include <vector>
 //#include <TNL/3rdparty/mpark/variant.hpp>  // backport of std::variant from C++17
 //#include "variant.hpp"
-#include <mpark/variant.hpp>
+//old: #include <mpark/variant.hpp>
+#include <variant>
 
 #include "VTKTraits.h"
 
@@ -24,7 +25,7 @@ class ParticleReader
 {
 public:
 
-   using VariantVector = mpark::variant< std::vector< std::int8_t >,
+   using VariantVector = std::variant< std::vector< std::int8_t >,
                                          std::vector< std::uint8_t >,
                                          std::vector< std::int16_t >,
                                          std::vector< std::uint16_t >,
@@ -77,7 +78,7 @@ public:
       using PointType = typename ParticleType::PointType;
 
       // assign points
-      using mpark::visit;
+      //old using mpark::visit;
       visit(
          [ &particles ]( auto&& array )
          {
@@ -154,3 +155,4 @@ protected:
 } // Readers
 } // ParticleSystem
 } // TNL
+
