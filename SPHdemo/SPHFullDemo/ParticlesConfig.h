@@ -16,7 +16,7 @@ class ParticleSystemConfig
   using GlobalIndexType = int;
   using LocalIndexType = int;
   using CellIndexType = int;
-  using RealType = float;
+  using RealType = double; //float
 
   static constexpr int spaceDimension = 2;
   static constexpr int numberOfParticles = 2769;
@@ -49,3 +49,4 @@ class ParticleSystemConfig
 
 } //namespace ParticleSystem
 } //namespace TNL
+

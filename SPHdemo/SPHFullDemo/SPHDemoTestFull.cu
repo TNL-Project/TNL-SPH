@@ -128,7 +128,7 @@ int main( int argc, char* argv[] )
   {
 
     std::cout << "STEP: " << time << std::endl;
-    mySPHSimulation.PerformNeighborSearch();
+    mySPHSimulation.PerformNeighborSearch( time );
     std::cout << "search... done." << std::endl;
 
     mySPHSimulation.Interact();
@@ -167,4 +167,3 @@ int main( int argc, char* argv[] )
 
 
 }
-

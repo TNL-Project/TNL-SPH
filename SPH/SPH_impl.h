@@ -6,7 +6,7 @@ namespace SPH {
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
-SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch()
+SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step )
 {
    /**
     * Compute gird nad partice cell indices.
@@ -16,9 +16,13 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    std::cout << "SPHSimulation::PerformNeighborSearch(): ... OK" << std::endl; //debug
    particles.computeParticleCellIndices();
    std::cout << "SPHSimulation::computeParticleCellIndices(): ... OK" << std::endl; //debug
-   model.sortParticlesAndVariables(); //I DONT NEED TO DO THIS IN EACH STEP!
-   std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
-   //particles.sortParticles();
+
+	 if( step % 100 == 0 )
+	 {
+    	model.sortParticlesAndVariables(); //I DONT NEED TO DO THIS IN EACH STEP!
+    	std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
+    	//particles.sortParticles();
+	 }
 
    //std::cout << particles.getParticleCellIndices() << std::endl; //debug
 
@@ -43,3 +47,4 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 } // SPH
 } // ParticleSystem
 } // TNL
+

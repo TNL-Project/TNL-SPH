@@ -15,7 +15,7 @@ class SPHCaseConfig
   using GlobalIndexType = int;
   using LocalIndexType = int;
   using CellIndexType = int;
-  using RealType = float;
+  using RealType = double; //float
 
   static constexpr float mass = 0.1;
   static constexpr float speedOfSound = 34.3;
@@ -31,3 +31,4 @@ class SPHCaseConfig
 } //SPH
 } //namespace ParticleSystem
 } //namespace TNL
+

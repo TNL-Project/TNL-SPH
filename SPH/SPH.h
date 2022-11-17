@@ -33,7 +33,7 @@ public:
   /**
    * Perform neighbors search and fill neighborsList in Particle system variable.
    */
-  void PerformNeighborSearch();
+  void PerformNeighborSearch( GlobalIndexType step );
 
   /**
    * Proces one particle (i.e. loop over all its neighbors and perform interactions).
@@ -59,3 +59,4 @@ private:
 } // TNL
 
 #include "SPH_impl.h"
+
