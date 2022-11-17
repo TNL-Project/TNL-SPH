@@ -136,7 +136,16 @@ int main( int argc, char* argv[] )
 
     #include "outputForDebug.h"
 
-    mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+		//: if( time % 20 == 0 ) {
+    //: 	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+		//: }
+		//: else {
+    //: 	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+		//: }
+		if(time < 5 )
+   	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+
+   	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
     std::cout << "integrate... done." << std::endl;
 
     mySPHSimulation.model.template ComputePressureFromDensity< EOS >();

@@ -83,6 +83,43 @@ class VerletIntegrator
 
   }
 
+	void IntegrateEuler( GlobalIndexType numberOfParticles, RealType dt )
+	{
+    ScalarArrayView rhoO_view = rhoO.getView();
+    VectorArrayView vO_view = vO.getView();
+
+    ScalarArrayView rhoOO_view = rhoOO.getView();
+    VectorArrayView vOO_view = vOO.getView();
+
+    ScalarArrayView rho_view = variables.rho.getView();
+    VectorArrayView v_view = variables.v.getView();
+    VectorArrayView r_view = points.getView();
+
+    InteractionResultView DrhoDv_view = variables.DrhoDv.getView();
+
+    RealType dtdt05 = 0.5 * dt * dt;
+
+    auto init = [=] __cuda_callable__ ( int i ) mutable
+    {
+        const RealType drho = { DrhoDv_view[ i ][ 0 ] };
+        const VectorType a = { DrhoDv_view[ i ][ 1 ], DrhoDv_view[ i ][ 2 ] };
+
+				v_view[ i ] += a * dt;
+       	r_view[ i ] += vO_view[ i ] * dt + a * dtdt05;
+				rho_view[ i ] += drho * dt;
+
+			 	vOO_view[ i ] = vO_view[ i ];
+       	vO_view[ i ] = v_view[ i ];
+
+       	rhoOO_view[ i ] = rhoO_view[ i ];
+       	rhoO_view[ i ] = rho_view[ i ];
+
+    };
+
+    Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, init );
+
+	}
+
   ScalarArrayType rhoO;
   VectorArrayType vO;
 
@@ -98,3 +135,4 @@ class VerletIntegrator
 } // SPH
 } // ParticleSystem
 } // TNL
+
