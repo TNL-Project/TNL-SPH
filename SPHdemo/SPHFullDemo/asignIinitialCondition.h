@@ -7,9 +7,9 @@ for( unsigned int p = 0; p < mySPHSimulation.particles.getNumberOfParticles(); p
       ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] >  0.   - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 1 ] <  0.   + eps ) ) ||
       ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] > -0.01 - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 1 ] < -0.01 + eps ) ) ||
       ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] > -0.02 - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 1 ] < -0.02 + eps ) ) ||
-      ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] >  1.6  - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 1 ] <  1.6  + eps ) ) ||
-      ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] >  1.61 - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 1 ] <  1.61 + eps ) ) ||
-      ( ( mySPHSimulation.particles.getPoint( p )[ 1 ] >  1.62 - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 1 ] <  1.62 + eps ) ) )
+      ( ( mySPHSimulation.particles.getPoint( p )[ 0 ] >  1.6  - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 0 ] <  1.6  + eps ) ) ||
+      ( ( mySPHSimulation.particles.getPoint( p )[ 0 ] >  1.61 - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 0 ] <  1.61 + eps ) ) ||
+      ( ( mySPHSimulation.particles.getPoint( p )[ 0 ] >  1.62 - eps ) && ( mySPHSimulation.particles.getPoint( p )[ 0 ] <  1.62 + eps ) ) )
   {
     mySPHSimulation.model.vars.type[ p ] = 1.;
   }
@@ -63,3 +63,4 @@ for( unsigned int p = 0; p < mySPHSimulation.particles.getNumberOfParticles(); p
 //      mySPHSimulation.model.integrator.vOO[ p ] = 0.;
 //
 //  }
+

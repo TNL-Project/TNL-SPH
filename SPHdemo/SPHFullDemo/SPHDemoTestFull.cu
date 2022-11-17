@@ -124,7 +124,7 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 500; time ++ )
+  for( unsigned int time = 0; time < 1400; time ++ )
   {
 
     std::cout << "STEP: " << time << std::endl;
@@ -136,16 +136,15 @@ int main( int argc, char* argv[] )
 
     #include "outputForDebug.h"
 
-		//: if( time % 20 == 0 ) {
-    //: 	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
-		//: }
-		//: else {
-    //: 	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
-		//: }
-		if(time < 5 )
-   	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
-
-   	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+		if( time % 20 == 0 ) {
+    	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+		}
+		else {
+    	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+		}
+		//: if(time < 5 )
+   	//: mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+   	//: mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
     std::cout << "integrate... done." << std::endl;
 
     mySPHSimulation.model.template ComputePressureFromDensity< EOS >();
@@ -158,6 +157,8 @@ int main( int argc, char* argv[] )
     //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
     //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
   }
+
+	#include "writeParticleData.h"
 
   //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
   //std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
