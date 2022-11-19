@@ -17,10 +17,17 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
    auto view_v = vars.v.getView();
    auto view_DrhoDv = vars.DrhoDv.getView();
 
+	 //temp, this needs to be done in better way - sort integrator arrays
+	 auto view_rhoO = integrator.rhoO.getView();
+	 auto view_vO = integrator.vO.getView();
+
+	 auto view_rhoOO = integrator.rhoOO.getView();
+	 auto view_vOO = integrator.vOO.getView();
+
    Algorithms::sort< DeviceType, GlobalIndexType >(
        0, particles.getNumberOfParticles(),
        [=] __cuda_callable__ ( int i, int j ) -> bool {
-         return view_particleCellIndices[ i ] < view_particleCellIndices[ j ]; },
+         return view_particleCellIndices[ i ] <= view_particleCellIndices[ j ]; },
        [=] __cuda_callable__ ( int i, int j ) mutable {
          swap( view_particleCellIndices[ i ], view_particleCellIndices[ j ] );
          swap( view_points[ i ], view_points[ j ] );
@@ -29,6 +36,11 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
          swap( view_p[ i ], view_p[ j ] );
          swap( view_v[ i ], view_v[ j ] );
          swap( view_DrhoDv[ i ], view_DrhoDv[ j ] );
+	 			//temp, this needs to be done in better way - sort integrator arrays
+         swap( view_rhoO[ i ], view_rhoO[ j ] );
+         swap( view_vO[ i ], view_vO[ j ] );
+         swap( view_rhoOO[ i ], view_rhoOO[ j ] );
+         swap( view_vOO[ i ], view_vOO[ j ] );
          } );
 }
 
@@ -106,7 +118,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFF(
 
   const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / ( vars.rho [ i ] * vars.rho[ j ] );
   const RealType visco =  ViscousTerm::Pi( vars.rho[ i ], vars.rho[ j ], drs, ( dr, dv ) );
-  const PointType a = ( -1 ) * ( p_term + visco )* gradW * vars.m;
+  const PointType a = ( -1.0 ) * ( p_term + visco )* gradW * vars.m;
   //const PointType a = ( p_term + visco )* gradW * vars.m;
 
   return { drho, a[ 0 ], a[ 1 ] };
@@ -132,7 +144,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionFB(
 
   const RealType p_term = ( vars.p[ i ] + vars.p[ j ] ) / ( vars.rho [ i ] * vars.rho[ j ] );
   const RealType visco =  ViscousTerm::Pi( vars.rho[ i ], vars.rho[ j ], drs, ( dr, dv ) );
-  const PointType a = ( -1 ) * ( p_term + visco ) * gradW * vars.m;
+  const PointType a = ( -1.0 ) * ( p_term + visco ) * gradW * vars.m;
 
   return { drho, a[ 0 ], a[ 1 ] };
 }

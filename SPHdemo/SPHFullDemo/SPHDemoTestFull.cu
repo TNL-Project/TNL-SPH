@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream> //temp, to write output
+#include <TNL/Meshes/Writers/VTIWriter.h> //temp,t o write grid
 
 #include <TNL/Devices/Host.h>
 #include <TNL/Devices/Cuda.h>
@@ -124,7 +126,7 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 1400; time ++ )
+  for( unsigned int time = 0; time < 250; time ++ )
   {
 
     std::cout << "STEP: " << time << std::endl;
@@ -134,7 +136,7 @@ int main( int argc, char* argv[] )
     mySPHSimulation.Interact();
     std::cout << "interact... done." << std::endl;
 
-    #include "outputForDebug.h"
+    //#include "outputForDebug.h"
 
 		if( time % 20 == 0 ) {
     	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
@@ -142,15 +144,16 @@ int main( int argc, char* argv[] )
 		else {
     	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
 		}
-		//: if(time < 5 )
-   	//: mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
-   	//: mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+		//if(time < 5 )
+   	//mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+
+		//: mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
     std::cout << "integrate... done." << std::endl;
 
     mySPHSimulation.model.template ComputePressureFromDensity< EOS >();
     std::cout << "compute pressure... done." << std::endl;
 
-
+		//#include "outputForDebugNbs.h"
 
     //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
     //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
@@ -158,7 +161,22 @@ int main( int argc, char* argv[] )
     //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
   }
 
-	#include "writeParticleData.h"
+	//#include "writeBoundaryParticleData.h"
+
+  //#include "printNeighborList.h"
+	#include "writeFluidParticleData.h"
+	//#include "writeParticleData.h"
+
+	//mySPHSimulation.particles.GetParticlesInformations();
+
+
+	/*
+  std::ofstream file( "grid.vti" );
+	using Grid = typename ParticleSystem::GridType;
+  using Writer = TNL::Meshes::Writers::VTUWriter< Grid >;
+  Writer writer( file );
+  writer.writeImageData( *mySPHSimulation.particles.grid );
+	*/
 
   //std::cout << "mySPHSimulation points after integration step: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
   //std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;

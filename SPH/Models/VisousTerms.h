@@ -10,7 +10,7 @@ class ArtificialViscosity
   public:
   using RealType = typename SPHCaseConfig::RealType; //fix this
 
-  static constexpr RealType coefAV = ( -2 ) * SPHCaseConfig::alpha * SPHCaseConfig::speedOfSound; //?
+  static constexpr RealType coefAV = ( -2. ) * SPHCaseConfig::alpha * SPHCaseConfig::speedOfSound; //?
   static constexpr RealType h = SPHCaseConfig::h;
   static constexpr RealType epsilon = SPHCaseConfig::eps;
 
@@ -28,3 +28,4 @@ class ArtificialViscosity
 } // SPH
 } // ParticleSystem
 } // TNL
+

@@ -25,7 +25,7 @@ class ParticleSystemConfig
   using CoordinatesType = Containers::StaticVector< 2, int >;
 
   //static constexpr RealType searchRadius = 0.01414213;
-  static constexpr RealType searchRadius = 0.02828426;
+  static constexpr RealType searchRadius = 0.02828426*1.005;
   static constexpr int gridXsize = 65; /* 65 */
   static constexpr int gridYsize = 35; /* 35 */
 

@@ -28,9 +28,9 @@ class VerletIntegrator
   using VectorType = typename SPHFluidTraitsType::VectorType;
   using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
 
-  using ScalarArrayView = typename Containers::ArrayView< ScalarType >;
-  using VectorArrayView = Containers::ArrayView< VectorType >;
-  using InteractionResultView = Containers::ArrayView< InteractionResultType >;
+  using ScalarArrayView = typename Containers::ArrayView< ScalarType >; //DeviceType
+  using VectorArrayView = Containers::ArrayView< VectorType >; //DeviceType
+  using InteractionResultView = Containers::ArrayView< InteractionResultType >; //DeviceType
 
   /* this is something that need rework a bit */
   using PointArrayType = typename Particles::PointArrayType;
