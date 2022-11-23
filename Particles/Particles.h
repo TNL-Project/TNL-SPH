@@ -60,11 +60,13 @@ public:
   {
     //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
     grid->setDimensions( Config::gridXsize, Config::gridYsize );
+    //grid->setDimensions( Config::gridXsize, Config::gridYsize ); //ignore boundary cells
 
     //gridCellIndices(grid->template getEntitiesCount<2>());
     //particleCellInidices = 0; //reset
 
     //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
+    //grid->setOrigin( { Config::gridXbegin , Config::gridYbegin } ); //ignore boundary cells
 
     neighborsList.setSegmentsSizes(size, Config::maxOfNeigborsPerParticle);
 
