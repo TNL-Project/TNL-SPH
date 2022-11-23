@@ -279,6 +279,15 @@ Particles< ParticleConfig, DeviceType >::setNeighbor(GlobalIndexType i, GlobalIn
 //:}
 
 template < typename ParticleConfig, typename DeviceType >
+__cuda_callable__
+typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
+Particles< ParticleConfig, DeviceType >::getCountOfGridCells()
+{
+	//return grid->getEntitiesCount( 2 );
+	return 2;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 void
 Particles< ParticleConfig, DeviceType >::resetNeighborList()
 {

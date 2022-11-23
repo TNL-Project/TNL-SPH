@@ -76,12 +76,15 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells
 (LocalIndexType centralCell, LocalIndexType neighborCell)
 {
 
-   if(firstCellParticle[ neighborCell ] != -1)
+   auto view_firstCellParticle = this->firstCellParticle.getView();
+   auto view_lastCellParticle = this->lastCellParticle.getView();
+
+   if(view_firstCellParticle[ neighborCell ] != -1)
    {
     auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j ) mutable
     {
-      if((l2Norm(particles.getPoint(i) - particles.getPoint(j)) < this->particles.getSearchRadius()) && (i != j))
-      this->particles.setNeighbor(static_cast< LocalIndexType>( j ), static_cast< LocalIndexType> ( i ) ); //i is nbs, j is central!
+      if((l2Norm(particles->getPoint(i) - particles->getPoint(j)) < this->particles->getSearchRadius()) && (i != j))
+      this->particles->setNeighbor(static_cast< LocalIndexType>( j ), static_cast< LocalIndexType> ( i ) ); //i is nbs, j is central!
 
       //printf("Particle i: %f, %f particle j: %f, %f, l2Norm: %f\n", particles.getPoint(i)[0], particles.getPoint(i)[1], particles.getPoint(j)[0], particles.getPoint(j)[1], l2Norm(particles.getPoint(i) - particles.getPoint(j)));
 
@@ -101,19 +104,64 @@ __cuda_callable__
 void
 NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid()
 {
+   auto view_firstCellParticle = this->firstCellParticle.getView();
+   auto view_lastCellParticle = this->lastCellParticle.getView();
 
+	 /* old, ready to remove
+ 	const int dim = particles->grid->getEntitiesCount( 2 );
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
-     if(firstCellParticle[ i ] != -1)
+     if( view_firstCellParticle[ i ] != -1 )
      {
-        myCell centralCell = particles.grid->template getEntity<GridCell>( i );
+        //const myCell centralCell = particles->grid->template getEntity< GridCell >( i );
+   						//const int dim = particles->getCountOfGridCells( );
         //old: centralCell.refresh();
         //old: const typename myCell::template NeighborEntities< 2 >& neighborEntities = centralCell.getNeighborEntities();
-        #include "somethingNotNice.h"
+        //#include "somethingNotNice.h"
       }
-
    };
    Algorithms::ParallelFor< DeviceType >::exec( 0, ParticleConfig::gridXsize*ParticleConfig::gridYsize, init );
+	 */
+
+   auto initF = [=] __cuda_callable__ ( myCell centralCell  ) mutable
+	 {
+		 const GlobalIndexType i = centralCell.getIndex();
+		 printf(" INDEX %d" , i );
+		 if( view_firstCellParticle[ i ] != -1 )
+		 {
+		  	//#include "somethingNotNice.h"
+				//if( centralCell.isBoundary() == false )
+
+				const LocalIndexType mp = centralCell.template getNeighbourEntity< 2, -1, 1 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mp);
+
+				const LocalIndexType zp = centralCell.template getNeighbourEntity< 2, 0, 1 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zp);
+
+				const LocalIndexType pp = centralCell.template getNeighbourEntity< 2, 1, 1 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pp);
+
+				const LocalIndexType mz = centralCell.template getNeighbourEntity< 2, -1, 0 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mz);
+
+				const LocalIndexType zz = centralCell.template getNeighbourEntity< 2, 0, 0 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zz);
+
+				const LocalIndexType pz = centralCell.template getNeighbourEntity< 2, 1, 0 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pz);
+
+				const LocalIndexType mm = centralCell.template getNeighbourEntity< 2, -1, -1 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, mm);
+
+				const LocalIndexType zm = centralCell.template getNeighbourEntity< 2, 0, -1 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, zm);
+
+				const LocalIndexType pm = centralCell.template getNeighbourEntity< 2, 1, -1 >().getIndex();
+				NeighborSearch< ParticleConfig, ParticleSystem >::getNeighborsFromTwoCells(i, pm);
+				//printf("[%d, %d, %d, %d, %d, %d, %d, %d, %d]\n", mp, zp, pp, mz, zz, pz, mm, zm, pm);
+		 }
+	 };
+	 particles->grid->template forInteriorEntities< 2 >( initF );
 
 }
 

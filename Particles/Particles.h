@@ -59,7 +59,7 @@ public:
   : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
   {
     //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
-    grid->setDimensions( Config::gridXsize, Config::gridYsize);
+    grid->setDimensions( Config::gridXsize, Config::gridYsize );
 
     //gridCellIndices(grid->template getEntitiesCount<2>());
     //particleCellInidices = 0; //reset
@@ -219,10 +219,15 @@ public:
   GridPointer grid; //temporarily moved outside protected
 
   /* NEIGHBOR LIST RELATED TEMP TOOL */
-  //temp
+  //temp - off
   __cuda_callable__
   myCell&
   getCell( GlobalIndexType i );
+
+	//temp
+  __cuda_callable__
+	GlobalIndexType
+	getCountOfGridCells();
 
   /**
    * Print/save neighbor whole neighbor list.

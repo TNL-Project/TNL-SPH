@@ -157,7 +157,7 @@ int main( int argc, char* argv[] )
 
   /*** TEMP TEST ***/
   std::cout << "\nCycle over internal cells." << std::endl;
-  myNeighborSearch.runCycleOverGrid();
+  myNeighborSearch->runCycleOverGrid();
 
 ///""
 ///""  //:/**
