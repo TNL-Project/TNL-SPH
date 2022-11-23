@@ -2,7 +2,7 @@
 #include <fstream> //temp, to write output
 #include <TNL/Meshes/Writers/VTIWriter.h> //temp,t o write grid
 
-#include <TNL/Devices/Host.h>
+//#include <TNL/Devices/Host.h>
 #include <TNL/Devices/Cuda.h>
 
 /**
@@ -44,7 +44,7 @@ int main( int argc, char* argv[] )
    * Number of particles
    */
   using ParticlesConfig = ParticleSystemConfig;
-  using Device = Devices::Host;
+  using Device = ParticlesConfig::DeviceType;
   using SPHConfig = SPH::SPHCaseConfig< Device >;
 
   using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
@@ -126,7 +126,7 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 250; time ++ )
+  for( unsigned int time = 0; time < 5000; time ++ )
   {
 
     std::cout << "STEP: " << time << std::endl;

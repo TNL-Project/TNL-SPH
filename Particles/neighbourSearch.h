@@ -12,6 +12,7 @@ public:
 
   /* common */
   using DeviceType = typename ParticleSystem::Device; //mh
+	using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
   using LocalIndexType = typename ParticleSystem::LocalIndexType;
   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
@@ -29,7 +30,7 @@ public:
   /**
    * Constructors.
    */
-  NeighborSearch(ParticleSystem& particles, GlobalIndexType cellCount)
+  NeighborSearch(ParticlePointer& particles, GlobalIndexType cellCount)
   : particles(particles), firstCellParticle(cellCount), lastCellParticle(cellCount)
   {
     firstCellParticle = -1;
@@ -94,7 +95,7 @@ public:
 protected:
 
   //const ParticleSystem& particles;
-  ParticleSystem& particles;
+  ParticlePointer particles;
 
   CellIndexArrayType firstCellParticle;
   CellIndexArrayType lastCellParticle;

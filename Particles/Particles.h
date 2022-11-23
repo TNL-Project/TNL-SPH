@@ -242,6 +242,7 @@ protected:
   NeighborsArrayType neighbors;
   NeighborListType neighborsList;
 
+  //PointArrayType* points = nullptr;
   PointArrayType points;
   CellIndexArrayType particleCellInidices;
 

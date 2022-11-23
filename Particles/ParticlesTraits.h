@@ -7,7 +7,7 @@
 namespace TNL {
 namespace ParticleSystem {
 
-template< typename ParticleConfig, typename Device = Devices::Host >
+template< typename ParticleConfig, typename Device = Devices::Cuda >
 class ParticlesTraits
 {
   public:
@@ -35,3 +35,4 @@ class ParticlesTraits
 
 } // namepsace ParticleSystem
 } // namespace TNL
+

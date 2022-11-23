@@ -126,6 +126,7 @@ bool generate2DParticleSystemCentric( Particles< ParticlesConfigCentric< Device 
 }
 
 
+/*
 TEST( SearchForNeighborsTest, NeighborSearchHost )
 {
    using ParticlesConfig =  ParticlesConfig< TNL::Devices::Host > ;
@@ -228,7 +229,120 @@ TEST( SearchForNeighborsTest, NeighborSearchHost )
    EXPECT_EQ( particles.getNeighbor( 8 , 1 ), 0 );
    EXPECT_EQ( particles.getNeighbor( 8 , 2 ), 4 );
 }
+*/
 
+#ifdef HAVE_CUDA
+//__global__ void testGetPointKernel()
+
+#endif /* HAVE_CUDA */
+
+TEST( SearchForNeighborsTest, NeighborSearchCuda )
+{
+   using ParticlesConfig =  ParticlesConfig< TNL::Devices::Cuda > ;
+   using ParticlesCuda = Particles< ParticlesConfig, Devices::Cuda >;
+   using neighborSearchHost = NeighborSearch< ParticlesConfig, ParticlesCuda >;
+
+   using PointType = typename ParticlesCuda::PointType;
+
+   //ParticlesCuda particles;
+   ParticlesCuda particles( 12, 0.6 );
+
+   ASSERT_TRUE( generate2DParticleSystem( particles ) );
+
+   //test number of points
+   EXPECT_EQ( particles.getNumberOfParticles(), 9 );
+
+   //test particle position
+   PointType point0( 0., 0. ),  point1( 0., 0.5 ),  point2( 0., 1. ),
+             point3( 0.5, 0. ), point4( 0.5, 0.5 ), point5( 0.5, 1. ),
+             point6( 1., 0. ),  point7( 1., 0.5 ),  point8( 1., 1. );
+
+	 std::cout << "getPoint: " << particles.getPoints( ) << std::endl;
+
+   //EXPECT_EQ( particles.getPoint( 0 ), point0 );
+   //EXPECT_EQ( particles.getPoint( 1 ), point1 );
+   //EXPECT_EQ( particles.getPoint( 2 ), point2 );
+   //EXPECT_EQ( particles.getPoint( 3 ), point3 );
+   //EXPECT_EQ( particles.getPoint( 4 ), point4 );
+   //EXPECT_EQ( particles.getPoint( 5 ), point5 );
+   //EXPECT_EQ( particles.getPoint( 6 ), point6 );
+   //EXPECT_EQ( particles.getPoint( 7 ), point7 );
+   //EXPECT_EQ( particles.getPoint( 8 ), point8 );
+
+   //: //compute grid and particle cell index, sort particles:
+   //: // ... this is something that would be also good to test
+   //: particles.computeGridCellIndices();
+   //: particles.computeParticleCellIndices();
+   //: particles.sortParticles();
+
+   //: //create neighbor search and search for neighbors:
+   //: neighborSearchHost nbs( particles, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize  );
+   //: nbs.searchForNeighbors();
+
+   //: //test neighbor list
+   //: // - test number of neigbors
+   //: EXPECT_EQ( particles.getNeighborsCount( 0 ), 8 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 1 ), 5 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 2 ), 3 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 3 ), 5 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 4 ), 5 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 5 ), 3 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 6 ), 3 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 7 ), 5 );
+   //: EXPECT_EQ( particles.getNeighborsCount( 8 ), 3 );
+
+   //: // - test neighbors
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 0 ), 6 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 1 ), 7 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 2 ), 8 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 3 ), 1 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 4 ), 2 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 5 ), 3 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 6 ), 4 );
+   //: EXPECT_EQ( particles.getNeighbor( 0 , 7 ), 5 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 1 , 0 ), 6 );
+   //: EXPECT_EQ( particles.getNeighbor( 1 , 1 ), 7 );
+   //: EXPECT_EQ( particles.getNeighbor( 1 , 2 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 1 , 3 ), 2 );
+   //: EXPECT_EQ( particles.getNeighbor( 1 , 4 ), 3 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 2 , 0 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 2 , 1 ), 1 );
+   //: EXPECT_EQ( particles.getNeighbor( 2 , 2 ), 3 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 3 , 0 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 3 , 1 ), 1 );
+   //: EXPECT_EQ( particles.getNeighbor( 3 , 2 ), 2 );
+   //: EXPECT_EQ( particles.getNeighbor( 3 , 3 ), 4 );
+   //: EXPECT_EQ( particles.getNeighbor( 3 , 4 ), 5 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 4 , 0 ), 7 );
+   //: EXPECT_EQ( particles.getNeighbor( 4 , 1 ), 8 );
+   //: EXPECT_EQ( particles.getNeighbor( 4 , 2 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 4 , 3 ), 3 );
+   //: EXPECT_EQ( particles.getNeighbor( 4 , 4 ), 5 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 5 , 0 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 5 , 1 ), 3 );
+   //: EXPECT_EQ( particles.getNeighbor( 5 , 2 ), 4 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 6 , 0 ), 7 );
+   //: EXPECT_EQ( particles.getNeighbor( 6 , 1 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 6 , 2 ), 1 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 7 , 0 ), 6 );
+   //: EXPECT_EQ( particles.getNeighbor( 7 , 1 ), 8 );
+   //: EXPECT_EQ( particles.getNeighbor( 7 , 2 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 7 , 3 ), 1 );
+   //: EXPECT_EQ( particles.getNeighbor( 7 , 4 ), 4 );
+
+   //: EXPECT_EQ( particles.getNeighbor( 8 , 0 ), 7 );
+   //: EXPECT_EQ( particles.getNeighbor( 8 , 1 ), 0 );
+   //: EXPECT_EQ( particles.getNeighbor( 8 , 2 ), 4 );
+}
+
+/*
 TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
 {
    using ParticlesConfigCentric =  ParticlesConfigCentric< TNL::Devices::Host > ;
@@ -335,6 +449,7 @@ TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
    EXPECT_EQ( particles.getNeighbor( 11 , 0 ), 10 );
    EXPECT_EQ( particles.getNeighbor( 11 , 1 ), 8 );
 }
+*/
 
 /*
 TEST( SearchForNeighborsTest, NeighborSearchCuda )
@@ -344,5 +459,4 @@ TEST( SearchForNeighborsTest, NeighborSearchCuda )
 
 }
 */
-
 

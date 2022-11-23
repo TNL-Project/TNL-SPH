@@ -44,7 +44,7 @@ class ParticleSystemConfig
   using CellIndexerType = SimpleCellIndex<ParticleSystemConfig, DeviceType>; //?
 
 
-  using NeighborListType = typename Algorithms::Segments::Ellpack< TNL::Devices::Host, int >;
+  using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
 } //namespace ParticleSystem

@@ -37,27 +37,33 @@ void
 NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
 ()
 {
-   GlobalIndexType nPtcs = particles.getNumberOfParticles();
+   GlobalIndexType nPtcs = particles->getNumberOfParticles();
 
    auto view_firstCellParticle = this->firstCellParticle.getView();
    auto view_lastCellParticle = this->lastCellParticle.getView();
+   //auto view_particleCellIndex = this->particles->getParticleCellIndices().getData(); //works for loop
+   auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
 
-   //resolve first particle by hand
-   view_firstCellParticle[  particles.getParticleCellIndex( 0 ) ] = 0;
-   view_lastCellParticle[  particles.getParticleCellIndex( 0 ) ] = (particles.getParticleCellIndex( 0 ) != particles.getParticleCellIndex( 0+1 )) ? 0 : -1;
+   //: //resolve first particle by hand
+   //view_firstCellParticle[  view_particleCellIndex[ 0 ] ] = 0;
+   view_firstCellParticle.setElement( view_particleCellIndex.getElement( 0 ) ,  0 );
+   //view_lastCellParticle[  view_particleCellIndex[ 0 ] ] = ( view_particleCellIndex[ 0 ] != view_particleCellIndex[ 0+1 ] ) ? 0 : -1;
+	 view_firstCellParticle.setElement( view_particleCellIndex.getElement( 0 ), ( view_particleCellIndex.getElement( 0 ) != view_particleCellIndex.getElement( 0+1 ) ) ? 0 : -1 );
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
-     if(particles.getParticleCellIndex( i ) != particles.getParticleCellIndex( i-1 ))
-       view_firstCellParticle[  particles.getParticleCellIndex( i ) ] = i ;
-     if(particles.getParticleCellIndex( i ) != particles.getParticleCellIndex( i+1 ))
-       view_lastCellParticle[  particles.getParticleCellIndex( i ) ] =  i ;
+   		if( view_particleCellIndex[ i ] != view_particleCellIndex[ i-1 ] )
+         view_firstCellParticle[  view_particleCellIndex[ i ] ] = i ;
+     	if( view_particleCellIndex[ i ] != view_particleCellIndex[ i+1 ] )
+        view_lastCellParticle[  view_particleCellIndex[ i ] ] =  i ;
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 1, this->particles.getNumberOfParticles() -1, init );
+   Algorithms::ParallelFor< DeviceType >::exec( 1, this->particles->getNumberOfParticles() -1, init );
 
-   //resolve last particle by hand
-   view_firstCellParticle[  particles.getParticleCellIndex( nPtcs-1 ) ] = (particles.getParticleCellIndex( nPtcs -1 ) != particles.getParticleCellIndex( nPtcs-2 )) ? nPtcs-1 : -1;
-   view_lastCellParticle[  particles.getParticleCellIndex( this->particles.getNumberOfParticles()-1 ) ] = this->particles.getNumberOfParticles()-1;
+   //: //resolve last particle by hand
+   //view_firstCellParticle[  view_particleCellIndex[ nPtcs-1 ] ] = ( view_particleCellIndex[ nPtcs -1 ] != view_particleCellIndex[ nPtcs-2 ] ) ? nPtcs-1 : -1;
+   view_firstCellParticle.setElement( view_particleCellIndex.getElement( nPtcs - 1 ), ( view_particleCellIndex.getElement( nPtcs -1 ) != view_particleCellIndex.getElement( nPtcs-2 ) ) ? nPtcs-1 : -1 );
+   //view_lastCellParticle[  view_particleCellIndex[ this->particles->getNumberOfParticles()-1 ] ] = this->particles->getNumberOfParticles()-1;
+   view_lastCellParticle.setElement(  view_particleCellIndex.getElement( nPtcs-1 ), nPtcs - 1 );
 
 }
 
