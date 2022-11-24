@@ -18,6 +18,7 @@ public:
   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
 
   using CellIndexArrayType = typename ParticleSystem::CellIndexArrayType;
+	using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
 
   /* grid related */
   using GridType = typename ParticleSystem::GridType;
@@ -80,14 +81,14 @@ public:
   /**
    * Test particles in two neighbor cells.
    */
-  __cuda_callable__
+  //__cuda_callable__
   void
   runCycleOverGrid();
 
   /**
    * Run the cycle to search for neighbors.
    */
-  __cuda_callable__
+  //__cuda_callable__
   void
   searchForNeighbors();
 
