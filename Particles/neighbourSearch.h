@@ -24,6 +24,9 @@ public:
 
 	/* Is this good idea? */
 	using PointTypeArrayView = typename Containers::ArrayView< typename ParticleSystem::PointType, DeviceType >;
+	/* Another temp stuff, just make it works, refucktor it away after. */
+	using NeighborsCountView = typename Containers::ArrayView< typename ParticleSystem::LocalIndexType, DeviceType >;
+	using NeighborsView = typename Containers::ArrayView< typename ParticleSystem::GlobalIndexType, DeviceType >;
 
   /* grid related */
   using GridType = typename ParticleSystem::GridType;
@@ -74,9 +77,8 @@ public:
   __cuda_callable__
   void
   //getNeighborsFromTwoCells(Cell centralCell, Cell neighborCell);
-  getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle , CellIndexArrayView view_lastCellParticle, PointTypeArrayView view_particles );
-  //getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell );
-  //getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle, CellIndexArrayView view_lastCellParticle);
+  //getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle , CellIndexArrayView view_lastCellParticle, PointTypeArrayView view_particles );
+  getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle , CellIndexArrayView view_lastCellParticle, PointTypeArrayView view_particles, NeighborsCountView view_neighborsCount, NeighborsView view_neighbors, RealType searchRadius);
 
   /**
    * Test particles in two neighbor cells.
@@ -107,7 +109,6 @@ protected:
 
   CellIndexArrayType firstCellParticle;
   CellIndexArrayType lastCellParticle;
-
 
 };
 

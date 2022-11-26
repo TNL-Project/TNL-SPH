@@ -184,6 +184,15 @@ public:
   /* NEIGHBOR LIST RELATED TOOL */
 
   /**
+   * Return list with neighbor particles.
+   */
+  const NeighborsArrayType& // -> using..
+  getNeighborsList() const;
+
+  NeighborsArrayType& // -> using..
+  getNeighborsList();
+
+  /**
    * Return jth neighbor of particle i.
    */
   __cuda_callable__

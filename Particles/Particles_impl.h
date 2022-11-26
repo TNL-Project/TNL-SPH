@@ -224,6 +224,19 @@ Particles< ParticleConfig, DeviceType>::GetParticlesInformations()
 }
 
 /* NEIGHBOR LIST RELATED TOOLS */
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::NeighborsArrayType&
+Particles< ParticleConfig, DeviceType >::getNeighborsList() const
+{
+  return neighbors;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+typename Particles< ParticleConfig, DeviceType >::NeighborsArrayType&
+Particles< ParticleConfig, DeviceType >::getNeighborsList()
+{
+  return neighbors;
+}
 
 template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
