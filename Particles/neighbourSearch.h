@@ -16,9 +16,14 @@ public:
 
   using LocalIndexType = typename ParticleSystem::LocalIndexType;
   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
+  using RealType = typename ParticleSystem::RealType;
 
+	using CellIndexType = typename ParticleSystem::CellIndexType;
   using CellIndexArrayType = typename ParticleSystem::CellIndexArrayType;
 	using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
+
+	/* Is this good idea? */
+	using PointTypeArrayView = typename Containers::ArrayView< typename ParticleSystem::PointType, DeviceType >;
 
   /* grid related */
   using GridType = typename ParticleSystem::GridType;
@@ -69,7 +74,9 @@ public:
   __cuda_callable__
   void
   //getNeighborsFromTwoCells(Cell centralCell, Cell neighborCell);
-  getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell);
+  getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle , CellIndexArrayView view_lastCellParticle, PointTypeArrayView view_particles );
+  //getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell );
+  //getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle, CellIndexArrayView view_lastCellParticle);
 
   /**
    * Test particles in two neighbor cells.

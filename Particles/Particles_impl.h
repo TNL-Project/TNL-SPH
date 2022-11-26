@@ -69,8 +69,8 @@ __cuda_callable__
 void
 Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, PointType point)
 {
-  //this->points[ particleIndex ] = point;
-	this->points.setElement( particleIndex, point );
+  this->points[ particleIndex ] = point;
+	//this->points.setElement( particleIndex, point );
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -228,45 +228,63 @@ Particles< ParticleConfig, DeviceType>::GetParticlesInformations()
 template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighbor(GlobalIndexType i, GlobalIndexType j) const
+Particles< ParticleConfig, DeviceType >::getNeighbor( GlobalIndexType i, GlobalIndexType j ) const
 {
-  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle )*i + 1 + j];
+  return neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle ) * i + j ];
 }
 
 template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighbor(GlobalIndexType i, GlobalIndexType j)
+Particles< ParticleConfig, DeviceType >::getNeighbor( GlobalIndexType i, GlobalIndexType j )
 {
-  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle )*i + 1 +j];
+  return neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle ) * i + j ];
+}
+
+//Neighbors count:
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::NeighborsCountArrayType&
+Particles< ParticleConfig, DeviceType >::getNeighborsCountList() const
+{
+  return neighborsCount;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+typename Particles< ParticleConfig, DeviceType >::NeighborsCountArrayType&
+Particles< ParticleConfig, DeviceType >::getNeighborsCountList()
+{
+  return neighborsCount;
 }
 
 template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::LocalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCount(GlobalIndexType i) const
+Particles< ParticleConfig, DeviceType >::getNeighborsCount( GlobalIndexType particleIndex ) const
 {
-  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i];
+  TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
+  TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
+  return this->neighborsCount[ particleIndex ];
 }
 
 
 template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::LocalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCount(GlobalIndexType i)
+Particles< ParticleConfig, DeviceType >::getNeighborsCount( GlobalIndexType particleIndex )
 {
-  return neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i];
+  TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
+  TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
+  return this->neighborsCount[ particleIndex ];
 }
 
 template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 void
-Particles< ParticleConfig, DeviceType >::setNeighbor(GlobalIndexType i, GlobalIndexType j)
+Particles< ParticleConfig, DeviceType >::setNeighbor( GlobalIndexType i, GlobalIndexType j )
 {
-  //TNL_ASSERT_LT( neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]++, ParticleConfig::maxOfNeigborsPerParticle, "number of neighbors is reached" );
-
-  neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]++;
-  neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i + neighbors[(ParticleConfig::maxOfNeigborsPerParticle)*i]] = j;
+  neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle )*i + neighborsCount[ i ] ] = j;
+  neighborsCount[ i ]++;
 }
 
 //:template < typename ParticleConfig, typename DeviceType >

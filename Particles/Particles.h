@@ -27,6 +27,7 @@ public:
   using RealType = typename ParticleTraitsType::RealType;
   using CellIndexType = typename ParticleTraitsType::CellIndexType;
   using CellIndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //nn
+  using NeighborsCountArrayType = typename ParticleTraitsType::NeighborsCountArrayType;
   using NeighborsArrayType = typename ParticleTraitsType::NeighborsArrayType;
   using NeighborListType = typename ParticleTraitsType::NeighborListType;
 
@@ -56,7 +57,7 @@ public:
   }
 
   Particles(GlobalIndexType size, RealType radius)
-  : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
+  : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighborsCount(size, 0), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
   {
     //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
     grid->setDimensions( Config::gridXsize, Config::gridYsize );
@@ -194,15 +195,24 @@ public:
   getNeighbor( GlobalIndexType i, GlobalIndexType j );
 
   /**
+   * Return list with numbers of particles.
+   */
+  const NeighborsCountArrayType& // -> using..
+  getNeighborsCountList() const;
+
+  NeighborsCountArrayType& // -> using..
+  getNeighborsCountList();
+
+  /**
    * Return number of neighbors of particle i.
    */
   __cuda_callable__
   const LocalIndexType&
-  getNeighborsCount( GlobalIndexType i ) const;
+  getNeighborsCount( GlobalIndexType particleIndex ) const;
 
   __cuda_callable__
   LocalIndexType&
-  getNeighborsCount( GlobalIndexType i );
+  getNeighborsCount( GlobalIndexType particleIndex );
 
   /**
    * Set j as neighbor for particle i.
@@ -246,8 +256,10 @@ protected:
 
   RealType radius;
 
+  NeighborsCountArrayType neighborsCount;
   NeighborsArrayType neighbors;
-  NeighborListType neighborsList;
+
+  NeighborListType neighborsList; //not used
 
   //PointArrayType* points = nullptr;
   PointArrayType points;

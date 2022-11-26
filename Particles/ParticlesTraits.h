@@ -24,6 +24,7 @@ class ParticlesTraits
   using PointArrayType = Containers::Array< PointType, Device, GlobalIndexType >;
 
   using NeighborListType = typename ParticleConfig::NeighborListType;
+  using NeighborsCountArrayType = Containers::Array< LocalIndexType, Device, GlobalIndexType >;
   using NeighborsArrayType = Containers::Array< GlobalIndexType, Device, GlobalIndexType >;
 
   /* grid related */
