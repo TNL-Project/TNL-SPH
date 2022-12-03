@@ -11,6 +11,10 @@
 
 #include "Particles/neighbourSearch.h"
 
+#include "SPH/Models/WCSPH_DBC/Variables.h"
+#include "SPH/Models/WCSPH_DBC/Interactions.h"
+#include "SPH/Models/EquationOfState.h"
+
 
 #ifdef HAVE_CUDA
 template< typename ParticlePointer >

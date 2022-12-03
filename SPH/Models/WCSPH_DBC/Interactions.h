@@ -38,11 +38,63 @@ public:
   using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
   using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
+	using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
+
+	/* VARIABLES FIELDS */
+  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
+  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+  using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
+
   /**
    * Constructor.
    **/
-  WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref )
-  : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars, points ) {};
+  //IDLT: WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref )
+  //IDLT: : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars, points ) {};
+  WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
+  //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ), integrator( size, vars, particles ) {}; //add integrator
+  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ) {}; //add integrator
+
+	/* NEW */
+  /**
+   * Get fileds with variables.
+   */
+  const ScalarArrayType&
+  getParticleType() const;
+
+  ScalarArrayType&
+  getParticleType();
+
+  const ScalarArrayType&
+  getRho() const;
+
+  ScalarArrayType&
+  getRho();
+
+  const ScalarArrayType&
+  getDrho() const;
+
+  ScalarArrayType&
+  getDrho();
+
+  const ScalarArrayType&
+  getPress() const;
+
+  ScalarArrayType&
+  getPress();
+
+  const VectorArrayType&
+  getVel() const;
+
+  VectorArrayType&
+  getVel();
+
+  const VectorArrayType&
+  getAcc() const;
+
+  VectorArrayType&
+  getAcc();
+
+	/* OLD */
 
   /**
    * Process one general parcile with index i.
@@ -97,15 +149,27 @@ public:
 
 //protected:
 
-  Variables vars;
-  PointArrayType& points;
+  //Variables vars;
+  //IDLT: PointArrayType& points;
+
+  /* Variables - Fields */
+  ParticleTypeArrayType type;
+
+  ScalarArrayType rho;
+  ScalarArrayType drho;
+  ScalarArrayType p;
+  VectorArrayType v;
+  VectorArrayType a;
+
+	/* Constants */
+  RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
   //PointArrayTypeView pointss; //mby like this?
   //PointArrayType_ptr points; //mby like this?
 
-  Particles& particles;
+  Particles particles;
 
-  Integrator integrator; //temp
+  //Integrator integrator; //temp
 
 };
 
@@ -114,3 +178,4 @@ public:
 } // TNL
 
 #include "Interactions_impl.h"
+

@@ -32,11 +32,13 @@ class VerletIntegrator
   using VectorArrayView = Containers::ArrayView< VectorType, DeviceType >; //DeviceType
   using InteractionResultView = Containers::ArrayView< InteractionResultType, DeviceType >; //DeviceType
 
+	using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
+
   /* this is something that need rework a bit */
   using PointArrayType = typename Particles::PointArrayType;
 
-  VerletIntegrator( GlobalIndexType size, Variables& variables_ref, PointArrayType& points_ref )
-  : rhoO( size ), vO( size ), rhoOO( size ), vOO( size ), variables( variables_ref ), points( points_ref )
+  VerletIntegrator( GlobalIndexType size, Variables& variables_ref, ParticlePointer& particles )
+  : rhoO( size ), vO( size ), rhoOO( size ), vOO( size ), variables( variables_ref ), particles( particles )
   {
     vO = variables_ref.v;
     rhoO = variables_ref.rho;
@@ -55,7 +57,7 @@ class VerletIntegrator
 
     ScalarArrayView rho_view = variables.rho.getView();
     VectorArrayView v_view = variables.v.getView();
-    VectorArrayView r_view = points.getView();
+    VectorArrayView r_view = particles->getPoints.getView();
 
     InteractionResultView DrhoDv_view = variables.DrhoDv.getView();
 
@@ -93,7 +95,7 @@ class VerletIntegrator
 
     ScalarArrayView rho_view = variables.rho.getView();
     VectorArrayView v_view = variables.v.getView();
-    VectorArrayView r_view = points.getView();
+    VectorArrayView r_view = particles->getPoints.getView();
 
     InteractionResultView DrhoDv_view = variables.DrhoDv.getView();
 
@@ -128,7 +130,7 @@ class VerletIntegrator
 
   Variables& variables;
 
-  PointArrayType& points;
+  ParticlePointer particles;
 
 };
 

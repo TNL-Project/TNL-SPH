@@ -1,5 +1,8 @@
 #pragma once
 
+#include <limits> //UINT_MAX
+//#define UINT_MAX = std::numeric_limits<unsigned int>::max()
+
 #include "Particles.h"
 
 namespace TNL {
@@ -42,8 +45,12 @@ public:
   NeighborSearch(ParticlePointer& particles, GlobalIndexType cellCount)
   : particles(particles), firstCellParticle(cellCount), lastCellParticle(cellCount)
   {
-    firstCellParticle = -1;
-    lastCellParticle = -1;
+    //firstCellParticle = -1;
+    //lastCellParticle = -1;
+
+    firstCellParticle = INT_MAX;
+    lastCellParticle = INT_MAX;
+
   }
 
   /**

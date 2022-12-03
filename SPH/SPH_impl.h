@@ -39,11 +39,49 @@ template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
 SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
-    auto init = [=] __cuda_callable__ ( int i ) mutable
-    {
-       model.ProcessOneParticle( i );
-    };
-    Algorithms::ParallelFor< DeviceType >::exec( 0, particles.getNumberOfParticles(), init );
+
+	 /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
+	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
+   static constexpr GlobalIndexType _numberOfCells = ParticleSystem::ParticleConfig::gridXsize; //FIXIT
+	 const auto view_firstCellParticle = neighborSearch.getCellFirstParticleList().getView();
+	 const auto view_particleCellIndex = particles.getParticleCellIndices().getView();
+	 const auto view_points = particles.getPoints().getView();
+	 RealType searchRadius = this->particles->getSearchRadius();
+
+	 /* VARIABLES AND FIELD ARRAYS */
+
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) mutable
+	 {
+		 const unsigned int activeCell = view_particleCellIndex[ i ];
+
+		 /* LOAD OTHER PARTICLE DATA */
+
+		 for( int ci = -1; ci <= 1; ci++ ){
+			 for( int cj = -1; cj <= 1; cj++ ){
+
+				 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
+				 int j = view_firstCellParticle[ neighborCell ]; //USE INT MAX
+
+				 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+
+       			//if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
+			 			//{	}
+
+					 	/* START OF LOOP OVER NEIGHBROS */
+
+
+					 	/* END OF LOOP OVER NEIGHBROS */
+
+					 j++;
+
+				 } //while over particle in cell
+			 } //for cells in y direction
+		 } //for cells in x direction
+
+	 /* SAVE INTERACTION RESULTS */
+
+	 };
+	 Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, particleLoop );
 }
 
 } // SPH

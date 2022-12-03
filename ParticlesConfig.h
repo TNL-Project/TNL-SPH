@@ -19,12 +19,12 @@ class ParticleSystemConfig
   using CoordinatesType = Containers::StaticVector< 2, int >;
 
   static constexpr int searchRadius = 1;
-  static constexpr int gridXsize = 8;
-  static constexpr int gridYsize = 8;
+  static constexpr int gridXsize = 8 + 2;
+  static constexpr int gridYsize = 8 + 2;
 
   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-  static constexpr int gridXbegin = 0;
-  static constexpr int gridYbegin = 0;
+  static constexpr int gridXbegin = 0 - searchRadius * 1;
+  static constexpr int gridYbegin = 0 - searchRadius * 1;
 
   // ... set particle system ...
 

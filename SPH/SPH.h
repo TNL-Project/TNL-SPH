@@ -23,10 +23,15 @@ public:
   using RealType = typename ParticleSystem::RealType;
   using InteractionResultType = typename Model::InteractionResultType;
 
+	using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
+	using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
+	//using ModelPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
+
   SPHSimulation() = default;
 
-  SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells)
-  : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles.getPoints(), particles ) {};
+  SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
+  //IDLT: : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles.getPoints(), particles ) {};
+  : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ) {};
 
 //protected:
 
@@ -46,8 +51,8 @@ public:
    */
   void Interact();
 
-  ParticleSystem particles;
-  NeighborSearch neighborSearch;
+  ParticlePointer particles;
+  NeighborSearchPointer neighborSearch;
   Model model;
 
 private:

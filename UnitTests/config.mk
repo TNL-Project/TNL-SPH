@@ -58,7 +58,7 @@ endif
 
 # tests
 LDLIBS += -I /usr/local/Cellar/googletest/1.10.0/include
-LDLIBS += -L /usr/local/Cellar/googletest/1.10.0/lib -lgtest -lgtest_main
+LDLIBS += -L /usr/local/Cellar/googletest/1.10.0/lib -lgtest -lgtest_main -lgmock
 
 CUDA_LDLIBS += -I /usr/local/Cellar/googletest/1.10.0/include
-CUDA_LDLIBS += -L /usr/local/Cellar/googletest/1.10.0/lib -lgtest -lgtest_main
+CUDA_LDLIBS += -L /usr/local/Cellar/googletest/1.10.0/lib -lgtest -lgtest_main -lgmock
