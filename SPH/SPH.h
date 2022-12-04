@@ -20,11 +20,13 @@ public:
 
   using LocalIndexType = typename ParticleSystem::LocalIndexType;
   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
+  using PointType = typename ParticleSystem::PointType; //remove
   using RealType = typename ParticleSystem::RealType;
   using InteractionResultType = typename Model::InteractionResultType;
 
 	using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 	using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
+	using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
 	//using ModelPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
 
   SPHSimulation() = default;
@@ -49,11 +51,12 @@ public:
    * Perform cycle over all particles. For each of them load  all the neighbors and
    * perform the interactions.
    */
+  template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
   void Interact();
 
   ParticlePointer particles;
   NeighborSearchPointer neighborSearch;
-  Model model;
+  ModelPointer model;
 
 private:
 

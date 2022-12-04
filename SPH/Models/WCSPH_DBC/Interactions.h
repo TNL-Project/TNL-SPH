@@ -58,10 +58,10 @@ public:
   /**
    * Get fileds with variables.
    */
-  const ScalarArrayType&
+  const ParticleTypeArrayType&
   getParticleType() const;
 
-  ScalarArrayType&
+  ParticleTypeArrayType&
   getParticleType();
 
   const ScalarArrayType&

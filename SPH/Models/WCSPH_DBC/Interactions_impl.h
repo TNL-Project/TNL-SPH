@@ -4,6 +4,94 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
+	/* NEW */
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ParticleTypeArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getParticleType() const
+{
+	return this->type;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ParticleTypeArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getParticleType()
+{
+	return this->type;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getRho() const
+{
+	return this->rho;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getRho()
+{
+	return this->rho;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getDrho() const
+{
+	return this->drho;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getDrho()
+{
+	return this->drho;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getPress() const
+{
+	return this->p;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getPress()
+{
+	return this->p;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getVel() const
+{
+	return this->v;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getVel()
+{
+	return this->v;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getAcc() const
+{
+	return this->a;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getAcc()
+{
+	return this->a;
+}
+
+	/* OLD */
+
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
