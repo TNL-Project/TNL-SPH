@@ -12,7 +12,7 @@
 #include "../EquationOfState.h"
 #include "../DiffusiveTerms.h"
 #include "../VisousTerms.h"
-#include "Integrator.h"
+//#include "Integrator.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -32,9 +32,11 @@ public:
   using PointType = typename Particles::PointType;
   using PointArrayType = typename Particles::PointArrayType;
 
+  using ScalarType = typename SPHFluidTraitsType::ScalarType;
+  using VectorType = typename SPHFluidTraitsType::VectorType;
   using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
 
-  using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >; //-> template
+  //way to hell: using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >; //-> template
   using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
   using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
@@ -52,7 +54,8 @@ public:
   //IDLT: : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars, points ) {};
   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
   //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ), integrator( size, vars, particles ) {}; //add integrator
-  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ) {}; //add integrator
+  //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ) {}; //add integrator
+  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), rhoOO( size ), vO( size ), vOO( size ), particles( particles ) {}; //add integrator
 
 	/* NEW */
   /**
@@ -120,32 +123,39 @@ public:
   /**
    * Evaluate interaction between fluid particle i and fluid particle j.
    */
-  template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
-  __cuda_callable__
-  InteractionResultType
-  PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
+  //template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
+  //__cuda_callable__
+  //InteractionResultType
+  //PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
 
   /**
    * Evaluate interaction between fluid particle i and boundary particle j.
    */
-  template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
-  __cuda_callable__
-  InteractionResultType
-  PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
+  //template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
+  //__cuda_callable__
+  //InteractionResultType
+  //PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
 
   /**
    * Evaluate interaction between boundary particle i and fluid particle j.
    */
-  template< typename SPHKernelFunction >
-  __cuda_callable__
-  InteractionResultType
-  PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j );
+  //template< typename SPHKernelFunction >
+  //__cuda_callable__
+  //InteractionResultType
+  //PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j );
 
   void sortParticlesAndVariables();
 
   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
   void
   ComputePressureFromDensity();
+
+	/* TEMP INTEGRATORS, REMOVE LTER */
+	void
+	IntegrateVerlet( RealType dt );
+
+	void
+	IntegrateEuler( RealType dt );
 
 //protected:
 
@@ -161,13 +171,22 @@ public:
   VectorArrayType v;
   VectorArrayType a;
 
+	/* Temporary integrator variables */
+
+  ScalarArrayType rhoO;
+  VectorArrayType vO;
+
+  ScalarArrayType rhoOO;
+  VectorArrayType vOO;
+
+
 	/* Constants */
   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
   //PointArrayTypeView pointss; //mby like this?
   //PointArrayType_ptr points; //mby like this?
 
-  Particles particles;
+  ParticlePointer particles;
 
   //Integrator integrator; //temp
 

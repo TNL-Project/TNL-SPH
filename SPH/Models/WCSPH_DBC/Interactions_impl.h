@@ -96,24 +96,25 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 {
-   auto view_particleCellIndices = particles.getParticleCellIndices().getView();
-   auto view_points = particles->getPoints.getView();
+   auto view_particleCellIndices = particles->getParticleCellIndices().getView();
+   auto view_points = particles->getPoints().getView();
 
-   auto view_type = vars.type.getView();
-   auto view_rho = vars.rho.getView();
-   auto view_p = vars.p.getView();
-   auto view_v = vars.v.getView();
-   auto view_DrhoDv = vars.DrhoDv.getView();
+   auto view_type = type.getView();
+   auto view_rho = rho.getView();
+   auto view_drho = drho.getView();
+   auto view_p = p.getView();
+   auto view_v = v.getView();
+   auto view_a = a.getView();
 
 	 //temp, this needs to be done in better way - sort integrator arrays
-	 auto view_rhoO = integrator.rhoO.getView();
-	 auto view_vO = integrator.vO.getView();
+	 auto view_rhoO = rhoO.getView();
+	 auto view_vO = vO.getView();
 
-	 auto view_rhoOO = integrator.rhoOO.getView();
-	 auto view_vOO = integrator.vOO.getView();
+	 auto view_rhoOO = rhoOO.getView();
+	 auto view_vOO = vOO.getView();
 
    Algorithms::sort< DeviceType, GlobalIndexType >(
-       0, particles.getNumberOfParticles(),
+       0, particles->getNumberOfParticles(),
        [=] __cuda_callable__ ( int i, int j ) -> bool {
          return view_particleCellIndices[ i ] <= view_particleCellIndices[ j ]; },
        [=] __cuda_callable__ ( int i, int j ) mutable {
@@ -121,22 +122,26 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
          swap( view_points[ i ], view_points[ j ] );
          swap( view_type[ i ], view_type[ j ] );
          swap( view_rho[ i ], view_rho[ j ] );
+         swap( view_drho[ i ], view_drho[ j ] );
          swap( view_p[ i ], view_p[ j ] );
          swap( view_v[ i ], view_v[ j ] );
-         swap( view_DrhoDv[ i ], view_DrhoDv[ j ] );
+         swap( view_a[ i ], view_a[ j ] );
 	 			//temp, this needs to be done in better way - sort integrator arrays
+				 /*
          swap( view_rhoO[ i ], view_rhoO[ j ] );
          swap( view_vO[ i ], view_vO[ j ] );
          swap( view_rhoOO[ i ], view_rhoOO[ j ] );
          swap( view_vOO[ i ], view_vOO[ j ] );
+				 */
          } );
 }
 
+/*
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneParticle( GlobalIndexType index_i )
 {
-  if( vars.type[ index_i ] == 0 )
+  if( type[ index_i ] == 0 )
     ProcessOneFluidParticle( index_i );
   else
     ProcessOneBoundaryParticle( index_i );
@@ -150,7 +155,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneFluidParticle( Glob
   {
     GlobalIndexType index_j = particles.getNeighbor( index_i, i );
 
-    if( vars.type[ index_j ] == 0 )
+    if( type[ index_j ] == 0 )
       return PerformParticleInteractionFF< WendlandKernel, DiffusiveTerm, ViscousTerm >( index_i , index_j );
     else
       return PerformParticleInteractionFB< WendlandKernel, DiffusiveTerm, ViscousTerm >( index_i , index_j );
@@ -185,7 +190,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ProcessOneBoundaryParticle( G
 
   vars.DrhoDv[ index_i ] = Algorithms::reduce< DeviceType, int, InteractionResultType >( 0, particles.getNeighborsCount( index_i ), fetch, reduction, { 0., 0., 0. } );
 }
+*/
 
+/*
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
 __cuda_callable__
@@ -258,21 +265,100 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::PerformParticleInteractionBF(
 
   return { drho, a[ 0 ], a[ 1 ] };
 }
+*/
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
 {
-  auto view_rho = vars.rho.getView();
-  auto view_p = vars.p.getView();
+  auto view_rho = this->getRho().getView();
+  auto view_p = this->getPress().getView();
 
   auto init = [=] __cuda_callable__ ( int i ) mutable
   {
      view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
   };
-  Algorithms::ParallelFor< DeviceType >::exec( 0, particles.getNumberOfParticles(), init );
+  Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), init );
 }
+
+/* TEMP INTEGRATION, REMOVE LATER */
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt )
+{
+    auto rhoO_view = this->rhoO.getView();
+    auto vO_view = this->vO.getView();
+
+    auto rhoOO_view = this->rhoOO.getView();
+    auto vOO_view = this->vOO.getView();
+
+    auto rho_view = this->getRho().getView();
+    auto v_view = this->getVel().getView();
+    auto r_view = this->particles->getPoints.getView();
+
+    auto drho_view = this->getDrho().getView();
+    auto a_view = this->getAcc().getView();
+
+    RealType dtdt05 = 0.5 * dt * dt;
+    RealType dt2 = 2 * dt;
+
+    auto init = [=] __cuda_callable__ ( int i ) mutable
+    {
+
+       r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
+       rho_view[ i ] = rhoOO_view[ i ] + drho_view[ i ] * dt2;
+       v_view[ i ] = vOO_view[ i ] + a_view[ i ] * dt2;
+
+       vOO_view[ i ] = vO_view[ i ];
+       vO_view[ i ] = v_view[ i ];
+
+       rhoOO_view[ i ] = rhoO_view[ i ];
+       rhoO_view[ i ] = rho_view[ i ];
+
+    };
+
+    Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
+{
+
+  auto rhoO_view = this->rhoO.getView();
+  auto vO_view = this->vO.getView();
+
+  auto rhoOO_view = this->rhoOO.getView();
+  auto vOO_view = this->vOO.getView();
+
+  auto rho_view = this->getRho().getView();
+  auto v_view = this->getVel().getView();
+  auto r_view = this->particles->getPoints.getView();
+
+  auto drho_view = this->getDrho().getView();
+  auto a_view = this->getAcc().getView();
+
+  RealType dtdt05 = 0.5 * dt * dt;
+
+  auto init = [=] __cuda_callable__ ( int i ) mutable
+  {
+
+			v_view[ i ] += a_view[ i ] * dt;
+     	r_view[ i ] += vO_view[ i ] * dt + a_view[ i ] * dtdt05;
+			rho_view[ i ] += drho_view[ i ] * dt;
+
+		 	vOO_view[ i ] = vO_view[ i ];
+     	vO_view[ i ] = v_view[ i ];
+
+     	rhoOO_view[ i ] = rhoO_view[ i ];
+     	rhoO_view[ i ] = rho_view[ i ];
+
+  };
+
+  Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
+}
+
 
 
 } // SPH

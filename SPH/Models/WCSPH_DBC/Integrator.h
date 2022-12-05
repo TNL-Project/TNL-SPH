@@ -11,6 +11,7 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig > >
+//template< typename Particles, typename Model, typename SPHFluidConfig  >
 class VerletIntegrator
 {
   public:
@@ -128,7 +129,7 @@ class VerletIntegrator
   ScalarArrayType rhoOO;
   VectorArrayType vOO;
 
-  Variables& variables;
+  //Variables& variables; This is good idea, we will turn to this later.
 
   ParticlePointer particles;
 

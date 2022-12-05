@@ -5,6 +5,11 @@
 
 #include "../Particles/Particles.h"
 
+#include "Models/EquationOfState.h"
+#include "Models/DiffusiveTerms.h"
+#include "Models/VisousTerms.h"
+//#include "Integrator.h"
+
 #include "Kernels.h"
 
 namespace TNL {
@@ -29,6 +34,10 @@ public:
 	using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
 	//using ModelPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
 
+  //using DiffusiveTerm_MT = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
+  //using ViscousTerm_AV = ArtificialViscosity< SPHFluidConfig >; //-> template
+
+
   SPHSimulation() = default;
 
   SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
@@ -51,7 +60,7 @@ public:
    * Perform cycle over all particles. For each of them load  all the neighbors and
    * perform the interactions.
    */
-  template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
+	template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
   void Interact();
 
   ParticlePointer particles;
