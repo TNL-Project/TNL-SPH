@@ -127,50 +127,53 @@ int main( int argc, char* argv[] )
   //: //test: #include "outputForDebug.h"
 
 
-  //: //test: std::cout << "\nTest one step of integration." << std::endl;
-  //: //test: mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
-  //: //test: //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+  //std::cout << "\nTest one step of integration." << std::endl;
+  //mySPHSimulation.model->IntegrateVerlet( 0.00005 );
+  //mySPHSimulation.model->IntegrateEuler( 0.00005 );
+  //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
+  //mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.0001 );
 
   //: //std::cout << "mySPHSimulation points after integration: " << mySPHSimulation.particles.getPoints() << std::endl;
   //: //std::cout << "mySPHSimulation interaction values after integration step: " << mySPHSimulation.model.vars.rho << std::endl;
 
 
-  //: using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
+  using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  //: for( unsigned int time = 0; time < 5000; time ++ )
-  //: {
+  for( unsigned int time = 0; time < 5000; time ++ )
+  //for( unsigned int time = 0; time < 5; time ++ )
+  {
 
-  //:   std::cout << "STEP: " << time << std::endl;
-  //:   mySPHSimulation.PerformNeighborSearch( time );
-  //:   std::cout << "search... done." << std::endl;
+    std::cout << "STEP: " << time << std::endl;
+    mySPHSimulation.PerformNeighborSearch( time );
+    std::cout << "search... done." << std::endl;
 
-  //:   mySPHSimulation.Interact();
-  //:   std::cout << "interact... done." << std::endl;
+  	mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm >();
+    std::cout << "interact... done." << std::endl;
 
-  //:   //#include "outputForDebug.h"
+    //#include "outputForDebug.h"
 
-	//: 	if( time % 20 == 0 ) {
-  //:   	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
-	//: 	}
-	//: 	else {
-  //:   	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
-	//: 	}
-	//: 	//if(time < 5 )
-  //:  	//mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+		if( time % 20 == 0 ) {
+    	mySPHSimulation.model->IntegrateEuler( 0.00005 );
+		}
+		else {
+    	mySPHSimulation.model->IntegrateVerlet( 0.00005 );
+		}
+		//if(time < 5 )
+   	//mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
 
-	//: 	//: mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
-  //:   std::cout << "integrate... done." << std::endl;
+		//: mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+    std::cout << "integrate... done." << std::endl;
 
-  //:   mySPHSimulation.model.template ComputePressureFromDensity< EOS >();
-  //:   std::cout << "compute pressure... done." << std::endl;
+    mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
+    std::cout << "compute pressure... done." << std::endl;
 
-	//: 	//#include "outputForDebugNbs.h"
+		//#include "outputForDebugNbs.h"
 
-  //:   //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
-  //:   //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
-  //:   //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
-  //:   //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
-  //: }
+    //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
+    //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
+    //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
+    //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
+  }
 
 	//: //#include "writeBoundaryParticleData.h"
 

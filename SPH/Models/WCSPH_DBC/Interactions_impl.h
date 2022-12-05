@@ -295,7 +295,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt 
 
     auto rho_view = this->getRho().getView();
     auto v_view = this->getVel().getView();
-    auto r_view = this->particles->getPoints.getView();
+    auto r_view = this->particles->getPoints().getView();
 
     auto drho_view = this->getDrho().getView();
     auto a_view = this->getAcc().getView();
@@ -334,7 +334,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
 
   auto rho_view = this->getRho().getView();
   auto v_view = this->getVel().getView();
-  auto r_view = this->particles->getPoints.getView();
+  auto r_view = this->particles->getPoints().getView();
 
   auto drho_view = this->getDrho().getView();
   auto a_view = this->getAcc().getView();
