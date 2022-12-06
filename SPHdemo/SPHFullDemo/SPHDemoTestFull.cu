@@ -35,6 +35,10 @@
 #include "../../SPH/Models/WCSPH_DBC/Interactions.h"
 #include "../../SPH/Models/EquationOfState.h"
 
+#include "../../SPH/Models/EquationOfState.h"
+#include "../../SPH/Models/DiffusiveTerms.h"
+#include "../../SPH/Kernels.h"
+
 using namespace TNL;
 
 int main( int argc, char* argv[] )
@@ -62,11 +66,11 @@ int main( int argc, char* argv[] )
   SPHSimulation mySPHSimulation( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
 
   /*** TEMP ***/
-  mySPHSimulation.model.vars.h = SPHConfig::h;
-  mySPHSimulation.model.vars.m = SPHConfig::mass;
-  mySPHSimulation.model.vars.speedOfSound = SPHConfig::speedOfSound;
-  mySPHSimulation.model.vars.coefB = SPHConfig::coefB;
-  mySPHSimulation.model.vars.rho0 = SPHConfig::rho0;
+  mySPHSimulation.model->h = SPHConfig::h;
+  mySPHSimulation.model->m = SPHConfig::mass;
+  mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
+  mySPHSimulation.model->coefB = SPHConfig::coefB;
+  mySPHSimulation.model->rho0 = SPHConfig::rho0;
 
   /***
    * Read the particle file.
@@ -74,7 +78,7 @@ int main( int argc, char* argv[] )
   const std::string inputFileName="./dambreak.vtk";
   Reader myReader( inputFileName );
   myReader.detectParticleSystem();
-  myReader.template loadParticle< ParticleSystem >( mySPHSimulation.particles );
+  myReader.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
 
   /***
    * Setup type for boundary particles and initial condition.
@@ -96,6 +100,8 @@ int main( int argc, char* argv[] )
   //:debug: std::cout << "Grid cell indices: " << mySPHSimulation.particles.getGridCellIndices() << std::endl;
   //:debug std::cout << "Particle cell indices: " << mySPHSimulation.particles.getParticleCellIndices() << std::endl;
 
+  using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >; //-> template
+  using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >; //-> template
 
   //test: /**
   //test:  * Find neighbors within the SPH simulation.
@@ -126,23 +132,25 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 5000; time ++ )
+  for( unsigned int time = 0; time < 200; time ++ )
   {
 
     std::cout << "STEP: " << time << std::endl;
     mySPHSimulation.PerformNeighborSearch( time );
     std::cout << "search... done." << std::endl;
 
-    mySPHSimulation.Interact();
+  	mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm >();
     std::cout << "interact... done." << std::endl;
 
     //#include "outputForDebug.h"
 
 		if( time % 20 == 0 ) {
-    	mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+    	//mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
+    	mySPHSimulation.model->IntegrateEuler( 0.00005 );
 		}
 		else {
-    	mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+    	//mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
+    	mySPHSimulation.model->IntegrateVerlet( 0.00005 );
 		}
 		//if(time < 5 )
    	//mySPHSimulation.model.integrator.IntegrateVerlet( ParticlesConfig::numberOfParticles, 0.00005 );
@@ -150,7 +158,7 @@ int main( int argc, char* argv[] )
 		//: mySPHSimulation.model.integrator.IntegrateEuler( ParticlesConfig::numberOfParticles, 0.00005 );
     std::cout << "integrate... done." << std::endl;
 
-    mySPHSimulation.model.template ComputePressureFromDensity< EOS >();
+    mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
     std::cout << "compute pressure... done." << std::endl;
 
 		//#include "outputForDebugNbs.h"
@@ -164,8 +172,8 @@ int main( int argc, char* argv[] )
 	//#include "writeBoundaryParticleData.h"
 
   //#include "printNeighborList.h"
-	#include "writeFluidParticleData.h"
-	//#include "writeParticleData.h"
+	//#include "writeFluidParticleData.h"
+	#include "writeParticleData.h"
 
 	//mySPHSimulation.particles.GetParticlesInformations();
 

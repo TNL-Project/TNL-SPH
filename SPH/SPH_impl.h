@@ -134,9 +134,9 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 
 	 		/* SAVE INTERACTION RESULTS */
 
-			//bug: view_Drho[ i ] = drho_i;
-			//bug: a_i += { 0., 9.81 };
-			//bug: view_a[ i ] = a_i;
+			view_Drho[ i ] = drho_i;
+			a_i[1] -= 9.81;
+			view_a[ i ] = a_i;
 
 
 		 } // if - process fluid particle

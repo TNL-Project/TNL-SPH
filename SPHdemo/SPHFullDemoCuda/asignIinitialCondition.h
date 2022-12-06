@@ -100,7 +100,7 @@ auto initCond = [=] __cuda_callable__ ( int p  ) mutable
   }
 
     rho_view[ p ] = 1000.;
-    p_view[ p ] = 1000.;
+    p_view[ p ] = 0.;
     v_view[ p ] = 0.;
 
     ////fill in integrator arrays

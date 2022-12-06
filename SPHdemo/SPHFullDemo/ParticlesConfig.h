@@ -26,8 +26,8 @@ class ParticleSystemConfig
 
   //static constexpr RealType searchRadius = 0.01414213;
   static constexpr RealType searchRadius = 0.02828426*1.005;
-  static constexpr int gridXsize = 65; /* 65 */
-  static constexpr int gridYsize = 35; /* 35 */
+  static constexpr int gridXsize = 65 + 2; /* 65 */
+  static constexpr int gridYsize = 35 + 2; /* 35 */
 
   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
   /*
@@ -35,8 +35,8 @@ class ParticleSystemConfig
   static constexpr int gridYbegin = -1;
   */
 
-  static constexpr RealType gridXbegin = -0.04;
-  static constexpr RealType gridYbegin = -0.04;
+  static constexpr RealType gridXbegin = -0.04 - searchRadius * 1;
+  static constexpr RealType gridYbegin = -0.04 - searchRadius * 1;
 
   // ... set particle system ...
 
