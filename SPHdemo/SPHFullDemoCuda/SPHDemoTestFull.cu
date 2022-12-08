@@ -139,7 +139,7 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 20; time ++ )
+  for( unsigned int time = 0; time < 1000; time ++ )
   //for( unsigned int time = 0; time < 5; time ++ )
   {
 
@@ -171,7 +171,7 @@ int main( int argc, char* argv[] )
 
     //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles->getPoints() << std::endl;
     //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
-    std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model->getRho() << std::endl;
+    //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model->getRho() << std::endl;
     //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
   }
 
@@ -179,7 +179,7 @@ int main( int argc, char* argv[] )
 
   //: //#include "printNeighborList.h"
 	//: #include "writeFluidParticleData.h"
-	//#include "writeParticleData.h"
+	#include "writeParticleData.h"
 
 	//: //mySPHSimulation.particles.GetParticlesInformations();
 

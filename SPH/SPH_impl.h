@@ -11,7 +11,8 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    /**
     * Compute gird nad partice cell indices.
     */
-   //particles->resetNeighborList();
+   neighborSearch->resetListWithIndices();
+
 	 if( step == 0 )
    particles->computeGridCellIndices(); //I DONT NEED TO REPEAT THIS!
 
@@ -25,6 +26,10 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     	std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
     	//particles.sortParticles();
 	 }
+
+
+   neighborSearch->particlesToCells();
+   std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
 
    //debug: std::cout << particles->getParticleCellIndices() << std::endl; //debug
 
@@ -41,6 +46,7 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
+	 printf("Running: SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()");
 
 	 /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
 	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
@@ -71,6 +77,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) mutable
 	 {
 		 const unsigned int activeCell = view_particleCellIndex[ i ];
+		 //printf("i:%d", i);
 
 		 /* This should be some interaction structure  - properties of particle A:*/
 		 const PointType r_i = view_points[ i ];
@@ -91,7 +98,11 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 		 		 	 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
 		 		 	 int j = view_firstCellParticle[ neighborCell ]; //USE INT MAX
 
-		 		 	 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+					 //printf("Particle i = %d in cell %d and particle j = %d in cell %d.\n", i, activeCell, j, neighborCell);
+
+		 		 	 //while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+		 		 	 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( i != j ) && ( view_particleCellIndex[ j ] == neighborCell )  ){
+					 if( i == j ){printf("problem!");}
 
      		  		//if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
 		 		  		//{	}
@@ -135,7 +146,8 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 	 		/* SAVE INTERACTION RESULTS */
 
 			view_Drho[ i ] = drho_i;
-			a_i[1] -= 9.81;
+							//printf("drho: %f", drho_i);
+			a_i[1] -= 9.81 ;
 			view_a[ i ] = a_i;
 
 
@@ -149,7 +161,9 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 		 		 	 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
 		 		 	 int j = view_firstCellParticle[ neighborCell ]; //USE INT MAX
 
-		 		 	 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+		 		 	 //while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+		 		 	 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( i != j ) && ( view_particleCellIndex[ j ] == neighborCell )  ){
+					 //if( i == j ){ continue; }
 
      		  			//if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
 		 		  			//{	}
@@ -173,7 +187,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 
 							const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
 							const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-  						const RealType drho = ( dv, gradW ) * m - diffTerm;
+  						drho_i += ( dv, gradW ) * m - diffTerm;
   						//const RealType drho = ( dv, gradW )*vars.m;
   						const PointType a = { 0., 0. };
 

@@ -34,6 +34,21 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getCellLastParticleList()
 template< typename ParticleConfig, typename ParticleSystem >
 __cuda_callable__
 void
+NeighborSearch< ParticleConfig, ParticleSystem >::resetListWithIndices
+()
+{
+
+   auto view_firstCellParticle = this->firstCellParticle.getView();
+   auto init = [=] __cuda_callable__ ( int i ) mutable
+   {
+   		view_firstCellParticle[ i ] = INT_MAX ;
+   };
+   Algorithms::ParallelFor< DeviceType >::exec( 0, this->firstCellParticle.getSize(), init );
+}
+
+template< typename ParticleConfig, typename ParticleSystem >
+__cuda_callable__
+void
 NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
 ()
 {
@@ -43,6 +58,9 @@ NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
    auto view_lastCellParticle = this->lastCellParticle.getView();
    //auto view_particleCellIndex = this->particles->getParticleCellIndices().getData(); //works for loop
    auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
+
+	 //RESET LIST
+	 //view_particleCellIndex = INT_MAX;
 
    //: //resolve first particle by hand
    //view_firstCellParticle[  view_particleCellIndex[ 0 ] ] = 0;

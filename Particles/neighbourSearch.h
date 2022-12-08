@@ -108,6 +108,12 @@ public:
   void
   searchForNeighbors();
 
+  /**
+   * Run the cycle to search for neighbors.
+   */
+	void
+  resetListWithIndices();
+
 
 protected:
 

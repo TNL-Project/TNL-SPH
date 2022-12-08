@@ -4,6 +4,9 @@ auto p_view = mySPHSimulation.model->getPress().getView();
 auto v_view = mySPHSimulation.model->getVel().getView();
 auto r_view = mySPHSimulation.particles->getPoints().getView();
 
+//integrator
+//auto v_view = mySPHSimulation.model->getVel().getView();
+
 for( unsigned int p = 0; p < mySPHSimulation.particles->getNumberOfParticles(); p ++ )
 {
 

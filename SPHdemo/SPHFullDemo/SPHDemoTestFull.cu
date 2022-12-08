@@ -132,7 +132,8 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 200; time ++ )
+  for( unsigned int time = 0; time < 2; time ++ )
+  //for( unsigned int time = 0; time < 200; time ++ )
   {
 
     std::cout << "STEP: " << time << std::endl;
@@ -165,8 +166,9 @@ int main( int argc, char* argv[] )
 
     //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
     //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
-    //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model.vars.p << std::endl;
-    //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model.vars.v << std::endl;
+    //std::cout << "mySPHSimulation PRESSURE: " << mySPHSimulation.model->getPress() << std::endl;
+    std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model->getDrho() << std::endl;
+    //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model->getAcc() << std::endl;
   }
 
 	//#include "writeBoundaryParticleData.h"
