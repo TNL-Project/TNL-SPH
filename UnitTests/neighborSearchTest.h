@@ -173,6 +173,7 @@ TEST( SearchForNeighborsTest, NeighborSearchHost )
    //create neighbor search and search for neighbors:
    NeighborSearchPointer nbs( particles, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize  );
    nbs->searchForNeighbors();
+   //nbs->searchForNeighborsClean();
 
 	//std::cout << "Nbsearch getCellFirstParticleList: " << nbs->getCellFirstParticleList() << std::endl;
 	//std::cout << "Nbsearch getCellLastParticleList: " << nbs->getCellLastParticleList() << std::endl;

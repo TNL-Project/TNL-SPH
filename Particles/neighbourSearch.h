@@ -94,6 +94,14 @@ public:
   void
   getAllNeighborCells();
 
+	/**
+	 * Particle negihbor loop.
+	 */
+	template< typename Function, typename... FunctionArgs >
+  __cuda_callable__
+  void
+	neighborParticleLoop( GlobalIndexType i, Function f, FunctionArgs... args  );
+
   /**
    * Test particles in two neighbor cells.
    */
@@ -107,6 +115,12 @@ public:
   //__cuda_callable__
   void
   searchForNeighbors();
+
+  /**
+   * New version of neighbor search.
+   */
+  void
+  searchForNeighborsClean();
 
   /**
    * Run the cycle to search for neighbors.
