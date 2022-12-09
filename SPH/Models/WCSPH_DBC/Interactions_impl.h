@@ -127,12 +127,10 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
          swap( view_v[ i ], view_v[ j ] );
          swap( view_a[ i ], view_a[ j ] );
 	 			//temp, this needs to be done in better way - sort integrator arrays
-				 /*
          swap( view_rhoO[ i ], view_rhoO[ j ] );
          swap( view_vO[ i ], view_vO[ j ] );
          swap( view_rhoOO[ i ], view_rhoOO[ j ] );
          swap( view_vOO[ i ], view_vOO[ j ] );
-				 */
          } );
 }
 

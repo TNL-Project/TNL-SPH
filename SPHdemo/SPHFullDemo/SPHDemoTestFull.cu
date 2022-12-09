@@ -132,7 +132,7 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 2; time ++ )
+  for( unsigned int time = 0; time < 11; time ++ )
   //for( unsigned int time = 0; time < 200; time ++ )
   {
 
@@ -162,12 +162,14 @@ int main( int argc, char* argv[] )
     mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
     std::cout << "compute pressure... done." << std::endl;
 
-		//#include "outputForDebugNbs.h"
+		#include "outputForDebug.h"
 
-    //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles.getPoints() << std::endl;
+    //std::cout << "mySPHSimulation POINTS: " << time << std::endl << mySPHSimulation.particles->getPoints() << std::endl;
+    //std::cout << "mySPHSimulation CELLINDICES: " << time << std::endl << mySPHSimulation.particles->getParticleCellIndices() << std::endl;
     //std::cout << "mySPHSimulation DERIVATIVES: " << time << std::endl << mySPHSimulation.model.vars.DrhoDv << std::endl;
     //std::cout << "mySPHSimulation PRESSURE: " << mySPHSimulation.model->getPress() << std::endl;
-    std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model->getDrho() << std::endl;
+    //std::cout << "mySPHSimulation DRHO: " << mySPHSimulation.model->getDrho() << std::endl;
+    //std::cout << "mySPHSimulation DENSIY: " << mySPHSimulation.model->getRho() << std::endl;
     //std::cout << "mySPHSimulation RHO: " << mySPHSimulation.model->getAcc() << std::endl;
   }
 

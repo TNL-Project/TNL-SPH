@@ -439,7 +439,6 @@ TEST( SearchForNeighborsTest, NeighborSearchCuda )
 }
 #endif /* HAVE_CUDA */
 
-/*
 TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
 {
    using ParticlesConfigCentric =  ParticlesConfigCentric< TNL::Devices::Host > ;
@@ -486,6 +485,35 @@ TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
    NeighborSearchPointer nbs( particles, ParticlesConfigCentric::gridXsize * ParticlesConfigCentric::gridYsize  );
    nbs->searchForNeighbors();
 
+	 for ( unsigned int p = 0; p < 12; p++ )
+		  if ( particles->getPoint( p ) == point0 )
+   		 	 EXPECT_EQ( particles->getNeighborsCount( p ), 2 );
+	 		else if ( particles->getPoint( p ) == point1 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 3 );
+	 		else if ( particles->getPoint( p ) == point2 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 3 );
+	 		else if ( particles->getPoint( p ) == point3 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 2 );
+	 		else if ( particles->getPoint( p ) == point4 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 3 );
+	 		else if ( particles->getPoint( p ) == point5 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 4 );
+	 		else if ( particles->getPoint( p ) == point6 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 4 );
+	 		else if ( particles->getPoint( p ) == point7 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 3 );
+	 		else if ( particles->getPoint( p ) == point8 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 2 );
+	 		else if ( particles->getPoint( p ) == point9 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 3 );
+	 		else if ( particles->getPoint( p ) == point10 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 3 );
+	 		else if ( particles->getPoint( p ) == point11 )
+   			 EXPECT_EQ( particles->getNeighborsCount( p ), 2 );
+	 		else
+				std::cout << "Unexpected error." << std::endl;
+
+	 /*
    //test neighbor list
    // - test number of neigbors
    EXPECT_EQ( particles->getNeighborsCount( 0 ), 4 );
@@ -547,6 +575,7 @@ TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
 
    EXPECT_EQ( particles->getNeighbor( 11 , 0 ), 10 );
    EXPECT_EQ( particles->getNeighbor( 11 , 1 ), 8 );
+	 */
 }
 
 /*

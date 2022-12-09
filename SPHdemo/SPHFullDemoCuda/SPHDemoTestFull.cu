@@ -139,7 +139,7 @@ int main( int argc, char* argv[] )
 
   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
 
-  for( unsigned int time = 0; time < 1000; time ++ )
+  for( unsigned int time = 0; time < 1500; time ++ )
   //for( unsigned int time = 0; time < 5; time ++ )
   {
 
