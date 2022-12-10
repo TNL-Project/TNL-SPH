@@ -102,7 +102,13 @@ public:
 	template< typename Function, typename... FunctionArgs >
   __cuda_callable__
   void
-	neighborParticleLoop( GlobalIndexType k, Function f, FunctionArgs... args  );
+	neighborParticleLoop( Function f, FunctionArgs... args  ); //rename this
+
+	template< typename Function, typename... FunctionArgs >
+  __cuda_callable__
+  void
+	//onlyNeighborParticleLoop( GlobalIndexType i, Function f, FunctionArgs... args  ); //rename this
+	onlyNeighborParticleLoop( GlobalIndexType i, GlobalIndexType numberOfParticles, CellIndexArrayView view_firstCellParticle,  CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args );
 
   /**
    * Test particles in two neighbor cells.
@@ -122,7 +128,10 @@ public:
    * New version of neighbor search.
    */
   void
-  searchForNeighborsClean();
+  searchForNeighborsFull(); //rename this
+
+  void
+  searchForNeighborsOnly(); //rename this
 
   /**
    * Run the cycle to search for neighbors.
