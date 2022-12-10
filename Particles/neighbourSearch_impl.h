@@ -265,19 +265,23 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighbors()
 {
    NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells();
 	 cudaDeviceSynchronize();
-   NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid();
+   //NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid();
+   NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsClean();
 }
 
 template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::neighborParticleLoop( GlobalIndexType i, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::neighborParticleLoop( GlobalIndexType k, Function f, FunctionArgs... args )
 {
    static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
-	 const auto view_firstCellParticle = this->neighborSearch->getCellFirstParticleList().getView();
+	 const auto view_firstCellParticle = getCellFirstParticleList().getView();
 	 const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
 	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
+
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) mutable
+	 {
 
 	 const unsigned int activeCell = view_particleCellIndex[ i ];
 	 for( int ci = -1; ci <= 1; ci++ ){
@@ -288,11 +292,16 @@ NeighborSearch< ParticleConfig, ParticleSystem >::neighborParticleLoop( GlobalIn
 
 		 		 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
 					  if( i == j ){ j++; continue; }
-				 		f( args... );
+				 		//f( i, j, args... );
+				 		f( i, j );
 		 		 		j++;
 		 		 } //while over particle in cell
 			} //for cells in y direction
 	 } //for cells in x direction
+
+	 };
+	 Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop );
+
 }
 
 template< typename ParticleConfig, typename ParticleSystem >
@@ -304,7 +313,14 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsClean()
 	 NeighborsCountView view_neighborsCount = this->particles->getNeighborsCountList().getView();
 	 NeighborsView view_neighbors = this->particles->getNeighborsList().getView();
 
-   auto compareTwoParticles = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j  ) //mutable
+	 /*
+   static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
+	 const auto view_firstCellParticle = getCellFirstParticleList().getView();
+	 const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
+	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
+	 printf(" First item: %d. \n", view_firstCellParticle[ 0 ]);
+	 */
+   auto compareTwoParticles = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j  ) mutable
 	 {
     	if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
 			{
@@ -313,11 +329,16 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsClean()
 			}
 	 };
 
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) //mutable
+	 /*
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) mutable
 	 {
 		 this->neighborParticleLoop( i, compareTwoParticles );
+		 //NeighborSearch< ParticleConfig, ParticleSystem >::neighborParticleLoop( i, compareTwoParticles );
 	 };
 	 Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop );
+	 */
+
+	 this->neighborParticleLoop(0, compareTwoParticles );
 }
 
 } // ParticleSystem
