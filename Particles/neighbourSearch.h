@@ -1,6 +1,8 @@
 #pragma once
 
 #include <limits> //UINT_MAX
+#include <utility> //std::forward
+
 //#define UINT_MAX = std::numeric_limits<unsigned int>::max()
 
 #include "Particles.h"
@@ -100,7 +102,7 @@ public:
 	template< typename Function, typename... FunctionArgs >
   __cuda_callable__
   void
-	neighborParticleLoop( GlobalIndexType i, Function f, FunctionArgs... args  );
+	neighborParticleLoop( GlobalIndexType k, Function f, FunctionArgs... args  );
 
   /**
    * Test particles in two neighbor cells.

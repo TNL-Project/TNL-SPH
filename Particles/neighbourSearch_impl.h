@@ -280,27 +280,26 @@ NeighborSearch< ParticleConfig, ParticleSystem >::neighborParticleLoop( GlobalIn
 	 const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
 	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
 
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) mutable
+   //C++20 solution: auto particleLoop = [=, ... args = std::forward< FunctionArgs >( args )] __cuda_callable__ ( LocalIndexType i  ) mutable
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, FunctionArgs... args ) mutable
 	 {
+	  	const unsigned int activeCell = view_particleCellIndex[ i ];
+	  	for( int ci = -1; ci <= 1; ci++ ){
+	  	   for( int cj = -1; cj <= 1; cj++ ){
 
-	 const unsigned int activeCell = view_particleCellIndex[ i ];
-	 for( int ci = -1; ci <= 1; ci++ ){
-	    for( int cj = -1; cj <= 1; cj++ ){
+	  	  		 const unsigned int neighborCell = activeCell + cj * numberOfCellsInX + ci;
+	  	  		 int j = view_firstCellParticle[ neighborCell ];
 
-		 		 const unsigned int neighborCell = activeCell + cj * numberOfCellsInX + ci;
-		 		 int j = view_firstCellParticle[ neighborCell ];
-
-		 		 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
-					  if( i == j ){ j++; continue; }
-				 		//f( i, j, args... );
-				 		f( i, j );
-		 		 		j++;
-		 		 } //while over particle in cell
-			} //for cells in y direction
-	 } //for cells in x direction
-
+	  	  		 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+	  	 			  if( i == j ){ j++; continue; }
+	  	 		 		//f( i, j, args... );
+	  	 		 		f( i, j );
+	  	  		 		j++;
+	  	  		 } //while over particle in cell
+	  	 	} //for cells in y direction
+	  	} //for cells in x direction
 	 };
-	 Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop );
+	 Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop, args... );
 
 }
 
