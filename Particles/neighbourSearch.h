@@ -108,7 +108,7 @@ public:
   __cuda_callable__
   void
 	//onlyNeighborParticleLoop( GlobalIndexType i, Function f, FunctionArgs... args  ); //rename this
-	onlyNeighborParticleLoop( GlobalIndexType i, GlobalIndexType numberOfParticles, CellIndexArrayView view_firstCellParticle,  CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args );
+	onlyNeighborParticleLoop( const GlobalIndexType i, const GlobalIndexType numberOfParticles, const CellIndexArrayView view_firstCellParticle, const CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args );
 
   /**
    * Test particles in two neighbor cells.

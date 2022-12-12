@@ -267,7 +267,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighbors()
 	 cudaDeviceSynchronize();
    //NeighborSearch< ParticleConfig, ParticleSystem >::runCycleOverGrid();
 
-
    //NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsFull();
    NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsOnly();
 }
@@ -331,7 +330,7 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::onlyNeighborParticleLoop( GlobalIndexType i, GlobalIndexType numberOfParticles, CellIndexArrayView view_firstCellParticle,  CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::onlyNeighborParticleLoop( const GlobalIndexType i, const GlobalIndexType numberOfParticles, const CellIndexArrayView view_firstCellParticle, const CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args )
 {
    static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
 	 /* This would be nice to have here */
@@ -365,7 +364,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsOnly()
 	 NeighborsCountView view_neighborsCount = this->particles->getNeighborsCountList().getView();
 	 NeighborsView view_neighbors = this->particles->getNeighborsList().getView();
 
-   static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
 	 const auto view_firstCellParticle = getCellFirstParticleList().getView();
 	 const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
 	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();

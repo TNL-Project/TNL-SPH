@@ -56,10 +56,10 @@ public:
   //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ), integrator( size, vars, particles ) {}; //add integrator
   //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ) {}; //add integrator
   //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), rhoOO( size ), vO( size ), vOO( size ), particles( particles ) {}; //add integrator
-  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), rhoOO( size ), vO( size ), vOO( size ), particles( particles )  //add integrator
+  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), particles( particles )  //add integrator
 	{
-		vO = 0.; vOO = 0.;
-		rhoO = 1000.; rhoOO = 1000.;
+		vO = 0.;
+		rhoO = 1000.;
 	}
 
 	/* NEW */
@@ -180,9 +180,6 @@ public:
 
   ScalarArrayType rhoO;
   VectorArrayType vO;
-
-  ScalarArrayType rhoOO;
-  VectorArrayType vOO;
 
 
 	/* Constants */

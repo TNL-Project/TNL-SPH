@@ -110,9 +110,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 	 auto view_rhoO = rhoO.getView();
 	 auto view_vO = vO.getView();
 
-	 auto view_rhoOO = rhoOO.getView();
-	 auto view_vOO = vOO.getView();
-
    Algorithms::sort< DeviceType, GlobalIndexType >(
        0, particles->getNumberOfParticles(),
        [=] __cuda_callable__ ( int i, int j ) -> bool {
@@ -129,8 +126,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 	 			//temp, this needs to be done in better way - sort integrator arrays
          swap( view_rhoO[ i ], view_rhoO[ j ] );
          swap( view_vO[ i ], view_vO[ j ] );
-         swap( view_rhoOO[ i ], view_rhoOO[ j ] );
-         swap( view_vOO[ i ], view_vOO[ j ] );
          } );
 }
 
@@ -288,9 +283,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt 
     auto rhoO_view = this->rhoO.getView();
     auto vO_view = this->vO.getView();
 
-    auto rhoOO_view = this->rhoOO.getView();
-    auto vOO_view = this->vOO.getView();
-
     auto rho_view = this->getRho().getView();
     auto v_view = this->getVel().getView();
     auto r_view = this->particles->getPoints().getView();
@@ -304,6 +296,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt 
     auto init = [=] __cuda_callable__ ( int i ) mutable
     {
 
+			/*
        r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
        rho_view[ i ] = rhoOO_view[ i ] + drho_view[ i ] * dt2;
        v_view[ i ] = vOO_view[ i ] + a_view[ i ] * dt2;
@@ -313,10 +306,24 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt 
 
        rhoOO_view[ i ] = rhoO_view[ i ];
        rhoO_view[ i ] = rho_view[ i ];
+			 */
+
+       r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
+       vO_view[ i ] += a_view[ i ] * dt2;
+
+       rhoO_view[ i ] += drho_view[ i ] * dt2;
 
     };
-
     Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
+
+		//auto velocity_auxData = getVel().getData();
+		//v_view = vO_view;
+		//vO_view = velocity_auxView;
+
+		//auto rho_auxView = getRho().getView();
+		//rho_view = rhoO_view;
+		//rhoO_view = rho_auxView;
+		std::swap( this->v, this->vO );
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -326,9 +333,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
 
   auto rhoO_view = this->rhoO.getView();
   auto vO_view = this->vO.getView();
-
-  auto rhoOO_view = this->rhoOO.getView();
-  auto vOO_view = this->vOO.getView();
 
   auto rho_view = this->getRho().getView();
   auto v_view = this->getVel().getView();
@@ -342,6 +346,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
   auto init = [=] __cuda_callable__ ( int i ) mutable
   {
 
+		/*
 			v_view[ i ] += a_view[ i ] * dt;
      	r_view[ i ] += vO_view[ i ] * dt + a_view[ i ] * dtdt05;
 			rho_view[ i ] += drho_view[ i ] * dt;
@@ -351,12 +356,18 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
 
      	rhoOO_view[ i ] = rhoO_view[ i ];
      	rhoO_view[ i ] = rho_view[ i ];
+			*/
+
+      r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
+			vO_view[ i ] = v_view[ i ];
+			v_view[ i ] += a_view[ i ] * dt;
+			rhoO_view[ i ] = rho_view[ i ];
+			rho_view[ i ] += drho_view[ i ] * dt;
 
   };
 
   Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
 }
-
 
 
 } // SPH
