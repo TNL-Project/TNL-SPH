@@ -5,13 +5,6 @@
 
 #include "../Particles/Particles.h"
 
-#include "Models/EquationOfState.h"
-#include "Models/DiffusiveTerms.h"
-#include "Models/VisousTerms.h"
-//#include "Integrator.h"
-
-#include "Kernels.h"
-
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -32,19 +25,11 @@ public:
 	using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 	using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
 	using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
-	//using ModelPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
-
-  //using DiffusiveTerm_MT = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
-  //using ViscousTerm_AV = ArtificialViscosity< SPHFluidConfig >; //-> template
-
 
   SPHSimulation() = default;
 
   SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
-  //IDLT: : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles.getPoints(), particles ) {};
   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ) {};
-
-//protected:
 
   /**
    * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -52,16 +37,12 @@ public:
   void PerformNeighborSearch( GlobalIndexType step );
 
   /**
-   * Proces one particle (i.e. loop over all its neighbors and perform interactions).
-   */
-  void ProcessOneParticle( GlobalIndexType index_i );
-
-  /**
-   * Perform cycle over all particles. For each of them load  all the neighbors and
-   * perform the interactions.
+   * Perform interaction for all particles, i.e. for all types.
    */
 	template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
   void Interact();
+
+//protected:
 
   ParticlePointer particles;
   NeighborSearchPointer neighborSearch;

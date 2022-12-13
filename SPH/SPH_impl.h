@@ -19,30 +19,22 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    std::cout << " - neighborSearch->resetListWithIndices();... done";
 	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
 
-	 if( step == 0 )
-   particles->computeGridCellIndices(); //I DONT NEED TO REPEAT THIS!
+	 if( step == 0 ) //TODO: do this better
+   particles->computeGridCellIndices();
 
-   //std::cout << "SPHSimulation::PerformNeighborSearch(): ... OK" << std::endl; //debug
    timer.reset();
 	 timer.start();
    particles->computeParticleCellIndices();
 	 timer.stop();
    std::cout << " - particles->computeParticleCellIndices();... done ";
 	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
-   //std::cout << "SPHSimulation::computeParticleCellIndices(): ... OK" << std::endl; //debug
 
-	 if( step % 1 == 0 )
-	 {
-   		timer.reset();
-	 		timer.start();
-    	model->sortParticlesAndVariables(); //I DONT NEED TO DO THIS IN EACH STEP!
-	 		timer.stop();
-   		std::cout << " - model->sortParticlesAndVariables();... done ";
-	 		std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
-    	//std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
-    	//particles.sortParticles();
-	 }
-
+   timer.reset();
+	 timer.start();
+   model->sortParticlesAndVariables(); //particles.sortParticles();
+	 timer.stop();
+   std::cout << " - model->sortParticlesAndVariables();... done ";
+	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
 
    timer.reset();
 	 timer.start();
@@ -50,20 +42,10 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 	 timer.stop();
    std::cout << " - neighborSearch->particlesToCells();... done ";
 	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
-   //std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
-
-   //debug: std::cout << particles->getParticleCellIndices() << std::endl; //debug
-
-   //i dont need to compose nblist, interaction are calculated directly: /**
-   //i dont need to compose nblist, interaction are calculated directly:  * Find neigbors.
-   //i dont need to compose nblist, interaction are calculated directly:  */
-   //i dont need to compose nblist, interaction are calculated directly: neighborSearch->searchForNeighbors();
-   //i dont need to compose nblist, interaction are calculated directly: std::cout << "neighborSearch.searchForNeighbors() ... OK" << std::endl; //debug
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
-//template< typename SPHKernelFunction = WendlandKernel, typename DiffusiveTerm = DiffusiveTerm_MT, typename VisousTerm = ViscousTerm_AV >
 void
 SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
@@ -86,7 +68,6 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 	 RealType delta = model->delta;
 	 RealType alpha = model->alpha;
 
-
 	 /* VARIABLES AND FIELD ARRAYS */
 	 const auto view_particleType = model->getParticleType().getView();
 	 const auto view_rho = model->getRho().getView();
@@ -98,9 +79,8 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i  ) mutable
 	 {
 		 const unsigned int activeCell = view_particleCellIndex[ i ];
-		 //printf("i:%d", i);
 
-		 /* This should be some interaction structure  - properties of particle A:*/
+		 /*TODO: This should be some interaction structure  - properties of particle A:*/
 		 const PointType r_i = view_points[ i ];
 		 const PointType v_i = view_v[ i ];
 		 const RealType rho_i = view_rho[ i ];
@@ -110,114 +90,93 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 		 RealType drho_i = 0.;
 
 		 /* LOAD OTHER PARTICLE DATA */
-		 /* Process fluid particle */
+		 // Process fluid particle
 		 if( view_particleType[ i ] == 0 )
 		 {
 		 		for( int ci = -1; ci <= 1; ci++ ){
 		 		  for( int cj = -1; cj <= 1; cj++ ){
+		 		 		 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
+		 		 	 	 int j = view_firstCellParticle[ neighborCell ];
+		 		 	 	 while( ( j < numberOfParticles ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+					 	 		if( i == j ){ j++; continue; }
 
-		 		 	 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
-		 		 	 int j = view_firstCellParticle[ neighborCell ]; //USE INT MAX
+		 		 	 	   	/* START OF LOOP OVER NEIGHBROS */
 
-					 //printf("Particle i = %d in cell %d and particle j = %d in cell %d.\n", i, activeCell, j, neighborCell);
+		 			 	  	/* This should be some interaction structure - properties of particle B:*/
+		 			 	  	const PointType r_j = view_points[ j ];
+		 			 	  	const PointType v_j = view_v[ j ];
+		 			 	  	const RealType rho_j = view_rho[ j ];
+		 			 	  	const RealType p_j = view_p[ j ];
 
+					 	  	/* Interaction: */
+  				 	  	const PointType dr = r_i - r_j;
+  				 	  	const PointType dv = v_i - v_j;
 
-		 		 	 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
-		 		 	 //while( ( j < numberOfParticles ) && ( j >= 0 ) && ( i != j ) && ( view_particleCellIndex[ j ] == neighborCell )  ){
-					 if( i == j ){ j++; continue; }
+  				 	  	const RealType drs = l2Norm( dr );
+  				 	  	const RealType F = SPHKernelFunction::F( drs, h );
+  				 	  	const PointType gradW = dr * F;
 
-     		  		//if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
-		 		  		//{	}
+					 	  	const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+					 	  	const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
+  				 	  	drho_i += ( dv, gradW ) * m - diffTerm;
 
-						 	// If im right, this is same for boundary as well as for fluid particles, sice we use DBC only for now.
+  				 	  	const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
+  				 	  	const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
+  				 	  	a_i += ( -1.0 ) * ( p_term + visco )* gradW * m;
 
-		 		 		 	/* START OF LOOP OVER NEIGHBROS */
-						 	/* This should be some interaction structure, mby. - properties of particle B: */
-		 					const PointType r_j = view_points[ j ];
-		 					const PointType v_j = view_v[ j ];
-		 					const RealType rho_j = view_rho[ j ];
-		 					const RealType p_j = view_p[ j ];
+		 		 	 	   	/* END OF LOOP OVER NEIGHBROS */
 
-							/* Interaction: */
+		 		 	 	   j++;
 
-  						const PointType dr = r_i - r_j;
-  						const PointType dv = v_i - v_j;
-
-  						const RealType drs = l2Norm( dr );
-  						const RealType F = SPHKernelFunction::F( drs, h );
-  						const PointType gradW = dr * F;
-
-							const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-							const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-  						drho_i += ( dv, gradW ) * m - diffTerm;
-  						//const RealType drho = ( dv, gradW ) * vars.m + DiffusiveTerm::Psi( vars.rho[ i ], vars.rho[ j ], drs );
-
-  						const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-  						const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
-  						a_i += ( -1.0 ) * ( p_term + visco )* gradW * m;
-
-		 		 		 	/* END OF LOOP OVER NEIGHBROS */
-
-		 		 		 j++;
-
-		 		 	 } //while over particle in cell
+		 		 	 	 } //while over particle in cell
 		 		  } //for cells in y direction
 		 		} //for cells in x direction
 
 	 		/* SAVE INTERACTION RESULTS */
 
 			view_Drho[ i ] = drho_i;
-			a_i[1] -= 9.81 ;
+			a_i[ 1 ] -= 9.81 ;
 			view_a[ i ] = a_i;
 
-
 		 } // if - process fluid particle
-		/* Process boundary particle */
+		// Process boundary particle
 		else if( view_particleType[ i ] == 1 )
 		{
 		 		for( int ci = -1; ci <= 1; ci++ ){
 		 		  for( int cj = -1; cj <= 1; cj++ ){
+		 		 		 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
+		 		 	 	 int j = view_firstCellParticle[ neighborCell ];
+		 		 	 	 while( ( j < numberOfParticles ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+					 	 		if( i == j ){ j++; continue; }
 
-		 		 	 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
-		 		 	 int j = view_firstCellParticle[ neighborCell ]; //USE INT MAX
+		 		 	 	   		 /* START OF LOOP OVER NEIGHBROS */
 
-		 		 	 while( ( j < numberOfParticles ) && ( j >= 0 ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
-		 		 	 //while( ( j < numberOfParticles ) && ( j >= 0 ) && ( i != j ) && ( view_particleCellIndex[ j ] == neighborCell )  ){
-					 if( i == j ){ j++; continue; }
-					 if( view_particleType[ j ] == 0 ){
+					 	 		if( view_particleType[ j ] == 0 ){
 
-     		  			//if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
-		 		  			//{	}
+					 	   		 /* This should be some interaction structure, mby. - properties of particle B: */
+		 			 	  		 const PointType r_j = view_points[ j ];
+		 			 	  		 const PointType v_j = view_v[ j ];
+		 			 	  		 const RealType rho_j = view_rho[ j ];
+		 			 	  		 const RealType p_j = view_p[ j ];
 
-		 		 		 	/* START OF LOOP OVER NEIGHBROS */
+					 	  		 /* Interaction */
+  				 	  		 const PointType dr = r_i - r_j;
+  				 	  		 const PointType dv = v_i - v_j;
 
-						 	/* This should be some interaction structure, mby. - properties of particle B: */
-		 					const PointType r_j = view_points[ j ];
-		 					const PointType v_j = view_v[ j ];
-		 					const RealType rho_j = view_rho[ j ];
-		 					const RealType p_j = view_p[ j ];
+  				 	  		 const RealType drs = l2Norm( dr );
+  				 	  		 const RealType F = SPHKernelFunction::F( drs, h );
+  				 	  		 const PointType gradW = dr*F;
 
-							/* INteraction */
+					 	  		 const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+					 	  		 const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
+  				 	  		 drho_i += ( dv, gradW ) * m - diffTerm;
+					 	  	}
 
-  						const PointType dr = r_i - r_j;
-  						const PointType dv = v_i - v_j;
+		 		 	 	   	/* END OF LOOP OVER NEIGHBROS */
 
-  						const RealType drs = l2Norm( dr );
-  						const RealType F = SPHKernelFunction::F( drs, h );
-  						const PointType gradW = dr*F;
+		 		 	 	   j++;
 
-							const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-							const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-  						drho_i += ( dv, gradW ) * m - diffTerm;
-  						//drho_i = ( dv, gradW ) * m;
-  						const PointType a = { 0., 0. };
-							} //if particle type of inner loop
-
-		 		 		 	/* END OF LOOP OVER NEIGHBROS */
-
-		 		 		 j++;
-
-		 		 	 } //while over particle in cell
+		 		 	 	 } //while over particle in cell
 		 		  } //for cells in y direction
 		 		} //for cells in x direction
 
@@ -228,10 +187,8 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 		} //else if - process boundary particle
 		else
 		{
-			//cerr
-			printf( "-INVALID PARTICLE TYPE!-" );
+			printf( "INVALID PARTICLE TYPE!" ); //cerr
 		}
-
 
 	 };
 	 Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, particleLoop );
