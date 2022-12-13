@@ -8,28 +8,49 @@ template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
 SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step )
 {
+   TNL::Timer timer;
    /**
     * Compute gird nad partice cell indices.
     */
+   timer.reset();
+	 timer.start();
    neighborSearch->resetListWithIndices();
+	 timer.stop();
+   std::cout << " - neighborSearch->resetListWithIndices();... done";
+	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
 
 	 if( step == 0 )
    particles->computeGridCellIndices(); //I DONT NEED TO REPEAT THIS!
 
-   std::cout << "SPHSimulation::PerformNeighborSearch(): ... OK" << std::endl; //debug
+   //std::cout << "SPHSimulation::PerformNeighborSearch(): ... OK" << std::endl; //debug
+   timer.reset();
+	 timer.start();
    particles->computeParticleCellIndices();
-   std::cout << "SPHSimulation::computeParticleCellIndices(): ... OK" << std::endl; //debug
+	 timer.stop();
+   std::cout << " - particles->computeParticleCellIndices();... done ";
+	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+   //std::cout << "SPHSimulation::computeParticleCellIndices(): ... OK" << std::endl; //debug
 
 	 if( step % 1 == 0 )
 	 {
+   		timer.reset();
+	 		timer.start();
     	model->sortParticlesAndVariables(); //I DONT NEED TO DO THIS IN EACH STEP!
-    	std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
+	 		timer.stop();
+   		std::cout << " - model->sortParticlesAndVariables();... done ";
+	 		std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+    	//std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
     	//particles.sortParticles();
 	 }
 
 
+   timer.reset();
+	 timer.start();
    neighborSearch->particlesToCells();
-   std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
+	 timer.stop();
+   std::cout << " - neighborSearch->particlesToCells();... done ";
+	 std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+   //std::cout << "SPHSimulation::sortParticlesAndVariables(): ... OK" << std::endl; //debug
 
    //debug: std::cout << particles->getParticleCellIndices() << std::endl; //debug
 
@@ -46,7 +67,6 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
-	 printf("Running: SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()");
 
 	 /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
 	 GlobalIndexType numberOfParticles = particles->getNumberOfParticles();

@@ -3,8 +3,6 @@
 #include <limits> //UINT_MAX
 #include <utility> //std::forward
 
-//#define UINT_MAX = std::numeric_limits<unsigned int>::max()
-
 #include "Particles.h"
 
 namespace TNL {
@@ -26,20 +24,6 @@ public:
 	using CellIndexType = typename ParticleSystem::CellIndexType;
   using CellIndexArrayType = typename ParticleSystem::CellIndexArrayType;
 	using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
-
-	/* Is this good idea? */
-	using PointTypeArrayView = typename Containers::ArrayView< typename ParticleSystem::PointType, DeviceType >;
-	/* Another temp stuff, just make it works, refucktor it away after. */
-	using NeighborsCountView = typename Containers::ArrayView< typename ParticleSystem::LocalIndexType, DeviceType >;
-	using NeighborsView = typename Containers::ArrayView< typename ParticleSystem::GlobalIndexType, DeviceType >;
-
-  /* grid related */
-  using GridType = typename ParticleSystem::GridType;
-  using GridPointer = typename ParticleSystem::GridPointer;
-
-  using myCell = typename ParticleSystem::myCell;
-  //temp
-  using GridCell = typename ParticleSystem::GridType::Cell;
 
   /**
    * Constructors.
@@ -80,76 +64,66 @@ public:
   void
   particlesToCells();
 
-  /**
-   * Run cycle over cells to search for neighbors.
-   */
-  __cuda_callable__
-  void
-  //getNeighborsFromTwoCells(Cell centralCell, Cell neighborCell);
-  //getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle , CellIndexArrayView view_lastCellParticle, PointTypeArrayView view_particles );
-  getNeighborsFromTwoCells(LocalIndexType centralCell, LocalIndexType neighborCell, CellIndexArrayView view_firstCellParticle , CellIndexArrayView view_lastCellParticle, PointTypeArrayView view_particles, NeighborsCountView view_neighborsCount, NeighborsView view_neighbors, RealType searchRadius);
-
-  /**
-   * Test particles in two neighbor cells.
-   */
-  __cuda_callable__
-  void
-  getAllNeighborCells();
-
 	/**
-	 * Particle negihbor loop.
+	 * Runs cycle over all particles, for each particles run cycle over ints negihbors
+	 * and exec given function f for each pair.
 	 */
 	template< typename Function, typename... FunctionArgs >
   __cuda_callable__
   void
-	neighborParticleLoop( Function f, FunctionArgs... args  ); //rename this
+	loopOverParticlesAndNeighbors( Function f, FunctionArgs... args  ); //rename this
 
+	/**
+	 * Loop that for given particle i runs cycle over all its neighbors
+	 * and exec given function f for each pair.
+	 * TODO: Improve the interface and argument handling.
+	 */
 	template< typename Function, typename... FunctionArgs >
   __cuda_callable__
   void
-	//onlyNeighborParticleLoop( GlobalIndexType i, Function f, FunctionArgs... args  ); //rename this
-	onlyNeighborParticleLoop( const GlobalIndexType i, const GlobalIndexType numberOfParticles, const CellIndexArrayView view_firstCellParticle, const CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args );
+	loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType numberOfParticles, const CellIndexArrayView view_firstCellParticle, const CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args );
 
   /**
-   * Test particles in two neighbor cells.
+   * For all particles run loop over neighbors and assemble neighbor list.
+	 * TEMP: This function is actually not used, but show the structure of negihbor loop.
    */
-  //__cuda_callable__
   void
-  runCycleOverGrid();
+  searchForNeighborsExampleLoop();
 
   /**
-   * Run the cycle to search for neighbors.
+   * Runs all necessary functions and fills neighbor list.
    */
-  //__cuda_callable__
   void
   searchForNeighbors();
 
   /**
-   * New version of neighbor search.
+   * Search for neighbors and assemble neighbor list.
+	 * TEMP: This function has some limitations, but show how the neighbor loop should work.
    */
   void
-  searchForNeighborsFull(); //rename this
-
-  void
-  searchForNeighborsOnly(); //rename this
+  searchForNeighborsWithForAll();
 
   /**
-   * Run the cycle to search for neighbors.
+   * Search for neighbors and assemble neighbor list.
+	 */
+  void
+  searchForNeighborsWithForEach();
+
+  /**
+   * Reset the list with first and last particle in cell.
    */
 	void
-  resetListWithIndices();
+  resetListWithIndices(); //protected?
 
 
 protected:
 
-  //const ParticleSystem& particles;
   ParticlePointer particles;
 
   CellIndexArrayType firstCellParticle;
   CellIndexArrayType lastCellParticle;
 
 };
-
 
 } // ParticleSystem
 } // TNL
