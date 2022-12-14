@@ -40,6 +40,7 @@ for( unsigned int p = 0; p < mySPHSimulation.particles->getNumberOfParticles(); 
     mySPHSimulation.model.integrator.vOO[ p ] = 0.;
 		*/
 
+	/*
   if( ( ( r_view[ p ][ 0 ] >  0.   - eps ) && ( r_view[ p ][ 0 ] <  0.   + eps ) ) ||
       ( ( r_view[ p ][ 0 ] > -0.01 - eps ) && ( r_view[ p ][ 0 ] < -0.01 + eps ) ) ||
       ( ( r_view[ p ][ 0 ] > -0.02 - eps ) && ( r_view[ p ][ 0 ] < -0.02 + eps ) ) ||
@@ -49,6 +50,27 @@ for( unsigned int p = 0; p < mySPHSimulation.particles->getNumberOfParticles(); 
       ( ( r_view[ p ][ 0 ] >  1.6  - eps ) && ( r_view[ p ][ 0 ] <  1.6  + eps ) ) ||
       ( ( r_view[ p ][ 0 ] >  1.61 - eps ) && ( r_view[ p ][ 0 ] <  1.61 + eps ) ) ||
       ( ( r_view[ p ][ 0 ] >  1.62 - eps ) && ( r_view[ p ][ 0 ] <  1.62 + eps ) ) )
+	*/
+  if( ( ( r_view[ p ][ 0 ] >  0.   - eps ) && (   r_view[ p ][ 0 ] <  0.   + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] > -0.002 - eps ) && (  r_view[ p ][ 0 ] < -0.002 + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] > -0.004 - eps ) && (  r_view[ p ][ 0 ] < -0.004 + eps ) ) ||
+      ( ( r_view[ p ][ 1 ] >  0.   - eps ) && (   r_view[ p ][ 1 ] <  0.   + eps ) ) ||
+      ( ( r_view[ p ][ 1 ] > -0.002 - eps ) && (  r_view[ p ][ 1 ] < -0.002 + eps ) ) ||
+      ( ( r_view[ p ][ 1 ] > -0.004 - eps ) && (  r_view[ p ][ 1 ] < -0.004 + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] >  1.608  - eps ) && ( r_view[ p ][ 0 ] <  1.608  + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] >  1.61 - eps ) && (   r_view[ p ][ 0 ] <  1.61 + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] >  1.612 - eps ) && (  r_view[ p ][ 0 ] <  1.612 + eps ) ) )
+	/*
+  if( ( ( r_view[ p ][ 0 ] >  0.   - eps ) && (   r_view[ p ][ 0 ] <  0.   + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] > -0.001 - eps ) && (  r_view[ p ][ 0 ] < -0.001 + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] > -0.002 - eps ) && (  r_view[ p ][ 0 ] < -0.002 + eps ) ) ||
+      ( ( r_view[ p ][ 1 ] >  0.   - eps ) && (   r_view[ p ][ 1 ] <  0.   + eps ) ) ||
+      ( ( r_view[ p ][ 1 ] > -0.001 - eps ) && (  r_view[ p ][ 1 ] < -0.001 + eps ) ) ||
+      ( ( r_view[ p ][ 1 ] > -0.002 - eps ) && (  r_view[ p ][ 1 ] < -0.002 + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] >  1.609  - eps ) && ( r_view[ p ][ 0 ] <  1.609  + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] >  1.61 - eps ) && (   r_view[ p ][ 0 ] <  1.61 + eps ) ) ||
+      ( ( r_view[ p ][ 0 ] >  1.611 - eps ) && (  r_view[ p ][ 0 ] <  1.611 + eps ) ) )
+	*/
   {
     type_view[ p ] = 1.;
   }

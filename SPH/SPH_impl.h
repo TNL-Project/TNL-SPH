@@ -57,16 +57,16 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 	 const auto view_lastCellParticle = neighborSearch->getCellLastParticleList().getView(); // DEBUG
 	 const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
 	 const auto view_points = particles->getPoints().getView();
-	 RealType searchRadius = this->particles->getSearchRadius();
+	 const RealType searchRadius = this->particles->getSearchRadius();
 
 	 /* CONSTANT VARIABLES */
-	 RealType h = model->h;
-	 RealType m = model->m;
-	 RealType speedOfSound = model->speedOfSound;
-	 RealType coefB = model->coefB;
-	 RealType rho0 = model->rho0;
-	 RealType delta = model->delta;
-	 RealType alpha = model->alpha;
+	 const RealType h = model->h;
+	 const RealType m = model->m;
+	 const RealType speedOfSound = model->speedOfSound;
+	 const RealType coefB = model->coefB;
+	 const RealType rho0 = model->rho0;
+	 const RealType delta = model->delta;
+	 const RealType alpha = model->alpha;
 
 	 /* VARIABLES AND FIELD ARRAYS */
 	 const auto view_particleType = model->getParticleType().getView();
@@ -97,6 +97,10 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 		 		  for( int cj = -1; cj <= 1; cj++ ){
 		 		 		 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
 		 		 	 	 int j = view_firstCellParticle[ neighborCell ];
+						 //also works: int j_end = view_lastCellParticle[ neighborCell ];//test;
+						 //also works: if( j_end >= numberOfParticles )
+						 //also works:  	j_end = -1;
+		 		 	 	 //also works: while( ( j <= j_end ) ){ //test
 		 		 	 	 while( ( j < numberOfParticles ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
 					 	 		if( i == j ){ j++; continue; }
 
@@ -146,6 +150,10 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
 		 		  for( int cj = -1; cj <= 1; cj++ ){
 		 		 		 const unsigned int neighborCell = activeCell + cj * _numberOfCells + ci;
 		 		 	 	 int j = view_firstCellParticle[ neighborCell ];
+						 //also works: int j_end = view_lastCellParticle[ neighborCell ];//test;
+						 //also works: if( j_end >= numberOfParticles )
+						 //also works:  	j_end = -1;
+		 		 	 	 //also works: while( ( j <= j_end ) ){ //test
 		 		 	 	 while( ( j < numberOfParticles ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
 					 	 		if( i == j ){ j++; continue; }
 

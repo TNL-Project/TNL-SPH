@@ -36,7 +36,6 @@ public:
   using VectorType = typename SPHFluidTraitsType::VectorType;
   using InteractionResultType = typename SPHFluidTraitsType::InteractionResultType;
 
-  //way to hell: using Integrator = VerletIntegrator< Particles, SPHFluidConfig, Variables >; //-> template
   using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
   using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
@@ -49,17 +48,12 @@ public:
 
   /**
    * Constructor.
-   **/
-  //IDLT: WCSPH_DBC( GlobalIndexType size, PointArrayType& points_ref, Particles& particles_ref )
-  //IDLT: : vars( size ), points( points_ref ), particles( particles_ref ), integrator( size, vars, points ) {};
+   */
   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-  //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ), integrator( size, vars, particles ) {}; //add integrator
-  //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , particles( particles ) {}; //add integrator
-  //: type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), rhoOO( size ), vO( size ), vOO( size ), particles( particles ) {}; //add integrator
-  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), particles( particles )  //add integrator
+  : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), particles( particles )
 	{
-		vO = 0.;
-		rhoO = 1000.;
+		vO = 0.; //remove
+		rhoO = 1000.; //remove
 	}
 
 	/* NEW */
@@ -102,60 +96,21 @@ public:
   VectorArrayType&
   getAcc();
 
-	/* OLD */
-
   /**
-   * Process one general parcile with index i.
+   * Sort particles and all variables based on particle cell index.
+	 * TODO: Move this on the side of nbsearch/particles.
    */
-  __cuda_callable__
-  void
-  ProcessOneParticle( GlobalIndexType index_i );
-
-  /**
-   * Process one fluid particle with index i.
-   */
-  __cuda_callable__
-  void
-  ProcessOneFluidParticle( GlobalIndexType index_i  );
-
-  /**
-   * Process one boundary particle with index i.
-   */
-  __cuda_callable__
-  void
-  ProcessOneBoundaryParticle( GlobalIndexType index_i );
-
-  /**
-   * Evaluate interaction between fluid particle i and fluid particle j.
-   */
-  //template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
-  //__cuda_callable__
-  //InteractionResultType
-  //PerformParticleInteractionFF( GlobalIndexType i, GlobalIndexType j );
-
-  /**
-   * Evaluate interaction between fluid particle i and boundary particle j.
-   */
-  //template< typename SPHKernelFunction, typename DiffusiveTerm, typename VisousTerm >
-  //__cuda_callable__
-  //InteractionResultType
-  //PerformParticleInteractionFB( GlobalIndexType i, GlobalIndexType j );
-
-  /**
-   * Evaluate interaction between boundary particle i and fluid particle j.
-   */
-  //template< typename SPHKernelFunction >
-  //__cuda_callable__
-  //InteractionResultType
-  //PerformParticleInteractionBF( GlobalIndexType i, GlobalIndexType j );
-
   void sortParticlesAndVariables();
 
+  /**
+   * Compute pressure from density.
+	 * TODO: Move out.
+   */
   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
   void
   ComputePressureFromDensity();
 
-	/* TEMP INTEGRATORS, REMOVE LTER */
+	/* TEMP INTEGRATORS, MOVE OUT */
 	void
 	IntegrateVerlet( RealType dt );
 
@@ -163,9 +118,6 @@ public:
 	IntegrateEuler( RealType dt );
 
 //protected:
-
-  //Variables vars;
-  //IDLT: PointArrayType& points;
 
   /* Variables - Fields */
   ParticleTypeArrayType type;
@@ -176,20 +128,14 @@ public:
   VectorArrayType v;
   VectorArrayType a;
 
-	/* Temporary integrator variables */
-
+	/* TEMP INTEGRATORS, MOVE OUT */
   ScalarArrayType rhoO;
   VectorArrayType vO;
-
 
 	/* Constants */
   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
-  //PointArrayTypeView pointss; //mby like this?
-  //PointArrayType_ptr points; //mby like this?
-
   ParticlePointer particles;
-
   //Integrator integrator; //temp
 
 };
