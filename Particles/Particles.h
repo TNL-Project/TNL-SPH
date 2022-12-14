@@ -15,274 +15,262 @@ template < typename ParticleConfig, typename DeviceType >
 class Particles{
 public:
 
-  using Device = DeviceType;
-  using Config = ParticleConfig;
-  using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
+   using Device = DeviceType;
+   using Config = ParticleConfig;
+   using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
 
-  static constexpr int spaceDimension = 2;
+   static constexpr int spaceDimension = 2;
 
-  /* common */
-  using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
-  using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
-  using RealType = typename ParticleTraitsType::RealType;
-  using CellIndexType = typename ParticleTraitsType::CellIndexType;
-  using CellIndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //nn
-  using NeighborsCountArrayType = typename ParticleTraitsType::NeighborsCountArrayType;
-  using NeighborsArrayType = typename ParticleTraitsType::NeighborsArrayType;
-  using NeighborListType = typename ParticleTraitsType::NeighborListType;
+   /* common */
+   using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
+   using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
+   using RealType = typename ParticleTraitsType::RealType;
+   using CellIndexType = typename ParticleTraitsType::CellIndexType;
+   using CellIndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //nn
+   using NeighborsCountArrayType = typename ParticleTraitsType::NeighborsCountArrayType;
+   using NeighborsArrayType = typename ParticleTraitsType::NeighborsArrayType;
+   using NeighborListType = typename ParticleTraitsType::NeighborListType;
 
-  using CellIndexer = typename Config::CellIndexerType;
+   using CellIndexer = typename Config::CellIndexerType;
 
-  /* particle related */
-  using PointType = typename ParticleTraitsType::PointType;
-  using PointArrayType = typename ParticleTraitsType::PointArrayType; //nn
+   /* particle related */
+   using PointType = typename ParticleTraitsType::PointType;
+   using PointArrayType = typename ParticleTraitsType::PointArrayType; //nn
 
-  /* grid related */
-  using GridType = typename ParticleTraitsType::GridType;
-  using GridPointer = typename ParticleTraitsType::GridPointer;
+   /* grid related */
+   using GridType = typename ParticleTraitsType::GridType;
+   using GridPointer = typename ParticleTraitsType::GridPointer;
 
-  //temp
-  //old using myCell = Meshes::GridEntity< GridType, 2, Meshes::GridEntityCrossStencilStorage<  > >;
-  using myCell = Meshes::GridEntity< GridType, 2 >;
+   //temp
+   //old using myCell = Meshes::GridEntity< GridType, 2, Meshes::GridEntityCrossStencilStorage<  > >;
+   using myCell = Meshes::GridEntity< GridType, 2 >;
 
-  /**
-   * Constructors.
-   */
-  Particles() = default;
+   /**
+    * Constructors.
+    */
+   Particles() = default;
 
-  Particles(GlobalIndexType size)
-  : numberOfParticles(size), points(size)
-  {
+   Particles(GlobalIndexType size)
+   : numberOfParticles(size), points(size) { }
 
-  }
+   Particles(GlobalIndexType size, RealType radius)
+   : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighborsCount(size, 0), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
+   {
+      //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
+      grid->setDimensions( Config::gridXsize, Config::gridYsize );
+      //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
+      neighborsList.setSegmentsSizes( size, Config::maxOfNeigborsPerParticle );
+   }
 
-  Particles(GlobalIndexType size, RealType radius)
-  : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighborsCount(size, 0), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
-  {
-    //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
-    grid->setDimensions( Config::gridXsize, Config::gridYsize );
-    //grid->setDimensions( Config::gridXsize, Config::gridYsize ); //ignore boundary cells
+   /* PARTICLE RELATED TOOLS */
 
-    //gridCellIndices(grid->template getEntitiesCount<2>());
-    //particleCellInidices = 0; //reset
+   /**
+    * Get dimension of particle system.
+    */
+   static constexpr int
+   getParticleDimension();
 
-    //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
-    //grid->setOrigin( { Config::gridXbegin , Config::gridYbegin } ); //ignore boundary cells
+   /**
+    * Get search radius.
+    */
+   __cuda_callable__
+   RealType
+   getSearchRadius() const;
 
-    neighborsList.setSegmentsSizes(size, Config::maxOfNeigborsPerParticle);
+   /**
+    * Get number of particles in particle system.
+    */
+   __cuda_callable__
+   GlobalIndexType
+   getNumberOfParticles() const;
 
-  }
+   /**
+    * Get particle (i.e. point) positions.
+    */
+   const typename ParticleTraitsType::PointArrayType& // -> using..
+   getPoints() const;
 
-  /* PARTICLE RELATED TOOLS */
+   typename ParticleTraitsType::PointArrayType& // -> using..
+   getPoints();
 
-  /**
-   * Get dimension of particle system.
-   */
-  static constexpr int
-  getParticleDimension();
+   /**
+    * Get position of given particle.
+    */
+   __cuda_callable__
+   const PointType&
+   getPoint( GlobalIndexType particleIndex ) const;
 
-  /**
-   * Get search radius.
-   */
-  __cuda_callable__
-  RealType
-  getSearchRadius() const;
+   __cuda_callable__
+   PointType&
+   getPoint( GlobalIndexType particleIndex );
 
-  /**
-   * Get number of particles in particle system.
-   */
-  __cuda_callable__
-  GlobalIndexType
-  getNumberOfParticles() const;
+   /**
+    * Set position of given particle.
+    */
+   __cuda_callable__
+   void
+   setPoint( GlobalIndexType particleIndex, PointType point);
 
-  /**
-   * Get particle (i.e. point) positions.
-   */
-  const typename ParticleTraitsType::PointArrayType& // -> using..
-  getPoints() const;
+   /**
+    * Get particle cell indices.
+    */
+   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   getParticleCellIndices() const;
 
-  typename ParticleTraitsType::PointArrayType& // -> using..
-  getPoints();
+   typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   getParticleCellIndices();
 
-  /**
-   * Get position of given particle.
-   */
-  __cuda_callable__
-  const PointType&
-  getPoint( GlobalIndexType particleIndex ) const;
+   /**
+    * Get cell index of given partile.
+    */
+   __cuda_callable__
+   const CellIndexType&
+   getParticleCellIndex( GlobalIndexType particleIndex ) const;
 
-  __cuda_callable__
-  PointType&
-  getPoint( GlobalIndexType particleIndex );
+   __cuda_callable__
+   CellIndexType&
+   getParticleCellIndex( GlobalIndexType particleIndex );
 
-  /**
-   * Set position of given particle.
-   */
-  __cuda_callable__
-  void
-  setPoint( GlobalIndexType particleIndex, PointType point);
+   /**
+    * Get cell index of given partile.
+    */
+   void
+   computeParticleCellIndices();
 
-  /**
-   * Get particle cell indices.
-   */
-  const typename ParticleTraitsType::CellIndexArrayType& // -> using..
-  getParticleCellIndices() const;
+   /**
+    * Sort particles by its cell index.
+    */
+   void sortParticles();
 
-  typename ParticleTraitsType::CellIndexArrayType& // -> using..
-  getParticleCellIndices();
+   /* PARTICLE RELATED TEMP TOOLS */
 
-  /**
-   * Get cell index of given partile.
-   */
-  __cuda_callable__
-  const CellIndexType&
-  getParticleCellIndex( GlobalIndexType particleIndex ) const;
+   void generateRandomParticles(); //used only for tests
 
-  __cuda_callable__
-  CellIndexType&
-  getParticleCellIndex( GlobalIndexType particleIndex );
+   /* GRID RELATED TOOLS */
 
-  /**
-   * Get cell index of given partile.
-   */
-  void
-  computeParticleCellIndices();
+   void // -> move this into constructor..
+   SetupGrid();
 
-  /**
-   * Sort particles by its cell index.
-   */
-  void sortParticles();
+   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   getGridCellIndices() const;
 
-  /* PARTICLE RELATED TEMP TOOLS */
+   typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   getGridCellIndices();
 
-  void generateRandomParticles(); //used only for tests
+   __cuda_callable__
+   const CellIndexType&
+   getGridCellIndex( GlobalIndexType cellIndex ) const;
 
-  /* GRID RELATED TOOLS */
+   __cuda_callable__
+   CellIndexType&
+   getGridCellIndex( GlobalIndexType cellIndex );
 
-  void // -> move this into constructor..
-  SetupGrid();
+   void computeGridCellIndices();
 
-  const typename ParticleTraitsType::CellIndexArrayType& // -> using..
-  getGridCellIndices() const;
+   /* general */
+   void GetParticlesInformations();
 
-  typename ParticleTraitsType::CellIndexArrayType& // -> using..
-  getGridCellIndices();
+   /* NEIGHBOR LIST RELATED TOOL */
 
-  __cuda_callable__
-  const CellIndexType&
-  getGridCellIndex( GlobalIndexType cellIndex ) const;
+   /**
+    * Return list with neighbor particles.
+    */
+   const NeighborsArrayType& // -> using..
+   getNeighborsList() const;
 
-  __cuda_callable__
-  CellIndexType&
-  getGridCellIndex( GlobalIndexType cellIndex );
+   NeighborsArrayType& // -> using..
+   getNeighborsList();
 
-  void computeGridCellIndices();
+   /**
+    * Return jth neighbor of particle i.
+    */
+   __cuda_callable__
+   const GlobalIndexType&
+   getNeighbor( GlobalIndexType i, GlobalIndexType j ) const;
 
-  /* general */
-  void GetParticlesInformations();
+   __cuda_callable__
+   GlobalIndexType&
+   getNeighbor( GlobalIndexType i, GlobalIndexType j );
 
-  /* NEIGHBOR LIST RELATED TOOL */
+   /**
+    * Return list with numbers of particles.
+    */
+   const NeighborsCountArrayType& // -> using..
+   getNeighborsCountList() const;
 
-  /**
-   * Return list with neighbor particles.
-   */
-  const NeighborsArrayType& // -> using..
-  getNeighborsList() const;
+   NeighborsCountArrayType& // -> using..
+   getNeighborsCountList();
 
-  NeighborsArrayType& // -> using..
-  getNeighborsList();
+   /**
+    * Return number of neighbors of particle i.
+    */
+   __cuda_callable__
+   const LocalIndexType&
+   getNeighborsCount( GlobalIndexType particleIndex ) const;
 
-  /**
-   * Return jth neighbor of particle i.
-   */
-  __cuda_callable__
-  const GlobalIndexType&
-  getNeighbor( GlobalIndexType i, GlobalIndexType j ) const;
+   __cuda_callable__
+   LocalIndexType&
+   getNeighborsCount( GlobalIndexType particleIndex );
 
-  __cuda_callable__
-  GlobalIndexType&
-  getNeighbor( GlobalIndexType i, GlobalIndexType j );
+   /**
+    * Set j as neighbor for particle i.
+    */
+   __cuda_callable__
+   void
+   setNeighbor( GlobalIndexType i, GlobalIndexType j );
 
-  /**
-   * Return list with numbers of particles.
-   */
-  const NeighborsCountArrayType& // -> using..
-  getNeighborsCountList() const;
+   /**
+    * Remove all neighbors and clear the neighbor list.
+    */
+   void
+   resetNeighborList();
 
-  NeighborsCountArrayType& // -> using..
-  getNeighborsCountList();
+   /* gird related */
+   GridPointer grid; //temporarily moved outside protected
 
-  /**
-   * Return number of neighbors of particle i.
-   */
-  __cuda_callable__
-  const LocalIndexType&
-  getNeighborsCount( GlobalIndexType particleIndex ) const;
+   /* NEIGHBOR LIST RELATED TEMP TOOL */
+   //temp - off
+   __cuda_callable__
+   myCell&
+   getCell( GlobalIndexType i );
 
-  __cuda_callable__
-  LocalIndexType&
-  getNeighborsCount( GlobalIndexType particleIndex );
+   //temp
+   __cuda_callable__
+   GlobalIndexType
+   getCountOfGridCells();
 
-  /**
-   * Set j as neighbor for particle i.
-   */
-  __cuda_callable__
-  void
-  setNeighbor( GlobalIndexType i, GlobalIndexType j );
-
-  /**
-   * Remove all neighbors and clear the neighbor list.
-   */
-  void
-  resetNeighborList();
-
-  /* gird related */
-  GridPointer grid; //temporarily moved outside protected
-
-  /* NEIGHBOR LIST RELATED TEMP TOOL */
-  //temp - off
-  __cuda_callable__
-  myCell&
-  getCell( GlobalIndexType i );
-
-	//temp
-  __cuda_callable__
-	GlobalIndexType
-	getCountOfGridCells();
-
-  /**
-   * Print/save neighbor whole neighbor list.
-   */
-  void
-  saveNeighborList(std::string neigborListFile);
+   /**
+    * Print/save neighbor whole neighbor list.
+    */
+   void
+   saveNeighborList(std::string neigborListFile);
 
 
 protected:
 
-  /* particle related*/
-  GlobalIndexType numberOfParticles;
-  GlobalIndexType gridSize;
+   /* particle related*/
+   GlobalIndexType numberOfParticles;
+   GlobalIndexType gridSize;
 
-  RealType radius;
+   RealType radius;
 
-  NeighborsCountArrayType neighborsCount;
-  NeighborsArrayType neighbors;
+   NeighborsCountArrayType neighborsCount;
+   NeighborsArrayType neighbors;
 
-  NeighborListType neighborsList; //not used
+   NeighborListType neighborsList; //not used
 
-  //PointArrayType* points = nullptr;
-  PointArrayType points;
-  CellIndexArrayType particleCellInidices;
+   //PointArrayType* points = nullptr;
+   PointArrayType points;
+   CellIndexArrayType particleCellInidices;
 
 
-  CellIndexArrayType gridCellIndices;
+   CellIndexArrayType gridCellIndices;
 
 };
 
 
 
 } //namespace Particles
-
 } //namespace TNL
 
 #include "Particles_impl.h"
