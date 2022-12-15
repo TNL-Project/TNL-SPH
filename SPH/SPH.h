@@ -20,7 +20,6 @@ public:
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
    using PointType = typename ParticleSystem::PointType; //remove
    using RealType = typename ParticleSystem::RealType;
-   using InteractionResultType = typename Model::InteractionResultType;
 
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;

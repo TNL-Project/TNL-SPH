@@ -8,84 +8,84 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ParticleTypeArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getParticleType() const
 {
-	return this->type;
+   return this->type;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ParticleTypeArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getParticleType()
 {
-	return this->type;
+   return this->type;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getRho() const
 {
-	return this->rho;
+   return this->rho;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getRho()
 {
-	return this->rho;
+   return this->rho;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getDrho() const
 {
-	return this->drho;
+   return this->drho;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getDrho()
 {
-	return this->drho;
+   return this->drho;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getPress() const
 {
-	return this->p;
+   return this->p;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getPress()
 {
-	return this->p;
+   return this->p;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getVel() const
 {
-	return this->v;
+   return this->v;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getVel()
 {
-	return this->v;
+   return this->v;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getAcc() const
 {
-	return this->a;
+   return this->a;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getAcc()
 {
-	return this->a;
+   return this->a;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -94,17 +94,14 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 {
    auto view_particleCellIndices = particles->getParticleCellIndices().getView();
    auto view_points = particles->getPoints().getView();
-
    auto view_type = type.getView();
    auto view_rho = rho.getView();
    auto view_p = p.getView();
    auto view_v = v.getView();
-
+   auto view_rhoO = rhoO.getView();
+   auto view_vO = vO.getView();
    //auto view_drho = drho.getView(); //I actually don't need to sort these arrays.
    //auto view_a = a.getView(); //I actually don't need to sort these arrays.
-
-	 auto view_rhoO = rhoO.getView();
-	 auto view_vO = vO.getView();
 
    Algorithms::sort< DeviceType, GlobalIndexType >(
        0, particles->getNumberOfParticles(),
@@ -119,7 +116,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
          swap( view_v[ i ], view_v[ j ] );
          //swap( view_drho[ i ], view_drho[ j ] );
          //swap( view_a[ i ], view_a[ j ] );
-	 			 //temp, this needs to be done in better way - sort integrator arrays
          swap( view_rhoO[ i ], view_rhoO[ j ] );
          swap( view_vO[ i ], view_vO[ j ] );
          } );
@@ -130,17 +126,17 @@ template< typename EquationOfState >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
 {
-  auto view_rho = this->getRho().getView();
-  auto view_p = this->getPress().getView();
+   auto view_rho = this->getRho().getView();
+   auto view_p = this->getPress().getView();
 
-  auto init = [=] __cuda_callable__ ( int i ) mutable
-  {
-     view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
-  };
-  Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), init );
+   auto init = [=] __cuda_callable__ ( int i ) mutable
+   {
+      view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
+   };
+   Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), init );
 }
 
-/* TEMP INTEGRATION, REMOVE LATER */
+/* TEMP INTEGRATION, MOVE OUT */
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt )
@@ -166,7 +162,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt 
    };
    Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
 
-	 std::swap( this->v, this->vO ); //swap pointers instead
+   std::swap( this->v, this->vO ); //swap pointers instead
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -188,15 +184,13 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
       r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
-   		vO_view[ i ] = v_view[ i ];
-   		v_view[ i ] += a_view[ i ] * dt;
-   		rhoO_view[ i ] = rho_view[ i ];
-   		rho_view[ i ] += drho_view[ i ] * dt;
+      vO_view[ i ] = v_view[ i ];
+      v_view[ i ] += a_view[ i ] * dt;
+      rhoO_view[ i ] = rho_view[ i ];
+      rho_view[ i ] += drho_view[ i ] * dt;
    };
-
-  Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
+   Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
 }
-
 
 } // SPH
 } // ParticleSystem

@@ -19,11 +19,9 @@ class SPHFluidVariables
   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
   using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
-  using InteractionResultTypeArrayType = typename SPHFluidTraitsType::InteractionResultTypeArray;
-
 
   SPHFluidVariables( GlobalIndexType size )
-  : rho( size ), p( size ), v( size ), type( size ), DrhoDv( size ) {}
+  : rho( size ), p( size ), v( size ), type( size ) {}
 
   /* Variables - Fields */
   ParticleTypeArrayType type;
@@ -31,8 +29,6 @@ class SPHFluidVariables
   ScalarArrayType rho;
   ScalarArrayType p;
   VectorArrayType v;
-
-  InteractionResultTypeArrayType DrhoDv;
 
   /* Variables - constans */
   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
