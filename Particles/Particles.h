@@ -7,7 +7,6 @@
 #include "ParticlesTraits.h"
 #include "GenerateCellIndex.h"
 
-
 namespace TNL {
 namespace ParticleSystem {
 
@@ -40,10 +39,6 @@ public:
    /* grid related */
    using GridType = typename ParticleTraitsType::GridType;
    using GridPointer = typename ParticleTraitsType::GridPointer;
-
-   //temp
-   //old using myCell = Meshes::GridEntity< GridType, 2, Meshes::GridEntityCrossStencilStorage<  > >;
-   using myCell = Meshes::GridEntity< GridType, 2 >;
 
    /**
     * Constructors.
@@ -148,9 +143,6 @@ public:
 
    /* GRID RELATED TOOLS */
 
-   void // -> move this into constructor..
-   SetupGrid();
-
    const typename ParticleTraitsType::CellIndexArrayType& // -> using..
    getGridCellIndices() const;
 
@@ -202,7 +194,7 @@ public:
    getNeighborsCountList();
 
    /**
-    * Return number of neighbors of particle i.
+    * Return number of neighbors for particle i.
     */
    __cuda_callable__
    const LocalIndexType&
@@ -225,26 +217,11 @@ public:
    void
    resetNeighborList();
 
-   /* gird related */
-   GridPointer grid; //temporarily moved outside protected
-
-   /* NEIGHBOR LIST RELATED TEMP TOOL */
-   //temp - off
-   __cuda_callable__
-   myCell&
-   getCell( GlobalIndexType i );
-
-   //temp
-   __cuda_callable__
-   GlobalIndexType
-   getCountOfGridCells();
-
    /**
     * Print/save neighbor whole neighbor list.
     */
    void
    saveNeighborList(std::string neigborListFile);
-
 
 protected:
 
@@ -252,23 +229,22 @@ protected:
    GlobalIndexType numberOfParticles;
    GlobalIndexType gridSize;
 
+   /* gird related */
+   GridPointer grid; // not used now
+
    RealType radius;
 
    NeighborsCountArrayType neighborsCount;
    NeighborsArrayType neighbors;
 
-   NeighborListType neighborsList; //not used
+   NeighborListType neighborsList; //not used now
 
-   //PointArrayType* points = nullptr;
    PointArrayType points;
    CellIndexArrayType particleCellInidices;
-
 
    CellIndexArrayType gridCellIndices;
 
 };
-
-
 
 } //namespace Particles
 } //namespace TNL

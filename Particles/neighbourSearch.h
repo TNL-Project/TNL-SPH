@@ -13,7 +13,7 @@ class NeighborSearch
 {
 public:
 
-  /* common */
+   /* common */
    using DeviceType = typename ParticleSystem::Device; //mh
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
