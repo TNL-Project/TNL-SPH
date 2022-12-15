@@ -14,41 +14,39 @@ class SPHSimulation
 {
 public:
 
-  using DeviceType = typename ParticleSystem::Device;
+   using DeviceType = typename ParticleSystem::Device;
 
-  using LocalIndexType = typename ParticleSystem::LocalIndexType;
-  using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
-  using PointType = typename ParticleSystem::PointType; //remove
-  using RealType = typename ParticleSystem::RealType;
-  using InteractionResultType = typename Model::InteractionResultType;
+   using LocalIndexType = typename ParticleSystem::LocalIndexType;
+   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
+   using PointType = typename ParticleSystem::PointType; //remove
+   using RealType = typename ParticleSystem::RealType;
+   using InteractionResultType = typename Model::InteractionResultType;
 
-	using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-	using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
-	using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
+   using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
+   using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
+   using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
 
-  SPHSimulation() = default;
+   SPHSimulation() = default;
 
-  SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
-  : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ) {};
+   SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
+   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ) {};
 
-  /**
-   * Perform neighbors search and fill neighborsList in Particle system variable.
-   */
-  void PerformNeighborSearch( GlobalIndexType step );
+   /**
+    * Perform neighbors search and fill neighborsList in Particle system variable.
+    */
+   void PerformNeighborSearch( GlobalIndexType step );
 
-  /**
-   * Perform interaction for all particles, i.e. for all types.
-   */
-	template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
-  void Interact();
+   /**
+    * Perform interaction for all particles, i.e. for all types.
+    */
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+   void Interact();
 
-//protected:
+   //protected: (or private?)
 
-  ParticlePointer particles;
-  NeighborSearchPointer neighborSearch;
-  ModelPointer model;
-
-private:
+   ParticlePointer particles;
+   NeighborSearchPointer neighborSearch;
+   ModelPointer model;
 
 };
 
