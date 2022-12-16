@@ -33,7 +33,7 @@ public:
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
-   void PerformNeighborSearch( GlobalIndexType step );
+   void PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells );
 
    /**
     * Perform interaction for all particles, i.e. for all types.

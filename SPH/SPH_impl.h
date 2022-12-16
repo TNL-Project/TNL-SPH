@@ -6,42 +6,33 @@ namespace SPH {
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
-SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step )
+SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
 {
-   TNL::Timer timer;
    /**
     * Compute gird nad partice cell indices.
     */
-   timer.reset();
-   timer.start();
+   timer_reset.start();
    neighborSearch->resetListWithIndices();
-   timer.stop();
-   std::cout << " - neighborSearch->resetListWithIndices();... done";
-   std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+   timer_reset.stop();
+   std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
    if( step == 0 ) //TODO: do this better
    particles->computeGridCellIndices();
 
-   timer.reset();
-   timer.start();
+   timer_cellIndices.start();
    particles->computeParticleCellIndices();
-   timer.stop();
-   std::cout << " - particles->computeParticleCellIndices();... done ";
-   std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+   timer_cellIndices.stop();
+   std::cout << " - particles->computeParticleCellIndices();... done " << std::endl;
 
-   timer.reset();
-   timer.start();
+   timer_sort.start();
    model->sortParticlesAndVariables(); //particles.sortParticles();
-   timer.stop();
-   std::cout << " - model->sortParticlesAndVariables();... done ";
-   std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+   timer_sort.stop();
+   std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
 
-   timer.reset();
-   timer.start();
+   timer_toCells.start();
    neighborSearch->particlesToCells();
-   timer.stop();
-   std::cout << " - neighborSearch->particlesToCells();... done ";
-   std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+   timer_toCells.stop();
+   std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >

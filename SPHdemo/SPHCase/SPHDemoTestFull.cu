@@ -107,8 +107,8 @@ int main( int argc, char* argv[] )
     */
    #include "asignIinitialCondition.h"
 
-   TNL::Timer timer;
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
+   TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
    int steps = 2500;
    for( unsigned int time = 0; time < steps; time ++ ) //2500
@@ -118,22 +118,18 @@ int main( int argc, char* argv[] )
       /**
        * Find neighbors within the SPH simulation.
        */
-      //timer.reset();
       timer_search.start();
-      mySPHSimulation.PerformNeighborSearch( time );
+      mySPHSimulation.PerformNeighborSearch( time, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
-      std::cout << "Search... done. ";
-      //std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+      std::cout << "Search... done. " << std::endl;
 
       timer_interact.start();
       mySPHSimulation.template InteractLambda< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm >();
       timer_interact.stop();
-      std::cout << "Interact... done. ";
-      //std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+      std::cout << "Interact... done. " << std::endl;
 
       //#include "outputForDebug.h"
 
-      //timer.reset();
       timer_integrate.start();
       if( time % 20 == 0 ) {
          mySPHSimulation.model->IntegrateEuler( 0.00002 ); //0.00005/0.00002/0.00001
@@ -142,15 +138,12 @@ int main( int argc, char* argv[] )
          mySPHSimulation.model->IntegrateVerlet( 0.00002 );
       }
       timer_integrate.stop();
-      std::cout << "integrate... done. " ;
-      //std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+      std::cout << "integrate... done. " << std::endl;
 
-      //timer.reset();
       timer_pressure.start();
       mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
       timer_pressure.stop();
-      std::cout << "Compute pressure... done. ";
-      //std::cout << "Total time: " << timer.getRealTime() << " sec." << std::endl;
+      std::cout << "Compute pressure... done. " << std::endl;
 
       if( ( time % 2500 ==  0) && (time > 1) )
       {
@@ -161,17 +154,25 @@ int main( int argc, char* argv[] )
    }
 
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
-   std::cout << "Search................................... " << timer_search.getRealTime() << " sec." << std::endl;
-   std::cout << "Search (average time per step)........... " << timer_search.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Interaction.............................. " << timer_interact.getRealTime() << " sec." << std::endl;
-   std::cout << "Interaction (average time per step)...... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Integrate................................ " << timer_integrate.getRealTime() << " sec." << std::endl;
-   std::cout << "Integrate (average time per step)........ " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Pressure update.......................... " << timer_pressure.getRealTime() << " sec." << std::endl;
-   std::cout << "Pressure update (average time per step).. " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Total.................................... " << ( timer_search.getRealTime() + \
+   std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
+   std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
+   std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
+   std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
+   std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
+   std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
+   std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
+   std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
+   std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
-   std::cout << "Total (average time per step)............ " << ( timer_search.getRealTime() + \
+   std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
 
