@@ -107,6 +107,13 @@ public:
    //  std::cout << "PointsArray: " << pointsArray[0][0] << std::endl;
    //}
 
+   virtual VariantVector
+   readPointData( const std::string& arrayName )
+   {
+      throw Exceptions::NotImplementedError(
+         "readPointData is not implemented in the mesh reader for this specific file format." );
+   }
+
    int
    getSpaceDimension() const
    {

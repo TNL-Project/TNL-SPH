@@ -41,6 +41,9 @@ public:
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
    void Interact();
 
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+   void InteractLambda();
+
    //protected: (or private?)
 
    ParticlePointer particles;
@@ -54,4 +57,5 @@ public:
 } // TNL
 
 #include "SPH_impl.h"
+#include "SPH_implLambda.h"
 

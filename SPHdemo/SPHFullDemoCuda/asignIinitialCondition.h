@@ -1,102 +1,44 @@
-/* DEVICE */
-//Copy particles
-
-#include <new>
 using PointArrayType = typename ParticleSystem::PointArrayType;
-using PointArrayPointer = typename Pointers::SharedPointer< PointArrayType, Device >;
+using ScalarArrayType = typename SPHModel::ScalarArrayType;
+using VectorArrayType = typename SPHModel::VectorArrayType;
+using ParticleTypeArrayType = typename SPHModel::ParticleTypeArrayType;
 
-PointArrayPointer myArray( ParticlesConfig::numberOfParticles );
+PointArrayType pointsLoaded( ParticlesConfig::numberOfParticles );
+pointsLoaded = particlesToRead.getPoints();
+ScalarArrayType pressureLoaded( ParticlesConfig::numberOfParticles );
+pressureLoaded = std::get< std::vector< float > >( myReader.readPointData( "Pressure" ) );
+ScalarArrayType densityLoaded( ParticlesConfig::numberOfParticles );
+densityLoaded = std::get< std::vector< float > >( myReader.readPointData( "Density" ) );
+VectorArrayType velocityLoaded( ParticlesConfig::numberOfParticles );
+velocityLoaded = std::get< std::vector< float > >( myReader.readPointData( "Velocity" ) );
+ParticleTypeArrayType typeLoaded( ParticlesConfig::numberOfParticles );
+typeLoaded = std::get< std::vector< int > >( myReader.readPointData( "Ptype" ) );
 
+auto pointsLoaded_view = pointsLoaded.getView();
+auto pLoaded_view = pressureLoaded.getView();
+auto rhoLoaded_view = densityLoaded.getView();
+auto vLoaded_view = velocityLoaded.getView();
+auto typeLoaded_view = typeLoaded.getView();
 
-auto host_data_view = particlesToRead.getPoints().getView();
-auto device_data_view = mySPHSimulation.particles->getPoints().getView();
-
-Pointers::synchronizeSmartPointersOnDevice< Devices::Cuda >();
-
-for( unsigned int p = 0; p < ParticlesConfig::numberOfParticles; p ++ )
-{
-	myArray->setElement( p, host_data_view[ p ] );
-}
-
-auto particleLoop = [=] __cuda_callable__ ( int i  ) mutable
-{
-	 //device_data_view[ i ] = host_data_view.getElement( i );
-	 device_data_view[ i ] = myArray->getElement( i );
-	 //host_data_view[ i ] = {1., 1.};
-};
-Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig::numberOfParticles, particleLoop );
-
-for( unsigned int p = 0; p < ParticlesConfig::numberOfParticles; p ++ )
-{
-	//mySPHSimulation.particles->setPoint( p, particlesToRead.getPoint( p ));
-	//std::cout << mySPHSimulation.particles->getPoint( p ) << std::endl;
-}
-
-//std::cout << mySPHSimulation.particles->getPoints() << std::endl;
-
-
-
-
-
-//auto device_data_view = mySPHSimulation.particles->getPoints().getView();
+auto points_view = mySPHSimulation.particles->getPoints().getView();
 auto type_view = mySPHSimulation.model->getParticleType().getView();
 auto rho_view = mySPHSimulation.model->getRho().getView();
 auto p_view = mySPHSimulation.model->getPress().getView();
 auto v_view = mySPHSimulation.model->getVel().getView();
 
-auto initCond = [=] __cuda_callable__ ( int p  ) mutable
+auto particleLoop = [=] __cuda_callable__ ( int i  ) mutable
 {
-
-	/*
-  if( ( ( device_data_view[ p ][ 0 ] >  0.   - eps ) && ( device_data_view[ p ][ 0 ] <  0.   + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] > -0.01 - eps ) && ( device_data_view[ p ][ 0 ] < -0.01 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] > -0.02 - eps ) && ( device_data_view[ p ][ 0 ] < -0.02 + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] >  0.   - eps ) && ( device_data_view[ p ][ 1 ] <  0.   + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] > -0.01 - eps ) && ( device_data_view[ p ][ 1 ] < -0.01 + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] > -0.02 - eps ) && ( device_data_view[ p ][ 1 ] < -0.02 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.6  - eps ) && ( device_data_view[ p ][ 0 ] <  1.6  + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.61 - eps ) && ( device_data_view[ p ][ 0 ] <  1.61 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.62 - eps ) && ( device_data_view[ p ][ 0 ] <  1.62 + eps ) ) )
-	*/
-  if( ( ( device_data_view[ p ][ 0 ] >  0.   - eps ) && ( device_data_view[ p ][ 0 ] <  0.   + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] > -0.002 - eps ) && ( device_data_view[ p ][ 0 ] < -0.002 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] > -0.004 - eps ) && ( device_data_view[ p ][ 0 ] < -0.004 + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] >  0.   - eps ) && ( device_data_view[ p ][ 1 ] <  0.   + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] > -0.002 - eps ) && ( device_data_view[ p ][ 1 ] < -0.002 + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] > -0.004 - eps ) && ( device_data_view[ p ][ 1 ] < -0.004 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.608  - eps ) && ( device_data_view[ p ][ 0 ] <  1.608  + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.61 - eps ) && ( device_data_view[ p ][ 0 ] <  1.61 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.612 - eps ) && ( device_data_view[ p ][ 0 ] <  1.612 + eps ) ) )
-	/*
-  if( ( ( device_data_view[ p ][ 0 ] >  0.   - eps ) && ( device_data_view[ p ][ 0 ] <  0.   + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] > -0.001 - eps ) && ( device_data_view[ p ][ 0 ] < -0.001 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] > -0.002 - eps ) && ( device_data_view[ p ][ 0 ] < -0.002 + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] >  0.   - eps ) && ( device_data_view[ p ][ 1 ] <  0.   + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] > -0.001 - eps ) && ( device_data_view[ p ][ 1 ] < -0.001 + eps ) ) ||
-      ( ( device_data_view[ p ][ 1 ] > -0.002 - eps ) && ( device_data_view[ p ][ 1 ] < -0.002 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.609  - eps ) && ( device_data_view[ p ][ 0 ] <  1.609  + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.61 - eps ) && ( device_data_view[ p ][ 0 ] <  1.61 + eps ) ) ||
-      ( ( device_data_view[ p ][ 0 ] >  1.611 - eps ) && ( device_data_view[ p ][ 0 ] <  1.611 + eps ) ) )
-	*/
-  {
-    type_view[ p ] = 1.;
-  }
-  else
-  {
-    type_view[ p ] = 0.;
-  }
-
-    rho_view[ p ] = 1000.;
-    p_view[ p ] = 0.;
-    v_view[ p ] = 0.;
-
-    ////fill in integrator arrays
-    //mySPHSimulation.model.integrator.rhoO[ p ] = 1000.;
-    //mySPHSimulation.model.integrator.rhoOO[ p ] = 1000.;
-
-    //mySPHSimulation.model.integrator.vO[ p ] = 0.;
-    //mySPHSimulation.model.integrator.vOO[ p ] = 0.;
-
+   points_view[ i ] = pointsLoaded_view.getElement( i );
+   p_view[ i ] = pLoaded_view.getElement( i );
+   rho_view[ i ] = rhoLoaded_view.getElement( i );
+   v_view[ i ] = vLoaded_view.getElement( i );
+   type_view[ i ] = typeLoaded_view.getElement( i );
 };
-Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig::numberOfParticles, initCond );
+Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig::numberOfParticles, particleLoop );
+
+pressureLoaded.reset();
+densityLoaded.reset();
+velocityLoaded.reset();
+typeLoaded.reset();
+pointsLoaded.reset();
 

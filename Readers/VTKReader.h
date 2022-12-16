@@ -98,6 +98,12 @@ public:
 
    }
 
+   VariantVector
+   readPointData( const std::string& arrayName ) override
+   {
+      return readPointOrCellData( "POINT_DATA", arrayName );
+   }
+
 protected:
    // output of parseHeader
    std::string formatVersion;
@@ -409,6 +415,84 @@ protected:
       } //while loop
    } //find Sections
 
+   VariantVector
+   readPointOrCellData( std::string sectionName, const std::string& arrayName )
+   {
+      // NOTE: we must open the file in binary mode to prevent CR/CRLF conversions on Windows
+      std::ifstream inputFile( fileName, std::ios_base::binary );
+      if( ! inputFile )
+         throw ParticleReaderError( "VTKReader", "failed to open the file '" + fileName + "'" );
+
+      std::int32_t elements = ( sectionName == "CELL_DATA" ) ? cells_count : points_count;
+      int values_per_element = 1;
+
+      sectionName += "::" + arrayName;
+      if( sectionPositions.count( sectionName ) == 0 )
+         throw ParticleReaderError( "VTKReader", "array " + arrayName + " was not found in the CELL_DATA section" );
+      inputFile.seekg( sectionPositions[ sectionName ] );
+
+      // type: SCALARS, VECTORS, etc.
+      // datatype: int, float, double
+      std::string type;
+      std::string datatype;
+
+      // parse the metadata line
+      std::string line;
+      getline( inputFile, line );
+      line = rstrip_cr( line );
+      std::istringstream iss( line );
+      iss >> type;
+
+      // if the line starts with the array name, it must be a FIELD
+      if( type == arrayName ) {
+         // parse <array_name> <components> <tuples> <datatype>
+         iss >> values_per_element >> elements >> datatype;
+      }
+      else {
+         // parse the rest of the line: <type> <array_name> <datatype>
+         std::string array_name;
+         iss >> array_name >> datatype;
+         if( type == "SCALARS" ) {
+            values_per_element = 1;
+            // skip the LOOKUP_TABLE line
+            getline( inputFile, line );
+         }
+         else if( type == "VECTORS" )
+            values_per_element = 3;
+         else if( type == "TENSORS" )
+            values_per_element = 9;
+         else
+            throw ParticleReaderError( "VTKReader", "requested array type " + type + " is not implemented in the reader" );
+      }
+
+      if( datatype == "int" )
+         return readDataArray< std::int32_t >( inputFile, elements * values_per_element );
+      else if( datatype == "float" )
+         return readDataArray< float >( inputFile, elements * values_per_element );
+      else if( datatype == "double" )
+         return readDataArray< double >( inputFile, elements * values_per_element );
+      else
+         throw ParticleReaderError( "VTKReader", "found data type which is not implemented in the reader: " + datatype );
+   }
+
+   template< typename T >
+   std::vector< T >
+   readDataArray( std::istream& str, std::int32_t values )
+   {
+      std::vector< T > vector( values );
+      for( std::int32_t i = 0; i < values; i++ )
+         vector[ i ] = readValue< T >( dataFormat, str );
+      return vector;
+   }
+
+   static inline std::string
+   rstrip_cr( const std::string& string )
+   {
+      const auto end = string.find_last_not_of( '\r' );
+      return string.substr( 0, end + 1 );
+   }
+
+
    static void
    skipValue( VTK::FileFormat format, std::istream& str, const std::string& datatype )
    {
@@ -453,3 +537,4 @@ protected:
 } // Readers
 } // ParticleSystem
 } // TNL
+
