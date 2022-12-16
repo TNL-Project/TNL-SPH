@@ -124,7 +124,7 @@ int main( int argc, char* argv[] )
       std::cout << "Search... done. " << std::endl;
 
       timer_interact.start();
-      mySPHSimulation.template InteractLambda< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm >();
+      mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 

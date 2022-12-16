@@ -42,7 +42,7 @@ public:
    void Interact();
 
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
-   void InteractLambda();
+   void InteractModel();
 
    //protected: (or private?)
 
@@ -57,5 +57,4 @@ public:
 } // TNL
 
 #include "SPH_impl.h"
-#include "SPH_implLambda.h"
 

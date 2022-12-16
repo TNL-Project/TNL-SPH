@@ -194,6 +194,14 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::Interact()
    Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, particleLoop );
 }
 
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+void
+SPHSimulation< Variables, ParticleSystem, NeighborSearch >::InteractModel()
+{
+   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm >( neighborSearch );
+}
+
 } // SPH
 } // ParticleSystem
 } // TNL

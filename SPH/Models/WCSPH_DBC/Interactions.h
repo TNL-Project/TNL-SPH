@@ -26,6 +26,7 @@ public:
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
    using DeviceType = typename Particles::Device; //?
 
+   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType; //Particles::?
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType; //Particles::?
    using RealType = typename SPHFluidTraitsType::RealType; //Particles::?
 
@@ -115,6 +116,10 @@ public:
    void
    IntegrateEuler( RealType dt );
 
+   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+   void
+   Interaction( NeighborSearchPointer& neighborSearch );
+
 //protected:
 
    /* Variables - Fields */
@@ -143,4 +148,5 @@ public:
 } // TNL
 
 #include "Interactions_impl.h"
+#include "Interactions_implLambda.h"
 
