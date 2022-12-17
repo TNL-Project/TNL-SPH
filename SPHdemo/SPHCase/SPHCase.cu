@@ -31,6 +31,8 @@ const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/da
 //#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
 
+const float endTime = 0.05;
+
 /**
  * SPH general toolds.
  */
@@ -110,7 +112,8 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
-   int steps = 2500;
+   int steps = endTime / SPHConfig::dtInit;
+   std::cout << "Number of steps: " << steps << std::endl;
    for( unsigned int time = 0; time < steps; time ++ ) //2500
    {
       std::cout << "STEP: " << time << std::endl;
@@ -132,10 +135,10 @@ int main( int argc, char* argv[] )
 
       timer_integrate.start();
       if( time % 20 == 0 ) {
-         mySPHSimulation.model->IntegrateEuler( 0.00002 ); //0.00005/0.00002/0.00001
+         mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
       }
       else {
-         mySPHSimulation.model->IntegrateVerlet( 0.00002 );
+         mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
       }
       timer_integrate.stop();
       std::cout << "integrate... done. " << std::endl;

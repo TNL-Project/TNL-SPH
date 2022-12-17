@@ -25,6 +25,7 @@ class SPHCaseConfig
    static constexpr float delta = 0.1;
    static constexpr float alpha = 0.02;
    static constexpr float eps = 0.001;
+   static constexpr float dtInit = 0.00002;
 };
 
 } //SPH
