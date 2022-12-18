@@ -16,7 +16,7 @@ public:
 
    __cuda_callable__
    static RealType
-   Pi( RealType rhoI, RealType rhoJ, RealType drs, RealType drdv )
+   Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv )
    {
       const RealType mu = h * drdv / ( drs * drs + epsilon * h * h );
       const RealType pi = ( drdv < 0 ) ? ( coefAV * mu / ( rhoI + rhoJ ) ) : (0.);

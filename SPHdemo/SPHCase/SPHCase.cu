@@ -31,6 +31,7 @@ const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/da
 //#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
 
+//const float endTime = 0.00002;
 const float endTime = 0.05;
 
 /**
@@ -127,7 +128,7 @@ int main( int argc, char* argv[] )
       std::cout << "Search... done. " << std::endl;
 
       timer_interact.start();
-      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm >();
+      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 

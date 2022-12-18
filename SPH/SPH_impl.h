@@ -36,11 +36,11 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
 SPHSimulation< Variables, ParticleSystem, NeighborSearch >::InteractModel()
 {
-   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm >( neighborSearch );
+   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch );
 }
 
 } // SPH

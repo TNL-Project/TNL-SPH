@@ -5,7 +5,7 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPointer& neighborSearch )
 {
@@ -32,7 +32,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    const auto view_particleType = this->getParticleType().getView();
    const auto view_rho = this->getRho().getView();
    auto view_Drho = this->getDrho().getView();
-   const auto view_p = this->getPress().getView();
+   //const auto view_p = this->getPress().getView();
    const auto view_v = this->getVel().getView();
    auto view_a = this->getAcc().getView();
 
@@ -42,7 +42,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const PointType r_j = view_points[ j ];
       const PointType v_j = view_v[ j ];
       const RealType rho_j = view_rho[ j ];
-      const RealType p_j = view_p[ j ];
+      //const RealType p_j = view_p[ j ];
+      const RealType p_j = EOS::DensityToPressure( rho_j );
 
       /* Interaction: */
       const PointType dr = r_i - r_j;
@@ -68,7 +69,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
          const PointType r_j = view_points[ j ];
          const PointType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
-         const RealType p_j = view_p[ j ];
+         //const RealType p_j = view_p[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j );
 
          /* Interaction */
          const PointType dr = r_i - r_j;
@@ -92,7 +94,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const PointType r_i = view_points[ i ];
       const PointType v_i = view_v[ i ];
       const RealType rho_i = view_rho[ i ];
-      const RealType p_i = view_p[ i ];
+      //const RealType p_i = view_p[ i ];
+      const RealType p_i = EOS::DensityToPressure( rho_i );
 
       PointType a_i = {0., 0.};
       RealType drho_i = 0.;

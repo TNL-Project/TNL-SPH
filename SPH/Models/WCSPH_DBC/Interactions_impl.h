@@ -96,7 +96,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
    auto view_points = particles->getPoints().getView();
    auto view_type = type.getView();
    auto view_rho = rho.getView();
-   auto view_p = p.getView();
+   //auto view_p = p.getView();
    auto view_v = v.getView();
    auto view_rhoO = rhoO.getView();
    auto view_vO = vO.getView();
@@ -112,7 +112,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
          swap( view_points[ i ], view_points[ j ] );
          swap( view_type[ i ], view_type[ j ] );
          swap( view_rho[ i ], view_rho[ j ] );
-         swap( view_p[ i ], view_p[ j ] );
+         //swap( view_p[ i ], view_p[ j ] );
          swap( view_v[ i ], view_v[ j ] );
          //swap( view_drho[ i ], view_drho[ j ] );
          //swap( view_a[ i ], view_a[ j ] );

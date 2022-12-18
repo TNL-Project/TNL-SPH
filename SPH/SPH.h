@@ -41,7 +41,7 @@ public:
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
    void Interact();
 
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void InteractModel();
 
    //protected: (or private?)

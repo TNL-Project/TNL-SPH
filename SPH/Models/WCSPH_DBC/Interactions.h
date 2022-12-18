@@ -45,6 +45,7 @@ public:
    using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
    using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
+   using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /**
     * Constructor.
@@ -116,7 +117,7 @@ public:
    void
    IntegrateEuler( RealType dt );
 
-   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void
    Interaction( NeighborSearchPointer& neighborSearch );
 

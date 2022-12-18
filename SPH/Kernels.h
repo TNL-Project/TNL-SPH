@@ -11,12 +11,12 @@ class WendlandKernel //2D
 {
 public:
    __cuda_callable__
-   static double F( double r, double h )
+   static float F( float r, float h )
    {
-      double F = 0;
-      const double awen = float( 0.557 / ( h * h ) ); //2D
-      const double bwen = float( -2.7852 / ( h * h * h ) ); //2D
-      const double qq = r / h; //2D
+      float F = 0;
+      const float awen = float( 0.557 / ( h * h ) ); //2D
+      const float bwen = float( -2.7852 / ( h * h * h ) ); //2D
+      const float qq = r / h; //2D
       const float wqq1 = 1.f - 0.5f * qq;
       const float wqq2 = wqq1 * wqq1;
       const float wqq = qq + qq + 1.f;
@@ -31,13 +31,13 @@ public:
    }
 
    __cuda_callable__
-   static double W( double r, double h )
+   static float W( float r, float h )
    {
-      double W = 0;
+      float W = 0;
 
-      const double awen = float( 0.557 / ( h * h ) ); //2D
-      const double bwen = float( -2.7852 / ( h * h * h) ); //2D
-      const double qq = r / h;
+      const float awen = float( 0.557 / ( h * h ) ); //2D
+      const float bwen = float( -2.7852 / ( h * h * h) ); //2D
+      const float qq = r / h;
       const float wqq1 = 1.f - 0.5f * qq;
       const float wqq2 = wqq1 * wqq1;
       const float wqq = qq + qq + 1.f;

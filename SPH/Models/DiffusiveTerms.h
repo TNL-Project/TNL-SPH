@@ -19,7 +19,7 @@ class MolteniDiffusiveTerm
 
    __cuda_callable__
    static RealType
-   Psi( RealType rhoI, RealType rhoJ, RealType drs )
+   Psi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs )
    {
       const RealType psi = coefDT * ( rhoJ - rhoI ) / ( drs * drs );
       return psi;
