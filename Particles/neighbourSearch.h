@@ -80,7 +80,7 @@ public:
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
    void
-   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType numberOfParticles, const CellIndexArrayView view_firstCellParticle, const CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args );
+   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const CellIndexArrayView& view_firstCellParticle, const CellIndexArrayView& view_lastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
 
    /**
     * For all particles run loop over neighbors and assemble neighbor list.

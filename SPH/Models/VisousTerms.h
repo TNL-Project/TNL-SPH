@@ -19,8 +19,7 @@ public:
    Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv )
    {
       const RealType mu = h * drdv / ( drs * drs + epsilon * h * h );
-      const RealType pi = ( drdv < 0 ) ? ( coefAV * mu / ( rhoI + rhoJ ) ) : (0.);
-      return pi;
+      return ( drdv < 0 ) ? ( coefAV * mu / ( rhoI + rhoJ ) ) : (0.);
    }
 };
 

@@ -1,4 +1,5 @@
 #include "Interactions.h"
+#include "../../customParallelFor.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -40,26 +41,31 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    {
       /* This should be some interaction structure - properties of particle B:*/
       const PointType r_j = view_points[ j ];
-      const PointType v_j = view_v[ j ];
-      const RealType rho_j = view_rho[ j ];
-      //const RealType p_j = view_p[ j ];
-      const RealType p_j = EOS::DensityToPressure( rho_j );
-
-      /* Interaction: */
       const PointType dr = r_i - r_j;
-      const PointType dv = v_i - v_j;
-
       const RealType drs = l2Norm( dr );
-      const RealType F = SPHKernelFunction::F( drs, h );
-      const PointType gradW = dr * F;
+      if (drs <= searchRadius )
+      {
+         const PointType v_j = view_v[ j ];
+         const RealType rho_j = view_rho[ j ];
+         //const RealType p_j = view_p[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j );
 
-      const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-      const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-      *drho_i += ( dv, gradW ) * m - diffTerm;
+         /* Interaction: */
+         //const PointType dr = r_i - r_j;
+         const PointType dv = v_i - v_j;
 
-      const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-      const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
-      *a_i += ( -1.0 ) * ( p_term + visco )* gradW * m;
+         //const RealType drs = l2Norm( dr );
+         const RealType F = SPHKernelFunction::F( drs, h );
+         const PointType gradW = dr * F;
+
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+         const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
+         *drho_i += ( dv, gradW ) * m - diffTerm;
+
+         const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
+         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
+         *a_i += ( -1.0 ) * ( p_term + visco )* gradW * m;
+      }
    };
 
    auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, PointType& r_i, PointType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
@@ -67,22 +73,27 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       if( view_particleType[ j ] == 0 ){
          /* This should be some interaction structure, mby. - properties of particle B: */
          const PointType r_j = view_points[ j ];
-         const PointType v_j = view_v[ j ];
-         const RealType rho_j = view_rho[ j ];
-         //const RealType p_j = view_p[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j );
-
-         /* Interaction */
          const PointType dr = r_i - r_j;
-         const PointType dv = v_i - v_j;
-
          const RealType drs = l2Norm( dr );
-         const RealType F = SPHKernelFunction::F( drs, h );
-         const PointType gradW = dr*F;
+         if( drs <= searchRadius )
+         {
+            const PointType v_j = view_v[ j ];
+            const RealType rho_j = view_rho[ j ];
+            //const RealType p_j = view_p[ j ];
+            const RealType p_j = EOS::DensityToPressure( rho_j );
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-         const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-         *drho_i += ( dv, gradW ) * m - diffTerm;
+            /* Interaction */
+            //const PointType dr = r_i - r_j;
+            const PointType dv = v_i - v_j;
+
+            const RealType drs = l2Norm( dr );
+            const RealType F = SPHKernelFunction::F( drs, h );
+            const PointType gradW = dr*F;
+
+            const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+            const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
+            *drho_i += ( dv, gradW ) * m - diffTerm;
+         }
       }
    };
 
@@ -103,7 +114,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       // Process fluid particle
       if( view_particleType[ i ] == 0 )
       {
-         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_lastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
          view_Drho[ i ] = drho_i;
          a_i[ 1 ] -= 9.81 ;
@@ -112,7 +123,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       // Process boundary particle
       else if( view_particleType[ i ] == 1 )
       {
-         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_particleCellIndex, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_lastCellParticle, view_particleCellIndex, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
 
          view_Drho[ i ] = drho_i;
          a_i = { 0., 0. };
@@ -123,9 +134,20 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
          printf( "INVALID PARTICLE TYPE!" );
       }
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, particleLoop, neighborSearch );
+
+   //Devices::Cuda::LaunchConfiguration launch_config;
+   //launch_config.blockSize.x = 122328; launch_config.blockSize.y = 1; launch_config.blockSize.z = 1;
+   //launch_config.gridSize.x = TNL::min( Cuda::getMaxGridXSize(), Cuda::getNumberOfBlocks( numberOfParticles, 256) ); launch_config.gridSize.y = 1; launch_config.gridSize.z = 1;
+   //printf(" BlockSize: %d\n", launch_config.blockSize.x );
+   //Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, particleLoop, neighborSearch );
+   SPHParallelFor::exec( 0, numberOfParticles, particleLoop, neighborSearch );
 }
 
+//template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename Function, typename... FunctionArgs >
+//__global__
+//void
+//ParticleLoop( NeighborSearchPointer& neighborSearch )
+//{  }
 
 } // SPH
 } // ParticleSystem

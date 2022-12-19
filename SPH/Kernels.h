@@ -10,24 +10,20 @@ namespace SPH {
 class WendlandKernel //2D
 {
 public:
+
    __cuda_callable__
    static float F( float r, float h )
    {
-      float F = 0;
-      const float awen = float( 0.557 / ( h * h ) ); //2D
-      const float bwen = float( -2.7852 / ( h * h * h ) ); //2D
+      const float bwen = float( -2.7852 / ( h * h * h ) ); //2D move to const
       const float qq = r / h; //2D
       const float wqq1 = 1.f - 0.5f * qq;
-      const float wqq2 = wqq1 * wqq1;
-      const float wqq = qq + qq + 1.f;
-
-      if ( qq <= 2.0 ){
-         F = bwen * qq * wqq2 * wqq1 / r;
-      }
-      else{
-         F = 0.0;
-      }
-      return F;
+      return bwen * qq * wqq1 * wqq1 * wqq1 / r;
+      /*
+      if ( qq <= 2.0 )
+         return bwen * qq * wqq1 * wqq1 * wqq1 / r;
+      else
+         return 0.0;
+      */
    }
 
    __cuda_callable__

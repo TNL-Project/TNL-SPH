@@ -19,7 +19,7 @@ public:
    {
       const RealType gamma = 7.;
       const RealType relativeDensity = rho / rho0;
-      return  coefB * ( pow( relativeDensity, gamma ) - 1 );
+      return coefB * ( pow( relativeDensity, gamma ) - 1 );
    }
 };
 

@@ -182,7 +182,7 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType numberOfParticles, const CellIndexArrayView view_firstCellParticle, const CellIndexArrayView view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const CellIndexArrayView& view_firstCellParticle, const CellIndexArrayView& view_lastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
 {
    static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
    const unsigned int activeCell = view_particleCellIndex[ i ];
@@ -191,8 +191,10 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
       for( int cj = -1; cj <= 1; cj++ ){
          const unsigned int neighborCell = activeCell + cj * numberOfCellsInX + ci;
          int j = view_firstCellParticle[ neighborCell ];
-
-         while( ( j < numberOfParticles ) && ( view_particleCellIndex[ j ] == neighborCell ) ){
+         int j_end = view_lastCellParticle[ neighborCell ];
+         if( j_end >= numberOfParticles )
+          	j_end = -1;
+         while( ( j <= j_end ) ){ //test
             if( i == j ){ j++; continue; }
             f( i, j, args... );
             j++;
@@ -213,6 +215,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach(
 
    // needed for negihbor loop
    const auto view_firstCellParticle = getCellFirstParticleList().getView();
+   const auto view_lastCellParticle = getCellFirstParticleList().getView();
    const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
    GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
 
@@ -227,7 +230,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach(
 
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
-      this->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_particleCellIndex, compareTwoParticles );
+      this->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_lastCellParticle, view_particleCellIndex, compareTwoParticles );
    };
    Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop );
 }

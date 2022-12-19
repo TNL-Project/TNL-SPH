@@ -43,6 +43,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::InteractModel()
    model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch );
 }
 
+
 } // SPH
 } // ParticleSystem
 } // TNL

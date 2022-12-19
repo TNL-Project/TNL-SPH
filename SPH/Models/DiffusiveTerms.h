@@ -21,8 +21,7 @@ class MolteniDiffusiveTerm
    static RealType
    Psi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs )
    {
-      const RealType psi = coefDT * ( rhoJ - rhoI ) / ( drs * drs );
-      return psi;
+      return coefDT * ( rhoJ - rhoI ) / ( drs * drs );
    }
 };
 
