@@ -31,8 +31,8 @@ const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/da
 //#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
 
-const float endTime = 0.0002;
-//const float endTime = 0.05;
+//const float endTime = 0.0002;
+const float endTime = 0.05;
 
 /**
  * SPH general toolds.

@@ -33,7 +33,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    const auto view_particleType = this->getParticleType().getView();
    const auto view_rho = this->getRho().getView();
    auto view_Drho = this->getDrho().getView();
-   //const auto view_p = this->getPress().getView();
    const auto view_v = this->getVel().getView();
    auto view_a = this->getAcc().getView();
 
@@ -47,14 +46,11 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       {
          const PointType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
-         //const RealType p_j = view_p[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j );
 
          /* Interaction: */
-         //const PointType dr = r_i - r_j;
          const PointType dv = v_i - v_j;
 
-         //const RealType drs = l2Norm( dr );
          const RealType F = SPHKernelFunction::F( drs, h );
          const PointType gradW = dr * F;
 
@@ -79,14 +75,11 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
          {
             const PointType v_j = view_v[ j ];
             const RealType rho_j = view_rho[ j ];
-            //const RealType p_j = view_p[ j ];
             const RealType p_j = EOS::DensityToPressure( rho_j );
 
             /* Interaction */
-            //const PointType dr = r_i - r_j;
             const PointType dv = v_i - v_j;
 
-            const RealType drs = l2Norm( dr );
             const RealType F = SPHKernelFunction::F( drs, h );
             const PointType gradW = dr*F;
 
@@ -105,7 +98,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const PointType r_i = view_points[ i ];
       const PointType v_i = view_v[ i ];
       const RealType rho_i = view_rho[ i ];
-      //const RealType p_i = view_p[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
 
       PointType a_i = {0., 0.};
@@ -135,19 +127,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       }
    };
 
-   //Devices::Cuda::LaunchConfiguration launch_config;
-   //launch_config.blockSize.x = 122328; launch_config.blockSize.y = 1; launch_config.blockSize.z = 1;
-   //launch_config.gridSize.x = TNL::min( Cuda::getMaxGridXSize(), Cuda::getNumberOfBlocks( numberOfParticles, 256) ); launch_config.gridSize.y = 1; launch_config.gridSize.z = 1;
-   //printf(" BlockSize: %d\n", launch_config.blockSize.x );
-   //Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, particleLoop, neighborSearch );
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, neighborSearch );
 }
-
-//template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename Function, typename... FunctionArgs >
-//__global__
-//void
-//ParticleLoop( NeighborSearchPointer& neighborSearch )
-//{  }
 
 } // SPH
 } // ParticleSystem
