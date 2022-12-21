@@ -157,6 +157,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt 
    Algorithms::ParallelFor< DeviceType >::exec( 0, this->particles->getNumberOfParticles(), init );
 
    std::swap( this->v, this->vO ); //swap pointers instead
+   std::swap( this->rho, this->rhoO ); //swap pointers instead
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
