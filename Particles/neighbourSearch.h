@@ -25,36 +25,28 @@ public:
    using CellIndexArrayType = typename ParticleSystem::CellIndexArrayType;
    using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
 
+   /* bucketing */
+   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
+   using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
+   using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+
    /**
     * Constructors.
     */
    NeighborSearch(ParticlePointer& particles, GlobalIndexType cellCount)
-   : particles(particles), firstCellParticle(cellCount), lastCellParticle(cellCount)
+   : particles(particles), firstLastCellParticle(cellCount)
    {
-      //firstCellParticle = -1;
-      //lastCellParticle = -1;
-
-      firstCellParticle = INT_MAX;
-      lastCellParticle = INT_MAX;
+      firstLastCellParticle = INT_MAX;
    }
 
    /**
-    * Get list of first particle in cells.
+    * Get list of first and last particle in cells.
     */
-   const typename ParticleSystem::CellIndexArrayType& // -> using..
-   getCellFirstParticleList() const;
+   const PairIndexArrayType& // -> using..
+   getCellFirstLastParticleList() const;
 
-   typename ParticleSystem::CellIndexArrayType& // -> using..
-   getCellFirstParticleList();
-
-   /**
-    * Get list of last particle in cells.
-    */
-   const typename ParticleSystem::CellIndexArrayType& // -> using..
-   getCellLastParticleList() const;
-
-   typename ParticleSystem::CellIndexArrayType& // -> using..
-   getCellLastParticleList();
+   PairIndexArrayType& // -> using..
+   getCellFirstLastParticleList();
 
    /**
     * Assign to each cell index of first contained particle.
@@ -80,7 +72,7 @@ public:
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
    void
-   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const CellIndexArrayView& view_firstCellParticle, const CellIndexArrayView& view_lastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
+   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
 
    /**
     * For all particles run loop over neighbors and assemble neighbor list.
@@ -116,10 +108,10 @@ public:
 
 protected:
 
+   //int numberOfCells
    ParticlePointer particles;
 
-   CellIndexArrayType firstCellParticle;
-   CellIndexArrayType lastCellParticle;
+   PairIndexArrayType firstLastCellParticle;
 
 };
 
