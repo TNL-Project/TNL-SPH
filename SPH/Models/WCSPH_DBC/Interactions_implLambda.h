@@ -14,8 +14,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
    static constexpr GlobalIndexType _numberOfCells = Particles::Config::gridXsize; //FIXIT
-   const auto view_firstCellParticle = neighborSearch->getCellFirstParticleList().getView();
-   const auto view_lastCellParticle = neighborSearch->getCellLastParticleList().getView(); // DEBUG
+   const auto view_firstLastCellParticle = neighborSearch->getCellFirstLastParticleList().getView();
+   //const auto view_lastCellParticle = neighborSearch->getCellLastParticleList().getView(); // DEBUG
    const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
    const auto view_points = particles->getPoints().getView();
    const RealType searchRadius = this->particles->getSearchRadius();
@@ -60,7 +60,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
          const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
-         *a_i += ( -1.0 ) * ( p_term + visco )* gradW * m;
+         *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
       }
    };
 
@@ -100,25 +100,25 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const RealType rho_i = view_rho[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
 
-      PointType a_i = {0., 0.};
-      RealType drho_i = 0.;
+      PointType a_i = {0.f, 0.f};
+      RealType drho_i = 0.f;
 
       // Process fluid particle
       if( view_particleType[ i ] == 0 )
       {
-         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_lastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
          view_Drho[ i ] = drho_i;
-         a_i[ 1 ] -= 9.81 ;
+         a_i[ 1 ] -= 9.81f ;
          view_a[ i ] = a_i;
       }
       // Process boundary particle
       else if( view_particleType[ i ] == 1 )
       {
-         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstCellParticle, view_lastCellParticle, view_particleCellIndex, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+         neighborSearch->loopOverNeighbors( i, numberOfParticles, view_firstLastCellParticle, view_particleCellIndex, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
 
          view_Drho[ i ] = drho_i;
-         a_i = { 0., 0. };
+         a_i = { 0.f, 0.f };
          view_a[ i ] = a_i;
       }
       else
