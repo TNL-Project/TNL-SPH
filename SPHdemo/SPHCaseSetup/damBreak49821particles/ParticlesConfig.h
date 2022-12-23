@@ -24,7 +24,7 @@ class ParticleSystemConfig
    static constexpr int numberOfParticles = 49821;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
-   static constexpr RealType searchRadius = 0.0056569*1.001;
+   static constexpr RealType searchRadius = 0.0056569f*1.001f;
    static constexpr int gridXsize = 285 + 2;
    static constexpr int gridYsize = 158 + 2;
 

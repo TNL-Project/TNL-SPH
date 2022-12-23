@@ -17,15 +17,15 @@ class SPHCaseConfig
 
    static constexpr int spaceDimension = 2;
 
-   static constexpr float mass = 0.004;
-   static constexpr float speedOfSound = 34.3;
-   static constexpr float coefB = 167050.281250;
-   static constexpr float rho0 = 1000.;
-   static constexpr float h = 0.0028284;
-   static constexpr float delta = 0.1;
-   static constexpr float alpha = 0.02;
-   static constexpr float eps = 0.001;
-   static constexpr float dtInit = 0.00002;
+   static constexpr float mass = 0.004f;
+   static constexpr float speedOfSound = 34.3f;
+   static constexpr float coefB = 167050.281250f;
+   static constexpr float rho0 = 1000.f;
+   static constexpr float h = 0.0028284f;
+   static constexpr float delta = 0.1f;
+   static constexpr float alpha = 0.02f;
+   static constexpr float eps = 0.001f;
+   static constexpr float dtInit = 0.00002f;
 };
 
 } //SPH

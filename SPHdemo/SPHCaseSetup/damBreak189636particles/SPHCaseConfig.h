@@ -17,15 +17,15 @@ class SPHCaseConfig
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr float mass = 0.001;
-   static constexpr float speedOfSound = 34.3;
-   static constexpr float coefB = 167610.859375;
-   static constexpr float rho0 = 1000.;
-   static constexpr float h = 0.001414;
-   static constexpr float delta = 0.1;
-   static constexpr float alpha = 0.02;
-   static constexpr float eps = 0.001;
-   static constexpr float dtInit = 0.00001;
+   static constexpr float mass = 0.001f;
+   static constexpr float speedOfSound = 34.3f;
+   static constexpr float coefB = 167610.859375f;
+   static constexpr float rho0 = 1000.f;
+   static constexpr float h = 0.001414f;
+   static constexpr float delta = 0.1f;
+   static constexpr float alpha = 0.02f;
+   static constexpr float eps = 0.001f;
+   static constexpr float dtInit = 0.00001f;
 };
 
 } //SPH

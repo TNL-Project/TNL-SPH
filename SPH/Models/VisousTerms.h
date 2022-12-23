@@ -10,7 +10,7 @@ class ArtificialViscosity
 public:
    using RealType = typename SPHCaseConfig::RealType; //fix this
 
-   static constexpr RealType coefAV = ( -2. ) * SPHCaseConfig::alpha * SPHCaseConfig::speedOfSound; //?
+   static constexpr RealType coefAV = ( -2.f ) * SPHCaseConfig::alpha * SPHCaseConfig::speedOfSound; //?
    static constexpr RealType h = SPHCaseConfig::h;
    static constexpr RealType epsilon = SPHCaseConfig::eps;
 
@@ -19,7 +19,7 @@ public:
    Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv )
    {
       const RealType mu = h * drdv / ( drs * drs + epsilon * h * h );
-      return ( drdv < 0 ) ? ( coefAV * mu / ( rhoI + rhoJ ) ) : (0.);
+      return ( drdv < 0 ) ? ( coefAV * mu / ( rhoI + rhoJ ) ) : ( 0.f );
    }
 };
 

@@ -17,7 +17,7 @@ public:
    static RealType
    DensityToPressure( RealType rho )
    {
-      const RealType gamma = 7.;
+      const RealType gamma = 7.f;
       const RealType relativeDensity = rho / rho0;
       return coefB * ( pow( relativeDensity, gamma ) - 1 );
    }
