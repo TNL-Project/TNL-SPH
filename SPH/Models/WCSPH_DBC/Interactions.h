@@ -3,6 +3,14 @@
 #include <TNL/Containers/Array.h>
 #include <TNL/Containers/ArrayView.h>
 
+/**
+ * Use thrust for sorting.
+ **/
+#include <thrust/sort.h>
+#include <thrust/gather.h>
+#include <thrust/execution_policy.h>
+#include <thrust/iterator/zip_iterator.h>
+
 #include "../../SPHTraits.h"
 #include "Variables.h"
 
@@ -47,11 +55,14 @@ public:
    using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
+   /* Thrust sort */
+   using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType, GlobalIndexType >;
+
    /**
     * Constructor.
     */
    WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-   : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), particles( particles )
+   : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), indicesMap( size ), particles( particles )
    {
       vO = 0.; //remove
       rhoO = 1000.; //remove
@@ -101,6 +112,7 @@ public:
     * TODO: Move this on the side of nbsearch/particles.
     */
    void sortParticlesAndVariables();
+   void sortParticlesAndVariablesThrust();
 
    /**
     * Compute pressure from density.
@@ -141,6 +153,9 @@ public:
 
    ParticlePointer particles;
    //Integrator integrator; //temp
+
+   /* TEMP - Indices for thrust sort. */
+   IndexArrayType indicesMap;
 
 };
 

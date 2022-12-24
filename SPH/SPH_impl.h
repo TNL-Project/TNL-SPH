@@ -25,7 +25,8 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    std::cout << " - particles->computeParticleCellIndices();... done " << std::endl;
 
    timer_sort.start();
-   model->sortParticlesAndVariables(); //particles.sortParticles();
+   //model->sortParticlesAndVariables(); //particles.sortParticles();
+   model->sortParticlesAndVariablesThrust();
    timer_sort.stop();
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
 

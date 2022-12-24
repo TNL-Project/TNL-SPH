@@ -21,7 +21,7 @@
  */
 //#include "../SPHCaseSetup/damBreak2769particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreak2769particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/2769particles/dambreak.vtk";
+//const std::string inputParticleFile = "../SPHCaseSetup/damBreak2769particles/dambreak.vtk";
 
 #include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
 #include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"

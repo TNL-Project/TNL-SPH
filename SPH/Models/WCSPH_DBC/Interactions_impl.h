@@ -116,6 +116,34 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThrust()
+{
+   //Reset indices:
+   indicesMap.forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
+
+   GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
+   auto view_particleCellIndices = particles->getParticleCellIndices().getView();
+   auto view_points = particles->getPoints().getView();
+
+   auto view_type = type.getView();
+   auto view_rho = rho.getView();
+   auto view_v = v.getView();
+   auto view_rhoO = rhoO.getView();
+   auto view_vO = vO.getView();
+
+   //thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, indicesMap.getArrayData() );
+   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points.getArrayData() );
+   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_type.getArrayData(), view_type.getArrayData() );
+   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rho.getArrayData(), view_rho.getArrayData() );
+   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_v.getArrayData(), view_v.getArrayData() );
+   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rhoO.getArrayData(), view_rhoO.getArrayData() );
+   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_vO.getArrayData(), view_vO.getArrayData() );
+
+   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_type.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
