@@ -115,7 +115,7 @@ int main( int argc, char* argv[] )
 
    int steps = endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
-   for( unsigned int time = 0; time < steps; time ++ ) //2500
+   for( unsigned int time = 0; time < 1; time ++ ) //2500
    {
       std::cout << "STEP: " << time << std::endl;
 
@@ -127,34 +127,34 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
-      timer_interact.start();
-      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
-      timer_interact.stop();
-      std::cout << "Interact... done. " << std::endl;
+      //timer_interact.start();
+      //mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
+      //timer_interact.stop();
+      //std::cout << "Interact... done. " << std::endl;
 
-      //#include "outputForDebug.h"
+      ////#include "outputForDebug.h"
 
-      timer_integrate.start();
-      if( time % 20 == 0 ) {
-         mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
-      }
-      else {
-         mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
-      }
-      timer_integrate.stop();
-      std::cout << "integrate... done. " << std::endl;
+      //timer_integrate.start();
+      //if( time % 20 == 0 ) {
+      //   mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+      //}
+      //else {
+      //   mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
+      //}
+      //timer_integrate.stop();
+      //std::cout << "integrate... done. " << std::endl;
 
-      timer_pressure.start();
-      mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
-      timer_pressure.stop();
-      std::cout << "Compute pressure... done. " << std::endl;
+      //timer_pressure.start();
+      //mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
+      //timer_pressure.stop();
+      //std::cout << "Compute pressure... done. " << std::endl;
 
-      if( ( time % 2500 ==  0) && (time > 1) )
-      {
-         std::string outputFileName = "results/particles";
-         outputFileName += std::to_string(time) + ".ptcs";
-         #include "writeParticleData.h"
-      }
+      //if( ( time % 2500 ==  0) && (time > 1) )
+      //{
+      //   std::string outputFileName = "results/particles";
+      //   outputFileName += std::to_string(time) + ".ptcs";
+      //   #include "writeParticleData.h"
+      //}
    }
 
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
