@@ -4,6 +4,9 @@ TNL_INCLUDE_DIRS := -I ~/.local/include
 WITH_OPENMP := yes
 WITH_DEBUG := no
 
+# Application specific
+PREFER_SPEED_OVER_MEMORY := yes
+
 # If TNL is installed on your system, the CUDA architecture can be detected
 # automatically by tnl-cuda-arch. This is done if CUDA_ARCH is set to "auto".
 # Otherwise, CUDA_ARCH has to be set manually to the desired CUDA architecture
@@ -47,4 +50,10 @@ ifeq ($(WITH_OPENMP),yes)
     LDLIBS += -lgomp
     CUDA_CXXFLAGS += -Xcompiler -fopenmp -DHAVE_OPENMP
     CUDA_LDLIBS += -lgomp
+endif
+
+# TEMP - prefer speed over memory
+ifeq ($(PREFER_SPEED_OVER_MEMORY),yes)
+    CXXFLAGS += -DPREFER_SPEED_OVER_MEMORY
+    CUDA_CXXFLAGS += -DPREFER_SPEED_OVER_MEMORY
 endif
