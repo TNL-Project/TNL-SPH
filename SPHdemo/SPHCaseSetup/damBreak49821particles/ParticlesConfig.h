@@ -34,6 +34,7 @@ class ParticleSystemConfig
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
+   //using CellIndexerType = ZOrderCurve< ParticleSystemConfig, DeviceType >; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 

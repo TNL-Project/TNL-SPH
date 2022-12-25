@@ -78,6 +78,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
    for( int ci = -1; ci <= 1; ci++ ){
       for( int cj = -1; cj <= 1; cj++ ){
          const unsigned int neighborCell = activeCell + cj * numberOfCellsInX + ci;
+         //const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ... );
          const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
          int j = firstLastParticle[ 0 ];
          int j_end = firstLastParticle[ 1 ];
