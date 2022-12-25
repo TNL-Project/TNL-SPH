@@ -114,7 +114,6 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
    int steps = endTime / SPHConfig::dtInit;
-   //int steps = 1000;
    std::cout << "Number of steps: " << steps << std::endl;
    for( unsigned int time = 0; time < steps; time ++ ) //2500
    {

@@ -155,12 +155,19 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
    //view_rhoO.swap( view_rhoO_swap );
    //view_vO.swap( view_vO_swap );
 
-   swap( view_points , view_points_swap );
-   swap( view_type , view_type_swap );
-   swap( view_rho , view_rho_swap );
-   swap( view_v , view_v_swap );
-   swap( view_rhoO , view_rhoO_swap );
-   swap( view_vO , view_vO_swap );
+   particles->getPoints().swap( points_swap );
+   type.swap( type_swap );
+   rho.swap( rho_swap );
+   v.swap( v_swap );
+   rhoO.swap( rhoO_swap );
+   vO.swap( vO_swap );
+
+   //swap( view_points.getArrayData() , view_points_swap.getArrayData() );
+   //swap( view_type.getArrayData() , view_type_swap.getArrayData() );
+   //swap( view_rho.getArrayData() , view_rho_swap.getArrayData() );
+   //swap( view_v.getArrayData() , view_v_swap.getArrayData() );
+   //swap( view_rhoO.getArrayData() , view_rhoO_swap.getArrayData() );
+   //swap( view_vO.getArrayData() , view_vO_swap.getArrayData() );
 
    //thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_type.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
 }
