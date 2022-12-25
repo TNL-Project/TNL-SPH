@@ -56,13 +56,15 @@ public:
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /* Thrust sort */
-   using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType, GlobalIndexType >;
+   using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
 
    /**
     * Constructor.
     */
    WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-   : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), indicesMap( size ), particles( particles )
+   : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ), indicesMap( size ),
+   type_swap( size ), rho_swap( size ), v_swap( size ), rhoO_swap( size ), vO_swap( size ), points_swap( size ),
+   particles( particles )
    {
       vO = 0.; //remove
       rhoO = 1000.; //remove
@@ -156,6 +158,14 @@ public:
 
    /* TEMP - Indices for thrust sort. */
    IndexArrayType indicesMap;
+
+   ///* TEMP - TEST */
+   ParticleTypeArrayType type_swap;
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
+   ScalarArrayType rhoO_swap;
+   VectorArrayType vO_swap;
+   PointArrayType points_swap;
 
 };
 

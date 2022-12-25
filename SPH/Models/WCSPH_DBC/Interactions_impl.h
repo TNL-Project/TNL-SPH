@@ -132,15 +132,37 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
    auto view_rhoO = rhoO.getView();
    auto view_vO = vO.getView();
 
-   //thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, indicesMap.getArrayData() );
-   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points.getArrayData() );
-   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_type.getArrayData(), view_type.getArrayData() );
-   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rho.getArrayData(), view_rho.getArrayData() );
-   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_v.getArrayData(), view_v.getArrayData() );
-   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rhoO.getArrayData(), view_rhoO.getArrayData() );
-   //thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_vO.getArrayData(), view_vO.getArrayData() );
+   auto view_indicesMap = indicesMap.getView();
+   auto view_points_swap = points_swap.getView();
+   auto view_type_swap = type_swap.getView();
+   auto view_rho_swap = rho_swap.getView();
+   auto view_v_swap = v_swap.getView();
+   auto view_rhoO_swap = rhoO_swap.getView();
+   auto view_vO_swap = vO_swap.getView();
 
-   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_type.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
+   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, view_indicesMap.getArrayData() );
+   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points_swap.getArrayData() );
+   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_type.getArrayData(), view_type_swap.getArrayData() );
+   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rho.getArrayData(), view_rho_swap.getArrayData() );
+   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_v.getArrayData(), view_v_swap.getArrayData() );
+   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rhoO.getArrayData(), view_rhoO_swap.getArrayData() );
+   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_vO.getArrayData(), view_vO_swap.getArrayData() );
+
+   //view_points.swap( view_points_swap );
+   //view_type.swap( view_type_swap );
+   //view_rho.swap( view_rho_swap );
+   //view_v.swap( view_v_swap );
+   //view_rhoO.swap( view_rhoO_swap );
+   //view_vO.swap( view_vO_swap );
+
+   swap( view_points , view_points_swap );
+   swap( view_type , view_type_swap );
+   swap( view_rho , view_rho_swap );
+   swap( view_v , view_v_swap );
+   swap( view_rhoO , view_rhoO_swap );
+   swap( view_vO , view_vO_swap );
+
+   //thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_type.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
