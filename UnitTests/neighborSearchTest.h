@@ -62,14 +62,15 @@ class ParticlesConfigCentric
    using RealType = float;
 
    using DeviceType = Device;
-   using CellIndexerType = SimpleCellIndex<ParticlesConfigCentric< DeviceType >, DeviceType>;
+   //using CellIndexerType = SimpleCellIndex<ParticlesConfigCentric< DeviceType >, DeviceType>;
+   using CellIndexerType = ZOrderCurve<ParticlesConfigCentric< DeviceType >, DeviceType>;
 
    static constexpr int spaceDimension = 2;
    static constexpr int maxOfNeigborsPerParticle = 12;
 
    static constexpr float searchRadius = 0.6;
-   static constexpr int gridXsize = 2 + 2;
-   static constexpr int gridYsize = 3 + 2;
+   static constexpr int gridXsize = 2 + 4;
+   static constexpr int gridYsize = 3 + 4;
    static constexpr RealType gridXbegin = -0.5 - searchRadius * 1;
    static constexpr RealType gridYbegin = -0.5 - searchRadius * 1;
 
@@ -482,6 +483,10 @@ TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
    particles->computeGridCellIndices();
    particles->computeParticleCellIndices();
    particles->sortParticles();
+
+	std::cout << "Particle positions: " << particles->getPoints() << std::endl;
+	std::cout << "Particle cell indices: " << particles->getParticleCellIndices() << std::endl;
+	std::cout << "Grid cell indices: " << particles->getGridCellIndices() << std::endl;
 
    //create neighbor search and search for neighbors:
    NeighborSearchPointer nbs( particles, ParticlesConfigCentric::gridXsize * ParticlesConfigCentric::gridYsize  );
