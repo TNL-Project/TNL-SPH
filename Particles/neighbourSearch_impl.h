@@ -73,6 +73,8 @@ void
 NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType gridX, const GlobalIndexType gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
 {
    static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
+   static constexpr GlobalIndexType numberOfCellsInY = ParticleSystem::Config::gridYsize; //FIXIT
+   static constexpr GlobalIndexType numberOfCells = numberOfCellsInX * numberOfCellsInY; //FIXIT
    const unsigned int activeCell = view_particleCellIndex[ i ];
 
    static const uint32_t MASKS[] = { 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF };
@@ -80,8 +82,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
 
    for( int ci = gridX - 1; ci <= gridX + 1; ci++ ){
       for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
-         //const unsigned int neighborCell = activeCell + cj * numberOfCellsInX + ci;
-         //printf(" [ ci: %d cj: %d ] ", ci, cj );
 
          /*** MORTON CODE ***/
          uint32_t x = ci;
@@ -100,8 +100,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
          const uint32_t neighborCell = x | ( y << 1 );
          /*******************/
 
-         //const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
-         //printf(" [ ci: %d cj: %d  nbc: %d ] ", ci, cj, neighborCell );
          const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
          int j = firstLastParticle[ 0 ];
          int j_end = firstLastParticle[ 1 ];
@@ -163,6 +161,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach(
    static constexpr RealType gridYbegin = ParticleSystem::Config::gridYbegin; //FIXIT
    static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
 
+
    auto compareTwoParticles = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j  ) mutable
    {
       if( ( l2Norm( view_points[ i ] - view_points[ j ] ) < searchRadius ) && ( i != j ) )
@@ -174,15 +173,10 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach(
 
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
-
       const PointType r_i = view_points[ i ];
       const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
       const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
       const unsigned int neighborCell =  gridIndexJ * numberOfCellsInX + gridIndexI;
-
-      printf(" [ x: %f y: %f I: %d J: %d ci: %d ] ", r_i[ 0 ], r_i[ 1 ], gridIndexI, gridIndexJ, neighborCell );
-
-
       this->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex, compareTwoParticles );
    };
    Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop );

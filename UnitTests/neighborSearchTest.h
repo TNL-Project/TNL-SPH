@@ -69,8 +69,8 @@ class ParticlesConfigCentric
    static constexpr int maxOfNeigborsPerParticle = 12;
 
    static constexpr float searchRadius = 0.6;
-   static constexpr int gridXsize = 2 + 4;
-   static constexpr int gridYsize = 3 + 4;
+   static constexpr int gridXsize = 2 + 2;
+   static constexpr int gridYsize = 3 + 2;
    static constexpr RealType gridXbegin = -0.5 - searchRadius * 1;
    static constexpr RealType gridYbegin = -0.5 - searchRadius * 1;
 

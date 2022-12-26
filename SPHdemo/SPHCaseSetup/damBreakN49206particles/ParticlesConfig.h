@@ -21,12 +21,12 @@ class ParticleSystemConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 49821;
+   static constexpr int numberOfParticles = 49206;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = 0.0056569f*1.001f;
-   static constexpr int gridXsize = 285 + 2;
-   static constexpr int gridYsize = 158 + 2;
+   static constexpr int gridXsize = 254 + 2;
+   static constexpr int gridYsize = 126 + 2;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
    static constexpr RealType gridXbegin = -0.0045 - searchRadius * 1;
