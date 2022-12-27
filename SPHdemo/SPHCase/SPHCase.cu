@@ -27,17 +27,17 @@
 //#include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak.vtk";
 
-//#include "../SPHCaseSetup/damBreakN49206particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreakN49206particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreakN49206particles/dambreak.vtk";
+#include "../SPHCaseSetup/damBreakN49206particles/ParticlesConfig.h"
+#include "../SPHCaseSetup/damBreakN49206particles/SPHCaseConfig.h"
+const std::string inputParticleFile = "../SPHCaseSetup/damBreakN49206particles/dambreak.vtk";
 
 //#include "../SPHCaseSetup/damBreak189636particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
 
-#include "../SPHCaseSetup/damBreakN736806particles/ParticlesConfig.h"
-#include "../SPHCaseSetup/damBreakN736806particles/SPHCaseConfig.h"
-const std::string inputParticleFile = "../SPHCaseSetup/damBreakN736806particles/dambreak.vtk";
+//#include "../SPHCaseSetup/damBreakN736806particles/ParticlesConfig.h"
+//#include "../SPHCaseSetup/damBreakN736806particles/SPHCaseConfig.h"
+//const std::string inputParticleFile = "../SPHCaseSetup/damBreakN736806particles/dambreak.vtk";
 
 //const float endTime = 0.0002;
 const float endTime = 0.05;

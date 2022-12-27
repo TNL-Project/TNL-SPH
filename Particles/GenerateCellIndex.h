@@ -46,7 +46,9 @@ public:
          f );
       }
 
-   static uint32_t EvaluateCellIndex( int i, int j )
+   __cuda_callable__
+   static uint32_t
+   EvaluateCellIndex( int i, int j )
    {
       return j*_numberOfCells + i;
    }
@@ -100,14 +102,13 @@ public:
 
    static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, PointsView view_points, GlobalIndexType _numberOfParticles )
    {
-
       auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
       {
-         //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
          //https://graphics.stanford.edu/~seander/bithacks.html
          static const uint32_t MASKS[] = { 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF };
          static const uint32_t SHIFTS[] = { 1, 2, 4, 8 };
 
+         //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
          uint32_t x = TNL::floor( ( view_points[ i ][ 0 ] - ParticleConfig::gridXbegin )/ ParticleConfig::searchRadius );
          uint32_t y = TNL::floor( ( view_points[ i ][ 1 ] - ParticleConfig::gridYbegin )/ ParticleConfig::searchRadius );
 
@@ -131,9 +132,11 @@ public:
          f );
       }
 
-   static uint32_t EvaluateCellIndex( unsigned int i, unsigned int j )
+   __cuda_callable__
+   static uint32_t
+   EvaluateCellIndex( unsigned int i, unsigned int j )
    {
-      //https://graphics.stanford.edu/~seander/bithacks.html
+      ////https://graphics.stanford.edu/~seander/bithacks.html
       static const uint32_t MASKS[] = { 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF };
       static const uint32_t SHIFTS[] = { 1, 2, 4, 8 };
 

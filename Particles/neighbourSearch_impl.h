@@ -70,36 +70,11 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType gridX, const GlobalIndexType gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
 {
-   static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
-   static constexpr GlobalIndexType numberOfCellsInY = ParticleSystem::Config::gridYsize; //FIXIT
-   static constexpr GlobalIndexType numberOfCells = numberOfCellsInX * numberOfCellsInY; //FIXIT
-   const unsigned int activeCell = view_particleCellIndex[ i ];
-
-   static const uint32_t MASKS[] = { 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF };
-   static const uint32_t SHIFTS[] = { 1, 2, 4, 8 };
-
    for( int ci = gridX - 1; ci <= gridX + 1; ci++ ){
       for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
-
-         /*** MORTON CODE ***/
-         uint32_t x = ci;
-         uint32_t y = cj;
-
-         x = ( x | ( x << SHIFTS[ 3 ] ) ) & MASKS[ 3 ];
-         x = ( x | ( x << SHIFTS[ 2 ] ) ) & MASKS[ 2 ];
-         x = ( x | ( x << SHIFTS[ 1 ] ) ) & MASKS[ 1 ];
-         x = ( x | ( x << SHIFTS[ 0 ] ) ) & MASKS[ 0 ];
-
-         y = ( y | ( y << SHIFTS[ 3 ] ) ) & MASKS[ 3 ];
-         y = ( y | ( y << SHIFTS[ 2 ] ) ) & MASKS[ 2 ];
-         y = ( y | ( y << SHIFTS[ 1 ] ) ) & MASKS[ 1 ];
-         y = ( y | ( y << SHIFTS[ 0 ] ) ) & MASKS[ 0 ];
-
-         const uint32_t neighborCell = x | ( y << 1 );
-         /*******************/
-
+         const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
          const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
          int j = firstLastParticle[ 0 ];
          int j_end = firstLastParticle[ 1 ];
