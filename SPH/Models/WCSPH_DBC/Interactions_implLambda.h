@@ -18,7 +18,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
 
    const auto view_firstLastCellParticle = neighborSearch->getCellFirstLastParticleList().getView();
-   //const auto view_lastCellParticle = neighborSearch->getCellLastParticleList().getView(); // DEBUG
    const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
    const auto view_points = particles->getPoints().getView();
    const RealType searchRadius = this->particles->getSearchRadius();

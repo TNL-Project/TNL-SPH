@@ -33,8 +33,7 @@ class ParticleSystemConfig
    static constexpr RealType gridYbegin = -0.0025 - searchRadius * 1;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   //using CellIndexerType = SimpleCellIndex<ParticleSystemConfig, DeviceType>; //?
-   using CellIndexerType = ZOrderCurve<ParticleSystemConfig, DeviceType>; //?
+   using CellIndexerType = SimpleCellIndex<ParticleSystemConfig, DeviceType>; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
