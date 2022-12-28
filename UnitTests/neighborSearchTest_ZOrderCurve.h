@@ -20,7 +20,7 @@ using namespace ParticleSystem;
  * NeighborSearch: SimpleCellIndex
  */
 template< typename Device >
-class ParticlesConfig
+class ParticlesConfigZOrderCurve
 {
    public:
 
@@ -30,14 +30,14 @@ class ParticlesConfig
    using RealType = float;
 
    using DeviceType = Device;
-   using CellIndexerType = SimpleCellIndex<ParticlesConfig< DeviceType >, DeviceType>;
+   using CellIndexerType = ZOrderCurve<ParticlesConfigZOrderCurve< DeviceType >, DeviceType>;
 
    static constexpr int spaceDimension = 2;
    static constexpr int maxOfNeigborsPerParticle = 9;
 
    static constexpr float searchRadius = 0.75;
-   static constexpr int gridXsize = 2 + 2;
-   static constexpr int gridYsize = 2 + 2;
+   static constexpr int gridXsize = 2 + 2; //this has to be power of 2
+   static constexpr int gridYsize = 2 + 2; //this has to be power of 2
    static constexpr RealType gridXbegin = 0 - searchRadius * 1;
    static constexpr RealType gridYbegin = 0 - searchRadius * 1;
 
@@ -51,7 +51,7 @@ class ParticlesConfig
  * NeighborSearch: SimpleCellIndex
  */
 template< typename Device >
-class ParticlesConfigCentric
+class ParticlesConfigCentricZOrderCurve
 {
    public:
 
@@ -61,78 +61,24 @@ class ParticlesConfigCentric
    using RealType = float;
 
    using DeviceType = Device;
-   using CellIndexerType = SimpleCellIndex<ParticlesConfigCentric< DeviceType >, DeviceType>;
+   using CellIndexerType = SimpleCellIndex<ParticlesConfigCentricZOrderCurve< DeviceType >, DeviceType>;
 
    static constexpr int spaceDimension = 2;
    static constexpr int maxOfNeigborsPerParticle = 12;
 
    static constexpr float searchRadius = 0.6;
-   static constexpr int gridXsize = 2 + 2;
-   static constexpr int gridYsize = 3 + 2;
+   static constexpr int gridXsize = 2 + 2; //this has to be power of 2
+   static constexpr int gridYsize = 3 + 2 + 2; //this has to be power of 2
    static constexpr RealType gridXbegin = -0.5 - searchRadius * 1;
    static constexpr RealType gridYbegin = -0.5 - searchRadius * 1;
 
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, GlobalIndexType >;
 };
 
-/**
- * Generate particle system of 9 particles in first quadrant.
- */
-//template< typename Device >
-template< typename Device, typename ParticlePointer >
-//bool generate2DParticleSystem( Particles< ParticlesConfig< Device >, Device >& particles)
-bool generate2DParticleSystem( ParticlePointer particles )
+
+TEST( SearchForNeighborsTest, NeighborSearchHost_ZOrderCurve )
 {
-  //constructor:
-  //particles = Particles< ParticlesConfig< Device >, Device >( 9, 0.75 );
-
-  //setup points:
-  particles->setPoint( 0, { 0., 0. } );
-  particles->setPoint( 1, { 0., 0.5 } );
-  particles->setPoint( 2, { 0., 1. } );
-
-  particles->setPoint( 3, { 0.5, 0. } );
-  particles->setPoint( 4, { 0.5, 0.5 } );
-  particles->setPoint( 5, { 0.5, 1. } );
-
-  particles->setPoint( 6, { 1., 0. } );
-  particles->setPoint( 7, { 1., 0.5 } );
-  particles->setPoint( 8, { 1., 1. } );
-
-  return true;
-}
-
-template< typename Device, typename ParticlePointer >
-//bool generate2DParticleSystemCentric( Particles< ParticlesConfigCentric< Device >, Device >& particles)
-bool generate2DParticleSystemCentric( ParticlePointer particles )
-{
-
-  //constructor:
-  //particles = Particles< ParticlesConfigCentric< Device >, Device >( 12, 0.6 );
-
-  //setup points:
-  particles->setPoint( 0, { -0.5, -0.5 } );
-  particles->setPoint( 1, { -0.5, 0. } );
-  particles->setPoint( 2, { -0.5, 0.5 } );
-  particles->setPoint( 3, { -0.5, 1. } );
-
-  particles->setPoint( 4, { 0., -0.5 } );
-  particles->setPoint( 5, { 0., 0. } );
-  particles->setPoint( 6, { 0., 0.5 } );
-  particles->setPoint( 7, { 0., 1. } );
-
-  particles->setPoint( 8, { 0.5, -0.5 } );
-  particles->setPoint( 9, { 0.5, 0. } );
-  particles->setPoint( 10, { 0.5, 0.5 } );
-  particles->setPoint( 11, { 0.5, 1. } );
-
-  return true;
-}
-
-
-TEST( SearchForNeighborsTest, NeighborSearchHost )
-{
-   using ParticlesConfig =  ParticlesConfig< TNL::Devices::Host > ;
+   using ParticlesConfig =  ParticlesConfigZOrderCurve< TNL::Devices::Host > ;
    using ParticlesHost = Particles< ParticlesConfig, Devices::Host >;
    using neighborSearchHost = NeighborSearch< ParticlesConfig, ParticlesHost >;
 	 using NeighborSearchPointer = typename Pointers::SharedPointer< neighborSearchHost, Devices::Host >;
@@ -271,35 +217,9 @@ TEST( SearchForNeighborsTest, NeighborSearchHost )
 }
 
 #ifdef HAVE_CUDA
-template< typename ParticlePointer >
-__global__ void testSetPointKernel( ParticlePointer particles )
+TEST( SearchForNeighborsTest, NeighborSearchCuda_ZOrderCurve )
 {
-  particles->setPoint( 0, { 0., 0. } );
-  particles->setPoint( 1, { 0., 0.5 } );
-  particles->setPoint( 2, { 0., 1. } );
-
-  particles->setPoint( 3, { 0.5, 0. } );
-  particles->setPoint( 4, { 0.5, 0.5 } );
-  particles->setPoint( 5, { 0.5, 1. } );
-
-  particles->setPoint( 6, { 1., 0. } );
-  particles->setPoint( 7, { 1., 0.5 } );
-  particles->setPoint( 8, { 1., 1. } );
-}
-
-
-template< typename ParticlePointer >
-__global__ void temp_printNeighbors( ParticlePointer particles )
-{
-	if( threadIdx.x < 9 )
-		printf(" %d: %d\n", threadIdx.x , particles->getNeighborsCount( threadIdx.x ) );
-}
-#endif /* HAVE_CUDA */
-
-#ifdef HAVE_CUDA
-TEST( SearchForNeighborsTest, NeighborSearchCuda )
-{
-   using ParticlesConfig =  ParticlesConfig< TNL::Devices::Cuda > ;
+   using ParticlesConfig =  ParticlesConfigZOrderCurve< TNL::Devices::Cuda > ;
    using ParticlesCuda = Particles< ParticlesConfig, Devices::Cuda >;
    using neighborSearchCuda = NeighborSearch< ParticlesConfig, ParticlesCuda >;
 	 using NeighborSearchPointer = typename Pointers::SharedPointer< neighborSearchCuda, Devices::Cuda >;
@@ -440,9 +360,9 @@ TEST( SearchForNeighborsTest, NeighborSearchCuda )
 }
 #endif /* HAVE_CUDA */
 
-TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
+TEST( SearchForNeighborsTest, NeighborSearchHostCentric_ZOrderCurve )
 {
-   using ParticlesConfigCentric =  ParticlesConfigCentric< TNL::Devices::Host > ;
+   using ParticlesConfigCentric =  ParticlesConfigCentricZOrderCurve< TNL::Devices::Host > ;
    using ParticlesHost = Particles< ParticlesConfigCentric, Devices::Host >;
    using neighborSearchHost = NeighborSearch< ParticlesConfigCentric, ParticlesHost >;
 	 using NeighborSearchPointer = typename Pointers::SharedPointer< neighborSearchHost, Devices::Cuda >;
