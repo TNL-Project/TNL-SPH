@@ -30,7 +30,8 @@ class ParticlesConfig
    using RealType = float;
 
    using DeviceType = Device;
-   using CellIndexerType = SimpleCellIndex<ParticlesConfig< DeviceType >, DeviceType>;
+   //using CellIndexerType = SimpleCellIndex<ParticlesConfig< DeviceType >, DeviceType>;
+   using CellIndexerType = ZOrderCurve<ParticlesConfig< DeviceType >, DeviceType>;
 
    static constexpr int spaceDimension = 2;
    static constexpr int maxOfNeigborsPerParticle = 9;
@@ -61,7 +62,8 @@ class ParticlesConfigCentric
    using RealType = float;
 
    using DeviceType = Device;
-   using CellIndexerType = SimpleCellIndex<ParticlesConfigCentric< DeviceType >, DeviceType>;
+   //using CellIndexerType = SimpleCellIndex<ParticlesConfigCentric< DeviceType >, DeviceType>;
+   using CellIndexerType = ZOrderCurve<ParticlesConfigCentric< DeviceType >, DeviceType>;
 
    static constexpr int spaceDimension = 2;
    static constexpr int maxOfNeigborsPerParticle = 12;
@@ -180,7 +182,7 @@ TEST( SearchForNeighborsTest, NeighborSearchHost )
 
 	//std::cout << "Particle positions: " << particles->getPoints() << std::endl;
 	//std::cout << "Particle cell indices: " << particles->getParticleCellIndices() << std::endl;
-	//:	std::cout << "Grid cell indices: " << particles->getGridCellIndices() << std::endl;
+	//std::cout << "Grid cell indices: " << particles->getGridCellIndices() << std::endl;
 	//:	particles->GetParticlesInformations();
 
    //test neighbor list
@@ -482,6 +484,10 @@ TEST( SearchForNeighborsTest, NeighborSearchHostCentric )
    particles->computeParticleCellIndices();
    particles->sortParticles();
 
+	std::cout << "Particle positions: " << particles->getPoints() << std::endl;
+	std::cout << "Particle cell indices: " << particles->getParticleCellIndices() << std::endl;
+	std::cout << "Grid cell indices: " << particles->getGridCellIndices() << std::endl;
+
    //create neighbor search and search for neighbors:
    NeighborSearchPointer nbs( particles, ParticlesConfigCentric::gridXsize * ParticlesConfigCentric::gridYsize  );
    nbs->searchForNeighbors();
@@ -586,5 +592,5 @@ TEST( SearchForNeighborsTest, NeighborSearchCuda )
   using ParticlesCuda = Particles< ParticlesConfig, Deivces::Cuda >;
 
 }
-*/
+ */
 

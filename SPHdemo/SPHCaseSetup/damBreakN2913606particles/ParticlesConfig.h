@@ -21,20 +21,20 @@ class ParticleSystemConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 49821;
+   static constexpr int numberOfParticles = 2913606;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
-   static constexpr RealType searchRadius = 0.0056569f*1.001f;
-   static constexpr int gridXsize = 285 + 2;
-   static constexpr int gridYsize = 158 + 2;
+   static constexpr RealType searchRadius = 0.0007071068f*1.001f;
+   static constexpr int gridXsize = 2046 + 2;
+   static constexpr int gridYsize = 1022 + 2;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = -0.0045 - searchRadius * 1;
-   static constexpr RealType gridYbegin = -0.0045 - searchRadius * 1;
+   static constexpr RealType gridXbegin = -0.0025 - searchRadius * 1;
+   static constexpr RealType gridYbegin = -0.0025 - searchRadius * 1;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   //using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
-   using CellIndexerType = ZOrderCurve< ParticleSystemConfig, DeviceType >; //?
+   //using CellIndexerType = SimpleCellIndex<ParticleSystemConfig, DeviceType>; //?
+   using CellIndexerType = ZOrderCurve<ParticleSystemConfig, DeviceType>; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
