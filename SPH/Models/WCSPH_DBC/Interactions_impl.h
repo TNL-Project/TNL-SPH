@@ -119,9 +119,6 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThrust()
 {
-   //Reset indices:
-   indicesMap.forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-
    GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
    auto view_particleCellIndices = particles->getParticleCellIndices().getView();
    auto view_points = particles->getPoints().getView();
@@ -131,6 +128,10 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
    auto view_v = v.getView();
    auto view_rhoO = rhoO.getView();
    auto view_vO = vO.getView();
+
+#ifdef PREFER_SPEED_OVER_MEMORY
+   //Reset indices:
+   indicesMap.forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
 
    auto view_indicesMap = indicesMap.getView();
    auto view_points_swap = points_swap.getView();
@@ -148,28 +149,15 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
    thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rhoO.getArrayData(), view_rhoO_swap.getArrayData() );
    thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_vO.getArrayData(), view_vO_swap.getArrayData() );
 
-   //view_points.swap( view_points_swap );
-   //view_type.swap( view_type_swap );
-   //view_rho.swap( view_rho_swap );
-   //view_v.swap( view_v_swap );
-   //view_rhoO.swap( view_rhoO_swap );
-   //view_vO.swap( view_vO_swap );
-
    particles->getPoints().swap( points_swap );
    type.swap( type_swap );
    rho.swap( rho_swap );
    v.swap( v_swap );
    rhoO.swap( rhoO_swap );
    vO.swap( vO_swap );
-
-   //swap( view_points.getArrayData() , view_points_swap.getArrayData() );
-   //swap( view_type.getArrayData() , view_type_swap.getArrayData() );
-   //swap( view_rho.getArrayData() , view_rho_swap.getArrayData() );
-   //swap( view_v.getArrayData() , view_v_swap.getArrayData() );
-   //swap( view_rhoO.getArrayData() , view_rhoO_swap.getArrayData() );
-   //swap( view_vO.getArrayData() , view_vO_swap.getArrayData() );
-
-   //thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_type.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
+#else
+   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_type.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
+#endif
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
