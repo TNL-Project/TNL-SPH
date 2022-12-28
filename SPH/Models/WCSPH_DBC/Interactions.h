@@ -162,6 +162,7 @@ public:
    /* TEMP - Indices for thrust sort. */
    IndexArrayType indicesMap;
 
+   /* Copy of arrays needed for resort */
    ParticleTypeArrayType type_swap;
    ScalarArrayType rho_swap;
    VectorArrayType v_swap;
