@@ -16,9 +16,15 @@ enum class FileFormat : std::uint8_t
    zlib_compressed
 };
 
+// VTK data types
+enum class DataType : std::uint8_t
+{
+   CellData,
+   PointData
+};
+
 
 }  // namespace VTK
 }  // namespace ParticleSystem
 }  // namespace TNL
-
 

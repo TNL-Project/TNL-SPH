@@ -14,6 +14,7 @@
  * Particle system reader.
  **/
 #include "../../Readers/VTKReader.h"
+//#include "../../Writers/VTKWriter.h"
 
 /**
  * Case configuration
@@ -82,6 +83,7 @@ int main( int argc, char* argv[] )
    using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimulation< SPHModel, ParticleSystem, NeighborSearch >;
 
    using Reader = TNL::ParticleSystem::Readers::VTKReader;
+   //using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
 
    /**
     * SPH solver models.
@@ -121,6 +123,15 @@ int main( int argc, char* argv[] )
     * Setup type for boundary particles and initial condition.
     */
    #include "asignIinitialCondition.h"
+
+   //const std::string outputFileName = "output.vtk";
+   //std::ofstream outputFile (outputFileName, std::ofstream::out);
+   //Writer myWriter( outputFile, VTK::FileFormat::ascii );
+   ////myWriter.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
+   //myWriter.writeParticles( *mySPHSimulation.particles );
+   ////myWriter.template writeMetadata( 1, 0 );
+   //myWriter.template writePointData< SPHModel::ScalarArrayType >( mySPHSimulation.model->getRho(), "Density" );
+   ////myWriter.template writePointData< SPHModel::VectorArrayType >( mySPHSimulation.model->getVel(), "Velocity" );
 
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
@@ -193,8 +204,8 @@ int main( int argc, char* argv[] )
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
 
-   std::string outputFileName = "particles.ptcs";
-   #include "writeParticleData.h"
+   //:std::string outputFileName = "particles.ptcs";
+   //:#include "writeParticleData.h"
 
-   std::cout << "\nDone ... " << std::endl;
+   //:std::cout << "\nDone ... " << std::endl;
 }
