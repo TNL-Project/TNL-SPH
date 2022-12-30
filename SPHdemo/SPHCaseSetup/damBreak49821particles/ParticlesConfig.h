@@ -21,10 +21,10 @@ class ParticleSystemConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 49821;
+   static constexpr int numberOfParticles = 45000;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
-   static constexpr RealType searchRadius = 0.0056569f*1.001f;
+   static constexpr RealType searchRadius = 0.0056569*1.005;
    static constexpr int gridXsize = 285 + 2;
    static constexpr int gridYsize = 158 + 2;
 
@@ -34,6 +34,34 @@ class ParticleSystemConfig
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
+};
+
+template< typename Device >
+class ParticleSystemConfig_boundary
+{
+   public:
+   using DeviceType = Device;
+
+   using GlobalIndexType = int;
+   using LocalIndexType = int;
+   using CellIndexType = int;
+   using RealType = float;
+
+   static constexpr int spaceDimension = 2;
+   static constexpr int numberOfParticles = 4821;
+   static constexpr int maxOfNeigborsPerParticle = 70;
+
+   static constexpr RealType searchRadius = 0.0056569*1.005;
+   static constexpr int gridXsize = 285 + 2;
+   static constexpr int gridYsize = 158 + 2;
+
+   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
+   static constexpr RealType gridXbegin = -0.0045 - searchRadius * 1;
+   static constexpr RealType gridYbegin = -0.0045 - searchRadius * 1;
+
+   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
+   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_boundary, DeviceType >; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 

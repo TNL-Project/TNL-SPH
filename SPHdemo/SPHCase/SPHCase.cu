@@ -24,9 +24,14 @@
 //#include "../SPHCaseSetup/damBreak2769particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak2769particles/dambreak.vtk";
 
+//:#include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
+//:#include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
+//:const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak.vtk";
+
 #include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
 #include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
-const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak.vtk";
+const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak49821particles/dambreak_boundary.vtk";
 
 //#include "../SPHCaseSetup/damBreakN49206particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreakN49206particles/SPHCaseConfig.h"
@@ -73,6 +78,7 @@ int main( int argc, char* argv[] )
     */
    using Device = Devices::Cuda;
    using ParticlesConfig = ParticleSystemConfig< Device >;
+   using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
    using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
@@ -95,7 +101,7 @@ int main( int argc, char* argv[] )
    /**
     * Create the simulation.
     */
-   SPHSimulation mySPHSimulation( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+   SPHSimulation mySPHSimulation( ParticlesConfig::numberOfParticles, ParticlesConfig_bound::numberOfParticles, ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
 
    /**
      * Temporary.
@@ -113,16 +119,29 @@ int main( int argc, char* argv[] )
    using ParticleSystemToReadData = typename ParticleSystem::Particles< ParticlesConfig, Devices::Host >;
    ParticleSystemToReadData particlesToRead( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius );
 
+   using ParticleSystemToReadData_bound = typename ParticleSystem::Particles< ParticlesConfig_bound, Devices::Host >;
+   ParticleSystemToReadData_bound particlesToRead_bound( ParticlesConfig_bound::numberOfParticles, ParticlesConfig::searchRadius );
+
    const std::string inputFileName = inputParticleFile;
    Reader myReader( inputFileName );
    myReader.detectParticleSystem();
    //myReader.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
    myReader.template loadParticle< ParticleSystemToReadData >( particlesToRead );
 
+   const std::string inputFileName_bound = inputParticleFile_bound;
+   Reader myReader_bound( inputFileName_bound );
+   myReader_bound.detectParticleSystem();
+   //myReader.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
+   myReader_bound.template loadParticle< ParticleSystemToReadData_bound >( particlesToRead_bound );
+
    /**
     * Setup type for boundary particles and initial condition.
     */
-   #include "asignIinitialCondition.h"
+   //#include "asignIinitialCondition.h"
+   #include "asignInitialCondition_fluid.h"
+   std::cout << " Fluid vars loaded. " << std::endl;
+   #include "asignInitialCondition_boundary.h"
+   std::cout << " Boundary vars loaded. " << std::endl;
 
    //const std::string outputFileName = "output.vtk";
    //std::ofstream outputFile (outputFileName, std::ofstream::out);
@@ -161,9 +180,11 @@ int main( int argc, char* argv[] )
       timer_integrate.start();
       if( time % 20 == 0 ) {
          mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         mySPHSimulation.model_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
       }
       else {
          mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
+         mySPHSimulation.model_bound->IntegrateVerlet( SPHConfig::dtInit );
       }
       timer_integrate.stop();
       std::cout << "integrate... done. " << std::endl;

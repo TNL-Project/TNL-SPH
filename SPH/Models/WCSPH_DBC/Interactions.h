@@ -133,9 +133,10 @@ public:
    void
    IntegrateEuler( RealType dt );
 
-   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+   template< typename NeighborSearchPointer, typename ModelPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void
-   Interaction( NeighborSearchPointer& neighborSearch );
+   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, ModelPointer& boundary );
+
 
 //protected:
 

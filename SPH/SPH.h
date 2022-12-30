@@ -27,8 +27,10 @@ public:
 
    SPHSimulation() = default;
 
-   SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ) {};
+   SPHSimulation( GlobalIndexType size, GlobalIndexType size_bound, RealType h, GlobalIndexType numberOfCells )
+   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ),
+     particles_bound( size_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ), model_bound( size_bound, particles_bound ){};
+
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -47,8 +49,11 @@ public:
    //protected: (or private?)
 
    ParticlePointer particles;
+   ParticlePointer particles_bound;
    NeighborSearchPointer neighborSearch;
+   NeighborSearchPointer neighborSearch_bound;
    ModelPointer model;
+   ModelPointer model_bound;
 
 };
 
