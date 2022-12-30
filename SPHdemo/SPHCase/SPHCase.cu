@@ -41,6 +41,11 @@ const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak49821partic
 //#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
 
+//#include "../SPHCaseSetup/damBreak189636particles/ParticlesConfig.h"
+//#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
+//const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak_fluid.vtk";
+//const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak189636particles/dambreak_boundary.vtk";
+
 //#include "../SPHCaseSetup/damBreakN736806particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreakN736806particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreakN736806particles/dambreak.vtk";

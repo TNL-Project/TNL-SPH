@@ -21,7 +21,7 @@ class ParticleSystemConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 739266;
+   static constexpr int numberOfParticles = 720000;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = 0.001414f*1.001f;
@@ -49,7 +49,7 @@ class ParticleSystemConfig_boundary
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 739266;
+   static constexpr int numberOfParticles = 19266;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = 0.001414f*1.001f;
