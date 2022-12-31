@@ -5,87 +5,17 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ParticleTypeArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getParticleType() const
+const Variables&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables() const
 {
-   return this->FluidVariables.type;
+   return FluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ParticleTypeArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getParticleType()
+Variables&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables()
 {
-   return this->FluidVariables.type;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getRho() const
-{
-   return this->FluidVariables.rho;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getRho()
-{
-   return this->FluidVariables.rho;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getDrho() const
-{
-   return this->FluidVariables.drho;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getDrho()
-{
-   return this->FluidVariables.drho;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getPress() const
-{
-   return this->FluidVariables.p;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ScalarArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getPress()
-{
-   return this->FluidVariables.p;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getVel() const
-{
-   return this->FluidVariables.v;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getVel()
-{
-   return this->FluidVariables.v;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getAcc() const
-{
-   return this->FluidVariables.a;
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::VectorArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getAcc()
-{
-   return this->FluidVariables.a;
+   return this->FluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -94,10 +24,10 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
 {
    auto view_particleCellIndices = particles->getParticleCellIndices().getView();
    auto view_points = particles->getPoints().getView();
-   auto view_rho = this->getRho().getView();
-   auto view_v = this->getVel().getView();
-   auto view_rhoO = rhoO.getView();
-   auto view_vO = vO.getView();
+   auto view_rho = this->FluidVariables.rho.getView();
+   auto view_v = this->FluidVariables.v.getView();
+   auto view_rhoO = this->rhoO.getView();
+   auto view_vO = this->vO.getView();
 
    Algorithms::sort< DeviceType, GlobalIndexType >(
        0, particles->getNumberOfParticles(),
@@ -121,8 +51,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
    auto view_particleCellIndices = particles->getParticleCellIndices().getView();
    auto view_points = particles->getPoints().getView();
 
-   auto view_rho = this->getRho().getView();
-   auto view_v = this->getVel().getView();
+   auto view_rho = this->FluidVariables.rho.getView();
+   auto view_v = this->FluidVariables.v.getView();
    auto view_rhoO = rhoO.getView();
    auto view_vO = vO.getView();
 
@@ -159,8 +89,8 @@ template< typename EquationOfState >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
 {
-   auto view_rho = this->getRho().getView();
-   auto view_p = this->getPress().getView();
+   auto view_rho = this->FluidVariables.rho.getView();
+   auto view_p = this->FluidVariables.p.getView();
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -174,15 +104,15 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateVerlet( RealType dt )
 {
-   auto rho_view = this->getRho().getView();
-   auto v_view = this->getVel().getView();
+   auto rho_view = this->FluidVariables.rho.getView();
+   auto v_view = this->FluidVariables.v.getView();
    auto r_view = this->particles->getPoints().getView();
 
    auto rhoO_view = this->rhoO.getView();
    auto vO_view = this->vO.getView();
 
-   const auto drho_view = this->getDrho().getView();
-   const auto a_view = this->getAcc().getView();
+   const auto drho_view = this->FluidVariables.drho.getView();
+   const auto a_view = this->FluidVariables.a.getView();
 
    RealType dtdt05 = 0.5 * dt * dt;
    RealType dt2 = 2 * dt;
@@ -203,15 +133,15 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IntegrateEuler( RealType dt )
 {
-   auto rho_view = this->getRho().getView();
-   auto v_view = this->getVel().getView();
+   auto rho_view = this->FluidVariables.rho.getView();
+   auto v_view = this->FluidVariables.v.getView();
    auto r_view = this->particles->getPoints().getView();
 
    auto rhoO_view = this->rhoO.getView();
    auto vO_view = this->vO.getView();
 
-   auto drho_view = this->getDrho().getView();
-   auto a_view = this->getAcc().getView();
+   const auto drho_view = this->FluidVariables.drho.getView();
+   const auto a_view = this->FluidVariables.a.getView();
 
    RealType dtdt05 = 0.5 * dt * dt;
 

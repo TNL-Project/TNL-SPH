@@ -23,7 +23,7 @@ class SPHFluidVariables
   : type( size ), rho( size ), drho ( size ), p( size ), v( size ), a( size ) {}
 
   /* Variables - Fields */
-  ParticleTypeArrayType type;
+  ParticleTypeArrayType type; //single int
 
   ScalarArrayType rho;
   ScalarArrayType drho;

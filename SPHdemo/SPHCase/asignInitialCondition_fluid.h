@@ -21,10 +21,9 @@ auto vLoaded_view = velocityLoaded.getView();
 auto typeLoaded_view = typeLoaded.getView();
 
 auto points_view = mySPHSimulation.particles->getPoints().getView();
-auto type_view = mySPHSimulation.model->getParticleType().getView();
-auto rho_view = mySPHSimulation.model->getRho().getView();
-auto p_view = mySPHSimulation.model->getPress().getView();
-auto v_view = mySPHSimulation.model->getVel().getView();
+auto rho_view = mySPHSimulation.model->getFluidVariables().rho.getView();
+auto p_view = mySPHSimulation.model->getFluidVariables().p.getView();
+auto v_view = mySPHSimulation.model->getFluidVariables().v.getView();
 
 auto particleLoop = [=] __cuda_callable__ ( int i  ) mutable
 {
@@ -32,7 +31,6 @@ auto particleLoop = [=] __cuda_callable__ ( int i  ) mutable
    p_view[ i ] = pLoaded_view.getElement( i );
    rho_view[ i ] = rhoLoaded_view.getElement( i );
    v_view[ i ] = vLoaded_view.getElement( i );
-   type_view[ i ] = typeLoaded_view.getElement( i );
 };
 Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig::numberOfParticles, particleLoop );
 

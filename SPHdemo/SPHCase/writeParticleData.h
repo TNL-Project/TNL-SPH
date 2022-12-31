@@ -2,10 +2,9 @@ std::ofstream outputFile;
 outputFile.open( outputFileName );
 
 auto of_r_view = mySPHSimulation.particles->getPoints().getView();
-auto of_type_view = mySPHSimulation.model->getParticleType().getView();
-auto of_rho_view = mySPHSimulation.model->getRho().getView();
-auto of_p_view = mySPHSimulation.model->getPress().getView();
-auto of_v_view = mySPHSimulation.model->getVel().getView();
+auto of_rho_view = mySPHSimulation.model->getFluidVariables().rho.getView();
+auto of_p_view = mySPHSimulation.model->getFluidVariables().p.getView();
+auto of_v_view = mySPHSimulation.model->getFluidVariables().v.getView();
 
 for( unsigned int p = 0; p < ParticlesConfig::numberOfParticles; p++ )
   outputFile << \

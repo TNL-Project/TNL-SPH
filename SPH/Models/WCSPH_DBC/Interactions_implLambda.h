@@ -37,17 +37,14 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    const RealType alpha = this->alpha;
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_particleType = this->getParticleType().getView();
-   const auto view_rho = this->getRho().getView();
-   auto view_Drho = this->getDrho().getView();
-   const auto view_v = this->getVel().getView();
-   auto view_a = this->getAcc().getView();
+   const auto view_rho = this->FluidVariables.rho.getView();
+   auto view_Drho = this->FluidVariables.drho.getView();
+   const auto view_v = this->FluidVariables.v.getView();
+   auto view_a = this->FluidVariables.a.getView();
 
-   const auto view_particleType_bound = boundary->getParticleType().getView();
-   const auto view_rho_bound = boundary->getRho().getView();
-   auto view_Drho_bound = boundary->getDrho().getView();
-   const auto view_v_bound = boundary->getVel().getView();
-   auto view_a_bound = boundary->getAcc().getView();
+   const auto view_rho_bound = boundary->getFluidVariables().rho.getView();
+   auto view_Drho_bound = boundary->getFluidVariables().drho.getView();
+   const auto view_v_bound = boundary->getFluidVariables().v.getView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, PointType& r_i, PointType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, PointType* a_i ) mutable
    {
@@ -177,8 +174,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
-      a_i = { 0.f, 0.f };
-      view_a_bound[ i ] = a_i;
 
    };
    SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary, neighborSearch );

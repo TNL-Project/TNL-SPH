@@ -25,14 +25,12 @@ auto vLoaded_bound_view = velocityLoaded_bound.getView();
 auto typeLoaded_bound_view = typeLoaded_bound.getView();
 
 auto points_bound_view = mySPHSimulation.particles_bound->getPoints().getView();
-auto type_bound_view = mySPHSimulation.model_bound->getParticleType().getView();
-auto rho_bound_view = mySPHSimulation.model_bound->getRho().getView();
-auto p_bound_view = mySPHSimulation.model_bound->getPress().getView();
-auto v_bound_view = mySPHSimulation.model_bound->getVel().getView();
+auto rho_bound_view = mySPHSimulation.model_bound->getFluidVariables().rho.getView();
+auto p_bound_view = mySPHSimulation.model_bound->getFluidVariables().p.getView();
+auto v_bound_view = mySPHSimulation.model_bound->getFluidVariables().v.getView();
 
 std::cout << std::endl << std::endl;
 std::cout << "ParticlesConfig_bound::numberOfParticles: " << ParticlesConfig_bound::numberOfParticles << std::endl;
-std::cout << "points_bound_view.getSize(): " << points_bound_view.getSize() << std::endl;
 std::cout << "rhoLoaded_bound_view.getSize(): " << rhoLoaded_bound_view.getSize() << std::endl;
 std::cout << std::endl << std::endl;
 
@@ -42,7 +40,6 @@ auto particleLoop_bound = [=] __cuda_callable__ ( int i  ) mutable
    p_bound_view[ i ] = pLoaded_bound_view.getElement( i );
    rho_bound_view[ i ] = rhoLoaded_bound_view.getElement( i );
    v_bound_view[ i ] = vLoaded_bound_view.getElement( i );
-   type_bound_view[ i ] = typeLoaded_bound_view.getElement( i );
 };
 Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig_bound::numberOfParticles, particleLoop_bound );
 

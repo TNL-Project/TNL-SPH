@@ -75,41 +75,11 @@ public:
    /**
     * Get fileds with variables.
     */
-   const ParticleTypeArrayType&
-   getParticleType() const;
+   const Variables&
+   getFluidVariables() const;
 
-   ParticleTypeArrayType&
-   getParticleType();
-
-   const ScalarArrayType&
-   getRho() const;
-
-   ScalarArrayType&
-   getRho();
-
-   const ScalarArrayType&
-   getDrho() const;
-
-   ScalarArrayType&
-   getDrho();
-
-   const ScalarArrayType&
-   getPress() const;
-
-   ScalarArrayType&
-   getPress();
-
-   const VectorArrayType&
-   getVel() const;
-
-   VectorArrayType&
-   getVel();
-
-   const VectorArrayType&
-   getAcc() const;
-
-   VectorArrayType&
-   getAcc();
+   Variables&
+   getFluidVariables();
 
    /**
     * Sort particles and all variables based on particle cell index.
@@ -138,7 +108,10 @@ public:
    Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, ModelPointer& boundary );
 
 
-//protected:
+   /* Constants */ //Move to protected
+   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
+
+protected:
 
    /* Variables - Fields */
    Variables FluidVariables;
@@ -148,11 +121,10 @@ public:
    ScalarArrayType rhoO;
    VectorArrayType vO;
 
-   /* Constants */
-   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
    ParticlePointer particles;
    //ParticlePointer boundaryParticles;
+
    //Integrator integrator; //temp
 
 #ifdef PREFER_SPEED_OVER_MEMORY
