@@ -91,7 +91,7 @@ int main( int argc, char* argv[] )
    using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
 
    using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimulation< SPHModel, ParticleSystem, NeighborSearch >;
+   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    using Reader = TNL::ParticleSystem::Readers::VTKReader;
    //using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;

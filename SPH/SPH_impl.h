@@ -6,7 +6,7 @@ namespace SPH {
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
-SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
 {
    /**
     * Compute gird nad partice cell indices.
@@ -48,7 +48,7 @@ SPHSimulation< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
-SPHSimulation< Variables, ParticleSystem, NeighborSearch >::InteractModel()
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::InteractModel()
 {
    model->template Interaction< NeighborSearchPointer, ModelPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound, model_bound );
 }

@@ -3,8 +3,8 @@ TestCase Dambreak
 
 """
 
-boxL = 1.4
-boxH = 0.7
+boxL = 1.61
+boxH = 0.8
 
 fluidL = 0.6
 fluidH = 0.3

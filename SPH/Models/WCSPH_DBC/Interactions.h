@@ -62,9 +62,9 @@ public:
     * Constructor.
     */
    WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-   : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ),
+   : FluidVariables( size ) , rhoO( size ), vO( size ),
 #ifdef PREFER_SPEED_OVER_MEMORY
-   indicesMap( size ), type_swap( size ), rho_swap( size ), v_swap( size ), rhoO_swap( size ), vO_swap( size ), points_swap( size ),
+   indicesMap( size ), rho_swap( size ), v_swap( size ), rhoO_swap( size ), vO_swap( size ), points_swap( size ),
 #endif
    particles( particles )
    {
@@ -141,13 +141,8 @@ public:
 //protected:
 
    /* Variables - Fields */
-   ParticleTypeArrayType type;
-
-   ScalarArrayType rho;
-   ScalarArrayType drho;
-   ScalarArrayType p;
-   VectorArrayType v;
-   VectorArrayType a;
+   Variables FluidVariables;
+   //Variables BoundaryVariables
 
    /* TEMP INTEGRATORS, MOVE OUT */
    ScalarArrayType rhoO;
@@ -157,6 +152,7 @@ public:
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
    ParticlePointer particles;
+   //ParticlePointer boundaryParticles;
    //Integrator integrator; //temp
 
 #ifdef PREFER_SPEED_OVER_MEMORY
@@ -164,12 +160,12 @@ public:
    IndexArrayType indicesMap;
 
    /* Copy of arrays needed for resort */
-   ParticleTypeArrayType type_swap;
    ScalarArrayType rho_swap;
    VectorArrayType v_swap;
+   PointArrayType points_swap;
+
    ScalarArrayType rhoO_swap;
    VectorArrayType vO_swap;
-   PointArrayType points_swap;
 #endif
 
 };
