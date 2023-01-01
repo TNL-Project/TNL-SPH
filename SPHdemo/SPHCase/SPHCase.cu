@@ -184,12 +184,16 @@ int main( int argc, char* argv[] )
 
       timer_integrate.start();
       if( time % 20 == 0 ) {
-         mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
-         mySPHSimulation.model_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         //mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         //mySPHSimulation.model_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         mySPHSimulation.integrator_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
       }
       else {
-         mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
-         mySPHSimulation.model_bound->IntegrateVerlet( SPHConfig::dtInit );
+         //mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
+         //mySPHSimulation.model_bound->IntegrateVerlet( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
+         mySPHSimulation.integrator_bound->IntegrateVerlet( SPHConfig::dtInit );
       }
       timer_integrate.stop();
       std::cout << "integrate... done. " << std::endl;

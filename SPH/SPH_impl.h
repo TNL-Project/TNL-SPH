@@ -29,11 +29,15 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
    std::cout << " - particles->computeParticleCellIndices();... done " << std::endl;
 
    timer_sort.start();
-   //model->sortParticlesAndVariables();
    model->sortParticlesAndVariablesThrust();
+   std::cout << "Particles: SORTED." << std::endl;
+   integrator->sortIntegratorArrays();
+   std::cout << "Integrator: SORTED." << std::endl;
    if( step == 0 )
-   //model_bound->sortParticlesAndVariables();
-   model_bound->sortParticlesAndVariablesThrust();
+   {
+      model_bound->sortParticlesAndVariablesThrust();
+      integrator_bound->sortIntegratorArrays();
+   }
    timer_sort.stop();
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
 

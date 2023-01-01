@@ -20,7 +20,7 @@
 #include "../EquationOfState.h"
 #include "../DiffusiveTerms.h"
 #include "../VisousTerms.h"
-//#include "Integrator.h"
+#include "Integrator.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -58,19 +58,19 @@ public:
    /* Thrust sort */
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
 
+   /* Integrator */
+   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
+   using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
+
    /**
     * Constructor.
     */
    WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-   : FluidVariables( size ) , rhoO( size ), vO( size ),
+   : FluidVariables( size ),
 #ifdef PREFER_SPEED_OVER_MEMORY
-   indicesMap( size ), rho_swap( size ), v_swap( size ), rhoO_swap( size ), vO_swap( size ), points_swap( size ),
+   indicesMap( size ), rho_swap( size ), v_swap( size ), points_swap( size ),
 #endif
-   particles( particles )
-   {
-      vO = 0.; //remove
-      rhoO = 1000.; //remove
-   }
+   particles( particles ) {}
 
    /**
     * Get fileds with variables.
@@ -80,6 +80,15 @@ public:
 
    Variables&
    getFluidVariables();
+
+   /**
+    * Get fileds with variables.
+    */
+   const IndexArrayType&
+   getIndicesForReoder() const;
+
+   IndexArrayType&
+   getIndicesForReoder();
 
    /**
     * Sort particles and all variables based on particle cell index.
@@ -96,13 +105,6 @@ public:
    void
    ComputePressureFromDensity();
 
-   /* TEMP INTEGRATORS, MOVE OUT */
-   void
-   IntegrateVerlet( RealType dt );
-
-   void
-   IntegrateEuler( RealType dt );
-
    template< typename NeighborSearchPointer, typename ModelPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void
    Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, ModelPointer& boundary );
@@ -111,21 +113,14 @@ public:
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
-protected:
+//protected:
 
    /* Variables - Fields */
    Variables FluidVariables;
    //Variables BoundaryVariables
 
-   /* TEMP INTEGRATORS, MOVE OUT */
-   ScalarArrayType rhoO;
-   VectorArrayType vO;
-
-
    ParticlePointer particles;
    //ParticlePointer boundaryParticles;
-
-   //Integrator integrator; //temp
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    /* TEMP - Indices for thrust sort. */
@@ -136,8 +131,6 @@ protected:
    VectorArrayType v_swap;
    PointArrayType points_swap;
 
-   ScalarArrayType rhoO_swap;
-   VectorArrayType vO_swap;
 #endif
 
 };

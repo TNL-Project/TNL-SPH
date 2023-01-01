@@ -25,11 +25,14 @@ public:
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
 
+   using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
+
    SPHSimpleFluid() = default;
 
    SPHSimpleFluid( GlobalIndexType size, GlobalIndexType size_bound, RealType h, GlobalIndexType numberOfCells )
    : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ),
-     particles_bound( size_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ), model_bound( size_bound, particles_bound ){};
+     particles_bound( size_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ), model_bound( size_bound, particles_bound ),
+     integrator( model, size ), integrator_bound( model_bound, size_bound ) {};
 
 
    /**
@@ -55,6 +58,9 @@ public:
 
    ModelPointer model;
    ModelPointer model_bound;
+
+   IntegratorPointer integrator;
+   IntegratorPointer integrator_bound;
 
 };
 
