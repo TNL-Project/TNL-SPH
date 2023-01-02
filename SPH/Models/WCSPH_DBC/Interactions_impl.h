@@ -8,7 +8,7 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 const Variables&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables() const
 {
-   return FluidVariables;
+   return this->FluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -19,68 +19,63 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables()
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
+const Variables&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getBoundaryVariables() const
+{
+   return this->BoundaryVariables;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+Variables&
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getBoundaryVariables()
+{
+   return this->BoundaryVariables;
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IndexArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getIndicesForReoder() const
 {
-   return indicesMap;
+   return swapFluid.indicesMap;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IndexArrayType&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getIndicesForReoder()
 {
-   return indicesMap;
+   return swapFluid.indicesMap;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariables()
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThrust( ParticlePointer& particleSys, Variables& variables, SwapVariables& variables_swap )
 {
-   auto view_particleCellIndices = particles->getParticleCellIndices().getView();
-   auto view_points = particles->getPoints().getView();
-   auto view_rho = this->FluidVariables.rho.getView();
-   auto view_v = this->FluidVariables.v.getView();
+   GlobalIndexType numberOfParticle = particleSys->getNumberOfParticles();
+   auto view_particleCellIndices = particleSys->getParticleCellIndices().getView();
+   auto view_points = particleSys->getPoints().getView();
 
-   Algorithms::sort< DeviceType, GlobalIndexType >(
-       0, particles->getNumberOfParticles(),
-       [=] __cuda_callable__ ( int i, int j ) -> bool {
-         return view_particleCellIndices[ i ] <= view_particleCellIndices[ j ]; },
-       [=] __cuda_callable__ ( int i, int j ) mutable {
-         swap( view_particleCellIndices[ i ], view_particleCellIndices[ j ] );
-         swap( view_points[ i ], view_points[ j ] );
-         swap( view_rho[ i ], view_rho[ j ] );
-         swap( view_v[ i ], view_v[ j ] );
-         } );
-}
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThrust()
-{
-   GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
-   auto view_particleCellIndices = particles->getParticleCellIndices().getView();
-   auto view_points = particles->getPoints().getView();
-
-   auto view_rho = this->FluidVariables.rho.getView();
-   auto view_v = this->FluidVariables.v.getView();
+   //auto view_rho = this->FluidVariables.rho.getView();
+   //auto view_v = this->FluidVariables.v.getView();
+   auto view_rho = variables.rho.getView();
+   auto view_v = variables.v.getView();
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    //Reset indices:
-   indicesMap.forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
+   variables_swap.indicesMap.forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
 
-   auto view_indicesMap = indicesMap.getView();
-   auto view_points_swap = points_swap.getView();
-   auto view_rho_swap = rho_swap.getView();
-   auto view_v_swap = v_swap.getView();
+   auto view_indicesMap = variables_swap.indicesMap.getView();
+   auto view_points_swap = variables_swap.points_swap.getView();
+   auto view_rho_swap = variables_swap.rho_swap.getView();
+   auto view_v_swap = variables_swap.v_swap.getView();
 
    thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, view_indicesMap.getArrayData() );
-   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points_swap.getArrayData() );
-   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_rho.getArrayData(), view_rho_swap.getArrayData() );
-   thrust::gather( thrust::device, indicesMap.getArrayData(), indicesMap.getArrayData() + numberOfParticle, view_v.getArrayData(), view_v_swap.getArrayData() );
+   thrust::gather( thrust::device, variables_swap.indicesMap.getArrayData(), variables_swap.indicesMap.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points_swap.getArrayData() );
+   thrust::gather( thrust::device, variables_swap.indicesMap.getArrayData(), variables_swap.indicesMap.getArrayData() + numberOfParticle, view_rho.getArrayData(), view_rho_swap.getArrayData() );
+   thrust::gather( thrust::device, variables_swap.indicesMap.getArrayData(), variables_swap.indicesMap.getArrayData() + numberOfParticle, view_v.getArrayData(), view_v_swap.getArrayData() );
 
-   particles->getPoints().swap( points_swap );
-   FluidVariables.rho.swap( rho_swap );
-   FluidVariables.v.swap( v_swap );
+   particleSys->getPoints().swap( variables_swap.points_swap );
+   variables.rho.swap( variables_swap.rho_swap );
+   variables.v.swap( variables_swap.v_swap );
 #else
    thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
 #endif

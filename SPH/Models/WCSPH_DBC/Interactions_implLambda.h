@@ -6,26 +6,26 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-template< typename NeighborSearchPointer, typename ModelPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, ModelPointer& boundary )
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound )
 {
 
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
+   GlobalIndexType numberOfParticles_bound = boundaryParticles->getNumberOfParticles();
    const RealType searchRadius = this->particles->getSearchRadius();
 
    static constexpr RealType gridXbegin = Particles::Config::gridXbegin; //FIXIT
    static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
 
    const auto view_firstLastCellParticle = neighborSearch->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
-   const auto view_points = particles->getPoints().getView();
+   const auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
+   const auto view_points = this->particles->getPoints().getView();
 
    const auto view_firstLastCellParticle_bound = neighborSearch_bound->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex_bound = boundary->particles->getParticleCellIndices().getView();
-   const auto view_points_bound = boundary->particles->getPoints().getView();
+   const auto view_particleCellIndex_bound = this->boundaryParticles->getParticleCellIndices().getView();
+   const auto view_points_bound = this->boundaryParticles->getPoints().getView();
 
    /* CONSTANT VARIABLES */
    const RealType h = this->h;
@@ -42,9 +42,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    const auto view_v = this->FluidVariables.v.getView();
    auto view_a = this->FluidVariables.a.getView();
 
-   const auto view_rho_bound = boundary->getFluidVariables().rho.getView();
-   auto view_Drho_bound = boundary->getFluidVariables().drho.getView();
-   const auto view_v_bound = boundary->getFluidVariables().v.getView();
+   const auto view_rho_bound = this->BoundaryVariables.rho.getView();
+   auto view_Drho_bound = this->BoundaryVariables.drho.getView();
+   const auto view_v_bound = this->BoundaryVariables.v.getView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, PointType& r_i, PointType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, PointType* a_i ) mutable
    {
@@ -128,8 +128,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       //}
    };
 
-
-
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
    {
       const unsigned int activeCell = view_particleCellIndex[ i ];
@@ -168,7 +166,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
       const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
 
-      PointType a_i = {0.f, 0.f};
       RealType drho_i = 0.;
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );

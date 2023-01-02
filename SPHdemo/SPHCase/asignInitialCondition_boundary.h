@@ -25,9 +25,9 @@ auto vLoaded_bound_view = velocityLoaded_bound.getView();
 auto typeLoaded_bound_view = typeLoaded_bound.getView();
 
 auto points_bound_view = mySPHSimulation.particles_bound->getPoints().getView();
-auto rho_bound_view = mySPHSimulation.model_bound->getFluidVariables().rho.getView();
-auto p_bound_view = mySPHSimulation.model_bound->getFluidVariables().p.getView();
-auto v_bound_view = mySPHSimulation.model_bound->getFluidVariables().v.getView();
+auto rho_bound_view = mySPHSimulation.model->getBoundaryVariables().rho.getView();
+auto p_bound_view = mySPHSimulation.model->getBoundaryVariables().p.getView();
+auto v_bound_view = mySPHSimulation.model->getBoundaryVariables().v.getView();
 
 std::cout << std::endl << std::endl;
 std::cout << "ParticlesConfig_bound::numberOfParticles: " << ParticlesConfig_bound::numberOfParticles << std::endl;

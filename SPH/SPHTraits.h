@@ -28,6 +28,8 @@ class SPHFluidTraits
 
    using VectorType = Containers::StaticVector< spaceDimension, RealType >;
    using VectorArrayType = Containers::Array< VectorType, DeviceType, GlobalIndexType >;
+
+  using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
 };
 
 } // SPH

@@ -62,15 +62,19 @@ public:
    using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
 
+   /*Swap variables*/
+   using SwapVariables = SWAPFluidVariables< SPHFluidConfig, PointArrayType >; //REDO
+
    /**
     * Constructor.
     */
-   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-   : FluidVariables( size ),
+   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles, GlobalIndexType size_boundary, ParticlePointer& particles_boundary )
+   : FluidVariables( size ), BoundaryVariables( size_boundary ),
 #ifdef PREFER_SPEED_OVER_MEMORY
-   indicesMap( size ), rho_swap( size ), v_swap( size ), points_swap( size ),
+     swapFluid( size ), swapBoundary( size_boundary ),
 #endif
-   particles( particles ) {}
+   particles( particles ), boundaryParticles( particles_boundary ) {
+   }
 
    /**
     * Get fileds with variables.
@@ -80,6 +84,12 @@ public:
 
    Variables&
    getFluidVariables();
+
+   const Variables&
+   getBoundaryVariables() const;
+
+   Variables&
+   getBoundaryVariables();
 
    /**
     * Get fileds with variables.
@@ -94,8 +104,7 @@ public:
     * Sort particles and all variables based on particle cell index.
     * TODO: Move this on the side of nbsearch/particles.
     */
-   void sortParticlesAndVariables();
-   void sortParticlesAndVariablesThrust();
+   void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
    /**
     * Compute pressure from density.
@@ -105,10 +114,9 @@ public:
    void
    ComputePressureFromDensity();
 
-   template< typename NeighborSearchPointer, typename ModelPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void
-   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, ModelPointer& boundary );
-
+   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound );
 
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
@@ -117,19 +125,16 @@ public:
 
    /* Variables - Fields */
    Variables FluidVariables;
-   //Variables BoundaryVariables
+   Variables BoundaryVariables;
 
    ParticlePointer particles;
-   //ParticlePointer boundaryParticles;
+   ParticlePointer boundaryParticles;
+
+   SwapVariables swapFluid;
+   SwapVariables swapBoundary;
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    /* TEMP - Indices for thrust sort. */
-   IndexArrayType indicesMap;
-
-   /* Copy of arrays needed for resort */
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-   PointArrayType points_swap;
 
 #endif
 

@@ -3,6 +3,7 @@
 
 #include <TNL/Devices/Cuda.h>
 #include <string>
+#include <sys/types.h>
 
 /**
  * Particle system.
@@ -157,6 +158,7 @@ int main( int argc, char* argv[] )
    //myWriter.template writePointData< SPHModel::ScalarArrayType >( mySPHSimulation.model->getRho(), "Density" );
    ////myWriter.template writePointData< SPHModel::VectorArrayType >( mySPHSimulation.model->getVel(), "Velocity" );
 
+
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
@@ -175,6 +177,8 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
+      std::cout << "velocity field size: " << mySPHSimulation.model->getFluidVariables().v.getSize() << std::endl;
+
       timer_interact.start();
       mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
@@ -187,13 +191,13 @@ int main( int argc, char* argv[] )
          //mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
          //mySPHSimulation.model_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
          mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
-         mySPHSimulation.integrator_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
       }
       else {
          //mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
          //mySPHSimulation.model_bound->IntegrateVerlet( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
-         mySPHSimulation.integrator_bound->IntegrateVerlet( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
       }
       timer_integrate.stop();
       std::cout << "integrate... done. " << std::endl;
@@ -234,8 +238,8 @@ int main( int argc, char* argv[] )
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
 
-   //:std::string outputFileName = "particles.ptcs";
-   //:#include "writeParticleData.h"
+   std::string outputFileName = "particles.ptcs";
+   #include "writeParticleData.h"
 
-   //:std::cout << "\nDone ... " << std::endl;
+   std::cout << "\nDone ... " << std::endl;
 }

@@ -29,14 +29,12 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
    std::cout << " - particles->computeParticleCellIndices();... done " << std::endl;
 
    timer_sort.start();
-   model->sortParticlesAndVariablesThrust();
-   std::cout << "Particles: SORTED." << std::endl;
+   model->sortParticlesAndVariablesThrust( model->particles, model->FluidVariables, model->swapFluid );
    integrator->sortIntegratorArrays();
-   std::cout << "Integrator: SORTED." << std::endl;
    if( step == 0 )
    {
-      model_bound->sortParticlesAndVariablesThrust();
-      integrator_bound->sortIntegratorArrays();
+      model->sortParticlesAndVariablesThrust( model->boundaryParticles, model->BoundaryVariables, model->swapBoundary );
+      integrator->sortIntegratorBoundaryArrays();
    }
    timer_sort.stop();
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
@@ -54,7 +52,7 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::InteractModel()
 {
-   model->template Interaction< NeighborSearchPointer, ModelPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound, model_bound );
+   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound );
 }
 
 
