@@ -15,7 +15,7 @@
  * Particle system reader.
  **/
 #include "../../Readers/VTKReader.h"
-//#include "../../Writers/VTKWriter.h"
+#include "../../Writers/VTKWriter.h"
 
 /**
  * Case configuration
@@ -95,7 +95,6 @@ int main( int argc, char* argv[] )
    using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    using Reader = TNL::ParticleSystem::Readers::VTKReader;
-   //using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
 
    /**
     * SPH solver models.
@@ -149,14 +148,15 @@ int main( int argc, char* argv[] )
    #include "asignInitialCondition_boundary.h"
    std::cout << " Boundary vars loaded. " << std::endl;
 
-   //const std::string outputFileName = "output.vtk";
-   //std::ofstream outputFile (outputFileName, std::ofstream::out);
-   //Writer myWriter( outputFile, VTK::FileFormat::ascii );
-   ////myWriter.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
-   //myWriter.writeParticles( *mySPHSimulation.particles );
-   ////myWriter.template writeMetadata( 1, 0 );
-   //myWriter.template writePointData< SPHModel::ScalarArrayType >( mySPHSimulation.model->getRho(), "Density" );
-   ////myWriter.template writePointData< SPHModel::VectorArrayType >( mySPHSimulation.model->getVel(), "Velocity" );
+   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystemToReadData >;
+   const std::string outputFileName = "output.vtk";
+   std::ofstream outputFile (outputFileName, std::ofstream::out);
+   Writer myWriter( outputFile, VTK::FileFormat::binary );
+   //myWriter.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
+   myWriter.writeParticles( particlesToRead );
+   //myWriter.template writeMetadata( 1, 0 );
+   myWriter.template writePointData< SPHModel::ScalarArrayType >( mySPHSimulation.model->FluidVariables.rho, "Density" );
+   myWriter.template writeVector< SPHModel::VectorArrayType, float >( mySPHSimulation.model->FluidVariables.v, "Velocity", 3 );
 
 
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
@@ -165,7 +165,7 @@ int main( int argc, char* argv[] )
    int steps = endTime / SPHConfig::dtInit;
    //int steps = 1800;
    std::cout << "Number of steps: " << steps << std::endl;
-   for( unsigned int time = 0; time < steps; time ++ ) //2500
+   for( unsigned int time = 0; time < 0; time ++ ) //2500
    {
       std::cout << "STEP: " << time << std::endl;
 
@@ -188,14 +188,10 @@ int main( int argc, char* argv[] )
 
       timer_integrate.start();
       if( time % 20 == 0 ) {
-         //mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
-         //mySPHSimulation.model_bound->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
-         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
-         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
       }
       else {
-         //mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
-         //mySPHSimulation.model_bound->IntegrateVerlet( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
       }
@@ -207,12 +203,12 @@ int main( int argc, char* argv[] )
       timer_pressure.stop();
       std::cout << "Compute pressure... done. " << std::endl;
 
-      if( ( time % 2500 ==  0) && (time > 1) )
-      {
-         std::string outputFileName = "results/particles";
-         outputFileName += std::to_string(time) + ".ptcs";
-         #include "writeParticleData.h"
-      }
+      //if( ( time % 2500 ==  0) && (time > 1) )
+      //{
+      //   std::string outputFileName = "results/particles";
+      //   outputFileName += std::to_string(time) + ".ptcs";
+      //   #include "writeParticleData.h"
+      //}
    }
 
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
@@ -238,8 +234,8 @@ int main( int argc, char* argv[] )
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
 
-   std::string outputFileName = "particles.ptcs";
-   #include "writeParticleData.h"
+   //std::string outputFileName = "particles.ptcs";
+   //#include "writeParticleData.h"
 
    std::cout << "\nDone ... " << std::endl;
 }
