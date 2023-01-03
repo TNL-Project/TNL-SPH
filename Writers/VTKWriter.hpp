@@ -48,7 +48,8 @@ VTKWriter< ParticleSystem >::writeParticles( const ParticleSystem& particles )
 {
    if( ! headerWritten )
       writeHeader();
-   writePoints( particles );
+   //writePoints( particles );
+   writePointsTemp( particles );
 
    const std::uint64_t verticesCount = particles.getNumberOfParticles();
 
@@ -146,6 +147,37 @@ VTKWriter< ParticleSystem >::writePoints( const ParticleSystem& particles )
       if( format == VTK::FileFormat::ascii )
          str << "\n";
    }
+}
+
+template< typename ParticleSystem >
+void
+VTKWriter< ParticleSystem >::writePointsTemp( const ParticleSystem& particles )
+{
+   //I need to use host buffer also for points,
+   /* write data array */
+   // use a host buffer if direct access to the array elements is not possible
+   if( std::is_same< typename ParticleSystem::Device, Devices::Cuda >::value ) {
+      using Array = typename ParticleSystem::PointArrayType;
+      using HostArray = typename Array::
+         template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
+     HostArray hostBuffer;
+     hostBuffer = particles.getPoints();
+
+      pointsCount = particles.getNumberOfParticles();
+      str << "POINTS " << pointsCount << " " << getType< typename ParticleSystem::RealType >() << std::endl;
+      for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+         const auto& point = hostBuffer.getElement( i );
+         for( int j = 0; j < point.getSize(); j++ )
+            writeValue( format, str, point[ j ] );
+         // VTK needs zeros for unused dimensions
+         for( int j = point.getSize(); j < 3; j++ )
+            writeValue( format, str, (typename ParticleSystem::PointType::RealType) 0 );
+         if( format == VTK::FileFormat::ascii )
+            str << "\n";
+      }
+   }
+   else
+      writePoints( particles );
 }
 
 template< typename ParticleSystem >

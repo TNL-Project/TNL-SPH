@@ -1,19 +1,12 @@
-std::ofstream outputFile;
-outputFile.open( outputFileName );
+/* WRITE PARTICLES TEMPLATE */
 
-auto of_r_view = mySPHSimulation.particles->getPoints().getView();
-auto of_rho_view = mySPHSimulation.model->getFluidVariables().rho.getView();
-auto of_p_view = mySPHSimulation.model->getFluidVariables().p.getView();
-auto of_v_view = mySPHSimulation.model->getFluidVariables().v.getView();
-
-for( unsigned int p = 0; p < ParticlesConfig::numberOfParticles; p++ )
-  outputFile << \
-  of_r_view.getElement( p )[ 0 ] << " " << \
-  0 << " " << \
-  of_r_view.getElement( p )[ 1 ]<< " " << \
-  of_v_view.getElement( p )[ 0 ] << " " << \
-  0 << " " << \
-  of_v_view.getElement( p )[ 1 ] << " " << \
-  of_rho_view.getElement( p ) << " " << \
-  of_p_view.getElement( p ) << std::endl;
+//using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystemToReadData >;
+using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
+const std::string outputFileName = "output.vtk";
+std::ofstream outputFile (outputFileName, std::ofstream::out);
+Writer myWriter( outputFile, VTK::FileFormat::binary );
+myWriter.writeParticles( *mySPHSimulation.particles );
+//myWriter.template writeMetadata( 1, 0 );
+myWriter.template writePointData< SPHModel::ScalarArrayType >( mySPHSimulation.model->FluidVariables.rho, "Density" );
+myWriter.template writeVector< SPHModel::VectorArrayType, float >( mySPHSimulation.model->FluidVariables.v, "Velocity", 3 );
 

@@ -50,6 +50,9 @@ protected:
    writePoints( const ParticleSystem& particles );
 
    void
+   writePointsTemp( const ParticleSystem& particles );
+
+   void
    writeHeader();
 
    std::ostream str;
