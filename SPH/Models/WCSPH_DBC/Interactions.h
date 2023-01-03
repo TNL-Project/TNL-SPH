@@ -20,7 +20,7 @@
 #include "../EquationOfState.h"
 #include "../DiffusiveTerms.h"
 #include "../VisousTerms.h"
-//#include "Integrator.h"
+#include "Integrator.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -58,65 +58,53 @@ public:
    /* Thrust sort */
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
 
+   /* Integrator */
+   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
+   using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
+
+   /*Swap variables*/
+   using SwapVariables = SWAPFluidVariables< SPHFluidConfig, PointArrayType >; //REDO
+
    /**
     * Constructor.
     */
-   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles )
-   : type( size ), rho( size ), drho( size ), p( size ), v( size ), a( size ) , rhoO( size ), vO( size ),
+   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles, GlobalIndexType size_boundary, ParticlePointer& particles_boundary )
+   : FluidVariables( size ), BoundaryVariables( size_boundary ),
 #ifdef PREFER_SPEED_OVER_MEMORY
-   indicesMap( size ), type_swap( size ), rho_swap( size ), v_swap( size ), rhoO_swap( size ), vO_swap( size ), points_swap( size ),
+     swapFluid( size ), swapBoundary( size_boundary ),
 #endif
-   particles( particles )
-   {
-      vO = 0.; //remove
-      rhoO = 1000.; //remove
+   particles( particles ), boundaryParticles( particles_boundary ) {
    }
 
    /**
     * Get fileds with variables.
     */
-   const ParticleTypeArrayType&
-   getParticleType() const;
+   const Variables&
+   getFluidVariables() const;
 
-   ParticleTypeArrayType&
-   getParticleType();
+   Variables&
+   getFluidVariables();
 
-   const ScalarArrayType&
-   getRho() const;
+   const Variables&
+   getBoundaryVariables() const;
 
-   ScalarArrayType&
-   getRho();
+   Variables&
+   getBoundaryVariables();
 
-   const ScalarArrayType&
-   getDrho() const;
+   /**
+    * Get fileds with variables.
+    */
+   const IndexArrayType&
+   getIndicesForReoder() const;
 
-   ScalarArrayType&
-   getDrho();
-
-   const ScalarArrayType&
-   getPress() const;
-
-   ScalarArrayType&
-   getPress();
-
-   const VectorArrayType&
-   getVel() const;
-
-   VectorArrayType&
-   getVel();
-
-   const VectorArrayType&
-   getAcc() const;
-
-   VectorArrayType&
-   getAcc();
+   IndexArrayType&
+   getIndicesForReoder();
 
    /**
     * Sort particles and all variables based on particle cell index.
     * TODO: Move this on the side of nbsearch/particles.
     */
-   void sortParticlesAndVariables();
-   void sortParticlesAndVariablesThrust();
+   void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
    /**
     * Compute pressure from density.
@@ -126,49 +114,28 @@ public:
    void
    ComputePressureFromDensity();
 
-   /* TEMP INTEGRATORS, MOVE OUT */
-   void
-   IntegrateVerlet( RealType dt );
-
-   void
-   IntegrateEuler( RealType dt );
-
    template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void
-   Interaction( NeighborSearchPointer& neighborSearch );
+   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound );
+
+   /* Constants */ //Move to protected
+   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
 //protected:
 
    /* Variables - Fields */
-   ParticleTypeArrayType type;
-
-   ScalarArrayType rho;
-   ScalarArrayType drho;
-   ScalarArrayType p;
-   VectorArrayType v;
-   VectorArrayType a;
-
-   /* TEMP INTEGRATORS, MOVE OUT */
-   ScalarArrayType rhoO;
-   VectorArrayType vO;
-
-   /* Constants */
-   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
+   Variables FluidVariables;
+   Variables BoundaryVariables;
 
    ParticlePointer particles;
-   //Integrator integrator; //temp
+   ParticlePointer boundaryParticles;
+
+   SwapVariables swapFluid;
+   SwapVariables swapBoundary;
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    /* TEMP - Indices for thrust sort. */
-   IndexArrayType indicesMap;
 
-   /* Copy of arrays needed for resort */
-   ParticleTypeArrayType type_swap;
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-   ScalarArrayType rhoO_swap;
-   VectorArrayType vO_swap;
-   PointArrayType points_swap;
 #endif
 
 };

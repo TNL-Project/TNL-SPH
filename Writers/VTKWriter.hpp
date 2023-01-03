@@ -48,7 +48,8 @@ VTKWriter< ParticleSystem >::writeParticles( const ParticleSystem& particles )
 {
    if( ! headerWritten )
       writeHeader();
-   writePoints( particles );
+   //writePoints( particles );
+   writePointsTemp( particles );
 
    const std::uint64_t verticesCount = particles.getNumberOfParticles();
 
@@ -58,15 +59,15 @@ VTKWriter< ParticleSystem >::writeParticles( const ParticleSystem& particles )
    str << std::endl << "VERTICES " << verticesCount + 1 << " " << verticesCount << std::endl;
    str << "OFFSETS vtktypeint64" << std::endl;
    const int particlesCount = particles.getNumberOfParticles();
-      for( int i = 0; i < particlesCount; i++ ) {
-         writeValue< int >( format, str, i );
+      for( int i = 0; i < particlesCount + 1; i++ ) {
+         writeValue< signed long >( format, str, ( signed long ) i );
          if( format == VTK::FileFormat::ascii )
              str << "\n";
       }
    str << "CONNECTIVITY vtktypeint64" << std::endl;
    //detail::VTKMeshEntitiesWriter< Mesh, EntityDimension >::template writeConnectivity< std::int64_t >( mesh, str, format );
       for( int i = 0; i < particlesCount; i++ ) {
-         writeValue< int >( format, str, i );
+         writeValue< signed long >( format, str, ( signed long ) i );
          if( format == VTK::FileFormat::ascii )
              str << "\n";
       }
@@ -150,6 +151,37 @@ VTKWriter< ParticleSystem >::writePoints( const ParticleSystem& particles )
 
 template< typename ParticleSystem >
 void
+VTKWriter< ParticleSystem >::writePointsTemp( const ParticleSystem& particles )
+{
+   //I need to use host buffer also for points,
+   /* write data array */
+   // use a host buffer if direct access to the array elements is not possible
+   if( std::is_same< typename ParticleSystem::Device, Devices::Cuda >::value ) {
+      using Array = typename ParticleSystem::PointArrayType;
+      using HostArray = typename Array::
+         template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
+     HostArray hostBuffer;
+     hostBuffer = particles.getPoints();
+
+      pointsCount = particles.getNumberOfParticles();
+      str << "POINTS " << pointsCount << " " << getType< typename ParticleSystem::RealType >() << std::endl;
+      for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+         const auto& point = hostBuffer.getElement( i );
+         for( int j = 0; j < point.getSize(); j++ )
+            writeValue( format, str, point[ j ] );
+         // VTK needs zeros for unused dimensions
+         for( int j = point.getSize(); j < 3; j++ )
+            writeValue( format, str, (typename ParticleSystem::PointType::RealType) 0 );
+         if( format == VTK::FileFormat::ascii )
+            str << "\n";
+      }
+   }
+   else
+      writePoints( particles );
+}
+
+template< typename ParticleSystem >
+void
 VTKWriter< ParticleSystem >::writeHeader()
 {
    str << "# vtk DataFile Version 5.1\n"
@@ -161,7 +193,7 @@ VTKWriter< ParticleSystem >::writeHeader()
 template< typename ParticleSystem >
 template< typename T >
 void
-writeValue( VTK::FileFormat format, std::ostream& str, T value )
+VTKWriter< ParticleSystem >::writeValue( VTK::FileFormat format, std::ostream& str, T value )
 {
    if( format == VTK::FileFormat::binary ) {
       value = forceBigEndian( value );
@@ -171,6 +203,51 @@ writeValue( VTK::FileFormat format, std::ostream& str, T value )
       // precision affects only floating-point types, not integers
       str.precision( std::numeric_limits< T >::digits10 );
       str << value << " ";
+   }
+}
+
+/* TEMPORARY, AWFUL, AWFUL WAY HOW TO WRITE VECTORS */
+template< typename ParticleSystem >
+template< typename Array, typename Type >
+void
+VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string& name, const int numberOfComponents )
+{
+   /* write point data */
+   //: if( array.getSize() / numberOfComponents != typename Array::IndexType( pointsCount ) )
+   //:    throw std::length_error( "Mismatched array size for POINT_DATA section: " + std::to_string( array.getSize() )
+   //:                             + " (there are " + std::to_string( pointsCount ) + " points in the file)" );
+
+   // check that we won't start the section second time
+   if( currentSection != VTK::DataType::PointData && cellDataArrays * pointDataArrays != 0 )
+      throw std::logic_error( "The requested data section is not the current section and it has already been written." );
+   currentSection = VTK::DataType::PointData;
+
+   // start the appropriate section if necessary
+   if( pointDataArrays == 0 )
+      str << std::endl << "POINT_DATA " << pointsCount << std::endl;
+   ++pointDataArrays;
+
+   /* write data array */
+   // use a host buffer if direct access to the array elements is not possible
+   if( std::is_same< typename Array::DeviceType, Devices::Cuda >::value ) {
+      using HostArray = typename Array::
+         template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
+      HostArray hostBuffer;
+      hostBuffer = array;
+
+   /* write points */
+      pointsCount = hostBuffer.getSize();
+      str << "VECTORS " << name << " " << getType< Type >() << std::endl;
+      for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+         const auto& point = array.getElement( i );
+         for( int j = 0; j < point.getSize(); j++ )
+            writeValue( format, str, point[ j ] );
+         // VTK needs zeros for unused dimensions
+         for( int j = point.getSize(); j < 3; j++ )
+            writeValue( format, str, ( Type ) 0 );
+         if( format == VTK::FileFormat::ascii )
+            str << "\n";
+      }
    }
 }
 

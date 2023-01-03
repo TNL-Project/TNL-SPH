@@ -3,6 +3,7 @@
 
 #include <TNL/Devices/Cuda.h>
 #include <string>
+#include <sys/types.h>
 
 /**
  * Particle system.
@@ -14,7 +15,7 @@
  * Particle system reader.
  **/
 #include "../../Readers/VTKReader.h"
-//#include "../../Writers/VTKWriter.h"
+#include "../../Writers/VTKWriter.h"
 
 /**
  * Case configuration
@@ -24,9 +25,14 @@
 //#include "../SPHCaseSetup/damBreak2769particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak2769particles/dambreak.vtk";
 
+//:#include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
+//:#include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
+//:const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak.vtk";
+
 #include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
 #include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
-const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak.vtk";
+const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak49821particles/dambreak_boundary.vtk";
 
 //#include "../SPHCaseSetup/damBreakN49206particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreakN49206particles/SPHCaseConfig.h"
@@ -35,6 +41,11 @@ const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/da
 //#include "../SPHCaseSetup/damBreak189636particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
 //const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
+
+//#include "../SPHCaseSetup/damBreak189636particles/ParticlesConfig.h"
+//#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
+//const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak_fluid.vtk";
+//const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak189636particles/dambreak_boundary.vtk";
 
 //#include "../SPHCaseSetup/damBreakN736806particles/ParticlesConfig.h"
 //#include "../SPHCaseSetup/damBreakN736806particles/SPHCaseConfig.h"
@@ -46,6 +57,9 @@ const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/da
 
 //const float endTime = 0.0002;
 const float endTime = 0.05;
+const int outputStep = 2500;
+
+std::string outputFileName = "results/particles";
 
 /**
  * SPH general toolds.
@@ -67,38 +81,48 @@ using namespace TNL;
 
 int main( int argc, char* argv[] )
 {
-
    /**
     * Number of particles
     */
    using Device = Devices::Cuda;
    using ParticlesConfig = ParticleSystemConfig< Device >;
+   using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
+   /**
+    * Particle and neighbor search model.
+    */
    using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
-   using Variables = typename TNL::ParticleSystem::SPH::SPHFluidVariables< SPHConfig >;
    using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
 
+   /**
+    * SPH model.
+    */
    using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimulation< SPHModel, ParticleSystem, NeighborSearch >;
-
-   using Reader = TNL::ParticleSystem::Readers::VTKReader;
-   //using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
+   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
-    * SPH solver models.
+    * SPH schemes.
     */
-   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >; //-> template
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >; //-> template
-   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >; //move this inside model
+   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
+   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
+   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
+
+   /**
+    * Particle reader and writer.
+    */
+   using Reader = TNL::ParticleSystem::Readers::VTKReader;
+   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
 
    /**
     * Create the simulation.
     */
-   SPHSimulation mySPHSimulation( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+   SPHSimulation mySPHSimulation(
+         ParticlesConfig::numberOfParticles, ParticlesConfig_bound::numberOfParticles,
+         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
 
    /**
-     * Temporary.
+     * TEMP.
      */
    mySPHSimulation.model->h = SPHConfig::h;
    mySPHSimulation.model->m = SPHConfig::mass;
@@ -109,48 +133,37 @@ int main( int argc, char* argv[] )
    /**
     * Read the particle file.
     */
-   //Create temp particle system to read data in:
-   using ParticleSystemToReadData = typename ParticleSystem::Particles< ParticlesConfig, Devices::Host >;
-   ParticleSystemToReadData particlesToRead( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius );
-
-   const std::string inputFileName = inputParticleFile;
-   Reader myReader( inputFileName );
-   myReader.detectParticleSystem();
-   //myReader.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
-   myReader.template loadParticle< ParticleSystemToReadData >( particlesToRead );
+   #include "readParticleData.h"
 
    /**
-    * Setup type for boundary particles and initial condition.
+    * Define timers to measure computation time.
     */
-   #include "asignIinitialCondition.h"
-
-   //const std::string outputFileName = "output.vtk";
-   //std::ofstream outputFile (outputFileName, std::ofstream::out);
-   //Writer myWriter( outputFile, VTK::FileFormat::ascii );
-   ////myWriter.template loadParticle< ParticleSystem >( *mySPHSimulation.particles );
-   //myWriter.writeParticles( *mySPHSimulation.particles );
-   ////myWriter.template writeMetadata( 1, 0 );
-   //myWriter.template writePointData< SPHModel::ScalarArrayType >( mySPHSimulation.model->getRho(), "Density" );
-   ////myWriter.template writePointData< SPHModel::VectorArrayType >( mySPHSimulation.model->getVel(), "Velocity" );
-
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
+   /**
+    * TEMP: Determine number of interation for constant timestep.
+    * Perform simulation main loop.
+    */
    int steps = endTime / SPHConfig::dtInit;
-   //int steps = 1800;
    std::cout << "Number of steps: " << steps << std::endl;
-   for( unsigned int time = 0; time < steps; time ++ ) //2500
+
+   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
    {
-      std::cout << "STEP: " << time << std::endl;
+      std::cout << "STEP: " << iteration << std::endl;
 
       /**
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
-      mySPHSimulation.PerformNeighborSearch( time, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+      mySPHSimulation.PerformNeighborSearch(
+            iteration, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
+      /**
+       * Perform interaction with given model.
+       */
       timer_interact.start();
       mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
@@ -158,29 +171,51 @@ int main( int argc, char* argv[] )
 
       //#include "outputForDebug.h"
 
+      /**
+       * Perform time integration, i.e. update particle positions.
+       */
       timer_integrate.start();
-      if( time % 20 == 0 ) {
-         mySPHSimulation.model->IntegrateEuler( SPHConfig::dtInit ); //0.00005/0.00002/0.00001
+      if( iteration % 20 == 0 ) {
+         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
       }
       else {
-         mySPHSimulation.model->IntegrateVerlet( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
       }
       timer_integrate.stop();
       std::cout << "integrate... done. " << std::endl;
 
-      timer_pressure.start();
-      mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
-      timer_pressure.stop();
-      std::cout << "Compute pressure... done. " << std::endl;
 
-      if( ( time % 2500 ==  0) && (time > 1) )
+      /**
+       * Output particle data
+       */
+      if( ( iteration % outputStep ==  0) && (iteration > 0) )
       {
-         std::string outputFileName = "results/particles";
-         outputFileName += std::to_string(time) + ".ptcs";
-         #include "writeParticleData.h"
+         /**
+          * Compute pressure from density.
+          * This is not necessary since we do this localy, if pressure is needed.
+          * Its useful for output anywal.
+          */
+         timer_pressure.start();
+         mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
+         timer_pressure.stop();
+         std::cout << "Compute pressure... done. " << std::endl;
+
+         outputFileName += std::to_string( iteration ) + ".vtk";
+         std::ofstream outputFile (outputFileName, std::ofstream::out);
+         Writer myWriter( outputFile, VTK::FileFormat::binary );
+         myWriter.writeParticles( *mySPHSimulation.particles );
+         myWriter.template writePointData< SPHModel::ScalarArrayType >(
+               mySPHSimulation.model->FluidVariables.p, "Pressure" );
+         myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
+               mySPHSimulation.model->FluidVariables.v, "Velocity", 3 );
       }
    }
 
+   /**
+    * Output simulation stats.
+    */
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
    std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
    std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
@@ -204,8 +239,5 @@ int main( int argc, char* argv[] )
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
 
-   //:std::string outputFileName = "particles.ptcs";
-   //:#include "writeParticleData.h"
-
-   //:std::cout << "\nDone ... " << std::endl;
+   std::cout << "\nDone ... " << std::endl;
 }

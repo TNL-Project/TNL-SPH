@@ -10,7 +10,7 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Model, typename ParticleSystem, typename NeighborSearch >
-class SPHSimulation
+class SPHSimpleFluid
 {
 public:
 
@@ -25,10 +25,15 @@ public:
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
 
-   SPHSimulation() = default;
+   using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
 
-   SPHSimulation( GlobalIndexType size, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles ) {};
+   SPHSimpleFluid() = default;
+
+   SPHSimpleFluid( GlobalIndexType size, GlobalIndexType size_bound, RealType h, GlobalIndexType numberOfCells )
+   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles, size_bound, particles_bound ),
+     particles_bound( size_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ),
+     integrator( model, size, size_bound ) {};
+
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -47,8 +52,13 @@ public:
    //protected: (or private?)
 
    ParticlePointer particles;
+   ParticlePointer particles_bound;
    NeighborSearchPointer neighborSearch;
+   NeighborSearchPointer neighborSearch_bound;
+
    ModelPointer model;
+
+   IntegratorPointer integrator;
 
 };
 

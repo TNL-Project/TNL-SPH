@@ -40,9 +40,17 @@ public:
    void
    writeDataArray( const Array& array, const std::string& name, int numberOfComponents = 1 );
 
+   /* TEMPORARY, AWFUL, AWFUL WAY HOW TO WRITE VECTORS */
+   template< typename Array, typename Type >
+   void
+   writeVector( const Array& array, const std::string& name, const int numberOfComponents );
+
 protected:
    void
    writePoints( const ParticleSystem& particles );
+
+   void
+   writePointsTemp( const ParticleSystem& particles );
 
    void
    writeHeader();
@@ -70,6 +78,8 @@ protected:
    template< typename T >
    void
    writeValue( VTK::FileFormat format, std::ostream& str, T value );
+
+};
 
 }  // namespace Writers
 }  // namespace Meshes
