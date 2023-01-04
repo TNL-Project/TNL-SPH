@@ -86,7 +86,7 @@ if write == '.ptcs':
                      str( round( box_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
                      str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 1 ) + "\n" )
 elif write == '.vtk':
-    import saveParticleVTK
+    import saveParticlesVTK
     import numpy as np
 
     r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
@@ -95,8 +95,8 @@ elif write == '.vtk':
     p = np.zeros( len( fluid_rx ) )
     ptype = np.zeros( len( fluid_rx ) )
 
-    fluidToWrite = saveParticleVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticleVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
 
     r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
     v = np.zeros( ( len( box_rx ), 3 ) )
@@ -104,8 +104,8 @@ elif write == '.vtk':
     p = np.zeros( len( box_rx ) )
     ptype = np.ones( len( box_rx ) )
 
-    boxToWrite = saveParticleVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticleVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
+    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
 else:
     print( "Invalid particle output type." )
 
