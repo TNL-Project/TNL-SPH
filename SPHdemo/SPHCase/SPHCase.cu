@@ -16,7 +16,7 @@
  **/
 #include "../../Readers/VTKReader.h"
 #include "../../Writers/VTKWriter.h"
-#include "readDataClean.h"
+#include "../../Readers/readSPHSimulation.h"
 
 /**
  * Case configuration
