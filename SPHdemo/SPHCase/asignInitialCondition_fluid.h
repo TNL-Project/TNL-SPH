@@ -11,14 +11,11 @@ ScalarArrayType densityLoaded( ParticlesConfig::numberOfParticles );
 densityLoaded = std::get< std::vector< float > >( myReader.readPointData( "Density" ) );
 VectorArrayType velocityLoaded( ParticlesConfig::numberOfParticles );
 velocityLoaded = std::get< std::vector< float > >( myReader.readPointData( "Velocity" ) );
-ParticleTypeArrayType typeLoaded( ParticlesConfig::numberOfParticles );
-typeLoaded = std::get< std::vector< int > >( myReader.readPointData( "Ptype" ) );
 
 auto pointsLoaded_view = pointsLoaded.getView();
 auto pLoaded_view = pressureLoaded.getView();
 auto rhoLoaded_view = densityLoaded.getView();
 auto vLoaded_view = velocityLoaded.getView();
-auto typeLoaded_view = typeLoaded.getView();
 
 auto points_view = mySPHSimulation.particles->getPoints().getView();
 auto rho_view = mySPHSimulation.model->getFluidVariables().rho.getView();
@@ -37,6 +34,5 @@ Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig::numberOfParticles, 
 pressureLoaded.reset();
 densityLoaded.reset();
 velocityLoaded.reset();
-typeLoaded.reset();
 pointsLoaded.reset();
 

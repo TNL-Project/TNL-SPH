@@ -15,14 +15,11 @@ densityLoaded_bound = std::get< std::vector< float > >( myReader_bound.readPoint
 VectorArrayType velocityLoaded_bound( ParticlesConfig_bound::numberOfParticles );
 velocityLoaded_bound = std::get< std::vector< float > >( myReader_bound.readPointData( "Velocity" ) );
 
-ParticleTypeArrayType typeLoaded_bound( ParticlesConfig_bound::numberOfParticles );
-typeLoaded_bound = std::get< std::vector< int > >( myReader_bound.readPointData( "Ptype" ) );
 
 auto pointsLoaded_bound_view = pointsLoaded_bound.getView();
 auto pLoaded_bound_view = pressureLoaded_bound.getView();
 auto rhoLoaded_bound_view = densityLoaded_bound.getView();
 auto vLoaded_bound_view = velocityLoaded_bound.getView();
-auto typeLoaded_bound_view = typeLoaded_bound.getView();
 
 auto points_bound_view = mySPHSimulation.particles_bound->getPoints().getView();
 auto rho_bound_view = mySPHSimulation.model->getBoundaryVariables().rho.getView();
@@ -46,6 +43,5 @@ Algorithms::ParallelFor< Device >::exec( 0, ParticlesConfig_bound::numberOfParti
 pressureLoaded_bound.reset();
 densityLoaded_bound.reset();
 velocityLoaded_bound.reset();
-typeLoaded_bound.reset();
 pointsLoaded_bound.reset();
 

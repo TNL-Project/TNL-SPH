@@ -20,6 +20,9 @@ numberOfBoundaryLayers = 3
 
 speedOfSound = 34.3
 CFLnumber = 0.2
+timeStep = 0.00002 #otherwise is obtained automatically
+
+write = '.vtk' #.ptcs or .vtk
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
@@ -67,40 +70,65 @@ for layer in range( numberOfBoundaryLayers ):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 ### Write fluid particles
-with open( "dambreak.ptcs", "w" ) as f:
-    f.write( str( len( fluid_rx ) ) + "\n" )
-    for i in range( len( fluid_rx ) ):
-        f.write( str( round( fluid_rx[ i ], 5 ) ) + " " + str( round( fluid_rz[i], 5 ) ) + " " + \
-                 str( round( fluid_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
-                 str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 0. ) + "\n" )
+if write == '.ptcs':
+    with open( "dambreak_fluid.ptcs", "w" ) as f:
+        f.write( str( len( fluid_rx ) ) + "\n" )
+        for i in range( len( fluid_rx ) ):
+            f.write( str( round( fluid_rx[ i ], 5 ) ) + " " + str( round( fluid_rz[i], 5 ) ) + " " + \
+                     str( round( fluid_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
+                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 0 ) + "\n" )
 
-### Write fluid particles
-with open("dambreak.ptcs", "w") as f:
-    f.write( str( len( fluid_rx ) ) + "\n" )
-    for i in range( len( fluid_rx ) ):
-        f.write( str( round( fluid_rx[ i ], 5 ) ) + " " + str( round( fluid_rz[ i ], 5 ) ) + " " + \
-                 str( round( fluid_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
-                 str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 0. ) + "\n" )
+    ### Write fluid particles
+    with open("dambreak_boundary.ptcs", "w") as f:
+        f.write( str( len( box_rx ) ) + "\n" )
+        for i in range( len( box_rx ) ):
+            f.write( str( round( box_rx[ i ], 5 ) ) + " " + str( round( box_rz[ i ], 5 ) ) + " " + \
+                     str( round( box_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
+                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 1 ) + "\n" )
+elif write == '.vtk':
+    import saveParticleVTK
+    import numpy as np
+
+    r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
+    v = np.zeros( ( len( fluid_rx ), 3 ) )
+    rho = rho0 * np.ones( len( fluid_rx ) )
+    p = np.zeros( len( fluid_rx ) )
+    ptype = np.zeros( len( fluid_rx ) )
+
+    fluidToWrite = saveParticleVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    saveParticleVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+
+    r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
+    v = np.zeros( ( len( box_rx ), 3 ) )
+    rho = rho0 * np.ones( len( box_rx ) )
+    p = np.zeros( len( box_rx ) )
+    ptype = np.ones( len( box_rx ) )
+
+    boxToWrite = saveParticleVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    saveParticleVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
+else:
+    print( "Invalid particle output type." )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 ### Compute remaining parameters
 particleMass = rho0 * ( dp * dp )
 smoothingLentgh =  round( smoothingLentghCoef * dp, 7 )
 searchRadius = round( smoothingLentgh * 2 , 7 )
-timeStep = round( CFLnumber * ( smoothingLentgh / speedOfSound ), 8 )
+if not timeStep:
+    timeStep = round( CFLnumber * ( smoothingLentgh / speedOfSound ), 8 )
 coefB = round( speedOfSound * speedOfSound * rho0 / 7 , 1 )
 spaceDimension = 2
 
 #Determine grid size
 import math
-gridXbegin = 1.0001 * ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius
-gridYbegin = 1.0001 * ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius
+gridXbegin = 1.005 * ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius
+gridYbegin = 1.005 * ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius
 
-gridXend = 1.0001 * ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius
-gridYend = 1.0001 * ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius
+gridXend = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius
+gridYend = 1.005 * ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius
 
-gridXsize = math.ceil( gridXend - gridXbegin )
-gridYsize = math.ceil( gridYend - gridYbegin )
+gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
+gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
 
 # Read in the file
 with open( 'SPHCaseConfig_template.h', 'r' ) as file :
@@ -125,11 +153,12 @@ with open( 'ParticlesConfig_template.h', 'r' ) as file :
 # Replace the target string
 fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( gridXbegin ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( gridYbegin ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
 
 # Write the file out again
 with open( 'ParticlesConfig.h', 'w' ) as file:

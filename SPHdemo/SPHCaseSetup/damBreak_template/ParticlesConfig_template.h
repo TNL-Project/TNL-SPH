@@ -29,8 +29,8 @@ class ParticleSystemConfig
    static constexpr int gridYsize = placeholderGridYSize;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = -0.0045 - searchRadius * 1;
-   static constexpr RealType gridYbegin = -0.0045 - searchRadius * 1;
+   static constexpr RealType gridXbegin = placeholderGridXBegin;
+   static constexpr RealType gridYbegin = placeholderGridYBegin;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
@@ -48,17 +48,17 @@ class ParticleSystemConfig_boundary
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 4821;
+   static constexpr int spaceDimension = placeholderDimension;
+   static constexpr int numberOfParticles = placeholderBoundaryParticles;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
-   static constexpr RealType searchRadius = 0.0056569*1.005;
-   static constexpr int gridXsize = 285 + 2;
-   static constexpr int gridYsize = 158 + 2;
+   static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
+   static constexpr int gridXsize = placeholderGridXSize;
+   static constexpr int gridYsize = placeholderGridYSize;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = -0.0045 - searchRadius * 1;
-   static constexpr RealType gridYbegin = -0.0045 - searchRadius * 1;
+   static constexpr RealType gridXbegin = placeholderGridXBegin;
+   static constexpr RealType gridYbegin = placeholderGridYBegin;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_boundary, DeviceType >; //?

@@ -21,41 +21,11 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-//#include "../SPHCaseSetup/damBreak2769particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreak2769particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreak2769particles/dambreak.vtk";
+#include "../SPHCaseSetup/damBreak_template/ParticlesConfig.h"
+#include "../SPHCaseSetup/damBreak_template/SPHCaseConfig.h"
+const std::string inputParticleFile = "../SPHCaseSetup/damBreak_template/dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak_template/dambreak_boundary.vtk";
 
-//:#include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
-//:#include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
-//:const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak.vtk";
-
-#include "../SPHCaseSetup/damBreak49821particles/ParticlesConfig.h"
-#include "../SPHCaseSetup/damBreak49821particles/SPHCaseConfig.h"
-const std::string inputParticleFile = "../SPHCaseSetup/damBreak49821particles/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak49821particles/dambreak_boundary.vtk";
-
-//#include "../SPHCaseSetup/damBreakN49206particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreakN49206particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreakN49206particles/dambreak.vtk";
-
-//#include "../SPHCaseSetup/damBreak189636particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak.vtk";
-
-//#include "../SPHCaseSetup/damBreak189636particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreak189636particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreak189636particles/dambreak_fluid.vtk";
-//const std::string inputParticleFile_bound = "../SPHCaseSetup/damBreak189636particles/dambreak_boundary.vtk";
-
-//#include "../SPHCaseSetup/damBreakN736806particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreakN736806particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreakN736806particles/dambreak.vtk";
-
-//#include "../SPHCaseSetup/damBreakN2913606particles/ParticlesConfig.h"
-//#include "../SPHCaseSetup/damBreakN2913606particles/SPHCaseConfig.h"
-//const std::string inputParticleFile = "../SPHCaseSetup/damBreakN2913606particles/dambreak.vtk";
-
-//const float endTime = 0.0002;
 const float endTime = 0.05;
 const int outputStep = 2500;
 
