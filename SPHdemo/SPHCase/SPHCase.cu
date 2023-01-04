@@ -16,6 +16,7 @@
  **/
 #include "../../Readers/VTKReader.h"
 #include "../../Writers/VTKWriter.h"
+#include "readDataClean.h"
 
 /**
  * Case configuration
@@ -103,7 +104,29 @@ int main( int argc, char* argv[] )
    /**
     * Read the particle file.
     */
-   #include "readParticleData.h"
+   //#include "readParticleData.h"
+
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
+   myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles->getPoints() ) ;
+
+   myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
+         mySPHSimulation.model->getFluidVariables().rho, "Density" );
+   myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
+         mySPHSimulation.model->getFluidVariables().p, "Pressure" );
+   myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
+         mySPHSimulation.model->getFluidVariables().v, "Velocity" );
+
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
+   myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles_bound->getPoints() ) ;
+
+   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
+         mySPHSimulation.model->getBoundaryVariables().rho, "Density" );
+   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
+         mySPHSimulation.model->getBoundaryVariables().p, "Pressure" );
+   myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
+         mySPHSimulation.model->getBoundaryVariables().v, "Velocity" );
+
+   //std::cout << mySPHSimulation.model->getFluidVariables().rho << std::endl;
 
    /**
     * Define timers to measure computation time.
