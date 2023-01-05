@@ -4,7 +4,7 @@ import vtk
 import sys
 import argparse
 
-def create_pointcloud_polydata( points, velocity=None, density=None, pressure=None, ptype=None ):
+def create_pointcloud_polydata( points, velocity=None, density=None, pressure=None, ptype=None, normals=None ):
     """
     Creates a vtkPolyData object with the point cloud from numpy arrays
 
@@ -61,6 +61,15 @@ def create_pointcloud_polydata( points, velocity=None, density=None, pressure=No
         for i in range( points.shape[ 0 ] ):
             vptype.SetTuple1( i ,ptype[ i ] )
         vpoly.GetPointData().AddArray( vptype )
+
+    if not normals is None:
+        vnormals = vtk.vtkFloatArray()
+        vnormals.SetNumberOfComponents( 3 )
+        vnormals.SetName( "Normals" )
+        vnormals.SetNumberOfTuples( points.shape[ 0 ] )
+        for i in range( points.shape[ 0 ] ):
+            vnormals.SetTuple3( i, normals[ i, 0 ], normals[ i, 1 ], normals[ i, 2 ] )
+        vpoly.GetPointData().AddArray( vnormals )
 
     vcells = vtk.vtkCellArray()
 
