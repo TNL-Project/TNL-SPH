@@ -46,7 +46,7 @@ class SPHBoundaryVariables
   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
   SPHBoundaryVariables( GlobalIndexType size )
-  : rho( size ), drho ( size ), p( size ), v( size ), a( size ) {}
+  : rho( size ), drho ( size ), p( size ), v( size ), a( size ), n( size ) {}
 
   /* Variables - Fields */
   ScalarArrayType rho;
@@ -54,6 +54,7 @@ class SPHBoundaryVariables
   ScalarArrayType p;
   VectorArrayType v;
   VectorArrayType a;
+  VectorArrayType n;
 
   /* Variables - constans */
   //RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
@@ -86,6 +87,29 @@ class SWAPFluidVariables
   ScalarArrayType rho_swap;
   VectorArrayType v_swap;
   PointArrayType points_swap;
+
+};
+
+template< typename SPHFluidConfig, typename PointArrayType >
+class SWAPBoundaryVariables
+{
+  public:
+  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+
+  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+  using RealType = typename SPHFluidTraitsType::RealType;
+
+  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
+  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+
+  using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType; //REDO
+
+  SWAPBoundaryVariables( GlobalIndexType size )
+  : indicesMap( size ) {}
+
+  /* Variables - Fields */
+  IndexArrayType indicesMap;
+
 
 };
 

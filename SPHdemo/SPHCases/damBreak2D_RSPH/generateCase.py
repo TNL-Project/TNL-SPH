@@ -170,7 +170,7 @@ gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
 gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
 
 # Read in the file
-with open( 'SPHCaseConfig_template.h', 'r' ) as file :
+with open( 'template/SPHCaseConfig_template.h', 'r' ) as file :
   fileSPHConf = file.read()
 
 # Replace the target string
@@ -186,7 +186,7 @@ fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 with open( 'SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
 
-with open( 'ParticlesConfig_template.h', 'r' ) as file :
+with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
   fileParticleConf = file.read()
 
 # Replace the target string

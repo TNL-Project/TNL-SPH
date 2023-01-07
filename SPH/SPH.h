@@ -49,6 +49,9 @@ public:
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void InteractModel();
 
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
+   void InteractModel();
+
    //protected: (or private?)
 
    ParticlePointer particles;

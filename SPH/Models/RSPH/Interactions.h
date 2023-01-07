@@ -64,12 +64,14 @@ public:
 
    /*Swap variables*/
    using SwapVariables = SWAPFluidVariables< SPHFluidConfig, PointArrayType >; //REDO
+   using BoundaryVariables = SPHBoundaryVariables< SPHFluidConfig >;
+   using SwapBoundaryVariables = SWAPBoundaryVariables< SPHFluidConfig, PointArrayType >; //REDO
 
    /**
     * Constructor.
     */
    RSPHSimple( GlobalIndexType size, ParticlePointer& particles, GlobalIndexType size_boundary, ParticlePointer& particles_boundary )
-   : FluidVariables( size ), BoundaryVariables( size_boundary ),
+   : FluidVariables( size ), boundaryVariables( size_boundary ),
 #ifdef PREFER_SPEED_OVER_MEMORY
      swapFluid( size ), swapBoundary( size_boundary ),
 #endif
@@ -85,10 +87,10 @@ public:
    Variables&
    getFluidVariables();
 
-   const Variables&
+   const typename RSPHSimple< Particles, SPHFluidConfig, Variables >::BoundaryVariables&
    getBoundaryVariables() const;
 
-   Variables&
+   typename RSPHSimple< Particles, SPHFluidConfig, Variables >::BoundaryVariables&
    getBoundaryVariables();
 
    /**
@@ -106,6 +108,9 @@ public:
     */
    void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
+   void
+   sortParticlesAndVariablesBoundaryThrust( ParticlePointer& particles, BoundaryVariables& variables, SwapBoundaryVariables& variables_swap );
+
    /**
     * Compute pressure from density.
     * TODO: Move out.
@@ -114,7 +119,7 @@ public:
    void
    ComputePressureFromDensity();
 
-   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RIEMANN_SOLVER >
    void
    Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound );
 
@@ -125,13 +130,13 @@ public:
 
    /* Variables - Fields */
    Variables FluidVariables;
-   Variables BoundaryVariables;
+   BoundaryVariables boundaryVariables;
 
    ParticlePointer particles;
    ParticlePointer boundaryParticles;
 
    SwapVariables swapFluid;
-   SwapVariables swapBoundary;
+   SwapBoundaryVariables swapBoundary;
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    /* TEMP - Indices for thrust sort. */

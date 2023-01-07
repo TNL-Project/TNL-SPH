@@ -34,6 +34,7 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
    if( step == 0 )
    {
       model->sortParticlesAndVariablesThrust( model->boundaryParticles, model->BoundaryVariables, model->swapBoundary );
+      //model->sortParticlesAndVariablesBoundaryThrust( model->boundaryParticles, model->boundaryVariables, model->swapBoundary );
       integrator->sortIntegratorBoundaryArrays();
    }
    timer_sort.stop();
@@ -53,6 +54,14 @@ void
 SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::InteractModel()
 {
    model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound );
+}
+
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
+void
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::InteractModel()
+{
+   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS, RiemannSolver >( neighborSearch, neighborSearch_bound );
 }
 
 

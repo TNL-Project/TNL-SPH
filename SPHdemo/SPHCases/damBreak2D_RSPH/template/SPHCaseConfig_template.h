@@ -25,6 +25,7 @@ class SPHCaseConfig
    static constexpr float delta = 0.1f;
    static constexpr float alpha = 0.02f;
    static constexpr float eps = 0.001f;
+   static constexpr float etaLimiter = 3.0f;
    static constexpr float dtInit = placeholderTimeStepf;
 };
 

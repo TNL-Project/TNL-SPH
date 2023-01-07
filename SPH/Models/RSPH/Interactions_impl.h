@@ -19,17 +19,17 @@ RSPHSimple< Particles, SPHFluidConfig, Variables >::getFluidVariables()
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-const Variables&
+const typename RSPHSimple< Particles, SPHFluidConfig, Variables >::BoundaryVariables& //fix
 RSPHSimple< Particles, SPHFluidConfig, Variables >::getBoundaryVariables() const
 {
-   return this->BoundaryVariables;
+   return this->boundaryVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
-Variables&
+typename RSPHSimple< Particles, SPHFluidConfig, Variables >::BoundaryVariables& //fix
 RSPHSimple< Particles, SPHFluidConfig, Variables >::getBoundaryVariables()
 {
-   return this->BoundaryVariables;
+   return this->boundaryVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -79,6 +79,22 @@ RSPHSimple< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThr
 #else
    thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_rhoO.getArrayData(), view_vO.getArrayData() ) ) );
 #endif
+}
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+RSPHSimple< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesBoundaryThrust( ParticlePointer& particleSys, BoundaryVariables& variables, SwapBoundaryVariables& variables_swap )
+{
+   GlobalIndexType numberOfParticle = particleSys->getNumberOfParticles();
+   auto view_particleCellIndices = particleSys->getParticleCellIndices().getView();
+   auto view_points = particleSys->getPoints().getView();
+
+   auto view_indicesMap = variables_swap.indicesMap.getView();
+   auto view_rho = variables.rho.getView();
+   auto view_v = variables.v.getView();
+   auto view_n = variables.n.getView();
+
+   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_n.getArrayData(), view_indicesMap.getArrayData() ) ) );
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >

@@ -71,10 +71,10 @@ public:
    void
    IntegrateVerletBoundary( RealType dt )
    {
-      auto rho_view = model->BoundaryVariables.rho.getView();
+      auto rho_view = model->boundaryVariables.rho.getView();
       auto rho_old_view = this->rhoBoundary_old.getView();
 
-      const auto drho_view = model->BoundaryVariables.drho.getView();
+      const auto drho_view = model->boundaryVariables.drho.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
       RealType dt2 = 2 * dt;
@@ -117,10 +117,10 @@ public:
    void
    IntegrateEulerBoundary( RealType dt )
    {
-      auto rho_view = model->BoundaryVariables.rho.getView();
+      auto rho_view = model->boundaryVariables.rho.getView();
       auto rho_old_view = this->rhoBoundary_old.getView();
 
-      const auto drho_view = model->BoundaryVariables.drho.getView();
+      const auto drho_view = model->boundaryVariables.drho.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
 
