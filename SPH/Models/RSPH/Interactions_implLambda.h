@@ -38,15 +38,15 @@ RSPHSimple< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchP
    const VectorType gravity = { 0.0f , -9.81f };
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_rho = this->FluidVariables.rho.getView();
-   auto view_Drho = this->FluidVariables.drho.getView();
-   const auto view_v = this->FluidVariables.v.getView();
-   auto view_a = this->FluidVariables.a.getView();
+   const auto view_rho = this->getFluidVariables().rho.getView();
+   auto view_Drho = this->getFluidVariables().drho.getView();
+   const auto view_v = this->getFluidVariables().v.getView();
+   auto view_a = this->getFluidVariables().a.getView();
 
-   const auto view_rho_bound = this->boundaryVariables.rho.getView();
-   auto view_Drho_bound = this->boundaryVariables.drho.getView();
-   const auto view_v_bound = this->boundaryVariables.v.getView();
-   const auto view_n_bound = this->boundaryVariables.n.getView();
+   const auto view_rho_bound = this->getBoundaryVariables().rho.getView();
+   auto view_Drho_bound = this->getBoundaryVariables().drho.getView();
+   const auto view_v_bound = this->getBoundaryVariables().v.getView();
+   const auto view_n_bound = this->getBoundaryVariables().n.getView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
    {

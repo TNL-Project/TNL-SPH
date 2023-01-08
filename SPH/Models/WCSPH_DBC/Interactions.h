@@ -69,7 +69,7 @@ public:
     * Constructor.
     */
    WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles, GlobalIndexType size_boundary, ParticlePointer& particles_boundary )
-   : FluidVariables( size ), BoundaryVariables( size_boundary ),
+   : fluidVariables( size ), boundaryVariables( size_boundary ),
 #ifdef PREFER_SPEED_OVER_MEMORY
      swapFluid( size ), swapBoundary( size_boundary ),
 #endif
@@ -106,6 +106,9 @@ public:
     */
    void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
+   void
+   sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
+
    /**
     * Compute pressure from density.
     * TODO: Move out.
@@ -124,8 +127,8 @@ public:
 //protected:
 
    /* Variables - Fields */
-   Variables FluidVariables;
-   Variables BoundaryVariables;
+   Variables fluidVariables;
+   Variables boundaryVariables;
 
    ParticlePointer particles;
    ParticlePointer boundaryParticles;

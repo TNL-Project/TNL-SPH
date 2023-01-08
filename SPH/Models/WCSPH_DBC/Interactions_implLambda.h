@@ -37,14 +37,14 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    const RealType alpha = this->alpha;
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_rho = this->FluidVariables.rho.getView();
-   auto view_Drho = this->FluidVariables.drho.getView();
-   const auto view_v = this->FluidVariables.v.getView();
-   auto view_a = this->FluidVariables.a.getView();
+   const auto view_rho = this->fluidVariables.rho.getView();
+   auto view_Drho = this->fluidVariables.drho.getView();
+   const auto view_v = this->fluidVariables.v.getView();
+   auto view_a = this->fluidVariables.a.getView();
 
-   const auto view_rho_bound = this->BoundaryVariables.rho.getView();
-   auto view_Drho_bound = this->BoundaryVariables.drho.getView();
-   const auto view_v_bound = this->BoundaryVariables.v.getView();
+   const auto view_rho_bound = this->boundaryVariables.rho.getView();
+   auto view_Drho_bound = this->boundaryVariables.drho.getView();
+   const auto view_v_bound = this->boundaryVariables.v.getView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
    {

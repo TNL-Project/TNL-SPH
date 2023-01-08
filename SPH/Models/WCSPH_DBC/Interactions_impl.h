@@ -8,28 +8,28 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 const Variables&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables() const
 {
-   return this->FluidVariables;
+   return this->fluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 Variables&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables()
 {
-   return this->FluidVariables;
+   return this->fluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const Variables&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getBoundaryVariables() const
 {
-   return this->BoundaryVariables;
+   return this->boundaryVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 Variables&
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getBoundaryVariables()
 {
-   return this->BoundaryVariables;
+   return this->boundaryVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -82,12 +82,29 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particleSys, Variables& variables, SwapVariables& variables_swap )
+{
+   GlobalIndexType numberOfParticle = particleSys->getNumberOfParticles();
+   auto view_particleCellIndices = particleSys->getParticleCellIndices().getView();
+   auto view_points = particleSys->getPoints().getView();
+
+   auto view_indicesMap = variables_swap.indicesMap.getView();
+   auto view_rho = variables.rho.getView();
+   auto view_v = variables.v.getView();
+
+   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_indicesMap.getArrayData() ) ) );
+}
+
+
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState >
 void
 WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
 {
-   auto view_rho = this->FluidVariables.rho.getView();
-   auto view_p = this->FluidVariables.p.getView();
+   auto view_rho = this->getFluidVariables().rho.getView();
+   auto view_p = this->getFluidVariables().p.getView();
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {

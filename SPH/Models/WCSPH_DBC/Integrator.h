@@ -43,15 +43,15 @@ public:
    void
    IntegrateVerlet( RealType dt )
    {
-      auto rho_view = model->FluidVariables.rho.getView();
-      auto v_view = model->FluidVariables.v.getView();
+      auto rho_view = model->getFluidVariables().rho.getView();
+      auto v_view = model->getFluidVariables().v.getView();
       auto r_view = model->particles->getPoints().getView();
 
       auto rho_old_view = this->rho_old.getView();
       auto v_old_view = this->v_old.getView();
 
-      const auto drho_view = model->FluidVariables.drho.getView();
-      const auto a_view = model->FluidVariables.a.getView();
+      const auto drho_view = model->getFluidVariables().drho.getView();
+      const auto a_view = model->getFluidVariables().a.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
       RealType dt2 = 2 * dt;
@@ -71,10 +71,10 @@ public:
    void
    IntegrateVerletBoundary( RealType dt )
    {
-      auto rho_view = model->BoundaryVariables.rho.getView();
+      auto rho_view = model->getBoundaryVariables().rho.getView();
       auto rho_old_view = this->rhoBoundary_old.getView();
 
-      const auto drho_view = model->BoundaryVariables.drho.getView();
+      const auto drho_view = model->getBoundaryVariables().drho.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
       RealType dt2 = 2 * dt;
@@ -91,15 +91,15 @@ public:
    void
    IntegrateEuler( RealType dt )
    {
-      auto rho_view = model->FluidVariables.rho.getView();
-      auto v_view = model->FluidVariables.v.getView();
+      auto rho_view = model->getFluidVariables().rho.getView();
+      auto v_view = model->getFluidVariables().v.getView();
       auto r_view = model->particles->getPoints().getView();
 
       auto rho_old_view = this->rho_old.getView();
       auto v_old_view = this->v_old.getView();
 
-      const auto drho_view = model->FluidVariables.drho.getView();
-      const auto a_view = model->FluidVariables.a.getView();
+      const auto drho_view = model->getFluidVariables().drho.getView();
+      const auto a_view = model->getFluidVariables().a.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
 
@@ -117,10 +117,10 @@ public:
    void
    IntegrateEulerBoundary( RealType dt )
    {
-      auto rho_view = model->BoundaryVariables.rho.getView();
+      auto rho_view = model->getBoundaryVariables().rho.getView();
       auto rho_old_view = this->rhoBoundary_old.getView();
 
-      const auto drho_view = model->BoundaryVariables.drho.getView();
+      const auto drho_view = model->getBoundaryVariables().drho.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
 

@@ -24,13 +24,14 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
-const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
+const std::string inputParticleFile = "damBreak2D_RSPH/dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "damBreak2D_RSPH/dambreak_boundary.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 2500;
+const int outputStep = 9999;
 
 std::string outputFileName = "results/particles";
+std::string outputFileNameBoundary = "results/particles";
 
 /**
  * SPH general toolds.
@@ -40,10 +41,11 @@ std::string outputFileName = "results/particles";
 /**
  * SPH model.
  */
-#include "../../../SPH/Models/WCSPH_DBC/Variables.h"
-#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
+#include "../../../SPH/Models/RSPH/Variables.h"
+#include "../../../SPH/Models/RSPH/Interactions.h"
 #include "../../../SPH/Models/EquationOfState.h"
 
+#include "../../../SPH/Models/RiemannSolvers.h"
 #include "../../../SPH/Models/EquationOfState.h"
 #include "../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../SPH/Kernels.h"
@@ -69,7 +71,7 @@ int main( int argc, char* argv[] )
    /**
     * SPH model.
     */
-   using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = typename TNL::ParticleSystem::SPH::RSPHSimple< ParticleSystem, SPHConfig >;
    using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
@@ -78,6 +80,8 @@ int main( int argc, char* argv[] )
    using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
+
+   using RiemannSolver = TNL::ParticleSystem::SPH::RiemanSolverLinearized< SPHConfig >; //fix
 
    /**
     * Particle reader and writer.
@@ -123,6 +127,9 @@ int main( int argc, char* argv[] )
          mySPHSimulation.model->getBoundaryVariables().p, "Pressure" );
    myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.model->getBoundaryVariables().v, "Velocity" );
+   myBoundaryReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
+         mySPHSimulation.model->getBoundaryVariables().n, "Normals" );
+
 
    /**
     * Define timers to measure computation time.
@@ -135,7 +142,7 @@ int main( int argc, char* argv[] )
     * Perform simulation main loop.
     */
    int steps = endTime / SPHConfig::dtInit;
-   std::cout << "Number of steps: " << steps << std::endl;
+   std::cout << "Number of steps: " << 0 << std::endl;
 
    for( unsigned int iteration = 0; iteration < steps; iteration ++ )
    {
@@ -150,11 +157,13 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
+      //std::cout << "Normals: " << mySPHSimulation.model->getBoundaryVariables().n << std::endl;
+
       /**
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
+      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS, RiemannSolver >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -166,11 +175,11 @@ int main( int argc, char* argv[] )
       timer_integrate.start();
       if( iteration % 20 == 0 ) {
          mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
-         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
+         //mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
       }
       else {
          mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
-         mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
+         //mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
       }
       timer_integrate.stop();
 
@@ -189,14 +198,21 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         outputFileName += std::to_string( iteration ) + ".vtk";
-         std::ofstream outputFile (outputFileName, std::ofstream::out);
+         std::string outputFileName_step = outputFileName + std::to_string( iteration ) + ".vtk";
+         std::ofstream outputFile (outputFileName_step, std::ofstream::out);
          Writer myWriter( outputFile, VTK::FileFormat::binary );
          myWriter.writeParticles( *mySPHSimulation.particles );
          myWriter.template writePointData< SPHModel::ScalarArrayType >(
                mySPHSimulation.model->getFluidVariables().p, "Pressure" );
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
                mySPHSimulation.model->getFluidVariables().v, "Velocity", 3 );
+
+         std::string outputFileNameBoundary_step = outputFileName + std::to_string( iteration ) + "_boundary.vtk";
+         std::ofstream outputFileBoundary (outputFileNameBoundary_step, std::ofstream::out);
+         Writer myWriterBoundary( outputFileBoundary, VTK::FileFormat::binary );
+         myWriterBoundary.writeParticles( *mySPHSimulation.particles_bound );
+         myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
+               mySPHSimulation.model->getBoundaryVariables().n, "Normals", 3 );
       }
    }
 

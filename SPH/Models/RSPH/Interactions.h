@@ -71,7 +71,7 @@ public:
     * Constructor.
     */
    RSPHSimple( GlobalIndexType size, ParticlePointer& particles, GlobalIndexType size_boundary, ParticlePointer& particles_boundary )
-   : FluidVariables( size ), boundaryVariables( size_boundary ),
+   : fluidVariables( size ), boundaryVariables( size_boundary ),
 #ifdef PREFER_SPEED_OVER_MEMORY
      swapFluid( size ), swapBoundary( size_boundary ),
 #endif
@@ -109,7 +109,7 @@ public:
    void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
    void
-   sortParticlesAndVariablesBoundaryThrust( ParticlePointer& particles, BoundaryVariables& variables, SwapBoundaryVariables& variables_swap );
+   sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, BoundaryVariables& variables, SwapBoundaryVariables& variables_swap );
 
    /**
     * Compute pressure from density.
@@ -129,7 +129,7 @@ public:
 //protected:
 
    /* Variables - Fields */
-   Variables FluidVariables;
+   Variables fluidVariables;
    BoundaryVariables boundaryVariables;
 
    ParticlePointer particles;

@@ -8,14 +8,14 @@ template< typename Particles, typename SPHFluidConfig, typename Variables >
 const Variables&
 RSPHSimple< Particles, SPHFluidConfig, Variables >::getFluidVariables() const
 {
-   return this->FluidVariables;
+   return this->fluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 Variables&
 RSPHSimple< Particles, SPHFluidConfig, Variables >::getFluidVariables()
 {
-   return this->FluidVariables;
+   return this->fluidVariables;
 }
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
@@ -83,7 +83,7 @@ RSPHSimple< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThr
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 void
-RSPHSimple< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesBoundaryThrust( ParticlePointer& particleSys, BoundaryVariables& variables, SwapBoundaryVariables& variables_swap )
+RSPHSimple< Particles, SPHFluidConfig, Variables >::sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particleSys, BoundaryVariables& variables, SwapBoundaryVariables& variables_swap )
 {
    GlobalIndexType numberOfParticle = particleSys->getNumberOfParticles();
    auto view_particleCellIndices = particleSys->getParticleCellIndices().getView();
@@ -102,8 +102,8 @@ template< typename EquationOfState >
 void
 RSPHSimple< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
 {
-   auto view_rho = this->FluidVariables.rho.getView();
-   auto view_p = this->FluidVariables.p.getView();
+   auto view_rho = this->getFluidVariables().rho.getView();
+   auto view_p = this->getFluidVariables().p.getView();
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
