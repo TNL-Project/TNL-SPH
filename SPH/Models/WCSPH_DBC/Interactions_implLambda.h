@@ -46,86 +46,81 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
    auto view_Drho_bound = this->BoundaryVariables.drho.getView();
    const auto view_v_bound = this->BoundaryVariables.v.getView();
 
-   auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, PointType& r_i, PointType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, PointType* a_i ) mutable
+   auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
    {
-      /* This should be some interaction structure - properties of particle B:*/
-      const PointType r_j = view_points[ j ];
-      const PointType dr = r_i - r_j;
-      const RealType drs = l2Norm( dr );
+      const VectorType r_j = view_points[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
       if (drs <= searchRadius )
       {
-         const PointType v_j = view_v[ j ];
+         const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j );
 
          /* Interaction: */
-         const PointType dv = v_i - v_j;
+         const VectorType v_ij = v_i - v_j;
 
          const RealType F = SPHKernelFunction::F( drs, h );
-         const PointType gradW = dr * F;
+         const VectorType gradW = r_ij * F;
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-         const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-         *drho_i += ( dv, gradW ) * m - diffTerm;
+         const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
+         *drho_i += ( v_ij, gradW ) * m - diffTerm;
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
+         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ) );
          *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
       }
    };
 
-   auto FluidBound = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, PointType& r_i, PointType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, PointType* a_i ) mutable
+   auto FluidBound = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
    {
-      /* This should be some interaction structure - properties of particle B:*/
-      const PointType r_j = view_points_bound[ j ];
-      const PointType dr = r_i - r_j;
-      const RealType drs = l2Norm( dr );
+      const VectorType r_j = view_points_bound[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
       if (drs <= searchRadius )
       {
-         const PointType v_j = view_v_bound[ j ];
+         const VectorType v_j = view_v_bound[ j ];
          const RealType rho_j = view_rho_bound[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j );
 
          /* Interaction: */
-         const PointType dv = v_i - v_j;
+         const VectorType v_ij = v_i - v_j;
 
          const RealType F = SPHKernelFunction::F( drs, h );
-         const PointType gradW = dr * F;
+         const VectorType gradW = r_ij * F;
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-         const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-         *drho_i += ( dv, gradW ) * m - diffTerm;
+         const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
+         *drho_i += ( v_ij, gradW ) * m - diffTerm;
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( dr, dv ) );
+         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ) );
          *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
       }
    };
 
-   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, PointType& r_i, PointType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
+   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
    {
-      //if( view_particleType[ j ] == 0 ){
-         /* This should be some interaction structure, mby. - properties of particle B: */
-         const PointType r_j = view_points[ j ];
-         const PointType dr = r_i - r_j;
-         const RealType drs = l2Norm( dr );
-         if( drs <= searchRadius )
-         {
-            const PointType v_j = view_v[ j ];
-            const RealType rho_j = view_rho[ j ];
-            const RealType p_j = EOS::DensityToPressure( rho_j );
+      const VectorType r_j = view_points[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius )
+      {
+         const VectorType v_j = view_v[ j ];
+         const RealType rho_j = view_rho[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j );
 
-            /* Interaction */
-            const PointType dv = v_i - v_j;
+         /* Interaction */
+         const VectorType v_ij = v_i - v_j;
 
-            const RealType F = SPHKernelFunction::F( drs, h );
-            const PointType gradW = dr*F;
+         const RealType F = SPHKernelFunction::F( drs, h );
+         const VectorType gradW = r_ij * F;
 
-            const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
-            const RealType diffTerm =  psi * ( dr, gradW ) * m / rho_j;
-            *drho_i += ( dv, gradW ) * m - diffTerm;
-         }
-      //}
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+         const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
+         *drho_i += ( v_ij, gradW ) * m - diffTerm;
+      }
    };
 
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
@@ -133,15 +128,15 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const unsigned int activeCell = view_particleCellIndex[ i ];
 
       /*TODO: This should be some interaction structure  - properties of particle A:*/
-      const PointType r_i = view_points[ i ];
-      const PointType v_i = view_v[ i ];
+      const VectorType r_i = view_points[ i ];
+      const VectorType v_i = view_v[ i ];
       const RealType rho_i = view_rho[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
 
       const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
       const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
 
-      PointType a_i = {0.f, 0.f};
+      VectorType a_i = {0.f, 0.f};
       RealType drho_i = 0.f;
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
@@ -158,8 +153,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( NeighborSearchPo
       const unsigned int activeCell = view_particleCellIndex[ i ];
 
       /*TODO: This should be some interaction structure  - properties of particle A:*/
-      const PointType r_i = view_points_bound[ i ];
-      const PointType v_i = view_v_bound[ i ];
+      const VectorType r_i = view_points_bound[ i ];
+      const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
 
