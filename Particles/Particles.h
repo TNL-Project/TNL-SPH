@@ -45,16 +45,17 @@ public:
     */
    Particles() = default;
 
-   Particles(GlobalIndexType size)
-   : numberOfParticles(size), points(size) { }
+   Particles( GlobalIndexType size, GlobalIndexType sizeAllocated )
+   : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ) { }
 
-   Particles(GlobalIndexType size, RealType radius)
-   : numberOfParticles(size), points(size), radius(radius), particleCellInidices(size), gridCellIndices(Config::gridXsize*Config::gridYsize), neighborsCount(size, 0), neighbors(size*Config::maxOfNeigborsPerParticle, 0)
+   Particles( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius )
+   : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ), radius( radius ), particleCellInidices( sizeAllocated ),
+     gridCellIndices( Config::gridXsize*Config::gridYsize ), neighborsCount( sizeAllocated, 0 ), neighbors( sizeAllocated*Config::maxOfNeigborsPerParticle, 0 )
    {
       //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
       grid->setDimensions( Config::gridXsize, Config::gridYsize );
       //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
-      neighborsList.setSegmentsSizes( size, Config::maxOfNeigborsPerParticle );
+      neighborsList.setSegmentsSizes( sizeAllocated, Config::maxOfNeigborsPerParticle );
    }
 
    /* PARTICLE RELATED TOOLS */
@@ -69,7 +70,7 @@ public:
     * Get search radius.
     */
    __cuda_callable__
-   RealType
+   const RealType
    getSearchRadius() const;
 
    /**
@@ -77,7 +78,18 @@ public:
     */
    __cuda_callable__
    GlobalIndexType
+   getNumberOfParticles();
+
+   __cuda_callable__
+   const GlobalIndexType
    getNumberOfParticles() const;
+
+   __cuda_callable__
+   const GlobalIndexType
+   getNumberOfAllocatedParticles() const;
+
+   void
+   setNumberOfParticles( GlobalIndexType newNumberOfParticles );
 
    /**
     * Get particle (i.e. point) positions.
@@ -226,6 +238,7 @@ public:
 protected:
 
    /* particle related*/
+   GlobalIndexType numberOfAllocatedParticles;
    GlobalIndexType numberOfParticles;
    GlobalIndexType gridSize;
 

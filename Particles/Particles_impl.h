@@ -15,6 +15,14 @@ Particles< ParticleConfig, DeviceType>::getParticleDimension()
 template< typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
+Particles< ParticleConfig, DeviceType>::getNumberOfParticles()
+{
+   return numberOfParticles;
+}
+
+template< typename ParticleConfig, typename DeviceType >
+__cuda_callable__
+const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
 Particles< ParticleConfig, DeviceType>::getNumberOfParticles() const
 {
    return numberOfParticles;
@@ -22,7 +30,22 @@ Particles< ParticleConfig, DeviceType>::getNumberOfParticles() const
 
 template< typename ParticleConfig, typename DeviceType >
 __cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::RealType
+const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
+Particles< ParticleConfig, DeviceType>::getNumberOfAllocatedParticles() const
+{
+   return numberOfAllocatedParticles;
+}
+
+template< typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setNumberOfParticles( GlobalIndexType newNumberOfParticles )
+{
+   this->numberOfParticles = newNumberOfParticles;
+}
+
+template< typename ParticleConfig, typename DeviceType >
+__cuda_callable__
+const typename Particles< ParticleConfig, DeviceType >::RealType
 Particles< ParticleConfig, DeviceType>::getSearchRadius() const
 {
    return radius;
