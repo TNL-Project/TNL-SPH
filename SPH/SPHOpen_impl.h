@@ -15,14 +15,16 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    neighborSearch->resetListWithIndices();
    if( step == 0 )
    neighborSearch_bound->resetListWithIndices();
+   neighborSearch_buffer->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
    if( step == 0 ) //TODO: do this better
-   particles->computeGridCellIndices();
+   particles->computeGridCellIndices(); //with current settings, I dont need to do this
 
    timer_cellIndices.start();
    particles->computeParticleCellIndices();
+   particles_buffer->computeParticleCellIndices();
    if( step == 0 )
    particles_bound->computeParticleCellIndices();
    timer_cellIndices.stop();
@@ -30,6 +32,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_sort.start();
    model->sortParticlesAndVariablesThrust( model->particles, model->fluidVariables, model->swapFluid );
+   model->sortParticlesAndVariablesThrust( model->inletParticles, model->inletVariables, model->swapInlet );
    integrator->sortIntegratorArrays();
    if( step == 0 )
    {
@@ -42,6 +45,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_toCells.start();
    neighborSearch->particlesToCells();
+   neighborSearch_buffer->particlesToCells();
    if( step == 0 )
    neighborSearch_bound->particlesToCells();
    timer_toCells.stop();

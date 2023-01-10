@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <utility>
 #include <vector>
@@ -118,6 +119,12 @@ public:
    getSpaceDimension() const
    {
       return spaceDimension;
+   }
+
+   std::size_t
+   getNumberOfPoints() const
+   {
+      return NumberOfPoints;
    }
 
 

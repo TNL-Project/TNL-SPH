@@ -112,10 +112,14 @@ public:
     * Sort particles and all variables based on particle cell index.
     * TODO: Move this on the side of nbsearch/particles.
     */
-   void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
+   void
+   sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
    void
    sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
+
+   //void
+   //sortInletParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
 
    /**
     * Compute pressure from density.

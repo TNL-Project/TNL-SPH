@@ -26,7 +26,7 @@ public:
    using VectorType = typename SPHFluidTraitsType::VectorType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
-   using IndexArrayType = typename SPHFluidTraits::IndexArrayType;
+   using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
 
    VerletIntegrator( ModelPointer model, GlobalIndexType size, GlobalIndexType size_boundary, GlobalIndexType size_inlet )
    : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size ),
@@ -200,22 +200,22 @@ public:
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
          if( view_r_buffer[ i ] > bufferEdge )
          {
-            view[ i ] = 0;
+            view_inletMark[ i ] = 0;
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, model->inletParticles->getNumberOfParticles(), moveBufferParticles );
 
       //Get number of retyped particles
-      auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return inletMark_view[ i ]; };
+      auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
-      const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, inletMark_view.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
+      const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
 
       //Sort particles by mark
-      thrust::sort_by_key( thrust::device, inletMark_view.getArrayData(), inletMark_view.getArrayData() + numberOfParticle,
+      thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(), view_inletMark.getArrayData() + numberOfParticle,
             thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(), view_v_buffer.getArrayData(), view_rho_buffer.getArrayData() ) ) );
 
       //Change number of fluid particles
-      auto view_r_fluid = model->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+      model->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
 
       //Assign new fluid particles
       auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
@@ -229,10 +229,11 @@ public:
 
             //Generate new bufffer particle
             // TODO: Generalize!
-            const VectorType newBufferParticle = { view_r_buffer[ i ][ 0 ] };
-            view_r_buffer[ i ] = /* inlet position */
-            view_v_buffer[ i ] = /* inlet velocity */
-            view_rho_buffer[ i ] = 1000.;
+            const RealType bufferLength = 0.006f;
+            const VectorType newBufferParticle = { view_r_buffer[ i ][ 0 ] - bufferLength, view_r_buffer[ i ][ 1 ] };
+            view_r_buffer[ i ] = newBufferParticle;
+            view_v_buffer[ i ] = { 0.5f, 0.f };
+            view_rho_buffer[ i ] = 1000.f;
 
          }
       };

@@ -24,8 +24,8 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
-const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
+const std::string inputParticleFile = "simpleInlet2D_WCSPH-DBC_test/dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "simpleInlet2D_WCSPH-DBC_test/dambreak_boundary.vtk";
 
 const float endTime = 0.05;
 const int outputStep = 2500;
@@ -107,8 +107,10 @@ int main( int argc, char* argv[] )
    /**
     * Read the particle file.
     */
+   std::cout << "---> Fluid particle loading... ";
    TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
    myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles->getPoints() ) ;
+   std::cout << " particle loaded. " << std::endl;
 
    myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
          mySPHSimulation.model->getFluidVariables().rho, "Density" );
@@ -116,6 +118,8 @@ int main( int argc, char* argv[] )
          mySPHSimulation.model->getFluidVariables().p, "Pressure" );
    myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.model->getFluidVariables().v, "Velocity" );
+   std::cout << " ...OK " << std::endl;
+
 
    TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
    myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles_bound->getPoints() ) ;
@@ -126,6 +130,12 @@ int main( int argc, char* argv[] )
          mySPHSimulation.model->getBoundaryVariables().p, "Pressure" );
    myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.model->getBoundaryVariables().v, "Velocity" );
+
+   //std::cout << mySPHSimulation.particles->getPoints() << std::endl;
+   std::cout << "numberOfParticles: " <<  mySPHSimulation.particles->getNumberOfParticles() << std::endl;
+   std::cout << "particles.getSize(): " <<  mySPHSimulation.particles->getPoints().getSize() << std::endl;
+   std::cout << "numberOfAllocatedParticles: " <<  mySPHSimulation.particles->getNumberOfAllocatedParticles() << std::endl;
+
 
    /**
     * Define timers to measure computation time.
@@ -140,7 +150,7 @@ int main( int argc, char* argv[] )
    int steps = endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
 
-   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 1; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 

@@ -1,3 +1,5 @@
+#include <cfloat> //FLT_MAX
+
 namespace TNL {
 namespace ParticleSystem {
 
@@ -16,27 +18,32 @@ public:
    void readParticles( PointArray& particles )
    {
       using ParticleSystemToReadData = typename ParticleSystem::Particles< ParticlesConfig, Devices::Host >;
-      ParticleSystemToReadData particlesToRead( ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius );
+      ParticleSystemToReadData particlesToRead( ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius );
       reader.template loadParticle< ParticleSystemToReadData >( particlesToRead );
 
       PointArray pointsLoaded( ParticlesConfig::numberOfParticles );
+      //std::cout << "ParticlesLoaded size: " << particlesToRead.getPoints() << std::endl;
       pointsLoaded = particlesToRead.getPoints();
+      pointsLoaded.resize( ParticlesConfig::numberOfAllocatedParticles, FLT_MAX );
       particles = pointsLoaded;
    }
 
    template< typename Array, typename Type >
    void readParticleVariable( Array& array, const std::string& name )
    {
-      Array arrayLoaded( array.getSize() );
+      //Array arrayLoaded( array.getSize() );
+      Array arrayLoaded(  reader.getNumberOfPoints()  );
       arrayLoaded = std::get< std::vector< Type > >( reader.readPointData( name ) );
       //it would be nice to have type from Array::ValueType, but I need float for vector anyway.
+      arrayLoaded.resize( ParticlesConfig::numberOfAllocatedParticles, FLT_MAX );
       array = arrayLoaded;
    }
 
    template< typename Array, typename Type >
    void readParticleVariable2D( Array& array, const std::string& name )
    {
-      Array arrayLoaded( array.getSize() );
+      //Array arrayLoaded( array.getSize() );
+      Array arrayLoaded(  reader.getNumberOfPoints()  );
       std::vector< Type > temporary = std::get< std::vector< Type > >( reader.readPointData( name ) );
       std::cout << " Loaded " << name << " size: " << temporary.size() << std::endl;
 
@@ -44,7 +51,8 @@ public:
       using HostArray = typename Array::
          template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
 
-      HostArray hostArray( array.getSize() );
+      //HostArray hostArray( array.getSize() );
+      HostArray hostArray( reader.getNumberOfPoints() );
 
       std::vector< Type > hostBuffer;
       for( int i = 1; i < temporary.size() + 1; i ++ )
