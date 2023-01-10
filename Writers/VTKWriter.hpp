@@ -210,7 +210,7 @@ VTKWriter< ParticleSystem >::writeValue( VTK::FileFormat format, std::ostream& s
 template< typename ParticleSystem >
 template< typename Array, typename Type >
 void
-VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string& name, const int numberOfComponents )
+VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string& name, const int numberOfComponents, const int numberOfElements )
 {
    /* write point data */
    //: if( array.getSize() / numberOfComponents != typename Array::IndexType( pointsCount ) )
@@ -234,6 +234,7 @@ VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string&
          template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
       HostArray hostBuffer;
       hostBuffer = array;
+      hostBuffer.resize( numberOfElements );
 
    /* write points */
       pointsCount = hostBuffer.getSize();
@@ -248,6 +249,65 @@ VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string&
          if( format == VTK::FileFormat::ascii )
             str << "\n";
       }
+   }
+}
+
+/* TEMP FOR OPEN SYSTEM */
+template< typename ParticleSystem >
+template< typename Array >
+void
+VTKWriter< ParticleSystem >::writePointData( const Array& array, const std::string& name, const int numberOfElements, const int numberOfComponents )
+{
+   //if( array.getSize() / numberOfComponents != typename Array::IndexType( pointsCount ) )
+   //   throw std::length_error( "Mismatched array size for POINT_DATA section: " + std::to_string( array.getSize() )
+   //                            + " (there are " + std::to_string( pointsCount ) + " points in the file)" );
+
+   // check that we won't start the section second time
+   if( currentSection != VTK::DataType::PointData && cellDataArrays * pointDataArrays != 0 )
+      throw std::logic_error( "The requested data section is not the current section and it has already been written." );
+   currentSection = VTK::DataType::PointData;
+
+   // start the appropriate section if necessary
+   if( pointDataArrays == 0 )
+      str << std::endl << "POINT_DATA " << pointsCount << std::endl;
+   ++pointDataArrays;
+
+   writeDataArray( array, name, numberOfElements, numberOfComponents );
+}
+
+
+template< typename ParticleSystem >
+template< typename Array >
+void
+VTKWriter< ParticleSystem >::writeDataArray( const Array& array, const std::string& name, const int numberOfElements, const int numberOfComponents )
+{
+   // use a host buffer if direct access to the array elements is not possible
+   if( std::is_same< typename Array::DeviceType, Devices::Cuda >::value ) {
+      using HostArray = typename Array::
+         template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
+      HostArray hostBuffer;
+      hostBuffer = array;
+      hostBuffer.resize( numberOfElements );
+      writeDataArray( hostBuffer, name, numberOfElements, numberOfComponents );
+      return;
+   }
+
+   if( numberOfComponents != 1 && numberOfComponents != 3 )
+      throw std::logic_error( "Unsupported numberOfComponents parameter: " + std::to_string( numberOfComponents ) );
+
+   // write DataArray header
+   if( numberOfComponents == 1 ) {
+      str << "SCALARS " << name << " " << getType< typename Array::ValueType >() << std::endl;
+      str << "LOOKUP_TABLE default" << std::endl;
+   }
+   else {
+      str << "VECTORS " << name << " " << getType< typename Array::ValueType >() << std::endl;
+   }
+
+   for( typename Array::IndexType i = 0; i < array.getSize(); i++ ) {
+      writeValue( format, str, array[ i ] );
+      if( format == VTK::FileFormat::ascii )
+         str << "\n";
    }
 }
 

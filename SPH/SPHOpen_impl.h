@@ -57,7 +57,7 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::InteractModel()
 {
-   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound );
+   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound, neighborSearch_buffer );
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >

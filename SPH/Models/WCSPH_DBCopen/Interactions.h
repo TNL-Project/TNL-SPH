@@ -131,7 +131,8 @@ public:
 
    template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void
-   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound );
+   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound,
+         NeighborSearchPointer& neighborSearch_buffer );
 
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
