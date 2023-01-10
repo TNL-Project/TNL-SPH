@@ -29,7 +29,7 @@ const std::string inputParticleFile_bound = "simpleInlet2D_WCSPH-DBC_test/dambre
 const std::string inputParticleFile_inlet = "simpleInlet2D_WCSPH-DBC_test/dambreak_inlet.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 100;
+const int outputStep = 250;
 
 std::string outputFileName = "results/particles";
 
@@ -163,7 +163,7 @@ int main( int argc, char* argv[] )
    int steps = endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
 
-   for( unsigned int iteration = 0; iteration < 701; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 2501; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 
@@ -174,7 +174,7 @@ int main( int argc, char* argv[] )
       mySPHSimulation.PerformNeighborSearch(
             iteration, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
-      //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
+      std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
       std::cout << "Search... done. " << std::endl;
 
       /**
@@ -183,7 +183,6 @@ int main( int argc, char* argv[] )
       timer_interact.start();
       mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
-      //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
       std::cout << "Interact... done. " << std::endl;
 
       //#include "outputForDebug.h"
@@ -204,12 +203,16 @@ int main( int argc, char* argv[] )
       }
       timer_integrate.stop();
       //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
+      std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
+      std::cout << "Buffer density:" << mySPHSimulation.model->getInletVariables().rho << std::endl;
+      std::cout << "Buffer velocity:" << mySPHSimulation.model->getInletVariables().v << std::endl;
       std::cout << "Integration... done. " << std::endl;
 
       /**
        * Output particle data
        */
-      if( ( iteration % outputStep ==  0) && (iteration > 0) )
+      //if( ( iteration % outputStep ==  0) && (iteration > 0) )
+      if( ( ( iteration % outputStep ==  0) && (iteration > 0) ) || iteration == 701 )
       {
          /**
           * Compute pressure from density.

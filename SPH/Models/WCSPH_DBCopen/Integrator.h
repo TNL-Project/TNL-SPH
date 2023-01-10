@@ -257,7 +257,7 @@ public:
 
             //Generate new bufffer particle
             // TODO: Generalize!
-            const RealType bufferLength = 0.006f;
+            const RealType bufferLength = 0.007f;
             const VectorType newBufferParticle = { view_r_buffer[ i ][ 0 ] - bufferLength, view_r_buffer[ i ][ 1 ] };
             view_r_buffer[ i ] = newBufferParticle;
             view_v_buffer[ i ] = { 0.5f, 0.f };
