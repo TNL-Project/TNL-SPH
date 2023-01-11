@@ -187,9 +187,9 @@ public:
       auto view_rho_buffer = this->model->getInletVariables().rho.getView();
 
       auto view_inletMark = inletMark.getView();
-      view_inletMark = 1;
+      view_inletMark = 1; //TODO: this can be avoided
 
-      //Fluid
+      //Fluid ( variable arrays and integrator variable arrays )
       auto view_r_fluid = model->particles->getPoints().getView();
       auto view_v_fluid = model->getFluidVariables().v.getView();
       auto view_rho_fluid = model->getFluidVariables().rho.getView();
@@ -197,48 +197,29 @@ public:
       auto view_rho_old = rho_old.getView();
       auto view_v_old = v_old.getView();
 
-
-      //std::cout << "Buffer points:" << view_r_buffer << std::endl;
-
-      //Move buffer particles
       auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
-         if( view_r_buffer[ i ][ 0 ] > bufferEdge )
+         if( view_r_buffer[ i ][ 0 ] > bufferEdge ) //TODO: generalize
          {
             view_inletMark[ i ] = 0;
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->inletParticles->getNumberOfParticles(), moveBufferParticles );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
 
-      std::cout << "---> updateBuffer: Particle marked." << std::endl;
-
-
-      //Get number of retyped particles
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
       const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
+      std::cout << "... InletBuffer - number of retyped particles: " << numberOfRetyped << std::endl;
 
-      std::cout << ".................. numberOfRetyped: " << numberOfRetyped << std::endl;
+      if( numberOfRetyped == 0 )
+         return;
 
-      //Sort particles by mark
+      //Sort particles by mark //TODO: can be this avoided?
       thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(), view_inletMark.getArrayData() + numberOfBufferParticles,
             thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(), view_v_buffer.getArrayData(), view_rho_buffer.getArrayData() ) ) );
+      std::cout << "... InletBuffer - particles sorted." << std::endl;
 
-      std::cout << "---> updateBuffer: Particle sorted." << std::endl;
-      //std::cout << "Buffer points:" << view_r_buffer << std::endl;
-
-
-      std::cout << ".................. numberOfParticles: " << model->particles->getNumberOfParticles() << std::endl;
-      std::cout << "---> updateBuffer: Update number of particles in particle system." << std::endl;
-      std::cout << ".................. numberOfAllocatedParticles: " << model->particles->getNumberOfAllocatedParticles() << std::endl;
-      std::cout << ".................. numberOfParticles: " << model->particles->getNumberOfParticles() << std::endl;
-      std::cout << ".................. fieldSize: " << view_r_fluid.getSize()  << " | " << view_v_fluid.getSize() << " | " << view_rho_fluid.getSize() << std::endl;
-
-      //std::cout<< "density" << view_rho_buffer << std::endl;
-      std::cout<< "velocity:" << view_v_buffer << std::endl;
-
-      //Assign new fluid particles
       auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          if( view_inletMark[ i ] == 0 )
@@ -253,8 +234,6 @@ public:
             view_v_fluid[ numberOfParticle + i ] = { 0.5f, 0.f };
             view_v_old[ numberOfParticle + i ] = { 0.5f, 0.f };
 
-            printf( "___RETYPE___ i: %d, numberOfParticle + i: %d.\n", i, numberOfParticle + i );
-
             //Generate new bufffer particle
             // TODO: Generalize!
             const RealType bufferLength = 0.007f;
@@ -266,18 +245,8 @@ public:
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfRetyped, createNewFluidParticles );
-
-      //Change number of fluid particles
       model->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
-      std::cout << ".................. numberOfParticles: " << model->particles->getNumberOfParticles() << std::endl;
-      std::cout << "---> updateBuffer: Update number of particles in particle system." << std::endl;
-      std::cout << ".................. numberOfAllocatedParticles: " << model->particles->getNumberOfAllocatedParticles() << std::endl;
-      std::cout << ".................. numberOfParticles: " << model->particles->getNumberOfParticles() << std::endl;
-      std::cout << ".................. fieldSize: " << view_r_fluid.getSize()  << " | " << view_v_fluid.getSize() << " | " << view_rho_fluid.getSize() << std::endl;
-      std::cout << ".................. fieldSize integrator: " << view_r_fluid.getSize()  << " | " << view_v_fluid.getSize() << " | " << view_rho_fluid.getSize() << std::endl;
-
-
-      std::cout << "---> updateBuffer: Particle transfer done." << std::endl;
+      std::cout << "... InletBuffer - system updated." << std::endl;
 
    }
 

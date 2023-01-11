@@ -29,7 +29,7 @@ const std::string inputParticleFile_bound = "simpleInlet2D_WCSPH-DBC_test/dambre
 const std::string inputParticleFile_inlet = "simpleInlet2D_WCSPH-DBC_test/dambreak_inlet.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 250;
+const int outputStep = 1000;
 
 std::string outputFileName = "results/particles";
 
@@ -108,10 +108,8 @@ int main( int argc, char* argv[] )
    /**
     * Read the particle file.
     */
-   std::cout << "---> Fluid particle loading... ";
    TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
    myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles->getPoints() ) ;
-   std::cout << " particle loaded. " << std::endl;
 
    myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
          mySPHSimulation.model->getFluidVariables().rho, "Density" );
@@ -119,9 +117,7 @@ int main( int argc, char* argv[] )
          mySPHSimulation.model->getFluidVariables().p, "Pressure" );
    myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.model->getFluidVariables().v, "Velocity" );
-   std::cout << " ...OK " << std::endl;
 
-   //std::cout << mySPHSimulation.particles->getPoints() << std::endl;
    std::cout << "numberOfParticles: " <<  mySPHSimulation.particles->getNumberOfParticles() << std::endl;
    std::cout << "particles.getSize(): " <<  mySPHSimulation.particles->getPoints().getSize() << std::endl;
    std::cout << "numberOfAllocatedParticles: " <<  mySPHSimulation.particles->getNumberOfAllocatedParticles() << std::endl;
@@ -146,14 +142,13 @@ int main( int argc, char* argv[] )
    myInletReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
          mySPHSimulation.model->getInletVariables().v, "Velocity" );
 
-
    //std::cout << " Buffer points: " << mySPHSimulation.particles_buffer->getPoints() << std::endl;
-   std::cout << " Buffer points: " << mySPHSimulation.model->getInletVariables().v << std::endl;
+   //std::cout << " Buffer points: " << mySPHSimulation.model->getInletVariables().v << std::endl;
 
    /**
     * Define timers to measure computation time.
     */
-   TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
+   TNL::Timer timer_search, timer_interact, timer_integrate, timer_inlet, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
    /**
@@ -174,7 +169,6 @@ int main( int argc, char* argv[] )
       mySPHSimulation.PerformNeighborSearch(
             iteration, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
-      std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
       std::cout << "Search... done. " << std::endl;
 
       /**
@@ -194,18 +188,22 @@ int main( int argc, char* argv[] )
       if( iteration % 20 == 0 ) {
          mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
+         timer_inlet.start();
          mySPHSimulation.integrator->updateBuffer( SPHConfig::dtInit, 0.209 );
+         timer_inlet.stop();
       }
       else {
          mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
+         timer_inlet.start();
          mySPHSimulation.integrator->updateBuffer( SPHConfig::dtInit, 0.209 );
+         timer_inlet.stop();
       }
       timer_integrate.stop();
       //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
-      std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
-      std::cout << "Buffer density:" << mySPHSimulation.model->getInletVariables().rho << std::endl;
-      std::cout << "Buffer velocity:" << mySPHSimulation.model->getInletVariables().v << std::endl;
+      //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
+      //std::cout << "Buffer density:" << mySPHSimulation.model->getInletVariables().rho << std::endl;
+      //std::cout << "Buffer velocity:" << mySPHSimulation.model->getInletVariables().v << std::endl;
       std::cout << "Integration... done. " << std::endl;
 
       /**
@@ -228,7 +226,6 @@ int main( int argc, char* argv[] )
          std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
          Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
          myWriter.writeParticles( *mySPHSimulation.particles );
-         std::cout << "points written" << std::endl;
          myWriter.template writePointData< SPHModel::ScalarArrayType >(
                mySPHSimulation.model->getFluidVariables().rho, "Density", mySPHSimulation.particles->getNumberOfParticles(), 1 );
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
@@ -248,23 +245,39 @@ int main( int argc, char* argv[] )
    /**
     * Output simulation stats.
     */
+   float totalTime = ( timer_search.getRealTime() + \
+   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+
+   float totalTimePerStep = totalTime / steps;
+
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
    std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
    std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Search (percentage)........................... " << timer_search.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
    std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Reset (percentage)......................... " << timer_search_reset.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
    std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Index by cell (percentage)................. " << timer_search_cellIndices.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
    std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Sort (percentage).......................... " << timer_search_sort.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
    std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Particle to cell (percentage).............. " << timer_search_toCells.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
    std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
    std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
+   std::cout << " - Update inlet............................... " << timer_inlet.getRealTime() << " sec." << std::endl;
+   std::cout << " - Update inlet (average time per step)....... " << timer_inlet.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Update inlet (percentage).................. " << timer_inlet.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
    std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
    std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
