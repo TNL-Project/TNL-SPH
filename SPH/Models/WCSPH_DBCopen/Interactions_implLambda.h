@@ -5,33 +5,32 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction(
-      NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, NeighborSearchPointer& neighborSearch_buffer )
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound )
 {
 
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundaryParticles->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_inlet = inletParticles->getNumberOfParticles();
-   const RealType searchRadius = this->particles->getSearchRadius();
+   GlobalIndexType numberOfParticles_bound = particles_bound->getNumberOfParticles();
+   GlobalIndexType numberOfParticles_inlet = openBoundary->particles->getNumberOfParticles();
+   const RealType searchRadius = particles->getSearchRadius();
 
    static constexpr RealType gridXbegin = Particles::Config::gridXbegin; //FIXIT
    static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
 
    const auto view_firstLastCellParticle = neighborSearch->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
-   const auto view_points = this->particles->getPoints().getView();
+   const auto view_particleCellIndex = particles->getParticleCellIndices().getView();
+   const auto view_points = particles->getPoints().getView();
 
    const auto view_firstLastCellParticle_bound = neighborSearch_bound->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex_bound = this->boundaryParticles->getParticleCellIndices().getView();
-   const auto view_points_bound = this->boundaryParticles->getPoints().getView();
+   const auto view_particleCellIndex_bound = particles_bound->getParticleCellIndices().getView();
+   const auto view_points_bound = particles_bound->getPoints().getView();
 
-   const auto view_firstLastCellParticle_inlet = neighborSearch_buffer->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex_inlet = this->inletParticles->getParticleCellIndices().getView();
-   const auto view_points_inlet = this->inletParticles->getPoints().getView();
+   const auto view_firstLastCellParticle_inlet = openBoundary->neighborSearch->getCellFirstLastParticleList().getView();
+   const auto view_particleCellIndex_inlet = openBoundary->particles->getParticleCellIndices().getView();
+   const auto view_points_inlet = openBoundary->particles->getPoints().getView();
 
    /* CONSTANT VARIABLES */
    const RealType h = this->h;
@@ -159,7 +158,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction(
       }
    };
 
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, NeighborSearchPointer& neighborSearch_buffer ) mutable
    {
       const unsigned int activeCell = view_particleCellIndex[ i ];
 
@@ -183,7 +182,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction(
       a_i[ 1 ] -= 9.81f ;
       view_a[ i ] = a_i;
    };
-   SPHParallelFor::exec( 0, numberOfParticles, particleLoop, neighborSearch, neighborSearch_bound );
+   SPHParallelFor::exec( 0, numberOfParticles, particleLoop, neighborSearch, neighborSearch_bound, openBoundary->neighborSearch );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch ) mutable
    {

@@ -71,8 +71,12 @@ int main( int argc, char* argv[] )
    /**
     * SPH model.
     */
-   using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHOpenSystem< SPHModel, ParticleSystem, NeighborSearch >;
+   using OpenBoundaryType = typename TNL::ParticleSystem::SPH::OpenBoundaryBuffer_orthogonal<
+      ParticleSystem, NeighborSearch, SPHConfig >;
+   using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC<
+      ParticleSystem, OpenBoundaryType, SPHConfig >;
+   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHOpenSystem<
+      SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
     * SPH schemes.
@@ -94,7 +98,7 @@ int main( int argc, char* argv[] )
          ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfAllocatedParticles,
          ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
          ParticlesConfig_inlet::numberOfParticles, ParticlesConfig_inlet::numberOfAllocatedParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize, 1 );
 
    /**
      * TEMP.
@@ -133,7 +137,7 @@ int main( int argc, char* argv[] )
          mySPHSimulation.model->getBoundaryVariables().v, "Velocity" );
 
    TNL::ParticleSystem::ReadParticles< ParticlesConfig_inlet, Reader > myInletReader( inputParticleFile_inlet );
-   myInletReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles_buffer->getPoints() ) ;
+   myInletReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.openBoundaryPatch->particles->getPoints() ) ;
 
    myInletReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
          mySPHSimulation.model->getInletVariables().rho, "Density" );

@@ -2,8 +2,10 @@
 
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
+#include <memory> //shared_ptr
 
 #include "../Particles/Particles.h"
+#include "OpenBoundaryBuffers.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -27,17 +29,36 @@ public:
 
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
 
+   using SPHPointer = typename Pointers::SharedPointer< SPHOpenSystem, DeviceType >; // draft
+
+   using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, typename Model::SPHConfig >;
+   using OpenBoudaryPatchPointer = Pointers::SharedPointer< OpenBoundaryPatch, DeviceType >;
+
+   using OpenBoudaryPatches = Containers::Array< OpenBoundaryPatch, DeviceType >;
+   using OpenBoudaryPatchesPointer = Pointers::SharedPointer< OpenBoudaryPatches, DeviceType >;
+
    SPHOpenSystem() = default;
 
    SPHOpenSystem( GlobalIndexType size, GlobalIndexType sizeAllocated,
          GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
          GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer,
-         RealType h, GlobalIndexType numberOfCells )
+         RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
    : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ),
      particles_bound( size_bound, sizeAllocated_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ),
-     particles_buffer( size_buffer, sizeAllocated_buffer, h ), neighborSearch_buffer( particles_bound, numberOfCells ),
-     model( sizeAllocated, particles, sizeAllocated_bound, particles_bound, sizeAllocated_buffer, particles_buffer ), integrator( model, sizeAllocated, sizeAllocated_bound, sizeAllocated_buffer ) {};
-
+     model( sizeAllocated,
+            particles,
+            sizeAllocated_bound,
+            particles_bound,
+            sizeAllocated_buffer,
+            openBoundaryPatch),
+     integrator( model,
+                 sizeAllocated,
+                 sizeAllocated_bound,
+                 sizeAllocated_buffer ),
+     openBoundaryPatch( size_buffer,
+                        sizeAllocated_buffer,
+                        h,
+                        numberOfCells ){};
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -60,15 +81,34 @@ public:
 
    ParticlePointer particles;
    ParticlePointer particles_bound;
-   ParticlePointer particles_buffer;
 
    NeighborSearchPointer neighborSearch;
    NeighborSearchPointer neighborSearch_bound;
-   NeighborSearchPointer neighborSearch_buffer;
+
+   //OpenBoudaryPatchesPointer openBoundaryPatches;
+   OpenBoudaryPatchPointer openBoundaryPatch;
 
    ModelPointer model;
 
    IntegratorPointer integrator;
+
+
+   //using SPHPointer = typename Pointers::SharedPointer< SPHOpenSystem, DeviceType >; // draft
+   //using SPHPointer = typename Pointers::DevicePointer< SPHOpenSystem, DeviceType >; // draft
+   //using SPHPointer = std::shared_ptr< std::add_const_t< SPHOpenSystem > >;
+
+   //SPHOpenSystem* self()
+   //{ return this; }
+
+   //const SPHOpenSystem* self() const
+   //{ return this; }
+
+
+   //SPHOpenSystem& self()
+   //{ return *this; }
+
+   //const SPHOpenSystem& self() const
+   //{ return *this; }
 
 };
 

@@ -4,65 +4,65 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 const Variables&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables() const
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getFluidVariables() const
 {
    return this->fluidVariables;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 Variables&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getFluidVariables()
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getFluidVariables()
 {
    return this->fluidVariables;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 const Variables&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getBoundaryVariables() const
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getBoundaryVariables() const
 {
    return this->boundaryVariables;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 Variables&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getBoundaryVariables()
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getBoundaryVariables()
 {
    return this->boundaryVariables;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 const Variables&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getInletVariables() const
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getInletVariables() const
 {
    return this->inletVariables;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 Variables&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getInletVariables()
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getInletVariables()
 {
    return this->inletVariables;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IndexArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getIndicesForReoder() const
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
+const typename WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::IndexArrayType&
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getIndicesForReoder() const
 {
    return swapFluid.indicesMap;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IndexArrayType&
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::getIndicesForReoder()
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
+typename WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::IndexArrayType&
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getIndicesForReoder()
 {
    return swapFluid.indicesMap;
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThrust( ParticlePointer& particleSys, Variables& variables, SwapVariables& variables_swap )
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::sortParticlesAndVariablesThrust( ParticlePointer& particleSys, Variables& variables, SwapVariables& variables_swap )
 {
    GlobalIndexType numberOfParticle = particleSys->getNumberOfParticles();
    auto view_particleCellIndices = particleSys->getParticleCellIndices().getView();
@@ -95,9 +95,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortParticlesAndVariablesThru
 #endif
 }
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particleSys, Variables& variables, SwapVariables& variables_swap )
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particleSys, Variables& variables, SwapVariables& variables_swap )
 {
    GlobalIndexType numberOfParticle = particleSys->getNumberOfParticles();
    auto view_particleCellIndices = particleSys->getParticleCellIndices().getView();
@@ -112,10 +112,10 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortBoundaryParticlesAndVaria
 
 
 
-template< typename Particles, typename SPHFluidConfig, typename Variables >
+template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity()
+WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::ComputePressureFromDensity()
 {
    auto view_rho = this->getFluidVariables().rho.getView();
    auto view_p = this->getFluidVariables().p.getView();

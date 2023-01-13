@@ -15,7 +15,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    neighborSearch->resetListWithIndices();
    if( step == 0 )
    neighborSearch_bound->resetListWithIndices();
-   neighborSearch_buffer->resetListWithIndices();
+   openBoundaryPatch->neighborSearch->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
@@ -24,7 +24,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_cellIndices.start();
    particles->computeParticleCellIndices();
-   particles_buffer->computeParticleCellIndices();
+   openBoundaryPatch->particles->computeParticleCellIndices();
    if( step == 0 )
    particles_bound->computeParticleCellIndices();
    timer_cellIndices.stop();
@@ -32,12 +32,12 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_sort.start();
    model->sortParticlesAndVariablesThrust( model->particles, model->fluidVariables, model->swapFluid );
-   model->sortParticlesAndVariablesThrust( model->inletParticles, model->inletVariables, model->swapInlet );
+   model->sortParticlesAndVariablesThrust( openBoundaryPatch->particles, model->inletVariables, model->swapInlet );
    integrator->sortIntegratorArrays();
    if( step == 0 )
    {
       //model->sortParticlesAndVariablesThrust( model->boundaryParticles, model->BoundaryVariables, model->swapBoundary );
-      model->sortBoundaryParticlesAndVariablesThrust( model->boundaryParticles, model->boundaryVariables, model->swapBoundary );
+      model->sortBoundaryParticlesAndVariablesThrust( model->particles_bound, model->boundaryVariables, model->swapBoundary );
       integrator->sortIntegratorBoundaryArrays();
    }
    timer_sort.stop();
@@ -45,7 +45,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_toCells.start();
    neighborSearch->particlesToCells();
-   neighborSearch_buffer->particlesToCells();
+   openBoundaryPatch->neighborSearch->particlesToCells();
    if( step == 0 )
    neighborSearch_bound->particlesToCells();
    timer_toCells.stop();
@@ -57,7 +57,7 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::InteractModel()
 {
-   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound, neighborSearch_buffer );
+   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound );
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >

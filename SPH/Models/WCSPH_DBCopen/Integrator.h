@@ -88,7 +88,7 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->boundaryParticles->getNumberOfParticles(), init );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, model->particles_bound->getNumberOfParticles(), init );
 
       model->getBoundaryVariables().rho.swap( rhoBoundary_old );
    }
@@ -134,7 +134,7 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->boundaryParticles->getNumberOfParticles(), init );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, model->particles_bound->getNumberOfParticles(), init );
    }
 
    void
@@ -159,7 +159,7 @@ public:
    void
    sortIntegratorBoundaryArrays()
    {
-      GlobalIndexType numberOfParticle = model->boundaryParticles->getNumberOfParticles();
+      GlobalIndexType numberOfParticle = model->particles_bound->getNumberOfParticles();
       auto view_indicesMap = model->swapBoundary.indicesMap.getView();
 
       auto view_rho_old = rhoBoundary_old.getView();
@@ -179,10 +179,10 @@ public:
    updateBuffer( RealType dt, RealType bufferEdge )
    {
       const GlobalIndexType numberOfParticle = model->particles->getNumberOfParticles();
-      const GlobalIndexType numberOfBufferParticles = model->inletParticles->getNumberOfParticles();
+      const GlobalIndexType numberOfBufferParticles = model->openBoundary->particles->getNumberOfParticles();
 
       //Buffer
-      auto view_r_buffer = model->inletParticles->getPoints().getView();
+      auto view_r_buffer = model->openBoundary->particles->getPoints().getView();
       auto view_v_buffer = model->getInletVariables().v.getView();
       auto view_rho_buffer = this->model->getInletVariables().rho.getView();
 
