@@ -146,8 +146,14 @@ int main( int argc, char* argv[] )
    myInletReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
          mySPHSimulation.model->getInletVariables().v, "Velocity" );
 
-   //std::cout << " Buffer points: " << mySPHSimulation.particles_buffer->getPoints() << std::endl;
-   //std::cout << " Buffer points: " << mySPHSimulation.model->getInletVariables().v << std::endl;
+   mySPHSimulation.openBoundaryPatch->parameters.orientation = {
+      SPHConfig::INLET::orientation_x, SPHConfig::INLET::orientation_y };
+   mySPHSimulation.openBoundaryPatch->parameters.velocity = {
+      SPHConfig::INLET::velocity_x, SPHConfig::INLET::velocity_y };
+   mySPHSimulation.openBoundaryPatch->parameters.density = SPHConfig::INLET::inlet_density;
+   mySPHSimulation.openBoundaryPatch->parameters.bufferEdge = SPHConfig::INLET::bufferEdge;
+   mySPHSimulation.openBoundaryPatch->parameters.bufferWidth = {
+      SPHConfig::INLET::bufferWidth_x, SPHConfig::INLET::bufferWidth_y };
 
    /**
     * Define timers to measure computation time.
@@ -193,14 +199,14 @@ int main( int argc, char* argv[] )
          mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
          timer_inlet.start();
-         mySPHSimulation.integrator->updateBuffer( SPHConfig::dtInit, 0.209 );
+         mySPHSimulation.integrator->updateBuffer( SPHConfig::dtInit );
          timer_inlet.stop();
       }
       else {
          mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
          mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
          timer_inlet.start();
-         mySPHSimulation.integrator->updateBuffer( SPHConfig::dtInit, 0.209 );
+         mySPHSimulation.integrator->updateBuffer( SPHConfig::dtInit );
          timer_inlet.stop();
       }
       timer_integrate.stop();

@@ -176,7 +176,7 @@ public:
    }
 
    void
-   updateBuffer( RealType dt, RealType bufferEdge )
+   updateBuffer( RealType dt )
    {
       const GlobalIndexType numberOfParticle = model->particles->getNumberOfParticles();
       const GlobalIndexType numberOfBufferParticles = model->openBoundary->particles->getNumberOfParticles();
@@ -188,6 +188,11 @@ public:
 
       auto view_inletMark = inletMark.getView();
       view_inletMark = 1; //TODO: this can be avoided
+
+      const VectorType inletConstVelocity = model->openBoundary->parameters.velocity;
+      const RealType inletConstDensity = model->openBoundary->parameters.density;
+      const RealType bufferEdge = model->openBoundary->parameters.bufferEdge;
+      const VectorType bufferWidth = model->openBoundary->parameters.bufferWidth;
 
       //Fluid ( variable arrays and integrator variable arrays )
       auto view_r_fluid = model->particles->getPoints().getView();
@@ -224,23 +229,18 @@ public:
       {
          if( view_inletMark[ i ] == 0 )
          {
-            //Create new fluid
+            //Retype buffer particle to fluid
             view_r_fluid[ numberOfParticle + i ] = view_r_buffer[ i ];
-            //view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
-            //view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
+            view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
+            view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
+            view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
+            view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
 
-            view_rho_fluid[ numberOfParticle + i ] = 1000.f;
-            view_rho_old[ numberOfParticle + i ] = 1000.f;
-            view_v_fluid[ numberOfParticle + i ] = { 0.5f, 0.f };
-            view_v_old[ numberOfParticle + i ] = { 0.5f, 0.f };
-
-            //Generate new bufffer particle
-            // TODO: Generalize!
-            const RealType bufferLength = 0.007f;
-            const VectorType newBufferParticle = { view_r_buffer[ i ][ 0 ] - bufferLength, view_r_buffer[ i ][ 1 ] };
+            //Generate new bufffer partice
+            const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth;
             view_r_buffer[ i ] = newBufferParticle;
-            view_v_buffer[ i ] = { 0.5f, 0.f };
-            view_rho_buffer[ i ] = 1000.f;
+            view_v_buffer[ i ] = inletConstVelocity;
+            view_rho_buffer[ i ] = inletConstDensity;
 
          }
       };
