@@ -33,9 +33,7 @@ public:
 
    using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, typename Model::SPHConfig >;
    using OpenBoudaryPatchPointer = Pointers::SharedPointer< OpenBoundaryPatch, DeviceType >;
-
-   using OpenBoudaryPatches = Containers::Array< OpenBoundaryPatch, DeviceType >;
-   using OpenBoudaryPatchesPointer = Pointers::SharedPointer< OpenBoudaryPatches, DeviceType >;
+   using OpenBoudaryPatchesPointerArray = Containers::Array< OpenBoudaryPatchPointer, DeviceType >;
 
    SPHOpenSystem() = default;
 
@@ -87,6 +85,8 @@ public:
 
    //OpenBoudaryPatchesPointer openBoundaryPatches;
    OpenBoudaryPatchPointer openBoundaryPatch;
+
+   OpenBoudaryPatchesPointerArray openBoundaryPatches;
 
    ModelPointer model;
 

@@ -189,6 +189,7 @@ public:
       auto view_inletMark = inletMark.getView();
       view_inletMark = 1; //TODO: this can be avoided
 
+      const VectorType inletOrientation = model->openBoundary->parameters.orientation;
       const VectorType inletConstVelocity = model->openBoundary->parameters.velocity;
       const RealType inletConstDensity = model->openBoundary->parameters.density;
       const RealType bufferEdge = model->openBoundary->parameters.bufferEdge;
@@ -205,7 +206,7 @@ public:
       auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
-         if( view_r_buffer[ i ][ 0 ] > bufferEdge ) //TODO: generalize
+         if( ( view_r_buffer[ i ], inletOrientation ) > bufferEdge ) //It is possible to do for each direction.
          {
             view_inletMark[ i ] = 0;
          }
