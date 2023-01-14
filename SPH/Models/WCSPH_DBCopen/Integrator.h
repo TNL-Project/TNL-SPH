@@ -45,18 +45,19 @@ public:
       inletMark = 1;
    }
 
+   template< typename FluidPointer >
    void
-   IntegrateVerlet( RealType dt )
+   IntegrateVerlet( RealType dt, FluidPointer& fluid )
    {
-      auto rho_view = model->getFluidVariables().rho.getView();
-      auto v_view = model->getFluidVariables().v.getView();
-      auto r_view = model->particles->getPoints().getView();
+      auto rho_view = fluid->variables->rho.getView();
+      auto v_view = fluid->variables->v.getView();
+      auto r_view = fluid->particles->getPoints().getView();
 
       auto rho_old_view = this->rho_old.getView();
       auto v_old_view = this->v_old.getView();
 
-      const auto drho_view = model->getFluidVariables().drho.getView();
-      const auto a_view = model->getFluidVariables().a.getView();
+      const auto drho_view = fluid->variables->drho.getView();
+      const auto a_view = fluid->variables->a.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
       RealType dt2 = 2 * dt;
@@ -67,19 +68,20 @@ public:
          v_old_view[ i ] += a_view[ i ] * dt2;
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->particles->getNumberOfParticles(), init );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
 
-      model->getFluidVariables().v.swap( v_old );
-      model->getFluidVariables().rho.swap( rho_old );
+      fluid->variables->v.swap( v_old );
+      fluid->variables->rho.swap( rho_old );
    }
 
+   template< typename BoundaryPointer >
    void
-   IntegrateVerletBoundary( RealType dt )
+   IntegrateVerletBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_view = model->getBoundaryVariables().rho.getView();
+      auto rho_view = boundary->variables->rho.getView();
       auto rho_old_view = this->rhoBoundary_old.getView();
 
-      const auto drho_view = model->getBoundaryVariables().drho.getView();
+      const auto drho_view = boundary->variables->drho.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
       RealType dt2 = 2 * dt;
@@ -88,23 +90,24 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->particles_bound->getNumberOfParticles(), init );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
 
-      model->getBoundaryVariables().rho.swap( rhoBoundary_old );
+      boundary->variables->rho.swap( rhoBoundary_old );
    }
 
+   template< typename FluidPointer >
    void
-   IntegrateEuler( RealType dt )
+   IntegrateEuler( RealType dt, FluidPointer& fluid )
    {
-      auto rho_view = model->getFluidVariables().rho.getView();
-      auto v_view = model->getFluidVariables().v.getView();
-      auto r_view = model->particles->getPoints().getView();
+      auto rho_view = fluid->variables->rho.getView();
+      auto v_view = fluid->variables->v.getView();
+      auto r_view = fluid->particles->getPoints().getView();
 
       auto rho_old_view = this->rho_old.getView();
       auto v_old_view = this->v_old.getView();
 
-      const auto drho_view = model->getFluidVariables().drho.getView();
-      const auto a_view = model->getFluidVariables().a.getView();
+      const auto drho_view = fluid->variables->drho.getView();
+      const auto a_view = fluid->variables->a.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
 
@@ -116,16 +119,17 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->particles->getNumberOfParticles(), init );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
    }
 
+   template< typename BoundaryPointer >
    void
-   IntegrateEulerBoundary( RealType dt )
+   IntegrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_view = model->getBoundaryVariables().rho.getView();
+      auto rho_view = boundary->variables->rho.getView();
       auto rho_old_view = this->rhoBoundary_old.getView();
 
-      const auto drho_view = model->getBoundaryVariables().drho.getView();
+      const auto drho_view = boundary->variables->drho.getView();
 
       RealType dtdt05 = 0.5 * dt * dt;
 
@@ -134,13 +138,13 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, model->particles_bound->getNumberOfParticles(), init );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
    }
 
    void
-   sortIntegratorArrays()
+   sortIntegratorArrays( GlobalIndexType numberOfParticle ) //TODO: Make this better.
    {
-      GlobalIndexType numberOfParticle = model->particles->getNumberOfParticles();
+      //GlobalIndexType numberOfParticle = model->particles->getNumberOfParticles();
       auto view_indicesMap = model->swapFluid.indicesMap.getView();
 
       auto view_rho_old = rho_old.getView();
@@ -157,9 +161,9 @@ public:
    }
 
    void
-   sortIntegratorBoundaryArrays()
+   sortIntegratorBoundaryArrays( GlobalIndexType numberOfParticle ) //TODO: Make this better.
    {
-      GlobalIndexType numberOfParticle = model->particles_bound->getNumberOfParticles();
+      //GlobalIndexType numberOfParticle = model->particles_bound->getNumberOfParticles();
       auto view_indicesMap = model->swapBoundary.indicesMap.getView();
 
       auto view_rho_old = rhoBoundary_old.getView();
@@ -175,30 +179,31 @@ public:
       vBoundary_old.swap( vBoundary_old_swap );
    }
 
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   updateBuffer( RealType dt )
+   updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
    {
-      const GlobalIndexType numberOfParticle = model->particles->getNumberOfParticles();
-      const GlobalIndexType numberOfBufferParticles = model->openBoundary->particles->getNumberOfParticles();
+      const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
+      const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
       //Buffer
-      auto view_r_buffer = model->openBoundary->particles->getPoints().getView();
-      auto view_v_buffer = model->getInletVariables().v.getView();
-      auto view_rho_buffer = this->model->getInletVariables().rho.getView();
+      auto view_r_buffer = openBoundary->particles->getPoints().getView();
+      auto view_v_buffer = openBoundary->variables->v.getView();
+      auto view_rho_buffer = openBoundary->variables->rho.getView();
 
       auto view_inletMark = inletMark.getView();
       view_inletMark = 1; //TODO: this can be avoided
 
-      const VectorType inletOrientation = model->openBoundary->parameters.orientation;
-      const VectorType inletConstVelocity = model->openBoundary->parameters.velocity;
-      const RealType inletConstDensity = model->openBoundary->parameters.density;
-      const RealType bufferEdge = model->openBoundary->parameters.bufferEdge;
-      const VectorType bufferWidth = model->openBoundary->parameters.bufferWidth;
+      const VectorType inletOrientation = openBoundary->parameters.orientation;
+      const VectorType inletConstVelocity = openBoundary->parameters.velocity;
+      const RealType inletConstDensity = openBoundary->parameters.density;
+      const RealType bufferEdge = openBoundary->parameters.bufferEdge;
+      const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
 
       //Fluid ( variable arrays and integrator variable arrays )
-      auto view_r_fluid = model->particles->getPoints().getView();
-      auto view_v_fluid = model->getFluidVariables().v.getView();
-      auto view_rho_fluid = model->getFluidVariables().rho.getView();
+      auto view_r_fluid = fluid->particles->getPoints().getView();
+      auto view_v_fluid = fluid->variables->v.getView();
+      auto view_rho_fluid = fluid->variables->rho.getView();
 
       auto view_rho_old = rho_old.getView();
       auto view_v_old = v_old.getView();
@@ -246,7 +251,7 @@ public:
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfRetyped, createNewFluidParticles );
-      model->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+      fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
       std::cout << "... InletBuffer - system updated." << std::endl;
 
    }

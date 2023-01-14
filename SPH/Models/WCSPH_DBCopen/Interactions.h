@@ -26,18 +26,10 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
+template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
 class WCSPH_DBC
 {
 public:
-
-   //Test
-   using ParticleConfig = typename Particles::Config;
-   using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticleConfig, Particles >;
-   using SPHSim = SPHOpenSystem< WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig >, Particles, NeighborSearch >;
-   using SPHSimPointer = typename Pointers::SharedPointer< SPHSim, typename Particles::Device >;
-   using Ptr = std::shared_ptr< SPHSim >;
-   //Test
 
    using SPHConfig = SPHFluidConfig;
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
@@ -57,7 +49,6 @@ public:
    using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
    using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
-   using OpenBoundaryPointer = typename Pointers::SharedPointer< OpenBoundary, DeviceType >;
 
    /* VARIABLES FIELDS */
    using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
@@ -69,47 +60,42 @@ public:
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
 
    /* Integrator */
-   using Model = WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig >;
+   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
 
    /*Swap variables*/
    using SwapVariables = SWAPFluidVariables< SPHFluidConfig, PointArrayType >; //REDO
+   using ModelVariables = Variables;
+   using VariablesPointer = typename Pointers::SharedPointer< ModelVariables, DeviceType >;
 
    /**
     * Constructor.
     */
    WCSPH_DBC( GlobalIndexType size,
-              ParticlePointer& particles,
               GlobalIndexType size_boundary,
-              ParticlePointer& particles_boundary,
-              GlobalIndexType size_inlet,
-              OpenBoundaryPointer& openBoundary ) //THIS WORKS
-   : fluidVariables( size ), boundaryVariables( size_boundary ), inletVariables( size_inlet ),
-#ifdef PREFER_SPEED_OVER_MEMORY
-     swapFluid( size ), swapBoundary( size_boundary ), swapInlet( size_inlet ),
-#endif
-   particles( particles ), particles_bound( particles_boundary ), openBoundary( openBoundary ) {} //THIS WORKS
+              GlobalIndexType size_inlet ) //THIS WORKS
+   : swapFluid( size ), swapBoundary( size_boundary ), swapInlet( size_inlet ) {} //THIS WORKS
 
    /**
     * Get fileds with variables.
     */
-   const Variables&
-   getFluidVariables() const;
+   //const Variables&
+   //getFluidVariables() const;
 
-   Variables&
-   getFluidVariables();
+   //Variables&
+   //getFluidVariables();
 
-   const Variables&
-   getBoundaryVariables() const;
+   //const Variables&
+   //getBoundaryVariables() const;
 
-   Variables&
-   getBoundaryVariables();
+   //Variables&
+   //getBoundaryVariables();
 
-   const Variables&
-   getInletVariables() const;
+   //const Variables&
+   //getInletVariables() const;
 
-   Variables&
-   getInletVariables();
+   //Variables&
+   //getInletVariables();
 
    /**
     * Get fileds with variables.
@@ -125,10 +111,10 @@ public:
     * TODO: Move this on the side of nbsearch/particles.
     */
    void
-   sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
+   sortParticlesAndVariablesThrust( ParticlePointer& particles, VariablesPointer& variables, SwapVariables& variables_swap );
 
    void
-   sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
+   sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, VariablesPointer& variables, SwapVariables& variables_swap );
 
    //void
    //sortInletParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
@@ -137,13 +123,13 @@ public:
     * Compute pressure from density.
     * TODO: Move out.
     */
-   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
-   void
-   ComputePressureFromDensity();
+   //USETHIS:template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
+   //USETHIS:void
+   //USETHIS:ComputePressureFromDensity();
 
-   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+   template< typename FluidPointer, typename BoudaryPointer, typename OpenBoundaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS  >
    void
-   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound );
+   Interaction( FluidPointer& fluid, BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary );
 
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
@@ -151,18 +137,18 @@ public:
 //protected:
 
    /* Variables - Fields */
-   Variables fluidVariables;
-   Variables boundaryVariables;
-   Variables inletVariables;
+   //Variables fluidVariables;
+   //Variables boundaryVariables;
+   //Variables inletVariables;
 
-   ParticlePointer particles;
-   ParticlePointer particles_bound;
+   //ParticlePointer particles;
+   //ParticlePointer particles_bound;
 
    SwapVariables swapFluid;
    SwapVariables swapBoundary;
    SwapVariables swapInlet;
 
-   OpenBoundaryPointer openBoundary;
+   //OpenBoundaryPointer openBoundary;
    //SPHSim simulation;
    //std::shared_ptr< SPHSim > simulation;
    //std::weak_ptr< SPHSim > simulation;

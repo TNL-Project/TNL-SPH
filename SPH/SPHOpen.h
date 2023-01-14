@@ -5,6 +5,10 @@
 #include <memory> //shared_ptr
 
 #include "../Particles/Particles.h"
+
+
+#include "Fluid.h"
+#include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
 
 namespace TNL {
@@ -31,9 +35,20 @@ public:
 
    using SPHPointer = typename Pointers::SharedPointer< SPHOpenSystem, DeviceType >; // draft
 
-   using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, typename Model::SPHConfig >;
+   using SPHConfig = typename Model::SPHConfig;
+   using Variables = typename Model::ModelVariables;
+
+   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, Variables >;
+   using FluidPointer = Pointers::SharedPointer< Fluid, DeviceType >;
+
+   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, Variables >;
+   using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
+
+   using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, SPHConfig, Variables >;
    using OpenBoudaryPatchPointer = Pointers::SharedPointer< OpenBoundaryPatch, DeviceType >;
-   using OpenBoudaryPatchesPointerArray = Containers::Array< OpenBoudaryPatchPointer, DeviceType >;
+
+
+   //using OpenBoudaryPatchesPointerArray = Containers::Array< OpenBoudaryPatchPointer, DeviceType >;
 
    SPHOpenSystem() = default;
 
@@ -41,14 +56,9 @@ public:
          GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
          GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer,
          RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ),
-     particles_bound( size_bound, sizeAllocated_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ),
-     model( sizeAllocated,
-            particles,
+   : model( sizeAllocated,
             sizeAllocated_bound,
-            particles_bound,
-            sizeAllocated_buffer,
-            openBoundaryPatch),
+            sizeAllocated_buffer ),
      integrator( model,
                  sizeAllocated,
                  sizeAllocated_bound,
@@ -56,7 +66,15 @@ public:
      openBoundaryPatch( size_buffer,
                         sizeAllocated_buffer,
                         h,
-                        numberOfCells ){};
+                        numberOfCells ),
+      fluid( size,
+             sizeAllocated,
+             h,
+             numberOfCells ),
+      boundary( size_bound,
+                sizeAllocated_bound,
+                h,
+                numberOfCells ){};
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -66,49 +84,25 @@ public:
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
-   void Interact();
+  // template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+  // void Interact();
 
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
-   void InteractModel();
+   void Interact();
 
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
-   void InteractModel();
+  // template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
+  // void InteractModel();
 
    //protected: (or private?)
 
-   ParticlePointer particles;
-   ParticlePointer particles_bound;
-
-   NeighborSearchPointer neighborSearch;
-   NeighborSearchPointer neighborSearch_bound;
-
-   //OpenBoudaryPatchesPointer openBoundaryPatches;
+   FluidPointer fluid;
+   BoundaryPointer boundary;
    OpenBoudaryPatchPointer openBoundaryPatch;
-
-   OpenBoudaryPatchesPointerArray openBoundaryPatches;
+   //OpenBoudaryPatchesPointerArray openBoundaryPatches;
 
    ModelPointer model;
 
    IntegratorPointer integrator;
-
-
-   //using SPHPointer = typename Pointers::SharedPointer< SPHOpenSystem, DeviceType >; // draft
-   //using SPHPointer = typename Pointers::DevicePointer< SPHOpenSystem, DeviceType >; // draft
-   //using SPHPointer = std::shared_ptr< std::add_const_t< SPHOpenSystem > >;
-
-   //SPHOpenSystem* self()
-   //{ return this; }
-
-   //const SPHOpenSystem* self() const
-   //{ return this; }
-
-
-   //SPHOpenSystem& self()
-   //{ return *this; }
-
-   //const SPHOpenSystem& self() const
-   //{ return *this; }
 
 };
 
