@@ -56,25 +56,30 @@ public:
          GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
          GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer,
          RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   : model( sizeAllocated,
-            sizeAllocated_bound,
-            sizeAllocated_buffer ),
-     integrator( model,
-                 sizeAllocated,
-                 sizeAllocated_bound,
-                 sizeAllocated_buffer ),
-     openBoundaryPatch( size_buffer,
-                        sizeAllocated_buffer,
-                        h,
-                        numberOfCells ),
-      fluid( size,
-             sizeAllocated,
-             h,
-             numberOfCells ),
-      boundary( size_bound,
-                sizeAllocated_bound,
-                h,
-                numberOfCells ){};
+   : model(
+         sizeAllocated,
+         sizeAllocated_bound,
+         sizeAllocated_buffer ),
+     integrator(
+         model,
+         sizeAllocated,
+         sizeAllocated_bound,
+         sizeAllocated_buffer ),
+     openBoundaryPatch(
+         size_buffer,
+         sizeAllocated_buffer,
+         h,
+         numberOfCells ),
+      fluid(
+         size,
+         sizeAllocated,
+         h,
+         numberOfCells ),
+      boundary(
+         size_bound,
+         sizeAllocated_bound,
+         h,
+         numberOfCells ){};
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -84,16 +89,10 @@ public:
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
-  // template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
-  // void Interact();
-
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void Interact();
 
-  // template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
-  // void InteractModel();
-
-   //protected: (or private?)
+//protected:
 
    FluidPointer fluid;
    BoundaryPointer boundary;

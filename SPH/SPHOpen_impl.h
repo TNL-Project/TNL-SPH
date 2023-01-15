@@ -14,22 +14,25 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    timer_reset.start();
    fluid->neighborSearch->resetListWithIndices();
    if( step == 0 )
-   boundary->neighborSearch->resetListWithIndices();
+      boundary->neighborSearch->resetListWithIndices();
    openBoundaryPatch->neighborSearch->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
-   if( step == 0 ) //TODO: do this better
+   if( step == 0 ) //TODO: do this better, i. e. move this to constructor
    fluid->particles->computeGridCellIndices(); //with current settings, I dont need to do this
 
    timer_cellIndices.start();
    fluid->particles->computeParticleCellIndices();
    openBoundaryPatch->particles->computeParticleCellIndices();
    if( step == 0 )
-   boundary->particles->computeParticleCellIndices();
+      boundary->particles->computeParticleCellIndices();
    timer_cellIndices.stop();
    std::cout << " - particles->computeParticleCellIndices();... done " << std::endl;
 
+   /**
+    * Sort particles.
+    */
    timer_sort.start();
    model->sortParticlesAndVariablesThrust( fluid->particles, fluid->variables, model->swapFluid );
    model->sortParticlesAndVariablesThrust( openBoundaryPatch->particles, openBoundaryPatch->variables, model->swapInlet );
@@ -43,44 +46,26 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    timer_sort.stop();
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
 
+   /**
+    * Bucketing, particles to cells.
+    */
    timer_toCells.start();
    fluid->neighborSearch->particlesToCells();
    openBoundaryPatch->neighborSearch->particlesToCells();
    if( step == 0 )
-   boundary->neighborSearch->particlesToCells();
+      boundary->neighborSearch->particlesToCells();
    timer_toCells.stop();
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
-
-//: template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-//: template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
-//: void
-//: SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::InteractModel()
-//: {
-//:    //model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound );
-//: }
-//:
-//: template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-//: template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
-//: void
-//: SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::InteractModel()
-//: {
-//:    //model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS, RiemannSolver >( neighborSearch, neighborSearch_bound );
-//: }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
 SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
-   model->template Interaction< FluidPointer,
-                                BoundaryPointer,
-                                OpenBoudaryPatchPointer,
-                                NeighborSearchPointer,
-                                SPHKernelFunction,
-                                DiffusiveTerm,
-                                ViscousTerm,
-                                EOS >( fluid, boundary, openBoundaryPatch );
+   model->template Interaction<
+      FluidPointer, BoundaryPointer, OpenBoudaryPatchPointer, NeighborSearchPointer,
+      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, openBoundaryPatch );
 }
 
 

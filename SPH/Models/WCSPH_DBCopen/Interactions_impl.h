@@ -4,47 +4,6 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-//template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
-//const Variables&
-//WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getFluidVariables() const
-//{
-//   return this->fluidVariables;
-//}
-//
-//template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
-//Variables&
-//WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getFluidVariables()
-//{
-//   return this->fluidVariables;
-//}
-//
-//template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
-//const Variables&
-//WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getBoundaryVariables() const
-//{
-//   return this->boundaryVariables;
-//}
-//
-//template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
-//Variables&
-//WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getBoundaryVariables()
-//{
-//   return this->boundaryVariables;
-//}
-//
-//template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
-//const Variables&
-//WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getInletVariables() const
-//{
-//   return this->inletVariables;
-//}
-//
-//template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >
-//Variables&
-//WCSPH_DBC< Particles, OpenBoundary, SPHFluidConfig, Variables >::getInletVariables()
-//{
-//   return this->inletVariables;
-//}
 
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 const typename WCSPH_DBC< Particles, SPHFluidConfig, Variables >::IndexArrayType&

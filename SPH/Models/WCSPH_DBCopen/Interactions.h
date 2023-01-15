@@ -53,7 +53,6 @@ public:
    /* VARIABLES FIELDS */
    using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-   using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /* Thrust sort */
@@ -76,26 +75,6 @@ public:
               GlobalIndexType size_inlet ) //THIS WORKS
    : swapFluid( size ), swapBoundary( size_boundary ), swapInlet( size_inlet ) {} //THIS WORKS
 
-   /**
-    * Get fileds with variables.
-    */
-   //const Variables&
-   //getFluidVariables() const;
-
-   //Variables&
-   //getFluidVariables();
-
-   //const Variables&
-   //getBoundaryVariables() const;
-
-   //Variables&
-   //getBoundaryVariables();
-
-   //const Variables&
-   //getInletVariables() const;
-
-   //Variables&
-   //getInletVariables();
 
    /**
     * Get fileds with variables.
@@ -134,24 +113,10 @@ public:
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
 
-//protected:
-
-   /* Variables - Fields */
-   //Variables fluidVariables;
-   //Variables boundaryVariables;
-   //Variables inletVariables;
-
-   //ParticlePointer particles;
-   //ParticlePointer particles_bound;
-
    SwapVariables swapFluid;
    SwapVariables swapBoundary;
    SwapVariables swapInlet;
 
-   //OpenBoundaryPointer openBoundary;
-   //SPHSim simulation;
-   //std::shared_ptr< SPHSim > simulation;
-   //std::weak_ptr< SPHSim > simulation;
 
 
 #ifdef PREFER_SPEED_OVER_MEMORY

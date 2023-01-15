@@ -10,6 +10,25 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
+template< typename SPHFluidConfig >
+class IntegratorVariables
+{
+   public:
+   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+
+   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+   using RealType = typename SPHFluidTraitsType::RealType;
+
+   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
+   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+
+   IntegratorVariables( GlobalIndexType size )
+   : rho_old( size ), v_old( size ) {}
+
+   ScalarArrayType rho_old;
+   VectorArrayType v_old;
+};
+
 template< typename ModelPointer, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig > >
 class VerletIntegrator
 {

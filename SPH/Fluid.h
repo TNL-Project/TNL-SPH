@@ -33,10 +33,19 @@ class Fluid
       return this->variables;
    }
 
+   //void sortParticles
+   //void reorderDataVariables -> Variables.reorderVariables
+   //                          -> reorderIntegratorVariables
+
    ParticlePointer particles;
    NeighborSearchPointer neighborSearch;
    VariablesPointer variables;
-   //Variables variables;
+
+   //IntegratorVariables
+
+   //IndicesMap reorderPermutation
+   //SwapPointsArray
+   //SwapVariables
 };
 
 }
