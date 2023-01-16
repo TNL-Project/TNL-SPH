@@ -23,22 +23,12 @@ class Boundary
    using RealType = typename SPHTraitsType::RealType;
 
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
 
    Boundary( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     integratorVariables( size ), sortPermutations( size ), points_swap( size ) {};
+     integratorVariables( sizeAllocated ), sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
 
-   void sortParticles()
-   {
-      GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
-      auto view_particleCellIndices = particles->getParticleCellIndices().getView();
-      auto view_points = particles->getPoints().getView();
-      auto view_sortPermutations = sortPermutations.getView();
-
-      sortPermutations.forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-      //TODO: tempalte thrust device with TNL::Devices
-      thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, view_sortPermutations.getArrayData() );
-   }
 
    VariablesPointer&
    getBoundaryVariables()
@@ -52,18 +42,34 @@ class Boundary
       return this->variables;
    }
 
-   //void
-   //sortParticles
-   //{
+   void sortParticles()
+   {
+      GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
+      auto view_particleCellIndices = particles->getParticleCellIndices().getView();
+      auto view_map = sortPermutations->getView();
 
-   //}
+      sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
+      //TODO: tempalte thrust device with TNL::Devices
+      thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() );
+
+      auto view_points = particles->getPoints().getView();
+#ifdef PREFER_SPEED_OVER_MEMORY
+      auto view_points_swap = points_swap.getView();
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points_swap.getArrayData() );
+      particles->getPoints().swap( points_swap );
+#else
+      //TODO: Error or implement.
+#endif
+      variables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
+      integratorVariables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
+   }
 
    ParticlePointer particles;
    NeighborSearchPointer neighborSearch;
    VariablesPointer variables;
    IntegratorVariablesPointer integratorVariables;
 
-   IndexArrayType sortPermutations;
+   IndexArrayTypePointer sortPermutations;
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    using PointArrayType = typename ParticleSystem::PointArrayType;

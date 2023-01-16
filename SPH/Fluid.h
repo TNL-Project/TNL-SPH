@@ -28,7 +28,7 @@ class Fluid
 
    Fluid( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     integratorVariables( size ), sortPermutations( size ), points_swap( size ) {};
+     integratorVariables( sizeAllocated ), sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
 
    VariablesPointer&
    getFluidVariables()
@@ -60,6 +60,8 @@ class Fluid
 #else
       //TODO: Error or implement.
 #endif
+      variables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
+      integratorVariables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
    }
 
    ParticlePointer particles;

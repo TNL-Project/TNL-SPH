@@ -28,7 +28,7 @@ class OpenBoundaryBuffer_orthogonal
 
    OpenBoundaryBuffer_orthogonal( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     sortPermutations( size ), points_swap( size ) {};
+     sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
 
    VariablesPointer&
    getOpenBoundaryVariables()
@@ -60,6 +60,7 @@ class OpenBoundaryBuffer_orthogonal
 #else
       //TODO: Error or implement.
 #endif
+      variables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
    }
 
    struct Parameters

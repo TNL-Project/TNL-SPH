@@ -34,17 +34,18 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     * Sort particles.
     */
    timer_sort.start();
-   model->sortParticlesAndVariablesThrust( fluid->particles, fluid->variables, model->swapFluid );
-   //fluid->sortParticles();
-   //model->sortVariables( fluid->particles, fluid->variables, fluid->sortPermutations );
+   //model->sortParticlesAndVariablesThrust( fluid->particles, fluid->variables, model->swapFluid );
+   //integrator->sortIntegratorArrays( fluid->particles->getNumberOfParticles() ); //Moved to fluid
+   fluid->sortParticles();
 
-   model->sortParticlesAndVariablesThrust( openBoundaryPatch->particles, openBoundaryPatch->variables, model->swapInlet );
-   integrator->sortIntegratorArrays( fluid->particles->getNumberOfParticles() ); //TODO: NumberOfPtcs.
+   //model->sortParticlesAndVariablesThrust( openBoundaryPatch->particles, openBoundaryPatch->variables, model->swapInlet );
+   openBoundaryPatch->sortParticles();
    if( step == 0 )
    {
       //model->sortParticlesAndVariablesThrust( model->boundaryParticles, model->BoundaryVariables, model->swapBoundary );
-      model->sortBoundaryParticlesAndVariablesThrust( boundary->particles, boundary->variables, model->swapBoundary );
-      integrator->sortIntegratorBoundaryArrays( boundary->particles->getNumberOfParticles() ); //TODO: NumberOfPtcs.
+      //model->sortBoundaryParticlesAndVariablesThrust( boundary->particles, boundary->variables, model->swapBoundary );
+      //integrator->sortIntegratorBoundaryArrays( boundary->particles->getNumberOfParticles() ); //TODO: NumberOfPtcs.
+      boundary->sortParticles();
    }
    timer_sort.stop();
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
