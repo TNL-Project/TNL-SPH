@@ -69,6 +69,33 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortBoundaryParticlesAndVaria
    thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, thrust::make_zip_iterator( thrust::make_tuple( view_points.getArrayData(), view_rho.getArrayData(), view_v.getArrayData(), view_indicesMap.getArrayData() ) ) );
 }
 
+/**********************/
+
+template< typename Particles, typename SPHFluidConfig, typename Variables >
+void
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::sortVariables( ParticlePointer& particles, VariablesPointer& variables, IndexArrayTypePointer& map )
+{
+   GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
+
+   auto view_rho = variables->rho.getView();
+   auto view_v = variables->v.getView();
+
+   auto view_map = map->getView();
+
+#ifdef PREFER_SPEED_OVER_MEMORY
+   auto view_rho_swap = variables->rho_swap.getView();
+   auto view_v_swap = variables->v_swap.getView();
+
+   thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle, view_rho.getArrayData(), view_rho_swap.getArrayData() );
+   thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle, view_v.getArrayData(), view_v_swap.getArrayData() );
+
+   variables->rho.swap( variables->rho_swap );
+   variables->v.swap( variables->v_swap );
+#else
+   //TODO: Error or implement.
+#endif
+}
+
 
 
 //USETHIS:template< typename Particles, typename OpenBoundary, typename SPHFluidConfig, typename Variables >

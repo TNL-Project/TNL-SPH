@@ -35,6 +35,9 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    timer_sort.start();
    model->sortParticlesAndVariablesThrust( fluid->particles, fluid->variables, model->swapFluid );
+   //fluid->sortParticles();
+   //model->sortVariables( fluid->particles, fluid->variables, fluid->sortPermutations );
+
    model->sortParticlesAndVariablesThrust( openBoundaryPatch->particles, openBoundaryPatch->variables, model->swapInlet );
    integrator->sortIntegratorArrays( fluid->particles->getNumberOfParticles() ); //TODO: NumberOfPtcs.
    if( step == 0 )

@@ -57,10 +57,12 @@ public:
 
    /* Thrust sort */
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
 
    /* Integrator */
    using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
+   using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 
    /*Swap variables*/
    using SwapVariables = SWAPFluidVariables< SPHFluidConfig, PointArrayType >; //REDO
@@ -94,6 +96,12 @@ public:
 
    void
    sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, VariablesPointer& variables, SwapVariables& variables_swap );
+
+   void
+   sortVariables( ParticlePointer& particles, VariablesPointer& variables, IndexArrayTypePointer& map );
+
+   void
+   sortVariablesInPlace( ParticlePointer& particles, VariablesPointer& variables );
 
    //void
    //sortInletParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );

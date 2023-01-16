@@ -30,18 +30,15 @@ public:
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
-
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
-
-   using SPHPointer = typename Pointers::SharedPointer< SPHOpenSystem, DeviceType >; // draft
-
    using SPHConfig = typename Model::SPHConfig;
    using Variables = typename Model::ModelVariables;
+   using IntegratorVariables = typename Model::IntegratorVariables;
 
-   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, Variables >;
+   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, Variables, IntegratorVariables >;
    using FluidPointer = Pointers::SharedPointer< Fluid, DeviceType >;
 
-   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, Variables >;
+   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, Variables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
    using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, SPHConfig, Variables >;

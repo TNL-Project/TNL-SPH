@@ -23,7 +23,11 @@ class IntegratorVariables
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
    IntegratorVariables( GlobalIndexType size )
-   : rho_old( size ), v_old( size ) {}
+   : rho_old( size ), v_old( size )
+   {
+      rho_old = 1000.;
+      v_old = 0.;
+   }
 
    ScalarArrayType rho_old;
    VectorArrayType v_old;

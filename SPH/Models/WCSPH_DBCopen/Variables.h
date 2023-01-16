@@ -19,7 +19,8 @@ class SPHFluidVariables
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
    SPHFluidVariables( GlobalIndexType size )
-   : rho( size ), drho ( size ), p( size ), v( size ), a( size ) {}
+   : rho( size ), drho ( size ), p( size ), v( size ), a( size ),
+     rho_swap( size ), v_swap( size ) {}
 
    /* Variables - Fields */
    ScalarArrayType rho;
@@ -28,15 +29,12 @@ class SPHFluidVariables
    VectorArrayType v;
    VectorArrayType a;
 
-//#ifdef PREFER_SPEED_OVER_MEMORY
-//   struct {
-//
-//      ScalarArrayType rho_swap;
-//      VectorArrayType v_swap;
-//      PointArrayType points_swap;
-//
-//   } swapVariables;
-//#endif
+#ifdef PREFER_SPEED_OVER_MEMORY
+   //struct {
+      ScalarArrayType rho_swap;
+      VectorArrayType v_swap;
+   //} swapVariables;
+#endif
 };
 
 template< typename SPHFluidConfig >
