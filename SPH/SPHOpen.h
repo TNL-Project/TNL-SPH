@@ -53,15 +53,8 @@ public:
          GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
          GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer,
          RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   : model(
-         sizeAllocated,
-         sizeAllocated_bound,
-         sizeAllocated_buffer ),
-     integrator(
-         model,
-         sizeAllocated,
-         sizeAllocated_bound,
-         sizeAllocated_buffer ),
+   : model(),
+     integrator(),
      openBoundaryPatch(
          size_buffer,
          sizeAllocated_buffer,

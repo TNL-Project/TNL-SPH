@@ -28,7 +28,7 @@ class OpenBoundaryBuffer_orthogonal
 
    OpenBoundaryBuffer_orthogonal( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
+     particleMark( sizeAllocated ), sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
 
    VariablesPointer&
    getOpenBoundaryVariables()
@@ -79,6 +79,7 @@ class OpenBoundaryBuffer_orthogonal
    VariablesPointer variables;
 
    IndexArrayTypePointer sortPermutations;
+   IndexArrayTypePointer particleMark;
 
 #ifdef PREFER_SPEED_OVER_MEMORY
    using PointArrayType = typename ParticleSystem::PointArrayType;

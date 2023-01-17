@@ -30,7 +30,7 @@ class IntegratorVariables
    IntegratorVariables( GlobalIndexType size )
    : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size )
    {
-      rho_old = 1000.;
+      rho_old = 1000.; //TODO: Fix this.
       v_old = 0.;
    }
 
@@ -45,8 +45,10 @@ class IntegratorVariables
       auto view_rho_old_swap = rho_old_swap.getView();
       auto view_v_old_swap = v_old_swap.getView();
 
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles, view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles, view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
 
       rho_old.swap( rho_old_swap );
       v_old.swap( v_old_swap );
@@ -67,35 +69,14 @@ public:
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
    using DeviceType = typename SPHFluidConfig::DeviceType;
 
-   using RealType = typename Variables::RealType;
-   using GlobalIndexType = typename Variables::GlobalIndexType;
-
-   using ScalarType = typename SPHFluidTraitsType::ScalarType;
-   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
+   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+   using RealType = typename SPHFluidTraitsType::RealType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
-   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-
-   using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
 
    using IntegratorVariablesType = IntegratorVariables< SPHFluidConfig >;
    using IntegratorVariablesPointer = typename Pointers::SharedPointer< IntegratorVariablesType, DeviceType >;
 
-   VerletIntegrator( ModelPointer model, GlobalIndexType size, GlobalIndexType size_boundary, GlobalIndexType size_inlet )
-   : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size ),
-   rhoBoundary_old( size_boundary ), vBoundary_old( size_boundary ), rhoBoundary_old_swap( size_boundary ), vBoundary_old_swap( size_boundary ),
-   rhoInlet_old( size_inlet ), vInlet_old( size_inlet ), rhoInlet_old_swap( size_inlet ), vInlet_old_swap( size_inlet ), inletMark( size_inlet ),
-   model( model )
-   {
-      //rho_old = model->getFluidVariables().rho;
-      //v_old = model->getFluidVariables().v;
-      rho_old = 1000.f; rho_old_swap = 1000.f;
-      v_old = 0.f; v_old_swap = 0.f;
-
-      rhoBoundary_old = 1000.f; rhoBoundary_old_swap = 1000.f;
-      vBoundary_old = 0.f; vBoundary_old_swap = 0.f;
-
-      inletMark = 1;
-   }
+   VerletIntegrator() = default;
 
    template< typename FluidPointer >
    void
@@ -193,44 +174,6 @@ public:
       Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
    }
 
-   //void
-   //sortIntegratorArrays( GlobalIndexType numberOfParticle, IntegratorVariablesPointer& integratorVariables )
-   //{
-   //   //GlobalIndexType numberOfParticle = model->particles->getNumberOfParticles();
-   //   auto view_indicesMap = model->swapFluid.indicesMap.getView();
-
-   //   auto view_rho_old = rho_old.getView();
-   //   auto view_v_old = v_old.getView();
-
-   //   auto view_rho_old_swap = rho_old_swap.getView();
-   //   auto view_v_old_swap = v_old_swap.getView();
-
-   //   thrust::gather( thrust::device, view_indicesMap.getArrayData(), view_indicesMap.getArrayData() + numberOfParticle, view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
-   //   thrust::gather( thrust::device, view_indicesMap.getArrayData(), view_indicesMap.getArrayData() + numberOfParticle, view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
-
-   //   rho_old.swap( rho_old_swap );
-   //   v_old.swap( v_old_swap );
-   //}
-
-   //void
-   //sortIntegratorBoundaryArrays( GlobalIndexType numberOfParticle ) //TODO: Make this better.
-   //{
-   //   //GlobalIndexType numberOfParticle = model->particles_bound->getNumberOfParticles();
-   //   auto view_indicesMap = model->swapBoundary.indicesMap.getView();
-
-   //   auto view_rho_old = rhoBoundary_old.getView();
-   //   auto view_v_old = vBoundary_old.getView();
-
-   //   auto view_rho_old_swap = rhoBoundary_old_swap.getView();
-   //   auto view_v_old_swap = vBoundary_old_swap.getView();
-
-   //   thrust::gather( thrust::device, view_indicesMap.getArrayData(), view_indicesMap.getArrayData() + numberOfParticle, view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
-   //   thrust::gather( thrust::device, view_indicesMap.getArrayData(), view_indicesMap.getArrayData() + numberOfParticle, view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
-
-   //   rhoBoundary_old.swap( rhoBoundary_old_swap );
-   //   vBoundary_old.swap( vBoundary_old_swap );
-   //}
-
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
@@ -243,7 +186,7 @@ public:
       auto view_v_buffer = openBoundary->variables->v.getView();
       auto view_rho_buffer = openBoundary->variables->rho.getView();
 
-      auto view_inletMark = inletMark.getView();
+      auto view_inletMark = openBoundary->particleMark->getView();
       view_inletMark = 1; //TODO: this can be avoided
 
       const VectorType inletOrientation = openBoundary->parameters.orientation;
@@ -284,10 +227,8 @@ public:
       std::cout << "... InletBuffer - particles sorted." << std::endl;
 
       std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-      std::cout << "---> updateBuffer: Update number of particles in particle system." << std::endl;
       std::cout << ".................. numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
       std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-      std::cout << ".................. fieldSize: " << view_r_fluid.getSize()  << " | " << view_v_fluid.getSize() << " | " << view_rho_fluid.getSize() << std::endl;
 
       auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
       {
@@ -305,40 +246,12 @@ public:
             view_r_buffer[ i ] = newBufferParticle;
             view_v_buffer[ i ] = inletConstVelocity;
             view_rho_buffer[ i ] = inletConstDensity;
-
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfRetyped, createNewFluidParticles );
       fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
       std::cout << "... InletBuffer - system updated." << std::endl;
-
    }
-
-protected:
-
-   ModelPointer model;
-
-   ScalarArrayType rho_old;
-   VectorArrayType v_old;
-
-   ScalarArrayType rhoBoundary_old;
-   VectorArrayType vBoundary_old;
-
-   ScalarArrayType rhoInlet_old;
-   VectorArrayType vInlet_old;
-
-   IndexArrayType inletMark;
-
-#ifdef PREFER_SPEED_OVER_MEMORY
-   ScalarArrayType rho_old_swap;
-   VectorArrayType v_old_swap;
-
-   ScalarArrayType rhoBoundary_old_swap;
-   VectorArrayType vBoundary_old_swap;
-
-   ScalarArrayType rhoInlet_old_swap;
-   VectorArrayType vInlet_old_swap;
-#endif
 };
 
 } // SPH

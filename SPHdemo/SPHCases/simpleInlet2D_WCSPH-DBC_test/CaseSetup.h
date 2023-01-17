@@ -29,7 +29,7 @@ const std::string inputParticleFile_bound = "simpleInlet2D_WCSPH-DBC_test/dambre
 const std::string inputParticleFile_inlet = "simpleInlet2D_WCSPH-DBC_test/dambreak_inlet.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 1700;
+const int outputStep = 2500;
 
 std::string outputFileName = "results/particles";
 
@@ -120,11 +120,6 @@ int main( int argc, char* argv[] )
    myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
 
-   std::cout << "numberOfParticles: " <<  mySPHSimulation.fluid->particles->getNumberOfParticles() << std::endl;
-   std::cout << "particles.getSize(): " <<  mySPHSimulation.fluid->particles->getPoints().getSize() << std::endl;
-   std::cout << "numberOfAllocatedParticles: " <<  mySPHSimulation.fluid->particles->getNumberOfAllocatedParticles() << std::endl;
-   std::cout << "particles: " <<  mySPHSimulation.fluid->particles->getPoints() << std::endl;
-
    TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
    myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
 
@@ -145,6 +140,9 @@ int main( int argc, char* argv[] )
    myInletReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
          mySPHSimulation.openBoundaryPatch->getOpenBoundaryVariables()->v, "Velocity" );
 
+   /**
+    * Setup parameters for open boundary.
+    */
    mySPHSimulation.openBoundaryPatch->parameters.orientation = {
       SPHConfig::INLET::orientation_x, SPHConfig::INLET::orientation_y };
    mySPHSimulation.openBoundaryPatch->parameters.velocity = {
@@ -168,7 +166,7 @@ int main( int argc, char* argv[] )
    std::cout << "Number of steps: " << steps << std::endl;
 
 
-   for( unsigned int iteration = 0; iteration < 2500; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 12501; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 
@@ -210,17 +208,12 @@ int main( int argc, char* argv[] )
          timer_inlet.stop();
       }
       timer_integrate.stop();
-      //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
-      //std::cout << "Buffer points:" << mySPHSimulation.particles_buffer->getPoints() << std::endl;
-      //std::cout << "Buffer density:" << mySPHSimulation.model->getInletVariables()->rho << std::endl;
-      //std::cout << "Buffer velocity:" << mySPHSimulation.model->getInletVariables().v << std::endl;
       std::cout << "Integration... done. " << std::endl;
 
       /**
        * Output particle data
        */
-      //if( ( iteration % outputStep ==  0) && (iteration > 0) )
-      if( ( ( iteration % outputStep ==  0) && (iteration > 0) ) || iteration == 701 )
+      if( ( iteration % outputStep ==  0) && (iteration > 0) )
       {
          /**
           * Compute pressure from density.
@@ -228,7 +221,7 @@ int main( int argc, char* argv[] )
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         //mySPHSimulation.model->template ComputePressureFromDensity< EOS >(); //TODO: FIX.
+         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.fluid->variables, mySPHSimulation.fluid->particles->getNumberOfParticles() ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -241,14 +234,16 @@ int main( int argc, char* argv[] )
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
                mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
 
-         //std::string outputFileNameInlet = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
-         //std::ofstream outputFileInlet ( outputFileNameInlet, std::ofstream::out );
-         //Writer myWriterInlet( outputFileInlet, VTK::FileFormat::binary );
-         //myWriterInlet.writeParticles( *mySPHSimulation.particles_buffer );
-         ////myWriterInlet.template writePointData< SPHModel::ScalarArrayType >(
-         ////      mySPHSimulation.model->getInletVariables().p, "Pressure" );
-         //myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-         //      mySPHSimulation.model->getInletVariables().v, "Velocity", 3, mySPHSimulation.particles_buffer->getNumberOfParticles() );
+         /*
+         std::string outputFileNameInlet = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
+         std::ofstream outputFileInlet ( outputFileNameInlet, std::ofstream::out );
+         Writer myWriterInlet( outputFileInlet, VTK::FileFormat::binary );
+         myWriterInlet.writeParticles( *mySPHSimulation.particles_buffer );
+         //myWriterInlet.template writePointData< SPHModel::ScalarArrayType >(
+         //      mySPHSimulation.model->getInletVariables().p, "Pressure" );
+         myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
+               mySPHSimulation.model->getInletVariables().v, "Velocity", 3, mySPHSimulation.particles_buffer->getNumberOfParticles() );
+         */
       }
    }
 

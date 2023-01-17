@@ -34,17 +34,10 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     * Sort particles.
     */
    timer_sort.start();
-   //model->sortParticlesAndVariablesThrust( fluid->particles, fluid->variables, model->swapFluid );
-   //integrator->sortIntegratorArrays( fluid->particles->getNumberOfParticles() ); //Moved to fluid
    fluid->sortParticles();
-
-   //model->sortParticlesAndVariablesThrust( openBoundaryPatch->particles, openBoundaryPatch->variables, model->swapInlet );
    openBoundaryPatch->sortParticles();
    if( step == 0 )
    {
-      //model->sortParticlesAndVariablesThrust( model->boundaryParticles, model->BoundaryVariables, model->swapBoundary );
-      //model->sortBoundaryParticlesAndVariablesThrust( boundary->particles, boundary->variables, model->swapBoundary );
-      //integrator->sortIntegratorBoundaryArrays( boundary->particles->getNumberOfParticles() ); //TODO: NumberOfPtcs.
       boundary->sortParticles();
    }
    timer_sort.stop();
@@ -71,7 +64,6 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::Interact()
       FluidPointer, BoundaryPointer, OpenBoudaryPatchPointer, NeighborSearchPointer,
       SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, openBoundaryPatch );
 }
-
 
 } // SPH
 } // ParticleSystem
