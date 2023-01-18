@@ -50,12 +50,14 @@ class Boundary
 
       sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
       //TODO: tempalte thrust device with TNL::Devices
-      thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(), view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() );
+      thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
+            view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() );
 
       auto view_points = particles->getPoints().getView();
 #ifdef PREFER_SPEED_OVER_MEMORY
       auto view_points_swap = points_swap.getView();
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle, view_points.getArrayData(), view_points_swap.getArrayData() );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
+            view_points.getArrayData(), view_points_swap.getArrayData() );
       particles->getPoints().swap( points_swap );
 #else
       //TODO: Error or implement.

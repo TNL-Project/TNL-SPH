@@ -166,7 +166,7 @@ int main( int argc, char* argv[] )
    std::cout << "Number of steps: " << steps << std::endl;
 
 
-   for( unsigned int iteration = 0; iteration < 12501; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 2501; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 

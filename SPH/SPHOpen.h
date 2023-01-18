@@ -31,6 +31,7 @@ public:
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
+
    using SPHConfig = typename Model::SPHConfig;
    using Variables = typename Model::ModelVariables;
    using IntegratorVariables = typename Model::IntegratorVariables;
@@ -43,9 +44,7 @@ public:
 
    using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, SPHConfig, Variables >;
    using OpenBoudaryPatchPointer = Pointers::SharedPointer< OpenBoundaryPatch, DeviceType >;
-
-
-   //using OpenBoudaryPatchesPointerArray = Containers::Array< OpenBoudaryPatchPointer, DeviceType >;
+   using OpenBoudaryPatchesPointerArray = Containers::Array< OpenBoudaryPatchPointer, DeviceType >;
 
    SPHOpenSystem() = default;
 

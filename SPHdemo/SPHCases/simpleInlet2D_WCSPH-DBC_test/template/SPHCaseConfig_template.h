@@ -26,6 +26,18 @@ class SPHCaseConfig
    static constexpr float alpha = 0.02f;
    static constexpr float eps = 0.001f;
    static constexpr float dtInit = placeholderTimeStepf;
+
+   struct INLET
+   {
+      static constexpr int orientation_x = placeholderOBP1Orientation_x;
+      static constexpr int orientation_y = placeholderOBP1Orientation_y;
+      static constexpr float velocity_x = placeholderOBP1Velocity_xf;
+      static constexpr float velocity_y = placeholderOBP1Velocity_yf;
+      static constexpr float inlet_density = placeholderOBP1Densityf;
+      static constexpr float bufferWidth_x = placeholderOBP1Width_xf; //ie 4 layers
+      static constexpr float bufferWidth_y = placeholderOBP1Width_yf; //ie 4 layers
+      static constexpr float bufferEdge = placeholderOBP1BufferEdgef; //ie 4 layers
+   };
 };
 
 } //SPH

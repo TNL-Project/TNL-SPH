@@ -33,20 +33,17 @@ public:
 
    using SPHConfig = SPHFluidConfig;
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename Particles::Device; //?
+   using DeviceType = typename Particles::Device;
 
-   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType; //Particles::?
-   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType; //Particles::?
-   using RealType = typename SPHFluidTraitsType::RealType; //Particles::?
-
+   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+   using RealType = typename SPHFluidTraitsType::RealType;
    using PointType = typename Particles::PointType;
-   using PointArrayType = typename Particles::PointArrayType;
-
    using ScalarType = typename SPHFluidTraitsType::ScalarType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
 
-   using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
-   using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
+   //using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
+   //using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
    using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
 
