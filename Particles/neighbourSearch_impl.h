@@ -18,7 +18,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::getCellFirstLastParticleList()
 }
 
 template< typename ParticleConfig, typename ParticleSystem >
-__cuda_callable__
 void
 NeighborSearch< ParticleConfig, ParticleSystem >::resetListWithIndices
 ()
@@ -32,7 +31,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::resetListWithIndices
 }
 
 template< typename ParticleConfig, typename ParticleSystem >
-__cuda_callable__
 void
 NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
 ()

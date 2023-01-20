@@ -49,7 +49,6 @@ public:
    /**
     * Assign to each cell index of first contained particle.
     */
-   __cuda_callable__
    void
    particlesToCells();
 
