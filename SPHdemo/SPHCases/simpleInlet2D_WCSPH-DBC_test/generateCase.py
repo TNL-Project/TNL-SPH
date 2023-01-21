@@ -4,29 +4,7 @@
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
-boxL = 1.
-boxH = 0.8
-
-fluidL = 0.5
-fluidH = 0.2
-
-#first inlet buffer
-inletBufferOrientation_x = 1;
-inletBufferOrientation_z = 0;
-inletBufferPosition_x = 0.2
-inletBufferPosition_z = 0.4
-inletBufferHeight = 0.1
-inletVelocity_x = 0.5
-inletVelocity_z = 0.
-#maybe add something front edge
-
-#second inlet buffer
-inlet2BufferPosition_x = 0.7
-inlet2BufferPosition_z = 0.3
-inlet2BufferHeight = 0.15
-inlet2Velocity_x = 0.5
-inlet2Velocity_z = 0.
-
+## Parameters
 dp = 0.002
 smoothingLentghCoef = 2**0.5
 
@@ -40,6 +18,35 @@ CFLnumber = 0.2
 timeStep = 0.00002 #otherwise is obtained automatically
 
 write = '.vtk' #.ptcs or .vtk
+
+boxL = 1.
+boxH = 0.8
+
+fluidL = 0.5
+fluidH = 0.2
+
+#first inlet buffer
+inletBufferOrientation_x = 1
+inletBufferOrientation_z = 0
+inletBufferPosition_x = 0.2
+inletBufferPosition_z = 0.4
+inletBufferHeight = 0.1
+inletBufferWidth = 3 * dp + dp / 2
+inletBufferEdge = inletBufferPosition_x + 4 * dp  + dp / 2
+inletVelocity_x = 0.5
+inletVelocity_z = 0.
+#maybe add something front edge
+
+#second inlet buffer
+inlet2BufferOrientation_x = -1
+inlet2BufferOrientation_z = 0
+inlet2BufferPosition_x = 0.7
+inlet2BufferPosition_z = 0.3
+inlet2BufferHeight = 0.15
+inlet2BufferWidth = 3 * dp + dp / 2
+inlet2BufferEdge = inlet2BufferPosition_x  - dp / 2
+inlet2Velocity_x = -1.0
+inlet2Velocity_z = 0.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
@@ -82,8 +89,8 @@ for x in range( inletL_n ):
 inlet2_rx = []; inlet2_ry = []; inlet2_rz = []
 inlet2_vx = []; inlet2_vy = []; inlet2_vz = []
 
-for x in range( inletL_n ):
-    for z in range( inletH_n ):
+for x in range( inlet2L_n ):
+    for z in range( inlet2H_n ):
         inlet2_rx.append( inlet2BufferPosition_x + dp * ( x + 1 ) )
         inlet2_ry.append( 0. ) #we use only 2D case
         inlet2_rz.append( inlet2BufferPosition_z + dp * ( z + 1 ) )
@@ -142,7 +149,6 @@ if write == '.ptcs':
             f.write( str( round( inlet_rx[ i ], 5 ) ) + " " + str( round( inlet_rz[ i ], 5 ) ) + " " + \
                      str( round( inlet_ry[ i ], 5 ) ) + " " + str( round( inlet_vx[ i ] ) ) + " " + str( round( inlet_vy[ i ] ) ) + " " + str( round( inlet_vz[ i ] ) ) + " " + \
                      str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 10 ) + "\n" )
-
     ### Write fluid particles
     with open("dambreak_inlet2.ptcs", "w") as f:
         f.write( str( len( inlet2_rx ) ) + "\n" )
@@ -236,10 +242,19 @@ fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Orientation_y', str( inletBuf
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Velocity_x', str( inletVelocity_x ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Velocity_y', str( inletVelocity_z ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Density', str( rho0 ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_x', str( timeStep ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_y', str( timeStep ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_x', str( round( inletBufferWidth, 7 ) ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_y', str( 0. ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP1BufferEdge', str( round(  inletBufferEdge, 7 ) ) )
 
 #inlet2
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_x', str( inlet2BufferOrientation_x ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_y', str( inlet2BufferOrientation_z ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_x', str( inlet2Velocity_x ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_y', str( inlet2Velocity_z ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Density', str( rho0 ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_x', str( round( inlet2BufferWidth, 7 ) ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_y', str( 0. ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2BufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
 
 # Write the file out again
 with open( 'SPHCaseConfig.h', 'w' ) as file:
@@ -255,7 +270,10 @@ fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBufferParticles', str( len( inlet_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBufferParticles', str( len( inlet_rx ) * 2 ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBufferParticles', str( len( inlet_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderBuffer2Particles', str( len( inlet2_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBuffer2Particles', str( len( inlet2_rx ) ) )
+
 fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )

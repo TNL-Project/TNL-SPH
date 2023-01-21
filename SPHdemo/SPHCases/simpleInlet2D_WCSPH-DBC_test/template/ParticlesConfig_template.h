@@ -97,6 +97,35 @@ class ParticleSystemConfig_inletBuffer
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
+template< typename Device >
+class ParticleSystemConfig_inlet2Buffer
+{
+   public:
+   using DeviceType = Device;
+
+   using GlobalIndexType = int;
+   using LocalIndexType = int;
+   using CellIndexType = int;
+   using RealType = float;
+
+   static constexpr int spaceDimension = placeholderDimension;
+   static constexpr int numberOfParticles = placeholderBuffer2Particles;
+   static constexpr int numberOfAllocatedParticles = placeholderAllocatedBuffer2Particles;
+   static constexpr int maxOfNeigborsPerParticle = 70;
+
+   static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
+   static constexpr int gridXsize = placeholderGridXSize;
+   static constexpr int gridYsize = placeholderGridYSize;
+
+   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
+   static constexpr RealType gridXbegin = placeholderGridXBegin;
+   static constexpr RealType gridYbegin = placeholderGridYBegin;
+
+   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
+   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_inlet2Buffer, DeviceType >;
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
+};
+
 } //namespace ParticleSystem
 } //namespace TNL
 

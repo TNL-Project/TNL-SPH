@@ -15,7 +15,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    fluid->neighborSearch->resetListWithIndices();
    if( step == 0 )
       boundary->neighborSearch->resetListWithIndices();
-   openBoundaryPatch->neighborSearch->resetListWithIndices();
+   openBoundaryPatches[ 0 ]->neighborSearch->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
@@ -24,7 +24,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_cellIndices.start();
    fluid->particles->computeParticleCellIndices();
-   openBoundaryPatch->particles->computeParticleCellIndices();
+   openBoundaryPatches[ 0 ]->particles->computeParticleCellIndices();
    if( step == 0 )
       boundary->particles->computeParticleCellIndices();
    timer_cellIndices.stop();
@@ -35,7 +35,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    timer_sort.start();
    fluid->sortParticles();
-   openBoundaryPatch->sortParticles();
+   openBoundaryPatches[ 0 ]->sortParticles();
    if( step == 0 )
    {
       boundary->sortParticles();
@@ -48,7 +48,7 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    timer_toCells.start();
    fluid->neighborSearch->particlesToCells();
-   openBoundaryPatch->neighborSearch->particlesToCells();
+   openBoundaryPatches[ 0 ]->neighborSearch->particlesToCells();
    if( step == 0 )
       boundary->neighborSearch->particlesToCells();
    timer_toCells.stop();
@@ -62,7 +62,14 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
    model->template Interaction<
       FluidPointer, BoundaryPointer, OpenBoudaryPatchPointer, NeighborSearchPointer,
-      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, openBoundaryPatch );
+      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, openBoundaryPatches[ 0 ] );
+}
+
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+void
+SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::addOpenBoundaryPatch( GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer, RealType h, GlobalIndexType numberOfCells )
+{
+   openBoundaryPatches.emplace_back( size_buffer, sizeAllocated_buffer, h, numberOfCells );
 }
 
 } // SPH

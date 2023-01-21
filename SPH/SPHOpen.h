@@ -50,25 +50,9 @@ public:
 
    SPHOpenSystem( GlobalIndexType size, GlobalIndexType sizeAllocated,
          GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
-         GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer,
          RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   : model(),
-     integrator(),
-     openBoundaryPatch(
-         size_buffer,
-         sizeAllocated_buffer,
-         h,
-         numberOfCells ),
-      fluid(
-         size,
-         sizeAllocated,
-         h,
-         numberOfCells ),
-      boundary(
-         size_bound,
-         sizeAllocated_bound,
-         h,
-         numberOfCells ){};
+   : model(), integrator(), fluid( size, sizeAllocated, h, numberOfCells ),
+     boundary( size_bound, sizeAllocated_bound, h, numberOfCells ){};
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -81,12 +65,18 @@ public:
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void Interact();
 
+   /**
+    * TODO: I don't like this.
+    */
+   void addOpenBoundaryPatch( GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer, RealType h, GlobalIndexType numberOfCells );
+
 //protected:
 
    FluidPointer fluid;
    BoundaryPointer boundary;
-   OpenBoudaryPatchPointer openBoundaryPatch;
+
    //OpenBoudaryPatchesPointerArray openBoundaryPatches;
+   std::vector< OpenBoudaryPatchPointer > openBoundaryPatches;
 
    ModelPointer model;
 
