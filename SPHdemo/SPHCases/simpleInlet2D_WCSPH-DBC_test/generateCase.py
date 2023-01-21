@@ -44,7 +44,7 @@ inlet2BufferPosition_x = 0.7
 inlet2BufferPosition_z = 0.3
 inlet2BufferHeight = 0.15
 inlet2BufferWidth = 3 * dp + dp / 2
-inlet2BufferEdge = inlet2BufferPosition_x  - dp / 2
+inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2
 inlet2Velocity_x = -1.0
 inlet2Velocity_z = 0.
 

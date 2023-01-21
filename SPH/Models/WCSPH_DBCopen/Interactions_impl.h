@@ -176,7 +176,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
       neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndexI, gridIndexJ, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-      //neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndexI, gridIndexJ, view_firstLastCellParticle_inlet, view_particleCellIndex, FluidInlet, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndexI, gridIndexJ, view_firstLastCellParticle_inlet, view_particleCellIndex, FluidInlet, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       a_i[ 1 ] -= 9.81f ;

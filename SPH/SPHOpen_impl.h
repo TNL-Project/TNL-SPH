@@ -13,9 +13,12 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    timer_reset.start();
    fluid->neighborSearch->resetListWithIndices();
+   //openBoundaryPatches[ 0 ]->neighborSearch->resetListWithIndices();
+   for( auto& openBoundaryPatch : openBoundaryPatches )
+      openBoundaryPatch->neighborSearch->resetListWithIndices();
+
    if( step == 0 )
       boundary->neighborSearch->resetListWithIndices();
-   openBoundaryPatches[ 0 ]->neighborSearch->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
@@ -24,7 +27,10 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
 
    timer_cellIndices.start();
    fluid->particles->computeParticleCellIndices();
-   openBoundaryPatches[ 0 ]->particles->computeParticleCellIndices();
+   //openBoundaryPatches[ 0 ]->particles->computeParticleCellIndices();
+   for( auto& openBoundaryPatch : openBoundaryPatches )
+      openBoundaryPatch->particles->computeParticleCellIndices();
+
    if( step == 0 )
       boundary->particles->computeParticleCellIndices();
    timer_cellIndices.stop();
@@ -35,7 +41,10 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    timer_sort.start();
    fluid->sortParticles();
-   openBoundaryPatches[ 0 ]->sortParticles();
+   //openBoundaryPatches[ 0 ]->sortParticles();
+   for( auto& openBoundaryPatch : openBoundaryPatches )
+      openBoundaryPatch->sortParticles();
+
    if( step == 0 )
    {
       boundary->sortParticles();
@@ -48,7 +57,10 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
     */
    timer_toCells.start();
    fluid->neighborSearch->particlesToCells();
-   openBoundaryPatches[ 0 ]->neighborSearch->particlesToCells();
+   //openBoundaryPatches[ 0 ]->neighborSearch->particlesToCells();
+   for( auto& openBoundaryPatch : openBoundaryPatches )
+      openBoundaryPatch->neighborSearch->particlesToCells();
+
    if( step == 0 )
       boundary->neighborSearch->particlesToCells();
    timer_toCells.stop();

@@ -206,9 +206,20 @@ public:
       auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
-         if( ( view_r_buffer[ i ], inletOrientation ) > bufferEdge ) //It is possible to do for each direction.
+         //TODO: Ugly, ugly stuff.. Keep the scope inside, remove everything else.
+         if( inletOrientation[ 0 ] > 0 ) //This isn't.
          {
-            view_inletMark[ i ] = 0;
+            if( ( view_r_buffer[ i ], inletOrientation ) > bufferEdge ) //It is possible to do for each direction. This if statemens is good.
+            {
+               view_inletMark[ i ] = 0;
+            }
+         }
+         else if( inletOrientation[ 0 ] < 0 ) //This isn't.
+         {
+            if( ( view_r_buffer[ i ], inletOrientation ) > ( -1.f * bufferEdge ) ) //It is possible to do for each direction. This if statemens is good.
+            {
+               view_inletMark[ i ] = 0;
+            }
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
@@ -242,7 +253,8 @@ public:
             view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
 
             //Generate new bufffer partice
-            const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth;
+            //const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth ; //This works in 1d
+            const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth * inletOrientation[ 0 ] ; //This works in 1d
             view_r_buffer[ i ] = newBufferParticle;
             view_v_buffer[ i ] = inletConstVelocity;
             view_rho_buffer[ i ] = inletConstDensity;
