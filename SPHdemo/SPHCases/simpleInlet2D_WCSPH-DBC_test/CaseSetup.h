@@ -162,6 +162,8 @@ int main( int argc, char* argv[] )
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferEdge = SPHConfig::INLET::bufferEdge;
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth = {
       SPHConfig::INLET::bufferWidth_x, SPHConfig::INLET::bufferWidth_y };
+   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.position = {
+      SPHConfig::INLET::position_x, SPHConfig::INLET::position_y };
 
    std::cout << "Inlet parameters: " << std::endl;
    std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.orientation << std::endl;
@@ -193,6 +195,8 @@ int main( int argc, char* argv[] )
    mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferEdge = SPHConfig::INLET2::bufferEdge;
    mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth = {
       SPHConfig::INLET2::bufferWidth_x, SPHConfig::INLET2::bufferWidth_y };
+   mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.position = {
+      SPHConfig::INLET2::position_x, SPHConfig::INLET2::position_y };
 
    std::cout << "Inlet2 parameters: " << std::endl;
    std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.orientation << std::endl;

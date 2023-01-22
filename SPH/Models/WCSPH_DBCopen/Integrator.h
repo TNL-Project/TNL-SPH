@@ -194,6 +194,7 @@ public:
       const RealType inletConstDensity = openBoundary->parameters.density;
       const RealType bufferEdge = openBoundary->parameters.bufferEdge;
       const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
+      const VectorType bufferPosition = openBoundary->parameters.position;
 
       //Fluid ( variable arrays and integrator variable arrays )
       auto view_r_fluid = fluid->particles->getPoints().getView();
@@ -207,19 +208,12 @@ public:
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
          //TODO: Ugly, ugly stuff.. Keep the scope inside, remove everything else.
-         if( inletOrientation[ 0 ] > 0 ) //This isn't.
+         const VectorType r = view_r_buffer[ i ];
+         const VectorType r_relative = r - bufferPosition;
+
+         if( ( r_relative, inletOrientation ) > bufferWidth[ 0 ] ) //It is possible to do for each direction. This if statemens is good.
          {
-            if( ( view_r_buffer[ i ], inletOrientation ) > bufferEdge ) //It is possible to do for each direction. This if statemens is good.
-            {
-               view_inletMark[ i ] = 0;
-            }
-         }
-         else if( inletOrientation[ 0 ] < 0 ) //This isn't.
-         {
-            if( ( view_r_buffer[ i ], inletOrientation ) > ( -1.f * bufferEdge ) ) //It is possible to do for each direction. This if statemens is good.
-            {
-               view_inletMark[ i ] = 0;
-            }
+            view_inletMark[ i ] = 0;
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
@@ -254,7 +248,8 @@ public:
 
             //Generate new bufffer partice
             //const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth ; //This works in 1d
-            const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth * inletOrientation[ 0 ] ; //This works in 1d
+            const VectorType r_relative = view_r_buffer[ i ] - bufferPosition;
+            const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation; //This works in 1d
             view_r_buffer[ i ] = newBufferParticle;
             view_v_buffer[ i ] = inletConstVelocity;
             view_rho_buffer[ i ] = inletConstDensity;

@@ -68,6 +68,7 @@ class OpenBoundaryBuffer_orthogonal
    struct Parameters
    {
       VectorType orientation;
+      VectorType position;
       VectorType velocity;
       RealType density;
 
