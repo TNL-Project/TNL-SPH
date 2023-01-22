@@ -25,7 +25,7 @@ boxH = 0.8
 fluidL = 0.5
 fluidH = 0.2
 
-## First inlet buffer. ##
+#first inlet buffer
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
 inletBufferPosition_x = 0.2
@@ -40,20 +40,21 @@ inletBufferEdge = inletBufferPosition_x + 4 * dp  + dp / 2 #remove, deprecated
 inletBufferReferencePoint_x = inletBufferPosition_x - inletBufferOrientation_x * ( inletBufferLayers - 1 ) * dp
 inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z * ( inletBufferLayers - 1 ) * dp
 
-## Second inlet buffer. ##
-inlet2BufferOrientation_x = -1.
-inlet2BufferOrientation_z = 0.
+#second inlet buffer
+inlet2BufferOrientation_x = -3**0.5/2
+inlet2BufferOrientation_z = 0.5
 inlet2BufferPosition_x = 0.7
 inlet2BufferPosition_z = 0.3
 inlet2BufferHeight = 0.15
 inlet2BufferLayers = numberOfBoundaryLayers + 1
-inlet2Velocity_x = -1.0
-inlet2Velocity_z = 0.
+inlet2Velocity_x = 1.5 * inlet2BufferOrientation_x
+inlet2Velocity_z = 1.5 * inlet2BufferOrientation_z
 
-inlet2BufferWidth = inlet2BufferLayers * dp - dp / 2
-inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2 #remove, deprecated
+inlet2BufferWidth = 3 * dp + dp / 2
+inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2
 inlet2BufferReferencePoint_x = inlet2BufferPosition_x - inlet2BufferOrientation_x * ( inlet2BufferLayers - 1 ) * dp
 inlet2BufferReferencePoint_z = inlet2BufferPosition_z - inlet2BufferOrientation_z * ( inlet2BufferLayers - 1 ) * dp
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
@@ -63,7 +64,7 @@ boxH_n = round( boxH / dp )
 fluidL_n = round( fluidL / dp )
 fluidH_n = round( fluidH / dp )
 
-inletL_n = inletBufferLayers
+inletL_n = numberOfBoundaryLayers + 1
 inletH_n = round( inletBufferHeight / dp  )
 
 inlet2L_n = inlet2BufferLayers
@@ -86,7 +87,7 @@ for x in range( inletL_n ):
     for z in range( inletH_n ):
         inlet_rx.append( inletBufferPosition_x - inletBufferOrientation_x * dp * ( x ) )
         inlet_ry.append( 0. ) #we use only 2D case
-        inlet_rz.append( inletBufferPosition_z + dp * ( z ) )
+        inlet_rz.append( inletBufferPosition_z + dp * ( z + 1 ) )
 
         inlet_vx.append( inletVelocity_x )
         inlet_vy.append( 0. ) #we use only 2D case
@@ -96,11 +97,18 @@ for x in range( inletL_n ):
 inlet2_rx = []; inlet2_ry = []; inlet2_rz = []
 inlet2_vx = []; inlet2_vy = []; inlet2_vz = []
 
+RotMatrix_a11 = (-1)*inlet2BufferOrientation_x
+RotMatrix_a12 = (-1)*(-1)*inlet2BufferOrientation_z
+RotMatrix_a21 = (-1)*inlet2BufferOrientation_z
+RotMatrix_a22 = (-1)*inlet2BufferOrientation_x
+
 for x in range( inlet2L_n ):
     for z in range( inlet2H_n ):
-        inlet2_rx.append( inlet2BufferPosition_x - inlet2BufferOrientation_x * dp * ( x ) )
+        inlet2_rx.append( inlet2BufferPosition_x + RotMatrix_a11 * ( dp * ( x ) ) +
+                          RotMatrix_a12 * ( dp * ( z ) ) )
         inlet2_ry.append( 0. ) #we use only 2D case
-        inlet2_rz.append( inlet2BufferPosition_z + dp * ( z ) )
+        inlet2_rz.append( inlet2BufferPosition_z + RotMatrix_a21 * ( dp * ( x ) ) +
+                          RotMatrix_a22 * ( dp * ( z ) ) )
 
         inlet2_vx.append( inlet2Velocity_x )
         inlet2_vy.append( 0. ) #we use only 2D case
@@ -260,8 +268,8 @@ fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_x', str( inlet2Bu
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_y', str( inlet2BufferOrientation_z ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_x', str( inlet2Velocity_x ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_y', str( inlet2Velocity_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_x', str( inlet2BufferReferencePoint_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_y', str( inlet2BufferReferencePoint_z ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_x', str( round(  inlet2BufferReferencePoint_x, 9 ) ) )
+fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_y', str( round(  inlet2BufferReferencePoint_z, 9 ) ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Density', str( rho0 ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_x', str( round( inlet2BufferWidth, 7 ) ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_y', str( 0. ) )

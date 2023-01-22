@@ -29,10 +29,12 @@ class SPHCaseConfig
 
    struct INLET
    {
-      static constexpr int orientation_x = placeholderOBP1Orientation_x;
-      static constexpr int orientation_y = placeholderOBP1Orientation_y;
+      static constexpr float orientation_x = placeholderOBP1Orientation_xf;
+      static constexpr float orientation_y = placeholderOBP1Orientation_yf;
       static constexpr float velocity_x = placeholderOBP1Velocity_xf;
       static constexpr float velocity_y = placeholderOBP1Velocity_yf;
+      static constexpr float position_x = placeholderOBP1Position_xf;
+      static constexpr float position_y = placeholderOBP1Position_yf;
       static constexpr float inlet_density = placeholderOBP1Densityf;
       static constexpr float bufferWidth_x = placeholderOBP1Width_xf; //ie 4 layers
       static constexpr float bufferWidth_y = placeholderOBP1Width_yf; //ie 4 layers
@@ -41,10 +43,12 @@ class SPHCaseConfig
 
    struct INLET2
    {
-      static constexpr int orientation_x = placeholderOBP2Orientation_x;
-      static constexpr int orientation_y = placeholderOBP2Orientation_y;
+      static constexpr float orientation_x = placeholderOBP2Orientation_xf;
+      static constexpr float orientation_y = placeholderOBP2Orientation_yf;
       static constexpr float velocity_x = placeholderOBP2Velocity_xf;
       static constexpr float velocity_y = placeholderOBP2Velocity_yf;
+      static constexpr float position_x = placeholderOBP2Position_xf;
+      static constexpr float position_y = placeholderOBP2Position_yf;
       static constexpr float inlet_density = placeholderOBP2Densityf;
       static constexpr float bufferWidth_x = placeholderOBP2Width_xf; //ie 4 layers
       static constexpr float bufferWidth_y = placeholderOBP2Width_yf; //ie 4 layers
