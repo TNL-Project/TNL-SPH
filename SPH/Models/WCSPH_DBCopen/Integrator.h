@@ -192,7 +192,6 @@ public:
       const VectorType inletOrientation = openBoundary->parameters.orientation;
       const VectorType inletConstVelocity = openBoundary->parameters.velocity;
       const RealType inletConstDensity = openBoundary->parameters.density;
-      const RealType bufferEdge = openBoundary->parameters.bufferEdge;
       const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
       const VectorType bufferPosition = openBoundary->parameters.position;
 

@@ -159,7 +159,6 @@ int main( int argc, char* argv[] )
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.velocity = {
       SPHConfig::INLET::velocity_x, SPHConfig::INLET::velocity_y };
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.density = SPHConfig::INLET::inlet_density;
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferEdge = SPHConfig::INLET::bufferEdge;
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth = {
       SPHConfig::INLET::bufferWidth_x, SPHConfig::INLET::bufferWidth_y };
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.position = {
@@ -168,7 +167,6 @@ int main( int argc, char* argv[] )
    std::cout << "Inlet parameters: " << std::endl;
    std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.orientation << std::endl;
    std::cout << "Velocity .................... " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.velocity << std::endl;
-   std::cout << "BufferEdge .................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferEdge << std::endl;
    std::cout << "BufferWidth ................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth << std::endl;
 
    /**
@@ -192,7 +190,6 @@ int main( int argc, char* argv[] )
    mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity = {
       SPHConfig::INLET2::velocity_x, SPHConfig::INLET2::velocity_y };
    mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.density = SPHConfig::INLET2::inlet_density;
-   mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferEdge = SPHConfig::INLET2::bufferEdge;
    mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth = {
       SPHConfig::INLET2::bufferWidth_x, SPHConfig::INLET2::bufferWidth_y };
    mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.position = {
@@ -201,7 +198,6 @@ int main( int argc, char* argv[] )
    std::cout << "Inlet2 parameters: " << std::endl;
    std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.orientation << std::endl;
    std::cout << "Velocity .................... " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity << std::endl;
-   std::cout << "BufferEdge .................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferEdge << std::endl;
    std::cout << "BufferWidth ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth << std::endl;
 
    /**
@@ -218,7 +214,7 @@ int main( int argc, char* argv[] )
    std::cout << "Number of steps: " << steps << std::endl;
 
 
-   for( unsigned int iteration = 0; iteration < 22501; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 2501; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 

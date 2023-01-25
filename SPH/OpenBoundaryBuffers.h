@@ -72,7 +72,6 @@ class OpenBoundaryBuffer_orthogonal
       VectorType velocity;
       RealType density;
 
-      RealType bufferEdge;
       VectorType bufferWidth;
    };
    Parameters parameters;
