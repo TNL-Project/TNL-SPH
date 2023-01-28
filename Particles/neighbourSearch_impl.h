@@ -36,6 +36,8 @@ NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
 ()
 {
    GlobalIndexType numberOfParticles = particles->getNumberOfParticles();
+   if( numberOfParticles == 0 ) //temp
+      return;
    auto view_firstLastCellParticle = this->firstLastCellParticle.getView();
    const auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
 

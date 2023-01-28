@@ -158,6 +158,29 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       }
    };
 
+   auto BoundInlet = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
+   {
+      const VectorType r_j = view_points_inlet[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius )
+      {
+         const VectorType v_j = view_v_inlet[ j ];
+         const RealType rho_j = view_rho_inlet[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j );
+
+         /* Interaction */
+         const VectorType v_ij = v_i - v_j;
+
+         const RealType F = SPHKernelFunction::F( drs, h );
+         const VectorType gradW = r_ij * F;
+
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+         const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
+         *drho_i += ( v_ij, gradW ) * m - diffTerm;
+      }
+   };
+
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, NeighborSearchPointer& neighborSearch_buffer ) mutable
    {
       const unsigned int activeCell = view_particleCellIndex[ i ];
@@ -184,7 +207,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch, openBoundary->neighborSearch );
 
-   auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch ) mutable
+   auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_buffer ) mutable
    {
       const unsigned int activeCell = view_particleCellIndex[ i ];
 
@@ -200,11 +223,12 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       RealType drho_i = 0.;
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+      neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndexI, gridIndexJ, view_firstLastCellParticle_inlet, view_particleCellIndex, BoundInlet, r_i, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
 
    };
-   SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary, fluid->neighborSearch );
+   SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary, fluid->neighborSearch, openBoundary->neighborSearch );
 }
 
 
