@@ -89,8 +89,9 @@ int main( int argc, char* argv[] )
     * Create the simulation.
     */
    SPHSimulation mySPHSimulation(
-         ParticlesConfig::numberOfParticles, ParticlesConfig_bound::numberOfParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+         ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfAllocatedParticles,
+         ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
+         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize, 1 );
 
    /**
      * TEMP.
@@ -105,24 +106,24 @@ int main( int argc, char* argv[] )
     * Read the particle file.
     */
    TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
-   myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles->getPoints() ) ;
+   myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.fluid->particles->getPoints() ) ;
 
    myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getFluidVariables().rho, "Density" );
+         mySPHSimulation.fluid->getFluidVariables()->rho, "Density" );
    myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getFluidVariables().p, "Pressure" );
+         mySPHSimulation.fluid->getFluidVariables()->p, "Pressure" );
    myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.model->getFluidVariables().v, "Velocity" );
+         mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
 
    TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
-   myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles_bound->getPoints() ) ;
+   myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
 
    myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().rho, "Density" );
+         mySPHSimulation.boundary->getBoundaryVariables()->rho, "Density" );
    myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().p, "Pressure" );
+         mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure" );
    myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().v, "Velocity" );
+         mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity" );
 
    /**
     * Define timers to measure computation time.
@@ -154,23 +155,21 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
+      mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
-
-      //#include "outputForDebug.h"
 
       /**
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
       if( iteration % 20 == 0 ) {
-         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
-         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateEuler< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
+         mySPHSimulation.integrator->IntegrateEulerBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
       }
       else {
-         mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
-         mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
+         mySPHSimulation.integrator->IntegrateVerlet< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
+         mySPHSimulation.integrator->IntegrateVerletBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
       }
       timer_integrate.stop();
 
@@ -185,41 +184,54 @@ int main( int argc, char* argv[] )
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
+         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.fluid->variables, mySPHSimulation.fluid->particles->getNumberOfParticles() ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         outputFileName += std::to_string( iteration ) + ".vtk";
-         std::ofstream outputFile (outputFileName, std::ofstream::out);
-         Writer myWriter( outputFile, VTK::FileFormat::binary );
-         myWriter.writeParticles( *mySPHSimulation.particles );
+         std::string outputFileNameFluid = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
+         std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
+         Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
+         myWriter.writeParticles( *mySPHSimulation.fluid->particles );
          myWriter.template writePointData< SPHModel::ScalarArrayType >(
-               mySPHSimulation.model->getFluidVariables().p, "Pressure" );
+               mySPHSimulation.fluid->getFluidVariables()->p, "Pressure", mySPHSimulation.fluid->particles->getNumberOfParticles(), 1 );
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               mySPHSimulation.model->getFluidVariables().v, "Velocity", 3 );
+               mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
       }
    }
 
    /**
     * Output simulation stats.
     */
+   float totalTime = ( timer_search.getRealTime() + \
+   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+
+   float totalTimePerStep = totalTime / steps;
+
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
    std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
    std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Search (percentage)........................... " << timer_search.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
    std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Reset (percentage)......................... " << timer_search_reset.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
    std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Index by cell (percentage)................. " << timer_search_cellIndices.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
    std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Sort (percentage).......................... " << timer_search_sort.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
    std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Particle to cell (percentage).............. " << timer_search_toCells.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
    std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
    std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
    std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
    std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \

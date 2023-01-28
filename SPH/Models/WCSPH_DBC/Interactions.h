@@ -31,83 +31,44 @@ class WCSPH_DBC
 {
 public:
 
+   using SPHConfig = SPHFluidConfig;
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename Particles::Device; //?
+   using DeviceType = typename Particles::Device;
 
-   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType; //Particles::?
-   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType; //Particles::?
-   using RealType = typename SPHFluidTraitsType::RealType; //Particles::?
-
+   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+   using RealType = typename SPHFluidTraitsType::RealType;
    using PointType = typename Particles::PointType;
-   using PointArrayType = typename Particles::PointArrayType;
-
    using ScalarType = typename SPHFluidTraitsType::ScalarType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
 
-   using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
-   using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
+   //using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
+   //using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
 
    using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
 
    /* VARIABLES FIELDS */
    using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-   using ParticleTypeArrayType = typename SPHFluidTraitsType::ParticleTypeArrayType;
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /* Thrust sort */
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
 
    /* Integrator */
    using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
+   using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 
    /*Swap variables*/
-   using SwapVariables = SWAPFluidVariables< SPHFluidConfig, PointArrayType >; //REDO
+   using ModelVariables = Variables;
+   using VariablesPointer = typename Pointers::SharedPointer< ModelVariables, DeviceType >;
 
    /**
     * Constructor.
     */
-   WCSPH_DBC( GlobalIndexType size, ParticlePointer& particles, GlobalIndexType size_boundary, ParticlePointer& particles_boundary )
-   : fluidVariables( size ), boundaryVariables( size_boundary ),
-#ifdef PREFER_SPEED_OVER_MEMORY
-     swapFluid( size ), swapBoundary( size_boundary ),
-#endif
-   particles( particles ), boundaryParticles( particles_boundary ) {
-   }
-
-   /**
-    * Get fileds with variables.
-    */
-   const Variables&
-   getFluidVariables() const;
-
-   Variables&
-   getFluidVariables();
-
-   const Variables&
-   getBoundaryVariables() const;
-
-   Variables&
-   getBoundaryVariables();
-
-   /**
-    * Get fileds with variables.
-    */
-   const IndexArrayType&
-   getIndicesForReoder() const;
-
-   IndexArrayType&
-   getIndicesForReoder();
-
-   /**
-    * Sort particles and all variables based on particle cell index.
-    * TODO: Move this on the side of nbsearch/particles.
-    */
-   void sortParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
-
-   void
-   sortBoundaryParticlesAndVariablesThrust( ParticlePointer& particles, Variables& variables, SwapVariables& variables_swap );
+   WCSPH_DBC( ) = default; //THIS WORKS
 
    /**
     * Compute pressure from density.
@@ -115,31 +76,14 @@ public:
     */
    template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
    void
-   ComputePressureFromDensity();
+   ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles );
 
-   template< typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+   template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS  >
    void
-   Interaction( NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound );
+   Interaction( FluidPointer& fluid, BoudaryPointer& boundary );
 
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
-
-//protected:
-
-   /* Variables - Fields */
-   Variables fluidVariables;
-   Variables boundaryVariables;
-
-   ParticlePointer particles;
-   ParticlePointer boundaryParticles;
-
-   SwapVariables swapFluid;
-   SwapVariables swapBoundary;
-
-#ifdef PREFER_SPEED_OVER_MEMORY
-   /* TEMP - Indices for thrust sort. */
-
-#endif
 
 };
 
@@ -148,5 +92,4 @@ public:
 } // TNL
 
 #include "Interactions_impl.h"
-#include "Interactions_implLambda.h"
 

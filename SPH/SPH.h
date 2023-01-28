@@ -5,6 +5,9 @@
 
 #include "../Particles/Particles.h"
 
+#include "Fluid.h"
+#include "Boundary.h"
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -24,16 +27,24 @@ public:
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
-
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
+   using SPHConfig = typename Model::SPHConfig;
+   using Variables = typename Model::ModelVariables;
+   using IntegratorVariables = typename Model::IntegratorVariables;
+
+   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, Variables, IntegratorVariables >;
+   using FluidPointer = Pointers::SharedPointer< Fluid, DeviceType >;
+
+   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, Variables, IntegratorVariables >;
+   using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
    SPHSimpleFluid() = default;
 
-   SPHSimpleFluid( GlobalIndexType size, GlobalIndexType size_bound, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, h ), neighborSearch( particles, numberOfCells ), model( size, particles, size_bound, particles_bound ),
-     particles_bound( size_bound, h ), neighborSearch_bound( particles_bound, numberOfCells ),
-     integrator( model, size, size_bound ) {};
-
+   SPHSimpleFluid( GlobalIndexType size, GlobalIndexType sizeAllocated,
+         GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
+         RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
+   :  model(), integrator(), fluid( size, sizeAllocated, h, numberOfCells ),
+     boundary( size_bound, sizeAllocated_bound, h, numberOfCells ){};
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -43,21 +54,13 @@ public:
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm >
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void Interact();
 
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
-   void InteractModel();
+//protected:
 
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
-   void InteractModel();
-
-   //protected: (or private?)
-
-   ParticlePointer particles;
-   ParticlePointer particles_bound;
-   NeighborSearchPointer neighborSearch;
-   NeighborSearchPointer neighborSearch_bound;
+   FluidPointer fluid;
+   BoundaryPointer boundary;
 
    ModelPointer model;
 

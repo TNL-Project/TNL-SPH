@@ -12,38 +12,41 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
     * Compute gird nad partice cell indices.
     */
    timer_reset.start();
-   neighborSearch->resetListWithIndices();
+   fluid->neighborSearch->resetListWithIndices();
    if( step == 0 )
-   neighborSearch_bound->resetListWithIndices();
+      boundary->neighborSearch->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
-   if( step == 0 ) //TODO: do this better
-   particles->computeGridCellIndices();
+   if( step == 0 ) //TODO: do this better, i. e. move this to constructor
+   fluid->particles->computeGridCellIndices(); //with current settings, I dont need to do this
 
    timer_cellIndices.start();
-   particles->computeParticleCellIndices();
+   fluid->particles->computeParticleCellIndices();
    if( step == 0 )
-   particles_bound->computeParticleCellIndices();
+      boundary->particles->computeParticleCellIndices();
    timer_cellIndices.stop();
    std::cout << " - particles->computeParticleCellIndices();... done " << std::endl;
 
+   /**
+    * Sort particles.
+    */
    timer_sort.start();
-   model->sortParticlesAndVariablesThrust( model->particles, model->fluidVariables, model->swapFluid );
-   integrator->sortIntegratorArrays();
+   fluid->sortParticles();
    if( step == 0 )
    {
-      //model->sortParticlesAndVariablesThrust( model->boundaryParticles, model->BoundaryVariables, model->swapBoundary );
-      model->sortBoundaryParticlesAndVariablesThrust( model->boundaryParticles, model->boundaryVariables, model->swapBoundary );
-      integrator->sortIntegratorBoundaryArrays();
+      boundary->sortParticles();
    }
    timer_sort.stop();
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
 
+   /**
+    * Bucketing, particles to cells.
+    */
    timer_toCells.start();
-   neighborSearch->particlesToCells();
+   fluid->neighborSearch->particlesToCells();
    if( step == 0 )
-   neighborSearch_bound->particlesToCells();
+      boundary->neighborSearch->particlesToCells();
    timer_toCells.stop();
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
@@ -51,17 +54,11 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::InteractModel()
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact()
 {
-   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( neighborSearch, neighborSearch_bound );
-}
-
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename RiemannSolver >
-void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::InteractModel()
-{
-   model->template Interaction< NeighborSearchPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS, RiemannSolver >( neighborSearch, neighborSearch_bound );
+   model->template Interaction<
+      FluidPointer, BoundaryPointer, NeighborSearchPointer,
+      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary );
 }
 
 

@@ -6,7 +6,6 @@
 
 #include "../Particles/Particles.h"
 
-
 #include "Fluid.h"
 #include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
