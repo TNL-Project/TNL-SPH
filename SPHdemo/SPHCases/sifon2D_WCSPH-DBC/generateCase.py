@@ -5,7 +5,7 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 ## Parameters
-dp = 0.002
+dp = 0.005
 smoothingLentghCoef = 2**0.5
 
 rho0 = 1000.
@@ -15,22 +15,22 @@ numberOfBoundaryLayers = 3
 
 speedOfSound = 34.3
 CFLnumber = 0.2
-timeStep = 0.000018 #otherwise is obtained automatically
+timeStep = 0.00002 #otherwise is obtained automatically
 
 write = '.vtk' #.ptcs or .vtk
 
-boxL = 1.
-boxH = 0.8
+boxL = 4.3
+boxH = 0.65
 
 fluidL = 0.5
 fluidH = 0.2
 
-#first inlet buffer
+## First inlet buffer. ##
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
-inletBufferPosition_x = 0.2
-inletBufferPosition_z = 0.4
-inletBufferHeight = 0.1
+inletBufferPosition_x = 0.2 + dp/2
+inletBufferPosition_z = 0.095 + dp + dp
+inletBufferHeight = 0.19 - inletBufferPosition_z - dp
 inletBufferLayers = numberOfBoundaryLayers + 1
 inletVelocity_x = 0.5
 inletVelocity_z = 0.
@@ -40,21 +40,20 @@ inletBufferEdge = inletBufferPosition_x + 4 * dp  + dp / 2 #remove, deprecated
 inletBufferReferencePoint_x = inletBufferPosition_x - inletBufferOrientation_x * ( inletBufferLayers - 1 ) * dp
 inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z * ( inletBufferLayers - 1 ) * dp
 
-#second inlet buffer
-inlet2BufferOrientation_x = -3**0.5/2
-inlet2BufferOrientation_z = 0.5
+## Second inlet buffer. ##
+inlet2BufferOrientation_x = -1.
+inlet2BufferOrientation_z = 0.
 inlet2BufferPosition_x = 0.7
 inlet2BufferPosition_z = 0.3
 inlet2BufferHeight = 0.15
 inlet2BufferLayers = numberOfBoundaryLayers + 1
-inlet2Velocity_x = 1.5 * inlet2BufferOrientation_x
-inlet2Velocity_z = 1.5 * inlet2BufferOrientation_z
+inlet2Velocity_x = -1.0
+inlet2Velocity_z = 0.
 
-inlet2BufferWidth = 3 * dp + dp / 2
-inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2
+inlet2BufferWidth = inlet2BufferLayers * dp - dp / 2
+inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2 #remove, deprecated
 inlet2BufferReferencePoint_x = inlet2BufferPosition_x - inlet2BufferOrientation_x * ( inlet2BufferLayers - 1 ) * dp
 inlet2BufferReferencePoint_z = inlet2BufferPosition_z - inlet2BufferOrientation_z * ( inlet2BufferLayers - 1 ) * dp
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
@@ -64,7 +63,7 @@ boxH_n = round( boxH / dp )
 fluidL_n = round( fluidL / dp )
 fluidH_n = round( fluidH / dp )
 
-inletL_n = numberOfBoundaryLayers + 1
+inletL_n = inletBufferLayers
 inletH_n = round( inletBufferHeight / dp  )
 
 inlet2L_n = inlet2BufferLayers
@@ -87,7 +86,7 @@ for x in range( inletL_n ):
     for z in range( inletH_n ):
         inlet_rx.append( inletBufferPosition_x - inletBufferOrientation_x * dp * ( x ) )
         inlet_ry.append( 0. ) #we use only 2D case
-        inlet_rz.append( inletBufferPosition_z + dp * ( z + 1 ) )
+        inlet_rz.append( inletBufferPosition_z + dp * ( z ) )
 
         inlet_vx.append( inletVelocity_x )
         inlet_vy.append( 0. ) #we use only 2D case
@@ -97,18 +96,11 @@ for x in range( inletL_n ):
 inlet2_rx = []; inlet2_ry = []; inlet2_rz = []
 inlet2_vx = []; inlet2_vy = []; inlet2_vz = []
 
-RotMatrix_a11 = (-1)*inlet2BufferOrientation_x
-RotMatrix_a12 = (-1)*(-1)*inlet2BufferOrientation_z
-RotMatrix_a21 = (-1)*inlet2BufferOrientation_z
-RotMatrix_a22 = (-1)*inlet2BufferOrientation_x
-
 for x in range( inlet2L_n ):
     for z in range( inlet2H_n ):
-        inlet2_rx.append( inlet2BufferPosition_x + RotMatrix_a11 * ( dp * ( x ) ) +
-                          RotMatrix_a12 * ( dp * ( z ) ) )
+        inlet2_rx.append( inlet2BufferPosition_x - inlet2BufferOrientation_x * dp * ( x ) )
         inlet2_ry.append( 0. ) #we use only 2D case
-        inlet2_rz.append( inlet2BufferPosition_z + RotMatrix_a21 * ( dp * ( x ) ) +
-                          RotMatrix_a22 * ( dp * ( z ) ) )
+        inlet2_rz.append( inlet2BufferPosition_z + dp * ( z ) )
 
         inlet2_vx.append( inlet2Velocity_x )
         inlet2_vy.append( 0. ) #we use only 2D case
@@ -183,8 +175,8 @@ elif write == '.vtk':
     p = np.zeros( len( fluid_rx ) )
     ptype = np.zeros( len( fluid_rx ) )
 
-    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+    #fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    #saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
 
     r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
     v = np.zeros( ( len( box_rx ), 3 ) )
@@ -192,8 +184,8 @@ elif write == '.vtk':
     p = np.zeros( len( box_rx ) )
     ptype = np.ones( len( box_rx ) )
 
-    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
+    #boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    #saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
 
     r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
     v = np.array( ( inlet_vx, inlet_vz, inlet_vy ), dtype=float ).T #!!
@@ -202,7 +194,7 @@ elif write == '.vtk':
     ptype = np.ones( len( inlet_rx ) )
 
     inletToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( inletToWrite, "dambreak_inlet.vtk" )
+    saveParticlesVTK.save_polydata( inletToWrite, "sifon_inlet.vtk" )
 
     r = np.array( ( inlet2_rx, inlet2_rz, inlet2_ry ), dtype=float ).T #!!
     v = np.array( ( inlet2_vx, inlet2_vz, inlet2_vy ), dtype=float ).T #!!
@@ -210,8 +202,8 @@ elif write == '.vtk':
     p = np.zeros( len( inlet2_rx ) )
     ptype = np.ones( len( inlet2_rx ) )
 
-    inlet2ToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( inlet2ToWrite, "dambreak_inlet2.vtk" )
+    #inlet2ToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    #saveParticlesVTK.save_polydata( inlet2ToWrite, "dambreak_inlet2.vtk" )
 else:
     print( "Invalid particle output type." )
 
@@ -263,18 +255,6 @@ fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_x', str( round( inletBu
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_y', str( 0. ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderOBP1BufferEdge', str( round(  inletBufferEdge, 7 ) ) )
 
-#inlet2
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_x', str( inlet2BufferOrientation_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_y', str( inlet2BufferOrientation_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_x', str( inlet2Velocity_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_y', str( inlet2Velocity_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_x', str( round(  inlet2BufferReferencePoint_x, 9 ) ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_y', str( round(  inlet2BufferReferencePoint_z, 9 ) ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Density', str( rho0 ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_x', str( round( inlet2BufferWidth, 7 ) ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_y', str( 0. ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2BufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
-
 # Write the file out again
 with open( 'SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
@@ -300,5 +280,5 @@ fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round
 fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
 
 # Write the file out again
-with open( 'ParticlesConfig.h', 'w' ) as file:
-  file.write( fileParticleConf )
+#with open( 'ParticlesConfig.h', 'w' ) as file:
+#  file.write( fileParticleConf )
