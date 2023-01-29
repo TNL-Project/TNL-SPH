@@ -22,6 +22,7 @@ class ParticleSystemConfig
 
    static constexpr int spaceDimension = placeholderDimension;
    static constexpr int numberOfParticles = placeholderFluidParticles;
+   static constexpr int numberOfAllocatedParticles = placeholderAllocatedFluidParticles;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
@@ -29,8 +30,8 @@ class ParticleSystemConfig
    static constexpr int gridYsize = placeholderGridYSize;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = placeholderGridXBegin;
-   static constexpr RealType gridYbegin = placeholderGridYBegin;
+   static constexpr RealType gridXbegin = placeholderGridXBeginf;
+   static constexpr RealType gridYbegin = placeholderGridYBeginf;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
@@ -50,6 +51,7 @@ class ParticleSystemConfig_boundary
 
    static constexpr int spaceDimension = placeholderDimension;
    static constexpr int numberOfParticles = placeholderBoundaryParticles;
+   static constexpr int numberOfAllocatedParticles = placeholderBoundaryParticles;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
@@ -57,8 +59,8 @@ class ParticleSystemConfig_boundary
    static constexpr int gridYsize = placeholderGridYSize;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = placeholderGridXBegin;
-   static constexpr RealType gridYbegin = placeholderGridYBegin;
+   static constexpr RealType gridXbegin = placeholderGridXBeginf;
+   static constexpr RealType gridYbegin = placeholderGridYBeginf;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_boundary, DeviceType >; //?

@@ -155,7 +155,9 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
 # Replace the target string
 fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( fluid_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
