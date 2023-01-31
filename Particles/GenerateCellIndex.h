@@ -5,10 +5,15 @@
 using namespace TNL;
 using namespace TNL::ParticleSystem;
 
-template < typename ParticleConfig, typename DeviceType >
+template< int Dimension, typename ParticleConfig >
 class SimpleCellIndex
+{};
+
+template< typename ParticleConfig >
+class SimpleCellIndex< 2, ParticleConfig >
 {
 public:
+   using DeviceType = typename ParticleConfig::DeviceType;
    using ParticleTraitsType = ParticlesTraits< ParticleConfig, DeviceType >;
    using CellIndexView = TNL::Containers::ArrayView< typename ParticleTraitsType::CellIndexType, DeviceType >;
    using PointsView = TNL::Containers::ArrayView< typename ParticleTraitsType::PointType, DeviceType >;
@@ -55,7 +60,7 @@ public:
 
 };
 
-template < typename ParticleConfig, typename DeviceType >
+template< typename ParticleConfig, typename DeviceType >
 class ZOrderCurve
 {
 public:

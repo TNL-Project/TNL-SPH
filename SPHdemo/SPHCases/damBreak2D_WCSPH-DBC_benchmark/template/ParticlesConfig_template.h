@@ -34,7 +34,7 @@ class ParticleSystemConfig
    static constexpr RealType gridYbegin = placeholderGridYBeginf;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
@@ -63,7 +63,7 @@ class ParticleSystemConfig_boundary
    static constexpr RealType gridYbegin = placeholderGridYBeginf;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_boundary, DeviceType >; //?
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_boundary >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
