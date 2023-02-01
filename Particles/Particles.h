@@ -53,7 +53,7 @@ public:
      gridCellIndices( Config::gridXsize*Config::gridYsize ), neighborsCount( sizeAllocated, 0 ), neighbors( sizeAllocated*Config::maxOfNeigborsPerParticle, 0 )
    {
       //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
-      grid->setDimensions( Config::gridXsize, Config::gridYsize );
+      //3dto grid->setDimensions( Config::gridXsize, Config::gridYsize );
       //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
       neighborsList.setSegmentsSizes( sizeAllocated, Config::maxOfNeigborsPerParticle );
    }

@@ -60,6 +60,61 @@ public:
 
 };
 
+template< typename ParticleConfig >
+class SimpleCellIndex< 3, ParticleConfig >
+{
+public:
+   using DeviceType = typename ParticleConfig::DeviceType;
+   using ParticleTraitsType = ParticlesTraits< ParticleConfig, DeviceType >;
+   using CellIndexView = TNL::Containers::ArrayView< typename ParticleTraitsType::CellIndexType, DeviceType >;
+   using PointsView = TNL::Containers::ArrayView< typename ParticleTraitsType::PointType, DeviceType >;
+
+   using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
+   using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
+
+   static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridXsize;
+   static constexpr GlobalIndexType _numberOfCellsY = ParticleConfig::gridYsize;
+
+   static void ComputeCellIndex( CellIndexView cells, PointsView points )
+   {
+      auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, LocalIndexType k ) mutable
+      {
+         cells[ j*_numberOfCells + i ] = k*(_numberOfCells*_numberOfCellsY) + j*_numberOfCells + i;
+      };
+      Algorithms::ParallelFor3D< DeviceType >::exec(
+         ( LocalIndexType ) 0,
+         ( LocalIndexType ) 0,
+         ( LocalIndexType ) 0,
+         ( LocalIndexType ) ParticleConfig::gridXsize,
+         ( LocalIndexType ) ParticleConfig::gridYsize,
+         ( LocalIndexType ) ParticleConfig::gridZsize,
+         f );
+   }
+
+   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, PointsView view_points, GlobalIndexType _numberOfParticles )
+   {
+
+      auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+      {
+         view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - ParticleConfig::gridXbegin ) / ParticleConfig::searchRadius ) +
+                                        TNL::floor( ( view_points[ i ][ 1 ] - ParticleConfig::gridYbegin ) / ParticleConfig::searchRadius ) * ParticleConfig::gridXsize +
+                                        TNL::floor( ( view_points[ i ][ 2 ] - ParticleConfig::gridZbegin ) / ParticleConfig::searchRadius ) * ParticleConfig::gridXsize * ParticleConfig::gridYsize;
+      };
+      Algorithms::ParallelFor< DeviceType >::exec(
+         ( LocalIndexType ) 0,
+          _numberOfParticles,
+         f );
+      }
+
+   __cuda_callable__
+   static uint32_t
+   EvaluateCellIndex( GlobalIndexType i, GlobalIndexType j, GlobalIndexType k )
+   {
+      return k * _numberOfCells * _numberOfCellsY + j *_numberOfCells + i;
+   }
+
+};
+
 template< typename ParticleConfig, typename DeviceType >
 class ZOrderCurve
 {
