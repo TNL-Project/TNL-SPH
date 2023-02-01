@@ -67,6 +67,11 @@ public:
    void
    loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
 
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const GlobalIndexType& gridZ, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
+
    /**
     * Runs all necessary functions and fills neighbor list.
     */

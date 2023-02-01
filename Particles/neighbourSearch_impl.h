@@ -72,8 +72,8 @@ __cuda_callable__
 void
 NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
 {
-   for( int ci = gridX - 1; ci <= gridX + 1; ci++ ){
-      for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
+   for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
+      for( int ci = gridX - 1; ci <= gridX + 1; ci++ ){
          const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
          const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
          int j = firstLastParticle[ 0 ];
@@ -85,6 +85,31 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
             f( i, j, args... );
             j++;
          } //while over particle in cell
+      } //for cells in x direction
+   } //for cells in y direction
+}
+
+template< typename ParticleConfig, typename ParticleSystem >
+template< typename Function, typename... FunctionArgs >
+__cuda_callable__
+void
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const GlobalIndexType& gridZ, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+{
+   for( int cj = gridZ -1; cj <= gridZ + 1; cj++ ){
+      for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
+         for( int ci = gridX - 1; ci <= gridX + 1; ci++ ){
+            const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
+            const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
+            int j = firstLastParticle[ 0 ];
+            int j_end = firstLastParticle[ 1 ];
+            if( j_end >= numberOfParticles )
+             	j_end = -1;
+            while( ( j <= j_end ) ){
+               if( i == j ){ j++; continue; }
+               f( i, j, args... );
+               j++;
+            } //while over particle in cell
+         } //for cells in z direction
       } //for cells in y direction
    } //for cells in x direction
 }
