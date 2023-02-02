@@ -28,8 +28,6 @@ public:
    using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
 
-   using IndexVectorType = typename ParticleSystem::ParticleTraitsType::IndexVectorType;
-
    /**
     * Constructors.
     */

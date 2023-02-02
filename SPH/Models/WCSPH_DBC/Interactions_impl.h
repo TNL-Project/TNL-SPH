@@ -20,8 +20,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
    //static constexpr VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
    //static constexpr VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   //const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin, Particles::Config::gridZbegin };
+   //const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
+   const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin, Particles::Config::gridZbegin };
    //static constexpr VectorType gridBegin( 1.2f, 1.3f );
 
    const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
@@ -130,8 +130,6 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
    {
-      const unsigned int activeCell = view_particleCellIndex[ i ];
-
       /*TODO: This should be some interaction structure  - properties of particle A:*/
       const VectorType r_i = view_points[ i ];
       const VectorType v_i = view_v[ i ];
@@ -152,15 +150,14 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
-      a_i[ 1 ] -= 9.81f ; //TODO;
+      //a_i[ 1 ] -= 9.81f ; //TODO;
+      a_i[ 2 ] -= 9.81f ; //TODO;
       view_a[ i ] = a_i;
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch ) mutable
    {
-      const unsigned int activeCell = view_particleCellIndex[ i ];
-
       /*TODO: This should be some interaction structure  - properties of particle A:*/
       const VectorType r_i = view_points_bound[ i ];
       const VectorType v_i = view_v_bound[ i ];
@@ -171,7 +168,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       //const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
       const IndexVectorType gridIndex = TNL::floor( ( r_i - gridBegin ) / searchRadius );
 
-      RealType drho_i = 0.;
+      RealType drho_i = 0.f;
 
       //neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );

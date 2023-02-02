@@ -31,8 +31,6 @@ class ParticlesTraits
    using GridType = Meshes::Grid< spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using GridPointer = Pointers::SharedPointer< GridType >;
    using CellIndexArrayType = Containers::Array< CellIndexType, Device, GlobalIndexType >;
-
-   using IndexVectorType = Containers::StaticVector< spaceDimension, GlobalIndexType >;
 };
 
 } // namepsace ParticleSystem
