@@ -1,0 +1,63 @@
+#!/bin/bash
+#PBS -N damBreak2D_dualSPHysics
+#PBS -q gpu
+#PBS -l select=1:ngpus=1:mem=400mb:cluster=adan
+#PBS -l walltime=12:00:00
+
+echo Running at $(hostname)
+cd $PBS_O_WORKDIR
+fail () {
+    echo Execution aborted.
+    exit 1
+}
+
+#jmeno uhlohy, vystupni slozky
+export name=damBreak2D_WCSPH-DBC
+export dirout=${name}_out
+export diroutdata=${dirout}/data
+
+#nacteni prislusnych souboru
+export dirbin=/home/tomas/mount/home/tomas/Documents/DualSPHysics_v5.0.5/DualSPHysics_v5.0/bin/linux
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${dirbin}
+export gencase="${dirbin}/GenCase4_linux64"
+export dualsphysicscpu="${dirbin}/DualSPHysics4.4CPU_linux64"
+export dualsphysicsgpu="${dirbin}/DualSPHysics4.4_linux64"
+export boundaryvtk="${dirbin}/BoundaryVTK4_linux64"
+export partvtk="${dirbin}/PartVTK4_linux64"
+export partvtkout="${dirbin}/PartVTKOut4_linux64"
+export measuretool="${dirbin}/MeasureTool4_linux64"
+export computeforces="${dirbin}/ComputeForces4_linux64"
+export isosurface="${dirbin}/IsoSurface4_linux64"
+export flowtool="${dirbin}/FlowTool4_linux64"
+export floatinginfo="${dirbin}/FloatingInfo4_linux64"
+
+# "dirout" to store results is removed if it already exists
+if [ -e ${dirout} ]; then rm -r ${dirout}; fi
+
+# CODES are executed according the selected parameters of execution in this testcase
+# Executes GenCase4 to create initial files for simulation.
+${gencase} ${name}_Def ${dirout}/${name} -save:all
+if [ $? -ne 0 ] ; then fail; fi
+
+# Executes DualSPHysics to simulate SPH method.
+${dualsphysicsgpu} -gpu ${dirout}/${name} ${dirout} -dirdataout data -svres
+if [ $? -ne 0 ] ; then fail; fi
+
+# Executes PartVTK4 to create VTK files with particles.
+export dirout2=${dirout}/particles
+${partvtk} -dirin ${diroutdata} -savevtk ${dirout2}/PartFluid -onlytype:-all,fluid -vars:+idp,+vel,+rhop,+press,+vor
+if [ $? -ne 0 ] ; then fail; fi
+
+${partvtk} -dirin ${diroutdata} -savevtk ${dirout2}/PartBound -onlytype:-all,bound -vars:-all -last:0
+if [ $? -ne 0 ] ; then fail; fi
+
+# Executes PartVTKOut4 to create VTK files with excluded particles.
+${partvtkout} -dirin ${diroutdata} -savevtk ${dirout2}/PartFluidOut -SaveResume ${dirout2}/_ResumeFluidOut
+if [ $? -ne 0 ] ; then fail; fi
+
+# Executes IsoSurface4 to create VTK files with slices of surface.
+export dirout2=${dirout}/surface
+${isosurface} -dirin ${diroutdata} -saveslice ${dirout2}/Slices
+if [ $? -ne 0 ] ; then fail; fi
+
+echo All done
