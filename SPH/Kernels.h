@@ -6,7 +6,7 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHCaseConfig >
+//template< typename SPHCaseConfig >
 class WendlandKernel2D //2D
 {
 public:

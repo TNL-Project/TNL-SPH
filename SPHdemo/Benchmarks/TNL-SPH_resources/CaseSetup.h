@@ -29,11 +29,11 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
-const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
+const std::string inputParticleFile = "dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "dambreak_boundary.vtk";
 
-const float endTime = 0.05;
-const int outputStep = 2500;
+const float endTime = 0.4;
+const int outputStep = 25000;
 
 std::string outputFileName = "results/particles";
 
@@ -269,7 +269,7 @@ int main( int argc, char* argv[] )
    timeResults.insert({ "pressure-update",                     std::to_string( timer_pressure.getRealTime()                              ) } );
    timeResults.insert({ "pressure-update-average",             std::to_string( timer_pressure.getRealTime() / steps                      ) } );
    timeResults.insert({ "pressure-update-percentage",          std::to_string( timer_pressure.getRealTime() / totalTime * 100            ) } );
-   timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
+   timeResults.insert({ "total",                              std::to_string( totalTime                                                 ) } );
    timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
 
    TNL::Benchmarks::writeMapAsJson( timeResults, "time_measurements", ".json" );

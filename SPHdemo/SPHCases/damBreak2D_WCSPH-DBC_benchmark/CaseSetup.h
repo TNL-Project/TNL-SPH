@@ -6,6 +6,11 @@
 #include <sys/types.h>
 
 /**
+ *  Benchamrk stuff.
+ */
+#include <TNL/Benchmarks/Benchmarks.h>
+
+/**
  * Particle system.
  */
 #include "../../../Particles/Particles.h"
@@ -155,7 +160,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
+      mySPHSimulation.template Interact< SPH::WendlandKernel2D, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -237,6 +242,38 @@ int main( int argc, char* argv[] )
    std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
+   //JsonMap
+   std::map< std::string, std::string > timeResults;
+
+   timeResults.insert({ "search",                              std::to_string( timer_search.getRealTime()                                ) } );
+   timeResults.insert({ "search-average",                      std::to_string( timer_search.getRealTime() / steps                        ) } );
+   timeResults.insert({ "search-percentage",                   std::to_string( timer_search.getRealTime() / totalTime * 100              ) } );
+   timeResults.insert({ "search-reset",                        std::to_string( timer_search_reset.getRealTime()                          ) } );
+   timeResults.insert({ "search-reset-average",                std::to_string( timer_search_reset.getRealTime() / steps                  ) } );
+   timeResults.insert({ "search-reset-percentage",             std::to_string( timer_search_reset.getRealTime() / totalTime * 100        ) } );
+   timeResults.insert({ "search-index-by-cell ",               std::to_string( timer_search_cellIndices.getRealTime()                    ) } );
+   timeResults.insert({ "search-index-by-cell-average",        std::to_string( timer_search_cellIndices.getRealTime() / steps            ) } );
+   timeResults.insert({ "search-index-by-cell-percentage",     std::to_string( timer_search_cellIndices.getRealTime() / totalTime * 100  ) } );
+   timeResults.insert({ "search-sort",                         std::to_string( timer_search_sort.getRealTime()                           ) } );
+   timeResults.insert({ "search-sort-average",                 std::to_string( timer_search_sort.getRealTime() / steps                   ) } );
+   timeResults.insert({ "search-sort-percentage",              std::to_string( timer_search_sort.getRealTime() / totalTime * 100         ) } );
+   timeResults.insert({ "search-particles-to-cell ",           std::to_string( timer_search_toCells.getRealTime()                        ) } );
+   timeResults.insert({ "search-particles-to-cell-average",    std::to_string( timer_search_toCells.getRealTime() / steps                ) } );
+   timeResults.insert({ "search-particles-to-cell-percentage", std::to_string( timer_search_toCells.getRealTime() / totalTime * 100      ) } );
+   timeResults.insert({ "interaction",                         std::to_string( timer_interact.getRealTime()                              ) } );
+   timeResults.insert({ "interaction-average",                 std::to_string( timer_interact.getRealTime() / steps                      ) } );
+   timeResults.insert({ "interaction-percentage",              std::to_string( timer_interact.getRealTime() / totalTime * 100            ) } );
+   timeResults.insert({ "integrate",                           std::to_string( timer_integrate.getRealTime()                             ) } );
+   timeResults.insert({ "integrate-average",                   std::to_string( timer_integrate.getRealTime() / steps                     ) } );
+   timeResults.insert({ "integrate-percentage",                std::to_string( timer_integrate.getRealTime() / totalTime * 100           ) } );
+   timeResults.insert({ "pressure-update",                     std::to_string( timer_pressure.getRealTime()                              ) } );
+   timeResults.insert({ "pressure-update-average",             std::to_string( timer_pressure.getRealTime() / steps                      ) } );
+   timeResults.insert({ "pressure-update-percentage",          std::to_string( timer_pressure.getRealTime() / totalTime * 100            ) } );
+   timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
+   timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
+
+   TNL::Benchmarks::writeMapAsJson( timeResults, "time_measurements", ".json" );
    std::cout << "\nDone ... " << std::endl;
+
 }
 

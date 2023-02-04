@@ -4,15 +4,13 @@
 #PBS -l select=1:ngpus=1:mem=400mb:cluster=adan
 #PBS -l walltime=12:00:00
 
-echo Running at $(hostname)
-cd $PBS_O_WORKDIR
 fail () {
     echo Execution aborted.
     exit 1
 }
 
 #jmeno uhlohy, vystupni slozky
-export name=CaseDambreakVal2D
+export name=damBreak2D_WCSPH-DBC
 export dirout=${name}_out
 export diroutdata=${dirout}/data
 

@@ -20,8 +20,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
    //static constexpr VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
    //static constexpr VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   //const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin, Particles::Config::gridZbegin };
+   const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
+   //const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin, Particles::Config::gridZbegin };
    //static constexpr VectorType gridBegin( 1.2f, 1.3f );
 
    const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
@@ -150,8 +150,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
-      //a_i[ 1 ] -= 9.81f ; //TODO;
-      a_i[ 2 ] -= 9.81f ; //TODO;
+      a_i[ 1 ] -= 9.81f ; //TODO;
+      //a_i[ 2 ] -= 9.81f ; //TODO;
       view_a[ i ] = a_i;
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch );
