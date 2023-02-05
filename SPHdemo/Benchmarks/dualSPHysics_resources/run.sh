@@ -1,9 +1,4 @@
 #!/bin/bash
-#PBS -N damBreak2D_dualSPHysics
-#PBS -q gpu
-#PBS -l select=1:ngpus=1:mem=400mb:cluster=adan
-#PBS -l walltime=12:00:00
-
 fail () {
     echo Execution aborted.
     exit 1

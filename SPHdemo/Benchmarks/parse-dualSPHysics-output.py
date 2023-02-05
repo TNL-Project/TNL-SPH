@@ -1,11 +1,39 @@
-import requests
 import re
+import os
+import json
+import pandas as pd
+from pandas.io.json import json_normalize
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+from os.path import exists
+from json2html import *
 
-cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.00025_1" ]
-results_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1><br><hr>'
+#cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.00025_1" ]
+#folder = "results/"
+
+cases = [ "0.002_1" ]
+folder = "results_local-test/"
+
+#results_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1><br><hr>'
+results_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
+
+#device metadata
+deviceFile = folder + "tnl-sph_" + cases[ 0 ] + ".device_metadata.json"
+with open( deviceFile ) as f:
+    lines = json.load( f )
+    json_str = json.dumps( lines )
+    resp = json.loads( json_str )
+
+    deviceString = json2html.convert(json = resp)
+    #deviceString = json2html.convert(json = resp)
+    results_string += deviceString
+results_string += "<br><hr>"
+
 
 for case in cases:
-    filename = "./results/dualSPHysics_" + case + ".out"
+    #filename = "./results/dualSPHysics_" + case + ".out"
+    filename = folder + "dualSPHysics_" + case + ".out"
 
     keywords_search = [ "NL-Limits", "NL-PreSort", "NL-RadixSort", "NL-CellBegin", "NL-SortData", "NL-OutCheck" ]
     search_time = 0.
@@ -53,16 +81,9 @@ for case in cases:
     print( "Total time of simulation (not total runtime!): ", total_time )
     print( "Total number of steps: ", total_steps )
 
-    import os
-    import json
-    import pandas as pd
-    from pandas.io.json import json_normalize
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import math
-    from os.path import exists
 
-    filename = "./results/tnl-sph_" + case + ".json"
+    #filename = "./results/tnl-sph_" + case + ".json"
+    filename = folder + "tnl-sph_" + case + ".json"
 
     parsed_lines = []
     frames = []
@@ -94,11 +115,31 @@ for case in cases:
 
     frames.append( df )
     result = pd.concat( frames )
-    result.to_html( 'time_measurements.html' )
+    #result.to_html( 'time_measurements.html' )
 
-    results_string += '<h2> ' + 'Case ' + case + ' </h2>' + result.to_html(index=True,border=2,justify="center") + '<be><hr>'
+    #Case details
+    filename_caseMetadata = folder + "tnl-sph_" + case + ".case_metadata.json"
+    with open( filename_caseMetadata ) as file_metadata:
+        caseMetadata_lines = json.load( file_metadata )
+        caseMetadata_json_str = json.dumps( caseMetadata_lines )
+        caseMetadata_json = json.loads( caseMetadata_json_str )
+
+        detail_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
+        detail_string += json2html.convert( json = caseMetadata_json ) + "<br><hr>"
+        detail_string += json2html.convert( json = resp ) + "<br><hr>"
+        detail_string +='</center>'
+
+        outputFileName = folder + "case_detail.html"
+        with open( outputFileName, 'w') as _file:
+            _file.write( detail_string )
+
+    detail_string = ' <a href=\"case_detail.html\"> Details </a>'
+    #results_string += '<h2> ' + 'Case ' + case + ' </h2>' + result.to_html(index=True,border=2,justify="center") + '<be><hr>'
+    results_string += '<h2> ' + 'Case ' + case + ' </h2>' + detail_string + result.to_html(index=True,border=2,justify="center") + '<be><hr>'
+
 
 results_string +='</center>'
 
-with open("Result.html", 'w') as _file:
+outputFileName = folder + "result.html"
+with open( outputFileName, 'w') as _file:
     _file.write( results_string )
