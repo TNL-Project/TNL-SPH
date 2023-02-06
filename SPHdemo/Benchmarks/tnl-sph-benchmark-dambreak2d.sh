@@ -22,7 +22,8 @@ do
 
       ## setup and run TNL code
       cd TNL-SPH_resources
-      python generateCase.py -resolution=$resolution
+      python3 generateCase.py -resolution=$resolution
+      make clean
       make
       ./damBreak2D_WCSPH-DBC
       cd ..
