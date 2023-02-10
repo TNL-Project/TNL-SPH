@@ -15,7 +15,7 @@ class MolteniDiffusiveTerm
    public:
    using RealType = typename SPHCaseConfig::RealType; //fix this
 
-   static constexpr RealType coefDT = 2 * SPHCaseConfig::h * SPHCaseConfig::delta * SPHCaseConfig::speedOfSound;
+   static constexpr RealType coefDT = ( 2.f ) * SPHCaseConfig::h * SPHCaseConfig::delta * SPHCaseConfig::speedOfSound;
 
    __cuda_callable__
    static RealType
