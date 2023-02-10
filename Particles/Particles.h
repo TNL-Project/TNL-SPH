@@ -37,6 +37,7 @@ public:
    using PointArrayType = typename ParticleTraitsType::PointArrayType; //nn
 
    /* grid related */
+   using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using GridType = typename ParticleTraitsType::GridType;
    using GridPointer = typename ParticleTraitsType::GridPointer;
 
@@ -49,13 +50,13 @@ public:
    : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ) { }
 
    Particles( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius )
-   : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ), radius( radius ), particleCellInidices( sizeAllocated ),
-     gridCellIndices( Config::gridXsize*Config::gridYsize ), neighborsCount( sizeAllocated, 0 ), neighbors( sizeAllocated*Config::maxOfNeigborsPerParticle, 0 )
+   : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ), radius( radius ), particleCellInidices( sizeAllocated )
+   // gridCellIndices( Config::gridXsize*Config::gridYsize ), neighborsCount( sizeAllocated, 0 ), neighbors( sizeAllocated*Config::maxOfNeigborsPerParticle, 0 ) //DeactivatedAtm
    {
       //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
       //3dto grid->setDimensions( Config::gridXsize, Config::gridYsize );
       //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
-      neighborsList.setSegmentsSizes( sizeAllocated, Config::maxOfNeigborsPerParticle );
+      //neighborsList.setSegmentsSizes( sizeAllocated, Config::maxOfNeigborsPerParticle ); DeactivatedAtm
    }
 
    /* PARTICLE RELATED TOOLS */
@@ -155,6 +156,26 @@ public:
 
    /* GRID RELATED TOOLS */
 
+   /**
+    * Get and set grid dimension.
+    * The grid here is just implicit.
+    */
+   const IndexVectorType
+   getGridSize() const;
+
+   void
+   setGridSize( IndexVectorType gridSize );
+
+   /**
+    * Get and set grid origin.
+    * The grid here is just implicit.
+    */
+   const PointType
+   getGridOrigin() const;
+
+   void
+   setGridOrigin( PointType gridOrigin );
+
    const typename ParticleTraitsType::CellIndexArrayType& // -> using..
    getGridCellIndices() const;
 
@@ -242,7 +263,10 @@ protected:
    GlobalIndexType numberOfParticles;
    GlobalIndexType gridSize;
 
-   /* gird related */
+   /* grid related */
+   PointType gridOrigin; //atm we use only implicit grid.
+   IndexVectorType gridDimension; //atm we use only implicit grid.
+
    GridPointer grid; // not used now
 
    RealType radius;

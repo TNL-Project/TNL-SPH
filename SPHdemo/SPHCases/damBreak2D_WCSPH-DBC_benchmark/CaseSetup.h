@@ -98,6 +98,19 @@ int main( int argc, char* argv[] )
          ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
          ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize, 1 );
 
+
+   mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+
+   mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+
+   std::cout << "Particle grid size: " <<  mySPHSimulation.fluid->particles->getGridSize() << std::endl;
+   std::cout << "Particle grid origin: " <<  mySPHSimulation.fluid->particles->getGridOrigin() << std::endl;
+
+   std::cout << "Particle boundary grid size: " <<  mySPHSimulation.boundary->particles->getGridSize() << std::endl;
+   std::cout << "Particle boundary grid origin: " <<  mySPHSimulation.boundary->particles->getGridOrigin() << std::endl;
+
    /**
      * TEMP.
      */

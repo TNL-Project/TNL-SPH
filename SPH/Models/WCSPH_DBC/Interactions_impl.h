@@ -16,13 +16,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   static constexpr RealType gridXbegin = Particles::Config::gridXbegin; //FIXIT
-   static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
-   //static constexpr VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   //static constexpr VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin };
-   //const VectorType gridBegin = { Particles::Config::gridXbegin, Particles::Config::gridYbegin, Particles::Config::gridZbegin };
-   //static constexpr VectorType gridBegin( 1.2f, 1.3f );
+   const VectorType gridOrigin = fluid->particles->getGridOrigin();
+   const IndexVectorType gridSize = fluid->particles->getGridSize();
 
    const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
    const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
@@ -138,7 +133,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
       //const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
       //const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
-      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridBegin ) / searchRadius );
+      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
 
       //VectorType a_i = {0.f, 0.f};
       VectorType a_i = 0.f;
@@ -146,8 +141,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
       //neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
       //neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndexI, gridIndexJ, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-      neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       a_i[ 1 ] -= 9.81f ; //TODO;
@@ -166,12 +161,13 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
       //const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
       //const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
-      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridBegin ) / searchRadius );
+      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
 
       RealType drho_i = 0.f;
 
       //neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+
 
       view_Drho_bound[ i ] = drho_i;
 

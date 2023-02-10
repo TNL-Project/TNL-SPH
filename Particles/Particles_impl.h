@@ -132,12 +132,11 @@ void
 Particles< ParticleConfig, DeviceType >::computeParticleCellIndices()
 {
    GlobalIndexType _numberOfParticles = this->numberOfParticles;
-   GlobalIndexType _numberOfCells = ParticleConfig::gridYsize;
 
    auto view = this->particleCellInidices.getView();
    auto view_points = this->points.getView();
 
-   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles );
+   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles, gridDimension, gridOrigin, radius );
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -168,6 +167,33 @@ Particles< ParticleConfig, DeviceType >::generateRandomParticles()
 }
 
 /* GRID RELATED TOOLS */
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
+Particles< ParticleConfig, DeviceType >::getGridSize() const
+{
+   return gridDimension;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setGridSize( IndexVectorType gridSize )
+{
+   gridDimension = gridSize;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::PointType
+Particles< ParticleConfig, DeviceType >::getGridOrigin() const
+{
+   return gridOrigin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
+{
+   gridOrigin = gridBegin; //FIXME: Names.
+}
 
 template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
@@ -209,7 +235,7 @@ Particles< ParticleConfig, DeviceType >::computeGridCellIndices()
 {
    auto view = this->gridCellIndices.getView();
    auto view_points = this->points.getView();
-   CellIndexer::ComputeCellIndex(view, view_points);
+   CellIndexer::ComputeCellIndex( view, view_points, gridSize );
 }
 
 /* general */
