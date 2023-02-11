@@ -16,7 +16,7 @@ do
    do
       cd dualSPHysics_resources
       cp damBreak3D_WCSPH-DBC_Def_template.xml damBreak3D_WCSPH-DBC_Def.xml
-      sed -i "s/resolutionPlaceholder/${resolution}/" damBreak2D_WCSPH-DBC_Def.xml
+      sed -i "s/resolutionPlaceholder/${resolution}/" damBreak3D_WCSPH-DBC_Def.xml
       ./run.sh
       cd ..
 
