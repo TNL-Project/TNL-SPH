@@ -35,6 +35,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    const RealType rho0 = this->rho0;
    const RealType delta = this->delta;
    const RealType alpha = this->alpha;
+   const VectorType gravity = this->g;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_rho = fluid->variables->rho.getView();
@@ -145,8 +146,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
-      a_i[ 2 ] -= 9.81f ; //TODO;
       //a_i[ 2 ] -= 9.81f ; //TODO;
+      //a_i[ 2 ] -= 9.81f ; //TODO;
+      a_i += gravity;
       view_a[ i ] = a_i;
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch );

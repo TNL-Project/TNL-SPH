@@ -119,6 +119,7 @@ int main( int argc, char* argv[] )
    mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
    mySPHSimulation.model->coefB = SPHConfig::coefB;
    mySPHSimulation.model->rho0 = SPHConfig::rho0;
+   mySPHSimulation.model->g = { 0.f, -9.81f };
 
    /**
     * Read the particle file.
