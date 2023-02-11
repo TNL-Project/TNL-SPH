@@ -77,7 +77,7 @@ for layer in range( numberOfBoundaryLayers ):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 import sys
-sys.path.append('../../tools/')
+sys.path.append('../../../tools/')
 import saveParticlesVTK
 import numpy as np
 

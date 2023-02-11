@@ -13,15 +13,15 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/Particles.h"
-#include "../../../Particles/neighbourSearch.h"
+#include "../../../../Particles/Particles.h"
+#include "../../../../Particles/neighbourSearch.h"
 
 /**
- * Particle system reader.
+ * Particl../e system reader.
  **/
-#include "../../../Readers/VTKReader.h"
-#include "../../../Writers/VTKWriter.h"
-#include "../../../Readers/readSPHSimulation.h"
+#include "../../../../Readers/VTKReader.h"
+#include "../../../../Writers/VTKWriter.h"
+#include "../../../../Readers/readSPHSimulation.h"
 
 /**
  * Case configuration
@@ -40,18 +40,18 @@ std::string outputFileName = "results/particles";
 /**
  * SPH general toolds.
  */
-#include "../../../SPH/SPH.h"
+#include "../../../../SPH/SPH.h"
 
 /**
  * SPH model.
  */
-#include "../../../SPH/Models/WCSPH_DBC/Variables.h"
-#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
-#include "../../../SPH/Models/EquationOfState.h"
+#include "../../../../SPH/Models/WCSPH_DBC/Variables.h"
+#include "../../../../SPH/Models/WCSPH_DBC/Interactions.h"
+#include "../../../../SPH/Models/EquationOfState.h"
 
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Kernels.h"
+#include "../../../../SPH/Models/EquationOfState.h"
+#include "../../../../SPH/Models/DiffusiveTerms.h"
+#include "../../../../SPH/Kernels.h"
 
 using namespace TNL;
 
@@ -97,6 +97,22 @@ int main( int argc, char* argv[] )
          ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfAllocatedParticles,
          ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
          ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize, 1 );
+
+   mySPHSimulation.fluid->particles->setGridOrigin(
+         { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.boundary->particles->setGridOrigin(
+         { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+
+   mySPHSimulation.fluid->particles->setGridSize(
+         { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.boundary->particles->setGridSize(
+         { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+
+   std::cout << "Particle grid size: " <<  mySPHSimulation.fluid->particles->getGridSize() << std::endl;
+   std::cout << "Particle grid origin: " <<  mySPHSimulation.fluid->particles->getGridOrigin() << std::endl;
+
+   std::cout << "Particle boundary grid size: " <<  mySPHSimulation.boundary->particles->getGridSize() << std::endl;
+   std::cout << "Particle boundary grid origin: " <<  mySPHSimulation.boundary->particles->getGridOrigin() << std::endl;
 
    /**
      * TEMP.
