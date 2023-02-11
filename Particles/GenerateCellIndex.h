@@ -76,34 +76,37 @@ public:
 
    using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
+   using RealType = typename ParticleTraitsType::RealType;
+   using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
+   using PointType = typename ParticleTraitsType::PointType;
 
-   static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridXsize;
-   static constexpr GlobalIndexType _numberOfCellsY = ParticleConfig::gridYsize;
+   //static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridXsize;
+   //static constexpr GlobalIndexType _numberOfCellsY = ParticleConfig::gridYsize;
 
-   static void ComputeCellIndex( CellIndexView cells, PointsView points )
+   static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize  )
    {
       auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, LocalIndexType k ) mutable
       {
-         cells[ j*_numberOfCells + i ] = k*(_numberOfCells*_numberOfCellsY) + j*_numberOfCells + i;
+         cells[ k * ( gridSize[ 0 ] * gridSize[ 1 ] ) + j * gridSize[ 0 ] + i ] = k * ( gridSize[ 0 ] * gridSize[ 1 ] ) + j * gridSize[ 0 ] + i;
       };
       Algorithms::ParallelFor3D< DeviceType >::exec(
          ( LocalIndexType ) 0,
          ( LocalIndexType ) 0,
          ( LocalIndexType ) 0,
-         ( LocalIndexType ) ParticleConfig::gridXsize,
-         ( LocalIndexType ) ParticleConfig::gridYsize,
-         ( LocalIndexType ) ParticleConfig::gridZsize,
+         ( LocalIndexType ) gridSize[ 0 ],
+         ( LocalIndexType ) gridSize[ 1 ],
+         ( LocalIndexType ) gridSize[ 2 ],
          f );
    }
 
-   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, PointsView view_points, GlobalIndexType _numberOfParticles )
+   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, const PointsView view_points, const GlobalIndexType _numberOfParticles, const IndexVectorType gridSize, const PointType gridOrigin, const RealType searchRadius  )
    {
 
       auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
       {
-         view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - ParticleConfig::gridXbegin ) / ParticleConfig::searchRadius ) +
-                                        TNL::floor( ( view_points[ i ][ 1 ] - ParticleConfig::gridYbegin ) / ParticleConfig::searchRadius ) * ParticleConfig::gridXsize +
-                                        TNL::floor( ( view_points[ i ][ 2 ] - ParticleConfig::gridZbegin ) / ParticleConfig::searchRadius ) * ParticleConfig::gridXsize * ParticleConfig::gridYsize;
+         view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) +
+                                        TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ] +
+                                        TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) * gridSize[ 0 ] * gridSize[ 1 ];
       };
       Algorithms::ParallelFor< DeviceType >::exec(
          ( LocalIndexType ) 0,
@@ -113,9 +116,10 @@ public:
 
    __cuda_callable__
    static uint32_t
-   EvaluateCellIndex( GlobalIndexType i, GlobalIndexType j, GlobalIndexType k )
+   EvaluateCellIndex( const GlobalIndexType& i, const GlobalIndexType& j, const GlobalIndexType& k, const IndexVectorType& gridSize )
    {
-      return k * _numberOfCells * _numberOfCellsY + j *_numberOfCells + i;
+      //return k * _numberOfCells * _numberOfCellsY + j *_numberOfCells + i;
+      return k * gridSize[ 0 ] * gridSize[ 1 ] + j * gridSize[ 0 ] + i;
    }
 
 };

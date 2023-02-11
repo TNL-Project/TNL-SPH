@@ -93,6 +93,12 @@ int main( int argc, char* argv[] )
          ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
          ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize * ParticlesConfig::gridZsize, 1 );
 
+   mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin, ParticlesConfig::gridZbegin } );
+   mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin, ParticlesConfig::gridZbegin } );
+
+   mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize, ParticlesConfig::gridZsize } );
+   mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize, ParticlesConfig::gridZsize } );
+
    /**
      * TEMP.
      */
