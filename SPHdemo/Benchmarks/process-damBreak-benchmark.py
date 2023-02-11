@@ -9,8 +9,11 @@ import math
 from os.path import exists
 from json2html import *
 
-cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.00025_1" ]
-folder = "results_A40galdor/"
+#cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.00025_1" ]
+#folder = "results_A40galdor/"
+cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.0003_1" ]
+folder = "results_A40galdor_v3swap/"
+#folder = "results_T4adan/"
 
 #cases = [ "0.002_1" ]
 #folder = "/"

@@ -14,19 +14,20 @@ do
    #for sample in {1..5}
    for sample in 1
    do
-      #cd dualSPHysics_resources
-      #cp damBreak3D_WCSPH-DBC_Def_template.xml damBreak3D_WCSPH-DBC_Def.xml
-      #sed -i "s/resolutionPlaceholder/${resolution}/" damBreak2D_WCSPH-DBC_Def.xml
-      #./run.sh
-      #cd ..
+      cd dualSPHysics_resources
+      cp damBreak3D_WCSPH-DBC_Def_template.xml damBreak3D_WCSPH-DBC_Def.xml
+      sed -i "s/resolutionPlaceholder/${resolution}/" damBreak2D_WCSPH-DBC_Def.xml
+      ./run.sh
+      cd ..
 
-      ### setup and run TNL code
-      #cd TNL-SPH_resources
+      ## setup and run TNL code
+      cd TNL-SPH_resources
+      ./generateCase.sh $resolution
       #python3 generateCase.py -resolution=$resolution
-      #make clean
-      #make
-      #./damBreak3D_WCSPH-DBC
-      #cd ..
+      make clean
+      make
+      ./damBreak3D_WCSPH-DBC
+      cd ..
 
       ## save results
       # cp dualSPHysics_resources/damBreak2D_WCSPH-DBC_out/Run.out results_local/dualSPHysics_${resolution}_${sample}.out

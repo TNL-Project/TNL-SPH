@@ -21,11 +21,10 @@ class SPHCaseConfig
    static constexpr float speedOfSound = 45.17f;
    static constexpr float coefB = 291497.2f;
    static constexpr float rho0 = 1000.0f;
-   static constexpr float h = 0.04;
+   static constexpr float h = 0.04f;
    static constexpr float delta = 0.1f;
    static constexpr float alpha = 0.02f;
    static constexpr float eps = 0.001f;
-   static constexpr float etaLimiter = 3.0f;
    static constexpr float dtInit = 1.0e-04f;
 };
 

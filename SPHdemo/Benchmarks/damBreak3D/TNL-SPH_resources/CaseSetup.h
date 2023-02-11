@@ -29,8 +29,8 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
-const std::string inputParticleFile = "myFluidAscii.vtk";
-const std::string inputParticleFile_bound = "myBoundAscii.vtk";
+const std::string inputParticleFile = "dambreak_fluid.vtk";
+const std::string inputParticleFile_bound = "dambreak_bound.vtk";
 
 const float endTime = 1.0;
 const int outputStep = 500000;
