@@ -41,6 +41,7 @@ public:
    using PointType = typename Particles::PointType;
    using ScalarType = typename SPHFluidTraitsType::ScalarType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
+   using IndexVectorType = typename SPHFluidTraitsType::IndexVectorType;
 
    //using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
    //using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
@@ -84,6 +85,7 @@ public:
 
    /* Constants */ //Move to protected
    RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
+   VectorType g;
 
 };
 

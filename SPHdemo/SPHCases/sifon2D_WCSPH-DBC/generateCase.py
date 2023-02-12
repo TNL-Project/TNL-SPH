@@ -28,9 +28,12 @@ fluidH = 0.2
 ## First inlet buffer. ##
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
-inletBufferPosition_x = 0.2 + dp/2
-inletBufferPosition_z = 0.095 + dp + dp
-inletBufferHeight = 0.19 - inletBufferPosition_z - dp
+#inletBufferPosition_x = 0.2 + dp/2
+inletBufferPosition_x = 0.2
+#inletBufferPosition_z = 0.095 + dp + dp
+#inletBufferHeight = 0.19 - inletBufferPosition_z - dp
+inletBufferPosition_z = 0.095 + dp
+inletBufferHeight = 0.19 - inletBufferPosition_z
 inletBufferLayers = numberOfBoundaryLayers + 1
 inletVelocity_x = 0.5
 inletVelocity_z = 0.

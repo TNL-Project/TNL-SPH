@@ -17,8 +17,8 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    GlobalIndexType numberOfParticles_inlet = openBoundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   static constexpr RealType gridXbegin = Particles::Config::gridXbegin; //FIXIT
-   static constexpr RealType gridYbegin = Particles::Config::gridYbegin; //FIXIT
+   const VectorType gridOrigin = fluid->particles->getGridOrigin();
+   const IndexVectorType gridSize = fluid->particles->getGridSize();
 
    const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
    const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
@@ -40,6 +40,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    const RealType rho0 = this->rho0;
    const RealType delta = this->delta;
    const RealType alpha = this->alpha;
+   const VectorType gravity = this->g;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_rho = fluid->variables->rho.getView();
@@ -191,18 +192,18 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       const RealType rho_i = view_rho[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
 
-      const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
-      const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
+      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
 
-      VectorType a_i = {0.f, 0.f};
+      VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-      neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndexI, gridIndexJ, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-      neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndexI, gridIndexJ, view_firstLastCellParticle_inlet, view_particleCellIndex, FluidInlet, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndex, gridSize, view_firstLastCellParticle_inlet, view_particleCellIndex, FluidInlet, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
-      a_i[ 1 ] -= 9.81f ;
+      //a_i[ 1 ] -= 9.81f ;
+      a_i += gravity;
       view_a[ i ] = a_i;
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch, openBoundary->neighborSearch );
@@ -217,13 +218,12 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       const RealType rho_i = view_rho_bound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
 
-      const int gridIndexI = TNL::floor( ( r_i[ 0 ] - gridXbegin ) / searchRadius );
-      const int gridIndexJ = TNL::floor( ( r_i[ 1 ] - gridYbegin ) / searchRadius );
+      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
 
       RealType drho_i = 0.;
 
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
-      neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndexI, gridIndexJ, view_firstLastCellParticle_inlet, view_particleCellIndex, BoundInlet, r_i, v_i, rho_i, p_i, &drho_i );
+      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+      neighborSearch_buffer->loopOverNeighbors( i, numberOfParticles_inlet, gridIndex, gridSize, view_firstLastCellParticle_inlet, view_particleCellIndex, BoundInlet, r_i, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
 

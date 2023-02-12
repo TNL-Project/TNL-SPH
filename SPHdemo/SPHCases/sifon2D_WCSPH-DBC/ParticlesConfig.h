@@ -35,7 +35,7 @@ class ParticleSystemConfig
    static constexpr RealType gridYbegin = -0.0241922;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig, DeviceType >; //?
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
@@ -64,7 +64,7 @@ class ParticleSystemConfig_boundary
    static constexpr RealType gridYbegin = -0.0241922;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_boundary, DeviceType >; //?
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_boundary >; //?
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
@@ -80,8 +80,8 @@ class ParticleSystemConfig_inletBuffer
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfParticles = 64;
-   static constexpr int numberOfAllocatedParticles = 64;
+   static constexpr int numberOfParticles = 72;
+   static constexpr int numberOfAllocatedParticles = 72;
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = 0.0141422*1.001;
@@ -93,7 +93,7 @@ class ParticleSystemConfig_inletBuffer
    static constexpr RealType gridYbegin = -0.0241922;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_inletBuffer, DeviceType >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_inletBuffer >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
@@ -122,7 +122,7 @@ class ParticleSystemConfig_inlet2Buffer
    static constexpr RealType gridYbegin = -0.0241922;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< ParticleSystemConfig_inlet2Buffer, DeviceType >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_inlet2Buffer >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 

@@ -31,14 +31,14 @@ class SPHCaseConfig
    {
       static constexpr float orientation_x = 1.0f;
       static constexpr float orientation_y = 0.0f;
-      static constexpr float velocity_x = 1.5f;
+      static constexpr float velocity_x = 0.5f;
       static constexpr float velocity_y = 0.0f;
-      static constexpr float position_x = 0.1875f;
-      static constexpr float position_y = 0.10500000000000001f;
+      static constexpr float position_x = 0.185f;
+      static constexpr float position_y = 0.1f;
       static constexpr float inlet_density = 1000.0f;
       static constexpr float bufferWidth_x = 0.0175f; //ie 4 layers
       static constexpr float bufferWidth_y = 0.0f; //ie 4 layers
-      static constexpr float bufferEdge = 0.225f; //ie 4 layers
+      static constexpr float bufferEdge = 0.2225f; //ie 4 layers
    };
 
 };

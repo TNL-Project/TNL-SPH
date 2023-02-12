@@ -29,8 +29,8 @@
 const std::string inputParticleFile_bound = "sifon2D_WCSPH-DBC/sifon_ascii.vtk";
 const std::string inputParticleFile_inlet = "sifon2D_WCSPH-DBC/sifon_inlet.vtk";
 
-const float endTime = 0.05;
-const int outputStep = 1000;
+const float endTime = 0.5;
+const int outputStep = 200;
 
 std::string outputFileName = "results/particles";
 
@@ -102,8 +102,16 @@ int main( int argc, char* argv[] )
    mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet::numberOfParticles, ParticlesConfig_inlet::numberOfAllocatedParticles,
          ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
 
-   mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet2::numberOfParticles, ParticlesConfig_inlet2::numberOfAllocatedParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+   //mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet2::numberOfParticles, ParticlesConfig_inlet2::numberOfAllocatedParticles,
+   //      ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+
+   mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+
+   mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
 
 
    /**
@@ -114,6 +122,8 @@ int main( int argc, char* argv[] )
    mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
    mySPHSimulation.model->coefB = SPHConfig::coefB;
    mySPHSimulation.model->rho0 = SPHConfig::rho0;
+   mySPHSimulation.model->g = { 0.f, -9.81f };
+
 
    /**
     * Read the particle file.
@@ -207,7 +217,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
+      mySPHSimulation.template Interact< SPH::WendlandKernel2D, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
