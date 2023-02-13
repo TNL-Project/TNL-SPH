@@ -18,8 +18,8 @@ boxH = 0.8
 fluidL = 0.6
 fluidH = 0.3
 
-#dp = float( args.resolution )
-dp = 0.02
+dp = float( args.resolution )
+#dp = 0.02
 smoothingLentghCoef = 2
 
 rho0 = 1000.
@@ -30,6 +30,14 @@ numberOfBoundaryLayers = 3
 #speedOfSound = 45.17167357703276
 speedOfSound = 45.17
 CFLnumber = 0.15
+
+if dp == 0.01:
+    CFLnumber=0.15
+
+if dp == 0.005:
+    #CFLnumber = 0.095
+    CFLnumber = 0.094
+
 #timeStep = 0.00002 #otherwise is obtained automatically
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -103,7 +111,9 @@ gridZend = 1.005 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :,
 
 gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
 gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
-gridZsize = math.ceil( ( gridZend - gridZbegin ) / searchRadius )
+gridZsize = math.ceil( ( gridZend - gridZbegin ) / searchRadius ) + 5
+if dp == 0.005:
+    gridZsize += 30
 
 # Read in the file
 with open( 'template/SPHCaseConfig_template.h', 'r' ) as file :

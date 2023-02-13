@@ -4,6 +4,8 @@ resolution=$1
 
 #Generate geometry with DualSPHysics gencase
 cd template
+cp damBreak3D_WCSPH-DBC_Def_template.xml damBreak3D_WCSPH-DBC_Def.xml
+sed -i "s/resolutionPlaceholder/${resolution}/" damBreak3D_WCSPH-DBC_Def.xml
 ./generateGeoWithGenCase.sh
 cd ..
 
