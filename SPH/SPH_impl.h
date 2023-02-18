@@ -61,6 +61,16 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact()
       SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary );
 }
 
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename SPHKernelFunction, typename RiemannSolver, typename EOS >
+void
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact()
+{
+   model->template Interaction<
+      FluidPointer, BoundaryPointer, NeighborSearchPointer,
+      SPHKernelFunction, RiemannSolver, EOS >( fluid, boundary );
+}
+
 
 } // SPH
 } // ParticleSystem

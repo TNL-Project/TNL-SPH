@@ -57,6 +57,9 @@ public:
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
    void Interact();
 
+   template< typename SPHKernelFunction, typename RiemannSolver, typename EOS >
+   void Interact();
+
 //protected:
 
    FluidPointer fluid;
