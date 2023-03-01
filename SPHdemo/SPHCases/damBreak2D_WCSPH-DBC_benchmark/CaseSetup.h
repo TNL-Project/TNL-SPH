@@ -33,7 +33,7 @@ const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_f
 const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 2500;
+const int outputStep = 500;
 
 std::string outputFileName = "results/particles";
 
@@ -52,6 +52,11 @@ std::string outputFileName = "results/particles";
 #include "../../../SPH/Models/EquationOfState.h"
 #include "../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../SPH/Kernels.h"
+
+/**
+ * Measuretool draft.
+ */
+#include "../../../SPH/Models/WCSPH_DBC/Interpolation.h"
 
 using namespace TNL;
 
@@ -74,8 +79,8 @@ int main( int argc, char* argv[] )
    /**
     * SPH model.
     */
-   using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
+   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
     * SPH schemes.
@@ -145,6 +150,13 @@ int main( int argc, char* argv[] )
          mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity" );
 
    /**
+    * Measuretool draft.
+    */
+   using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
+   Interpolation myInterpolation( { 0.15f, 0.15f }, { 45, 45 }, { SPHConfig::h, SPHConfig::h } );
+
+
+   /**
     * Define timers to measure computation time.
     */
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
@@ -157,7 +169,7 @@ int main( int argc, char* argv[] )
    int steps = endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
 
-   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 502; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 
@@ -215,6 +227,14 @@ int main( int argc, char* argv[] )
                mySPHSimulation.fluid->getFluidVariables()->p, "Pressure", mySPHSimulation.fluid->particles->getNumberOfParticles(), 1 );
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
                mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
+
+         /**
+          * Interpolate on the grid.
+          */
+         std::string outputFileNameInterpolation = outputFileName + std::to_string( iteration ) + "_interpolation.vtu";
+         myInterpolation.saveInterpolation( outputFileNameInterpolation );
+
+
       }
    }
 
