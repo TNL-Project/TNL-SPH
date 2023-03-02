@@ -1,8 +1,9 @@
-#include <TNL/Meshes/Writers/VTUWriter.h>
-//#include <TNL/Meshes/Writers/VTKWriter.h>
+//#include <TNL/Meshes/Writers/VTUWriter.h>
+#include <TNL/Meshes/Writers/VTKWriter.h>
 //#include <TNL/Meshes/Writers/VTIWriter.h>
 
 #include "../../SPHTraits.h"
+#include "../../customParallelFor.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -27,16 +28,20 @@ class Interpolation
    using CoordinatesType = typename GridType::CoordinatesType;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, typename SPHConfig::DeviceType >;
 
-   Interpolation(VectorType gridOrigin, CoordinatesType gridDimension, VectorType spaceSteps )
+   Interpolation(VectorType gridOrigin, CoordinatesType gridDimension, VectorType spaceSteps,
+      GlobalIndexType numberOfSavedSteps, GlobalIndexType numberOfDensitySensors )
    : variables( gridDimension[ 0 ] * gridDimension[ 1 ] ), gridDimension( gridDimension )
    {
       interpolationGrid.setOrigin( gridOrigin );
       interpolationGrid.setDimensions( gridDimension );
       interpolationGrid.setSpaceSteps( spaceSteps );
+
+      densitySensors.setSize( numberOfDensitySensors );
+      densitySensorsPositions.setSize( numberOfDensitySensors );
    }
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
-   void InterpolatePoint( const VectorType r, NeighborSearchPointer neighborSearch );
+   void InterpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary );
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
    void InterpolateGrid( FluidPointer& fluid, BoudaryPointer& boundary );
@@ -45,11 +50,18 @@ class Interpolation
 
    //protected:
    GridType interpolationGrid;
-   std::vector< VectorType > sensors;
    CoordinatesType gridDimension;
 
    VariablesPointer variables;
 
+   GlobalIndexType numberOfSensors;
+   //std::vector< VariablesPointer > sensorsHistory;
+
+   using VariablesArrayType = Containers::Array< typename Variables::ScalarArrayType, DeviceType >;
+   typename Variables::VectorArrayType densitySensorsPositions;
+   VariablesArrayType densitySensors;
+   GlobalIndexType numberOfDensitySensors;
+   GlobalIndexType densitySensorsTimeIndexer = 0;
 
 };
 
@@ -87,7 +99,7 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
 
    /* CONSTANT VARIABLES */ //TODO: Do this like a human.
    const RealType h = SPHConfig::h;
-   const RealType m = SPHConfig::m;
+   const RealType m = SPHConfig::mass;
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
    {
@@ -102,10 +114,10 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
 
          const RealType V = m / rho_j;
 
-         v += v_j * W * V;
-         rho += W * m;
+         *v += v_j * W * V;
+         *rho += W * m;
 
-         gamma += W * V;
+         *gamma += W * V;
       }
    };
 
@@ -115,19 +127,22 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
       RealType rho = 0.f;
       RealType gamma = 0.f;
 
-      VectorType r = { i * this->searchRadius, j * this->searchRadius };
+      VectorType r = { ( i + 1 ) * searchRadius , ( j + 1) * searchRadius };
       const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+      const GlobalIndexType idx =  j * 45 + i;
+      printf("%d ", idx);
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
 
-      if( gamma > 0.5f ){
-         view_v_interpolation[ i ] = v / gamma;
-         view_rho_interpolation[ i ] = rho /gamma;
-      }
-      else{
-         view_v_interpolation[ i ] = 0.f;
-         view_rho_interpolation[ i ] = 0.f;
-      }
+
+     if( gamma > 0.5f ){
+        view_v_interpolation[ idx ] = v / gamma;
+        view_rho_interpolation[ idx ] = rho /gamma;
+     }
+     else{
+        view_v_interpolation[ idx ] = 0.f;
+        view_rho_interpolation[ idx ] = 0.f;
+     }
    };
    Algorithms::ParallelFor2D< DeviceType >::exec(
       ( LocalIndexType ) 0,
@@ -145,55 +160,96 @@ Interpolation< SPHConfig, Variables >::saveInterpolation( const std::string outp
    std::cout << "Saving interpolation ........... ";
    std::cout << "Interpolation grid: " << std::endl << interpolationGrid << std::endl;
    std::ofstream file( outputFileName );
-   using Writer = TNL::Meshes::Writers::VTUWriter< GridType >;
+   using Writer = TNL::Meshes::Writers::VTKWriter< GridType >;
    //using Writer = TNL::Meshes::Writers::VTIWriter< GridType >;
    Writer writer( file );
    writer.writeEntities( interpolationGrid );
    //writer.writeImageData( interpolationGrid );
+   //writer.template writeDataArray< typename Variables::ScalarArrayType >( variables->rho.getView(), "Density" );
+   std::string densityName = "Density";
+   //writer.template writeDataArray< typename Variables::ScalarArrayType >( variables->rho, densityName, 1 );
+   writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, densityName, 1 );
+   //writer.template writeCellData< typename Variables::VectorArrayType >( variables->v, "Velocity", 2 );
+   //std::cout << variables->rho << std::endl;
+   std::cout << variables->rho.getSize() << std::endl;
+   std::cout << "MY size: "<< gridDimension[ 0 ] * gridDimension[ 1 ] << std::endl;
    std::cout << " SAVED." << std::endl;
 
 }
 
 
-//template< typename SPHConfig, typename Variables >
-//template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
-//void
-//Interpolation< SPHConfig, Variables >::InterpolatePoint( const VectorType r, NeighborSearchPointer neighborSearch )
-//{
-//
-//   /* CONSTANT VARIABLES */ //TODO: Do this like a human.
-//   const RealType h = SPHConfig::h;
-//   const RealType m = SPHConfig::m;
-//
-//   /* INTERPOLATED VARIABLES */
-//   VectorType v = 0.f;
-//   RealType rho = 0.f;
-//
-//   RealType gamma = 0.f;
-//
-//   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
-//   {
-//      const VectorType r_j = view_points[ j ];
-//      const VectorType r_ij = r_i - r_j;
-//      const RealType drs = l2Norm( r_ij );
-//      if( drs <= searchRadius )
-//      {
-//         const VectorType v_j = view_v[ j ];
-//         const RealType rho_j = view_rho[ j ];
-//         const RealType W = SPHKernelFunction::W( drs, h );
-//
-//         const RealType V = m / rho_j;
-//
-//         v += v_j * W * V;
-//         rho += W * m;
-//
-//         gamma += W * V;
-//      }
-//   };
-//   neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, &rho, &v, &gamma );
-//
-//
-//}
+template< typename SPHConfig, typename Variables >
+template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
+void
+Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary )
+{
+
+   /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
+   GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
+   GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
+   const RealType searchRadius = fluid->particles->getSearchRadius();
+
+   const VectorType gridOrigin = fluid->particles->getGridOrigin();
+   const IndexVectorType gridSize = fluid->particles->getGridSize();
+
+   const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
+   const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
+
+   /* VARIABLES AND FIELD ARRAYS */
+   const auto view_points = fluid->particles->getPoints().getView();
+   const auto view_rho = fluid->variables->rho.getView();
+
+   /* CONSTANT VARIABLES */ //TODO: Do this like a human.
+   const RealType h = SPHConfig::h;
+   const RealType m = SPHConfig::m;
+
+
+   auto view_densitySensorsPositions = densitySensorsPositions.getView();
+   auto view_densitySensors = densitySensors.getView();
+
+   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius )
+      {
+         const RealType rho_j = view_rho[ j ];
+         const RealType W = SPHKernelFunction::W( drs, h );
+
+         const RealType V = m / rho_j;
+
+         rho += W * m;
+
+         gamma += W * V;
+      }
+   };
+
+   auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+   {
+      RealType rho = 0.f;
+      VectorType v = 0.f;
+      RealType gamma = 0.f;
+
+      VectorType r = view_densitySensorsPositions[ i ];
+      const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+
+      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
+
+
+     auto view_densitySensor = view_densitySensors[ i ].getView();
+
+     if( gamma > 0.5f ){
+        view_densitySensor[ densitySensorsTimeIndexer ] = rho /gamma;
+     }
+     else{
+        view_densitySensor[ densitySensorsTimeIndexer ] = 0.f;
+     }
+   };
+   Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfDensitySensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch );
+
+   densitySensorsTimeIndexer++;
+}
 
 } // SPH
 } // ParticleSystem

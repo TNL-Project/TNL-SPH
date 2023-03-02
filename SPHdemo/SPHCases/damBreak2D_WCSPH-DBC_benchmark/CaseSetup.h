@@ -33,7 +33,7 @@ const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_f
 const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 500;
+const int outputStep = 2501;
 
 std::string outputFileName = "results/particles";
 
@@ -153,7 +153,7 @@ int main( int argc, char* argv[] )
     * Measuretool draft.
     */
    using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
-   Interpolation myInterpolation( { 0.15f, 0.15f }, { 45, 45 }, { SPHConfig::h, SPHConfig::h } );
+   Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, 1, 1 );
 
 
    /**
@@ -231,7 +231,11 @@ int main( int argc, char* argv[] )
          /**
           * Interpolate on the grid.
           */
-         std::string outputFileNameInterpolation = outputFileName + std::to_string( iteration ) + "_interpolation.vtu";
+         std::string outputFileNameInterpolation = outputFileName + std::to_string( iteration ) + "_interpolation.vtk";
+         myInterpolation.template InterpolateGrid< typename SPHSimulation::FluidPointer,
+                                                   typename SPHSimulation::BoundaryPointer,
+                                                   SPH::WendlandKernel2D,
+                                                   typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
          myInterpolation.saveInterpolation( outputFileNameInterpolation );
 
 
