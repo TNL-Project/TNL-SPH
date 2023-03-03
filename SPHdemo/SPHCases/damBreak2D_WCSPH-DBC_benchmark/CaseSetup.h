@@ -236,6 +236,12 @@ int main( int argc, char* argv[] )
                                                    typename SPHSimulation::BoundaryPointer,
                                                    SPH::WendlandKernel2D,
                                                    typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+
+         myInterpolation.template InterpolateSensors< typename SPHSimulation::FluidPointer,
+                                                      typename SPHSimulation::BoundaryPointer,
+                                                      SPH::WendlandKernel2D,
+                                                      typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+
          myInterpolation.saveInterpolation( outputFileNameInterpolation );
 
 

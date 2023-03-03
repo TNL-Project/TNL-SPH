@@ -1,6 +1,7 @@
 //#include <TNL/Meshes/Writers/VTUWriter.h>
 #include <TNL/Meshes/Writers/VTKWriter.h>
 //#include <TNL/Meshes/Writers/VTIWriter.h>
+#include <TNL/Containers/NDArray.h>
 
 #include "../../SPHTraits.h"
 #include "../../customParallelFor.h"
@@ -36,8 +37,9 @@ class Interpolation
       interpolationGrid.setDimensions( gridDimension );
       interpolationGrid.setSpaceSteps( spaceSteps );
 
-      densitySensors.setSize( numberOfDensitySensors );
-      densitySensorsPositions.setSize( numberOfDensitySensors );
+      //test
+      sensorsDensity.setSizes( 2, 2 );
+
    }
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
@@ -54,14 +56,37 @@ class Interpolation
 
    VariablesPointer variables;
 
+
+   //Do Single sensor to measure density
+   typename Variables::ScalarArrayType sensorDensity;
+   using SensorsDataArray = Containers::NDArray< RealType,  // Value
+                                                 Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
+                                                 std::index_sequence< 0, 1 >,  // Permutation
+                                                 DeviceType >;         // Device
+
+   SensorsDataArray sensorsDensity;
+
+
+
+   //VectorType sensorPosition = { 0.1f, 0.01f };
+   //typename Variables::VectorArrayType sensorPositions = { { 0.01f, 0.01f },
+   //                                                        { 0.1f, 0.1f } };
+   typename Variables::VectorArrayType sensorPositions = { 0.01f, 0.01f, 0.1f, 0.1f };
+
+
+   GlobalIndexType sensorIndexer = 0;
+
+
+   //*********************SENSORS************************
+
    GlobalIndexType numberOfSensors;
    //std::vector< VariablesPointer > sensorsHistory;
 
-   using VariablesArrayType = Containers::Array< typename Variables::ScalarArrayType, DeviceType >;
-   typename Variables::VectorArrayType densitySensorsPositions;
-   VariablesArrayType densitySensors;
-   GlobalIndexType numberOfDensitySensors;
-   GlobalIndexType densitySensorsTimeIndexer = 0;
+   //using VariablesArrayType = Containers::Array< typename Variables::ScalarArrayType, DeviceType >;
+   //typename Variables::VectorArrayType densitySensorsPositions;
+   //VariablesArrayType densitySensors;
+   //GlobalIndexType numberOfDensitySensors;
+   //GlobalIndexType densitySensorsTimeIndexer = 0;
 
 };
 
@@ -201,11 +226,12 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
 
    /* CONSTANT VARIABLES */ //TODO: Do this like a human.
    const RealType h = SPHConfig::h;
-   const RealType m = SPHConfig::m;
+   const RealType m = SPHConfig::mass;
 
 
-   auto view_densitySensorsPositions = densitySensorsPositions.getView();
-   auto view_densitySensors = densitySensors.getView();
+   //auto view_densitySensor = sensorDensity.getView();
+   auto view_sensorsPositions = sensorPositions.getView();
+   auto view_densitySensors = sensorsDensity.getView();
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
    {
@@ -219,9 +245,9 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
 
          const RealType V = m / rho_j;
 
-         rho += W * m;
+         *rho += W * m;
+         *gamma += W * V;
 
-         gamma += W * V;
       }
    };
 
@@ -231,24 +257,24 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
       VectorType v = 0.f;
       RealType gamma = 0.f;
 
-      VectorType r = view_densitySensorsPositions[ i ];
+      VectorType r = view_sensorsPositions[ i ];
       const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
 
 
-     auto view_densitySensor = view_densitySensors[ i ].getView();
-
      if( gamma > 0.5f ){
-        view_densitySensor[ densitySensorsTimeIndexer ] = rho /gamma;
+        //view_densitySensor[ sensorIndexer ] = rho /gamma;
+        view_densitySensors( i, sensorIndexer ) = rho /gamma;
      }
      else{
-        view_densitySensor[ densitySensorsTimeIndexer ] = 0.f;
+        //view_densitySensor[ sensorIndexer ] = 0.f;
+        view_densitySensors( i, sensorIndexer ) = 0.f;
      }
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfDensitySensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch );
+   Algorithms::ParallelFor< DeviceType >::exec( 0, 1, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch );
 
-   densitySensorsTimeIndexer++;
+   sensorIndexer++;
 }
 
 } // SPH
