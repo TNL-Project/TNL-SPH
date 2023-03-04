@@ -23,7 +23,6 @@ class Interpolation
    using VectorType = typename SPHTraitsType::VectorType;
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
 
-   //using GridType = typename ParticleTraitsType::GridType;
    using GridType = Meshes::Grid< 2, RealType, typename SPHConfig::DeviceType, GlobalIndexType >;
 
    using CoordinatesType = typename GridType::CoordinatesType;
@@ -45,7 +44,7 @@ class Interpolation
 
    }
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
+   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
    void InterpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary );
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
@@ -142,10 +141,8 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
       VectorType r = { ( i + 1 ) * searchRadius , ( j + 1) * searchRadius };
       const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
       const GlobalIndexType idx =  j * 45 + i;
-      //printf("%d ", idx);
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
-
 
      if( gamma > 0.5f ){
         view_v_interpolation[ idx ] = v / gamma;
@@ -168,24 +165,24 @@ template< typename SPHConfig, typename Variables >
 void
 Interpolation< SPHConfig, Variables >::saveInterpolation( const std::string outputFileName )
 {
-
-   std::cout << "Saving interpolation ........... ";
-   std::cout << "Interpolation grid: " << std::endl << interpolationGrid << std::endl;
-   std::ofstream file( outputFileName );
    using Writer = TNL::Meshes::Writers::VTKWriter< GridType >;
-   //using Writer = TNL::Meshes::Writers::VTIWriter< GridType >;
+
+   std::cout << std::endl << "MEASURETOOL - SAVING INTERPOLATION :" << std::endl;
+   std::cout << "Ouput filename................................ " << outputFileName << " ." << std::endl;
+   std::cout << "Grid origin................................... " << outputFileName << " ." << std::endl;
+
+   std::ofstream file( outputFileName );
    Writer writer( file );
    writer.writeEntities( interpolationGrid );
    //writer.writeImageData( interpolationGrid );
-   //writer.template writeDataArray< typename Variables::ScalarArrayType >( variables->rho.getView(), "Density" );
-   std::string densityName = "Density";
+
+
    //writer.template writeDataArray< typename Variables::ScalarArrayType >( variables->rho, densityName, 1 );
-   writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, densityName, 1 );
+   writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
    //writer.template writeCellData< typename Variables::VectorArrayType >( variables->v, "Velocity", 2 );
-   //std::cout << variables->rho << std::endl;
-   std::cout << variables->rho.getSize() << std::endl;
-   std::cout << "MY size: "<< gridDimension[ 0 ] * gridDimension[ 1 ] << std::endl;
-   std::cout << " SAVED." << std::endl;
+
+   //std::cout << variables->rho.getSize() << std::endl;
+   //std::cout << "MY size: "<< gridDimension[ 0 ] * gridDimension[ 1 ] << std::endl;
 
 }
 
@@ -193,39 +190,35 @@ template< typename SPHConfig, typename Variables >
 void
 Interpolation< SPHConfig, Variables >::saveSensors( const std::string outputFileName )
 {
-
-   using HostSensorsDataArray = Containers::NDArray< RealType,  // Value
-                                                     Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
-                                                     std::index_sequence< 0, 1 >,  // Permutation
-                                                     Devices::Host >;         // Device
-
-   std::cout << "Device: " << sensorsDensity.getStorageArray() << std::endl;
-
+   using HostSensorsDataArray = Containers::NDArray< RealType,
+                                                     Containers::SizesHolder< int, 0, 0 >,
+                                                     std::index_sequence< 0, 1 >,
+                                                     Devices::Host >;
    HostSensorsDataArray sensorsDataHost;
    sensorsDataHost = sensorsDensity;
    const auto view_sensorsDataHost = sensorsDataHost.getView();
 
-   std::cout << "Host: " << sensorsDataHost.getStorageArray() << std::endl;
-
-   std::cout << "Number of sensors: " << numberOfSensors << std::endl;
-   std::cout << "Number of saved time steps: " << sensorIndexer << std::endl;
+   std::cout << std::endl << "MEASURETOOL - SAVING DATA :" << std::endl;
+   std::cout << "Number of sensors............................. " << numberOfSensors << " ." << std::endl;
+   std::cout << "Number of saved time steps.................... " << sensorIndexer << " ." << std::endl;
+   std::cout << "Ouput filename................................ " << outputFileName << " ." << std::endl;
 
    std::ofstream sensorsFile;
    sensorsFile.open( outputFileName );
-   sensorsFile << "Data from measuretool:\n";
+   sensorsFile << "#Data from measuretool:\n";
    for( int i = 0; i < sensorIndexer; i++ ){
+      sensorsFile << i;
       for( int j = 0; j < numberOfSensors; j++ ){
-         sensorsFile <<  view_sensorsDataHost( i, j ) << " ";
+         sensorsFile << " " <<  view_sensorsDataHost( i, j );
       }
       sensorsFile << std::endl;
    }
    sensorsFile.close();
-
 }
 
 
 template< typename SPHConfig, typename Variables >
-template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
+template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
 void
 Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary )
 {
@@ -249,14 +242,8 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
    const RealType h = SPHConfig::h;
    const RealType m = SPHConfig::mass;
 
-   printf( " --> InterpolateSensors: Ahead of views. \n" );
-
    auto view_sensorsPositions = sensorPositions.getView();
    auto view_densitySensors = sensorsDensity.getView();
-   //auto view_densitySensors = sensorsDensity.getLocalView();
-
-   printf( " --> InterpolateSensors: After views. \n" );
-   std::cout << " sensors: " << sensorsDensity.getStorageArray() << std::endl;
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
    {
@@ -266,11 +253,13 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
       if( drs <= searchRadius )
       {
          const RealType rho_j = view_rho[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j );
          const RealType W = SPHKernelFunction::W( drs, h );
 
          const RealType V = m / rho_j;
 
-         *rho += W * m;
+         //*rho += W * m;
+         *rho += p_j * W * V;
          *gamma += W * V;
 
       }
@@ -282,25 +271,17 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
       VectorType v = 0.f;
       RealType gamma = 0.f;
 
-      printf( " --> Sensor loop start. \n" );
       VectorType r = view_sensorsPositions[ i ];
       const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
-      printf( " --> Sensor loop: ahead of loopOverNeighbors. \n" );
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
 
-      printf( " --> Sensor loop: after loopOverNeighbors. \n" );
-      printf( " --> Sensor indexer: %d", sensorIndexer );
       if( gamma > 0.5f ){
-         //view_densitySensors( i, sensorIndexer ) = rho /gamma;
-         //view_densitySensors( sensorIndexer, i ) = rho /gamma;
-         view_densitySensors( sensorIndexer, i ) = rho /gamma;
+         view_densitySensors( sensorIndexer, i ) = rho / gamma;
       }
       else{
-         //view_densitySensors( i, sensorIndexer ) = 0.f;
          view_densitySensors( sensorIndexer, i ) = 0.f;
       }
-      printf( " --> Sensor loop: asigned. \n" );
    };
    Algorithms::ParallelFor< DeviceType >::exec( 0, 2, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
 

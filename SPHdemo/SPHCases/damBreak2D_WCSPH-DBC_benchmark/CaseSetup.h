@@ -32,9 +32,9 @@
 const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
 const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
 
-const float endTime = 0.05;
+const float endTime = 0.75;
 //const int outputStep = 2501;
-const int outputStep = 500;
+const int outputStep = 2000;
 const int outputSensorStep = 100;
 
 std::string outputFileName = "results/particles";
@@ -151,17 +151,6 @@ int main( int argc, char* argv[] )
    myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity" );
 
-   /**
-    * Measuretool draft.
-    */
-   //Define measuretool points
-   std::vector< typename SPHModel::VectorType > measurementPoints = { { 0.01f, 0.01f },
-                                                                      { 0.1f, 0.1f }     };
-   typename SPHModel::VectorArrayType measurementSensors( measurementPoints );
-
-   using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
-   Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, 6, 2, measurementSensors );
-
 
    /**
     * Define timers to measure computation time.
@@ -176,7 +165,21 @@ int main( int argc, char* argv[] )
    int steps = endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
 
-   for( unsigned int iteration = 0; iteration < 502; iteration ++ )
+   /**
+    * Measuretool draft.
+    */
+   //Define measuretool points
+   std::vector< typename SPHModel::VectorType > measurementPoints = { { 1.60f - SPHConfig::h, 0.003f },
+                                                                      { 1.60f - SPHConfig::h, 0.015f  },
+                                                                      { 1.60f - SPHConfig::h, 0.03f  },
+                                                                      { 1.60f - SPHConfig::h, 0.08f  } };
+
+   typename SPHModel::VectorArrayType measurementSensors( measurementPoints );
+
+   using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
+   Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
+
+   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 
@@ -228,12 +231,28 @@ int main( int argc, char* argv[] )
 
          std::string outputFileNameFluid = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
          std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
-         Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
+         //Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
+         Writer myWriter( outputFileFluid );
          myWriter.writeParticles( *mySPHSimulation.fluid->particles );
          myWriter.template writePointData< SPHModel::ScalarArrayType >(
                mySPHSimulation.fluid->getFluidVariables()->p, "Pressure", mySPHSimulation.fluid->particles->getNumberOfParticles(), 1 );
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
                mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
+
+         timer_pressure.start();
+         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
+         timer_pressure.stop();
+         std::cout << "Compute pressure... done. " << std::endl;
+
+         std::string outputFileNameBound = outputFileName + std::to_string( iteration ) + "_boundary.vtk";
+         std::ofstream outputFileBound ( outputFileNameBound, std::ofstream::out );
+         //Writer myWriterBoundary( outputFileBound, VTK::FileFormat::ascii );
+         Writer myWriterBoundary( outputFileBound );
+         myWriterBoundary.writeParticles( *mySPHSimulation.boundary->particles );
+         myWriterBoundary.template writePointData< SPHModel::ScalarArrayType >(
+               mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure", mySPHSimulation.boundary->particles->getNumberOfParticles(), 1 );
+         myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
+               mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity", 3, mySPHSimulation.boundary->particles->getNumberOfParticles() );
 
          /**
           * Interpolate on the grid.
@@ -254,7 +273,8 @@ int main( int argc, char* argv[] )
          myInterpolation.template InterpolateSensors< typename SPHSimulation::FluidPointer,
                                                       typename SPHSimulation::BoundaryPointer,
                                                       SPH::WendlandKernel2D,
-                                                      typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+                                                      typename SPHSimulation::NeighborSearchPointer,
+                                                      EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
       }
 
    }
