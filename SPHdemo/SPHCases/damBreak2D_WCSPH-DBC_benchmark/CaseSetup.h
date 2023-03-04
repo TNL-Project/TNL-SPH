@@ -33,7 +33,9 @@ const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_f
 const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
 
 const float endTime = 0.05;
-const int outputStep = 2501;
+//const int outputStep = 2501;
+const int outputStep = 500;
+const int outputSensorStep = 100;
 
 std::string outputFileName = "results/particles";
 
@@ -152,8 +154,13 @@ int main( int argc, char* argv[] )
    /**
     * Measuretool draft.
     */
+   //Define measuretool points
+   std::vector< typename SPHModel::VectorType > measurementPoints = { { 0.01f, 0.01f },
+                                                                      { 0.1f, 0.1f }     };
+   typename SPHModel::VectorArrayType measurementSensors( measurementPoints );
+
    using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
-   Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, 1, 1 );
+   Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, 6, 2, measurementSensors );
 
 
    /**
@@ -236,17 +243,24 @@ int main( int argc, char* argv[] )
                                                    typename SPHSimulation::BoundaryPointer,
                                                    SPH::WendlandKernel2D,
                                                    typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         myInterpolation.saveInterpolation( outputFileNameInterpolation );
 
+
+
+      }
+
+      if( ( iteration % outputSensorStep ==  0) && (iteration > 0) )
+      {
          myInterpolation.template InterpolateSensors< typename SPHSimulation::FluidPointer,
                                                       typename SPHSimulation::BoundaryPointer,
                                                       SPH::WendlandKernel2D,
                                                       typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
-
-         myInterpolation.saveInterpolation( outputFileNameInterpolation );
-
-
       }
+
    }
+
+   std::string outputFileNameInterpolation = outputFileName + "_sensors.dat";
+   myInterpolation.saveSensors( outputFileNameInterpolation );
 
    /**
     * Output simulation stats.
