@@ -47,6 +47,9 @@ class Interpolation
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
    void InterpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary );
 
+   template< typename FluidPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
+   void SensorWaterLevel( FluidPointer& fluid );
+
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
    void InterpolateGrid( FluidPointer& fluid, BoudaryPointer& boundary );
 
@@ -73,6 +76,19 @@ class Interpolation
    GlobalIndexType sensorIndexer = 0;
    GlobalIndexType numberOfSensors;
    GlobalIndexType numberOfSavedSteps;
+
+   ////*********************WATER-LEVEL-SENSORS************************
+   ///*
+   // * Init with  - Number of sensors
+   // *            - Start + end position of the sensor.
+   // *
+   // *
+   // */
+
+   //SensorsDataArray sensorsWaterLevel;
+   //typename Variables::VectorArrayType sensorWaterLevelPositions;
+   //typename Variables::VectorArrayType sensorWaterLevelPositions_end;
+   //GlobalIndexType numberOfWaterLevelSensors;
 
 };
 
@@ -287,6 +303,77 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
 
    sensorIndexer++;
 }
+
+//: template< typename SPHConfig, typename Variables >
+//: template< typename FluidPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
+//: void
+//: Interpolation< SPHConfig, Variables >::SensorWaterLevel( FluidPointer& fluid )
+//: {
+//:
+//:    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
+//:    GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
+//:    const RealType searchRadius = fluid->particles->getSearchRadius();
+//:
+//:    const VectorType gridOrigin = fluid->particles->getGridOrigin();
+//:    const IndexVectorType gridSize = fluid->particles->getGridSize();
+//:
+//:    const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
+//:    const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
+//:
+//:    /* VARIABLES AND FIELD ARRAYS */
+//:    const auto view_points = fluid->particles->getPoints().getView();
+//:    const auto view_rho = fluid->variables->rho.getView();
+//:
+//:    /* CONSTANT VARIABLES */ //TODO: Do this like a human.
+//:    const RealType h = SPHConfig::h;
+//:    const RealType m = SPHConfig::mass;
+//:
+//:    auto view_sensorsPositions = sensorPositions.getView();
+//:    auto view_densitySensors = sensorsDensity.getView();
+//:
+//:    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
+//:    {
+//:       const VectorType r_j = view_points[ j ];
+//:       const VectorType r_ij = r_i - r_j;
+//:       const RealType drs = l2Norm( r_ij );
+//:       if( drs <= searchRadius )
+//:       {
+//:          const RealType rho_j = view_rho[ j ];
+//:          const RealType p_j = EOS::DensityToPressure( rho_j );
+//:          const RealType W = SPHKernelFunction::W( drs, h );
+//:
+//:          const RealType V = m / rho_j;
+//:
+//:          *gamma += W * V;
+//:
+//:       }
+//:    };
+//:
+//:    for( int s = 0; s < numberOfWaterLevelSensors; s++ )
+//:    {
+//:       auto pointsInSensorLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, GlobalIndexType sensorIndexer ) mutable
+//:       {
+//:          RealType rho = 0.f;
+//:          VectorType v = 0.f;
+//:          RealType gamma = 0.f;
+//:
+//:          VectorType r = view_sensorsPositions[ i ];
+//:          const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+//:
+//:          neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &gamma );
+//:
+//:          if( gamma > 0.5f ){
+//:             view_densitySensors( sensorIndexer, i ) = rho / gamma;
+//:          }
+//:          else{
+//:             view_densitySensors( sensorIndexer, i ) = 0.f;
+//:          }
+//:       };
+//:       Algorithms::ParallelFor< DeviceType >::exec( 0, 2, sensorsLoop, fluid->neighborSearch, this->sensorIndexer );
+//:    }
+//:
+//:    sensorIndexer++;
+//: }
 
 } // SPH
 } // ParticleSystem

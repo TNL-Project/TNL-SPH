@@ -231,7 +231,6 @@ int main( int argc, char* argv[] )
 
          std::string outputFileNameFluid = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
          std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
-         //Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
          Writer myWriter( outputFileFluid );
          myWriter.writeParticles( *mySPHSimulation.fluid->particles );
          myWriter.template writePointData< SPHModel::ScalarArrayType >(
@@ -246,7 +245,6 @@ int main( int argc, char* argv[] )
 
          std::string outputFileNameBound = outputFileName + std::to_string( iteration ) + "_boundary.vtk";
          std::ofstream outputFileBound ( outputFileNameBound, std::ofstream::out );
-         //Writer myWriterBoundary( outputFileBound, VTK::FileFormat::ascii );
          Writer myWriterBoundary( outputFileBound );
          myWriterBoundary.writeParticles( *mySPHSimulation.boundary->particles );
          myWriterBoundary.template writePointData< SPHModel::ScalarArrayType >(
