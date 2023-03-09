@@ -169,17 +169,16 @@ class SensorInterpolation : public Measuretool< SPHConfig >
                                                  std::index_sequence< 0, 1 >,  // Permutation
                                                  DeviceType >;         // Device
 
-   SensorInterpolation( GlobalIndexType numberOfSavedSteps, GlobalIndexType numberOfDensitySensors, VectorArrayType& sensorsPoints )
-   : sensorPositions( numberOfDensitySensors )
+   SensorInterpolation( GlobalIndexType numberOfSavedSteps, GlobalIndexType numberOfSensors, VectorArrayType& sensorsPoints )
+   : sensorPositions( numberOfSensors ), numberOfSensors ( numberOfSensors )
    {
-      sensorsPressure.setSizes( numberOfSavedSteps, numberOfDensitySensors );
-      numberOfSensors = numberOfDensitySensors;
+      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
       numberOfSavedSteps = numberOfSavedSteps;
       sensorPositions = sensorsPoints;
    }
 
    //protected:
-   SensorsDataArray sensorsPressure;
+   SensorsDataArray sensors;
    VectorArrayType sensorPositions;
    GlobalIndexType sensorIndexer = 0;
    GlobalIndexType numberOfSensors;
@@ -210,7 +209,7 @@ class SensorInterpolation : public Measuretool< SPHConfig >
       const RealType m = SPHConfig::mass;
 
       auto view_sensorsPositions = sensorPositions.getView();
-      auto view_pressureSensors = sensorsPressure.getView();
+      auto view_pressureSensors = sensors.getView();
 
       auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* p, VectorType* v, RealType* gamma ) mutable
       {
@@ -249,7 +248,7 @@ class SensorInterpolation : public Measuretool< SPHConfig >
             view_pressureSensors( sensorIndexer, i ) = 0.f;
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, 2, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
 
       sensorIndexer++;
    }
@@ -262,7 +261,148 @@ class SensorInterpolation : public Measuretool< SPHConfig >
                                                         std::index_sequence< 0, 1 >,
                                                         Devices::Host >;
       HostSensorsDataArray sensorsDataHost;
-      sensorsDataHost = sensorsPressure;
+      sensorsDataHost = sensors;
+      const auto view_sensorsDataHost = sensorsDataHost.getView();
+
+      std::cout << std::endl << "MEASURETOOL - SAVING DATA :" << std::endl;
+      std::cout << "Number of sensors............................. " << numberOfSensors << " ." << std::endl;
+      std::cout << "Number of saved time steps.................... " << sensorIndexer << " ." << std::endl;
+      std::cout << "Ouput filename................................ " << outputFileName << " ." << std::endl;
+
+      std::ofstream sensorsFile;
+      sensorsFile.open( outputFileName );
+      sensorsFile << "#Data from measuretool:\n";
+      for( int i = 0; i < sensorIndexer; i++ ){
+         sensorsFile << i;
+         for( int j = 0; j < numberOfSensors; j++ ){
+            sensorsFile << " " <<  view_sensorsDataHost( i, j );
+         }
+         sensorsFile << std::endl;
+      }
+      sensorsFile.close();
+   }
+
+};
+
+template< typename SPHConfig >
+class SensorWaterLevel : public Measuretool< SPHConfig >
+{
+   public:
+   using MT = Measuretool< SPHConfig >;
+   using DeviceType = typename MT::DeviceType;
+
+   using LocalIndexType = typename MT::LocalIndexType;
+   using GlobalIndexType = typename MT::GlobalIndexType;
+   using IndexVectorType = typename MT::IndexVectorType;
+   using RealType = typename MT::RealType;
+   using VectorType = typename MT::VectorType;
+   using VectorArrayType = typename MT::SPHTraitsType::VectorArrayType;
+
+   using SensorsDataArray = Containers::NDArray< RealType,  // Value
+                                                 Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
+                                                 std::index_sequence< 0, 1 >,  // Permutation
+                                                 DeviceType >;         // Device
+
+   SensorWaterLevel( GlobalIndexType numberOfSavedSteps, GlobalIndexType numberOfSensors, VectorArrayType& sensorsPoints )
+   : sensorPositions( numberOfSensors )
+   {
+      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
+      numberOfSensors = numberOfSensors;
+      numberOfSavedSteps = numberOfSavedSteps;
+      sensorPositions = sensorsPoints;
+
+   }
+
+   //protected:
+   SensorsDataArray sensors;
+   VectorArrayType sensorPositions;
+   GlobalIndexType sensorIndexer = 0;
+   GlobalIndexType numberOfSensors;
+   GlobalIndexType numberOfSavedSteps;
+
+   //New
+   IndexArrayType levels;
+   GlobalIndexType numberOfLevels; //numberOfLevels = TNL::ceil( TNL::norm( endPoints - startPoint ) / levelIncrement );
+   RealType levelIncrement;
+
+   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
+   void
+   interpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary )
+   {
+
+      /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
+      GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
+      GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
+      const RealType searchRadius = fluid->particles->getSearchRadius();
+
+      const VectorType gridOrigin = fluid->particles->getGridOrigin();
+      const IndexVectorType gridSize = fluid->particles->getGridSize();
+
+      const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
+      const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
+
+      /* VARIABLES AND FIELD ARRAYS */
+      const auto view_points = fluid->particles->getPoints().getView();
+
+      /* CONSTANT VARIABLES */ //TODO: Do this like a human.
+      const RealType h = SPHConfig::h;
+      const RealType m = SPHConfig::mass;
+
+      auto view_sensorsPositions = sensorPositions.getView();
+      auto view_sensors = sensors.getView();
+      auto view_levels = levels.getView();
+
+      auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
+      {
+         const VectorType r_j = view_points[ j ];
+         const VectorType r_ij = r_i - r_j;
+         const RealType drs = l2Norm( r_ij );
+         if( drs <= searchRadius )
+         {
+            const RealType W = SPHKernelFunction::W( drs, h );
+            const RealType V = m / rho_j;
+            *gamma += W * V;
+         }
+      };
+
+      for( int s = 0; s < numberOfSensors; s++ )
+      {
+         const VectorArrayType startPoint = view_sensorsPositions[ 0 ];
+
+         auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, GlobalIndexType sensorIndexer ) mutable
+         {
+            RealType gamma = 0.f;
+            VectorType r = startPoint + i * levelIncrement;
+            const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+
+            neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &gamma );
+
+            if( gamma > 0.5f )
+               view_levels[ i ] = 1;
+            else
+               view_levels[ i ] = 0;
+         };
+         Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfLevels, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+
+         auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_levels[ i ]; };
+         auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
+         const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0.0 );
+
+         view_sensors( sensorIndexer, s ) = levelIncrement * numberOfFilledLevels; //TODO: Plus the base level.
+      }
+
+      sensorIndexer++;
+   }
+
+   void
+   saveSensors( const std::string outputFileName )
+   {
+      using HostSensorsDataArray = Containers::NDArray< RealType,
+                                                        Containers::SizesHolder< int, 0, 0 >,
+                                                        std::index_sequence< 0, 1 >,
+                                                        Devices::Host >;
+      HostSensorsDataArray sensorsDataHost;
+      sensorsDataHost = sensors;
       const auto view_sensorsDataHost = sensorsDataHost.getView();
 
       std::cout << std::endl << "MEASURETOOL - SAVING DATA :" << std::endl;

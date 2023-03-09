@@ -32,7 +32,7 @@
 const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
 const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
 
-const float endTime = 0.3;
+const float endTime = 0.75;
 //const int outputStep = 2501;
 const int outputStep = 2000;
 const int outputSensorStep = 100;
