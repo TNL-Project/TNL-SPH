@@ -32,7 +32,7 @@
 const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
 const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
 
-const float endTime = 0.75;
+const float endTime = 0.3;
 //const int outputStep = 2501;
 const int outputStep = 2000;
 const int outputSensorStep = 100;
@@ -58,7 +58,7 @@ std::string outputFileName = "results/particles";
 /**
  * Measuretool draft.
  */
-#include "../../../SPH/Models/WCSPH_DBC/Interpolation.h"
+#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
 
 using namespace TNL;
 
@@ -176,8 +176,22 @@ int main( int argc, char* argv[] )
 
    typename SPHModel::VectorArrayType measurementSensors( measurementPoints );
 
-   using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
-   Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
+   //Define measuretool points
+   std::vector< typename SPHModel::VectorType > measurementPointsWaterLevel = { { 1.60f - SPHConfig::h, 0.003f },
+                                                                              { 1.60f - SPHConfig::h, 0.015f  },
+                                                                              { 1.60f - SPHConfig::h, 0.03f  },
+                                                                              { 1.60f - SPHConfig::h, 0.08f  } };
+
+   typename SPHModel::VectorArrayType measurementSensorsWaterLevel( measurementPointsWaterLevel );
+
+   //using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
+   //Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
+
+   using GridInterpolation = TNL::ParticleSystem::SPH::GridInterpolation< SPHConfig, typename SPHModel::ModelVariables >;
+   using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig >;
+
+   GridInterpolation myInterpolation( { 0.0f, 0.0f }, { 150, 70 }, { SPHConfig::h, SPHConfig::h } );
+   SensorInterpolation mySensorInterpolation( TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
 
    for( unsigned int iteration = 0; iteration < steps; iteration ++ )
    {
@@ -268,17 +282,17 @@ int main( int argc, char* argv[] )
 
       if( ( iteration % outputSensorStep ==  0) && (iteration > 0) )
       {
-         myInterpolation.template InterpolateSensors< typename SPHSimulation::FluidPointer,
-                                                      typename SPHSimulation::BoundaryPointer,
-                                                      SPH::WendlandKernel2D,
-                                                      typename SPHSimulation::NeighborSearchPointer,
-                                                      EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         mySensorInterpolation.template interpolateSensors< typename SPHSimulation::FluidPointer,
+                                                            typename SPHSimulation::BoundaryPointer,
+                                                            SPH::WendlandKernel2D,
+                                                            typename SPHSimulation::NeighborSearchPointer,
+                                                            EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
       }
 
    }
 
    std::string outputFileNameInterpolation = outputFileName + "_sensors.dat";
-   myInterpolation.saveSensors( outputFileNameInterpolation );
+   mySensorInterpolation.saveSensors( outputFileNameInterpolation );
 
    /**
     * Output simulation stats.
