@@ -177,10 +177,10 @@ int main( int argc, char* argv[] )
    typename SPHModel::VectorArrayType measurementSensors( measurementPoints );
 
    //Define measuretool points
-   std::vector< typename SPHModel::VectorType > measurementPointsWaterLevel = { { 1.60f - SPHConfig::h, 0.003f },
-                                                                              { 1.60f - SPHConfig::h, 0.015f  },
-                                                                              { 1.60f - SPHConfig::h, 0.03f  },
-                                                                              { 1.60f - SPHConfig::h, 0.08f  } };
+   std::vector< typename SPHModel::VectorType > measurementPointsWaterLevel = { { 0.3f , 0.f + SPHConfig::h },
+                                                                                { 0.865f , 0.f + SPHConfig::h },
+                                                                                { 1.114f , 0.f + SPHConfig::h },
+                                                                                { 1.3625f , 0.f + SPHConfig::h } };
 
    typename SPHModel::VectorArrayType measurementSensorsWaterLevel( measurementPointsWaterLevel );
 
@@ -189,9 +189,11 @@ int main( int argc, char* argv[] )
 
    using GridInterpolation = TNL::ParticleSystem::SPH::GridInterpolation< SPHConfig, typename SPHModel::ModelVariables >;
    using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig >;
+   using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig >;
 
    GridInterpolation myInterpolation( { 0.0f, 0.0f }, { 150, 70 }, { SPHConfig::h, SPHConfig::h } );
    SensorInterpolation mySensorInterpolation( TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
+   SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), 4, measurementSensorsWaterLevel, SPHConfig::h, { 0.f, 1.f }, { 0.f, 0.4f }, 0.f, 0.4f );
 
    for( unsigned int iteration = 0; iteration < steps; iteration ++ )
    {
@@ -287,12 +289,21 @@ int main( int argc, char* argv[] )
                                                             SPH::WendlandKernel2D,
                                                             typename SPHSimulation::NeighborSearchPointer,
                                                             EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+
+         mySensorWaterLevel.template interpolateSensors< typename SPHSimulation::FluidPointer,
+                                                         typename SPHSimulation::BoundaryPointer,
+                                                         SPH::WendlandKernel2D,
+                                                         typename SPHSimulation::NeighborSearchPointer,
+                                                         EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
       }
 
    }
 
    std::string outputFileNameInterpolation = outputFileName + "_sensors.dat";
    mySensorInterpolation.saveSensors( outputFileNameInterpolation );
+
+   std::string outputFileNameWaterLevel = outputFileName + "_sensorsWaterLevel.dat";
+   mySensorWaterLevel.saveSensors( outputFileNameInterpolation );
 
    /**
     * Output simulation stats.

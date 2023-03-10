@@ -297,20 +297,56 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
    using RealType = typename MT::RealType;
    using VectorType = typename MT::VectorType;
    using VectorArrayType = typename MT::SPHTraitsType::VectorArrayType;
+   using IndexArrayType = typename MT::SPHTraitsType::IndexArrayType;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
                                                  std::index_sequence< 0, 1 >,  // Permutation
-                                                 DeviceType >;         // Device
+                                                 Devices::Host >;         // Device - store data on HOST
 
-   SensorWaterLevel( GlobalIndexType numberOfSavedSteps, GlobalIndexType numberOfSensors, VectorArrayType& sensorsPoints )
-   : sensorPositions( numberOfSensors )
+   /*
+   SensorWaterLevel( GlobalIndexType numberOfSavedSteps,
+                     GlobalIndexType numberOfSensors,
+                     VectorArrayType& sensorsPoints,
+                     RealType levelIncrement,
+                     VectorType& direction,
+                     VectorType& threshold )
+   : sensorPositions( numberOfSensors ),
+     direction( direction ),
+     levelIncrement( levelIncrement )
    {
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
       numberOfSensors = numberOfSensors;
       numberOfSavedSteps = numberOfSavedSteps;
       sensorPositions = sensorsPoints;
 
+      //New
+      numberOfLevels = TNL::Ceil( ( threshold - sensorsPoints[ 0 ], direction ) / levelIncrement );
+      levels.setSize( numberOfLevels );
+   }
+   */
+
+   SensorWaterLevel( GlobalIndexType numberOfSavedSteps,
+                     GlobalIndexType numberOfSensors,
+                     VectorArrayType& sensorsPoints,
+                     RealType levelIncrement,
+                     VectorType direction,
+                     VectorType threshold,
+                     RealType startLevel,
+                     RealType endLevel )
+   : sensorPositions( numberOfSensors ),
+     numberOfSensors ( numberOfSensors ),
+     levelIncrement( levelIncrement ),
+     direction( direction ),
+     threshold( threshold )
+   {
+      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
+      numberOfSavedSteps = numberOfSavedSteps;
+      sensorPositions = sensorsPoints;
+
+      //New
+      numberOfLevels = TNL::ceil( endLevel - startLevel / levelIncrement );
+      levels.setSize( numberOfLevels );
    }
 
    //protected:
@@ -324,6 +360,11 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
    IndexArrayType levels;
    GlobalIndexType numberOfLevels; //numberOfLevels = TNL::ceil( TNL::norm( endPoints - startPoint ) / levelIncrement );
    RealType levelIncrement;
+   VectorType direction;
+   VectorType threshold;
+
+   RealType startLevel;
+   RealType endLevel;
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
    void
@@ -343,6 +384,7 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
 
       /* VARIABLES AND FIELD ARRAYS */
       const auto view_points = fluid->particles->getPoints().getView();
+      const auto view_rho = fluid->variables->rho.getView();
 
       /* CONSTANT VARIABLES */ //TODO: Do this like a human.
       const RealType h = SPHConfig::h;
@@ -359,6 +401,7 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
          const RealType drs = l2Norm( r_ij );
          if( drs <= searchRadius )
          {
+            const RealType rho_j = view_rho[ j ];
             const RealType W = SPHKernelFunction::W( drs, h );
             const RealType V = m / rho_j;
             *gamma += W * V;
@@ -367,12 +410,15 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
 
       for( int s = 0; s < numberOfSensors; s++ )
       {
-         const VectorArrayType startPoint = view_sensorsPositions[ 0 ];
+         //const VectorType startPoint = view_sensorsPositions[ 0 ];
+         const VectorType startPoint = 0.f;
 
          auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, GlobalIndexType sensorIndexer ) mutable
          {
             RealType gamma = 0.f;
-            VectorType r = startPoint + i * levelIncrement;
+            const VectorType zax = { 0.f, 1.f };
+            //VectorType r = view_sensorsPositions[ 0 ] + i * levelIncrement * zax;
+            VectorType r = view_sensorsPositions[ 0 ] + i * h/2 * zax;
             const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
             neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &gamma );
@@ -388,7 +434,7 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
          auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
          const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0.0 );
 
-         view_sensors( sensorIndexer, s ) = levelIncrement * numberOfFilledLevels; //TODO: Plus the base level.
+         view_sensors( sensorIndexer, s ) = levelIncrement * numberOfFilledLevels + ( startPoint, direction ); //TODO: Plus the base level.
       }
 
       sensorIndexer++;
