@@ -303,7 +303,7 @@ int main( int argc, char* argv[] )
    mySensorInterpolation.saveSensors( outputFileNameInterpolation );
 
    std::string outputFileNameWaterLevel = outputFileName + "_sensorsWaterLevel.dat";
-   mySensorWaterLevel.saveSensors( outputFileNameInterpolation );
+   mySensorWaterLevel.saveSensors( outputFileNameWaterLevel );
 
    /**
     * Output simulation stats.

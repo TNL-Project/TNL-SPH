@@ -345,7 +345,7 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
       sensorPositions = sensorsPoints;
 
       //New
-      numberOfLevels = TNL::ceil( endLevel - startLevel / levelIncrement );
+      numberOfLevels = TNL::ceil( ( endLevel - startLevel ) / levelIncrement );
       levels.setSize( numberOfLevels );
    }
 
@@ -408,17 +408,19 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
          }
       };
 
+      std::cout << "-----------------------> Number of levels: " << numberOfLevels << std::endl;
       for( int s = 0; s < numberOfSensors; s++ )
       {
          //const VectorType startPoint = view_sensorsPositions[ 0 ];
          const VectorType startPoint = 0.f;
+         view_levels = 0.f;
 
          auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, GlobalIndexType sensorIndexer ) mutable
          {
             RealType gamma = 0.f;
             const VectorType zax = { 0.f, 1.f };
             //VectorType r = view_sensorsPositions[ 0 ] + i * levelIncrement * zax;
-            VectorType r = view_sensorsPositions[ 0 ] + i * h/2 * zax;
+            VectorType r = view_sensorsPositions[ s ] + i * h * zax;
             const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
             neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &gamma );
@@ -433,8 +435,9 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
          auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_levels[ i ]; };
          auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
          const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0.0 );
+         const RealType waterLevel = h * numberOfFilledLevels + ( startPoint, direction );
 
-         view_sensors( sensorIndexer, s ) = levelIncrement * numberOfFilledLevels + ( startPoint, direction ); //TODO: Plus the base level.
+         view_sensors( sensorIndexer, s ) = waterLevel;
       }
 
       sensorIndexer++;
