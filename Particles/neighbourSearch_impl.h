@@ -141,6 +141,67 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
    } //for cells in z direction
 }
 
+//with vector
+template< typename ParticleConfig, typename ParticleSystem >
+template< typename Function, typename... FunctionArgs >
+__cuda_callable__
+void
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsBlocks( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 3, GlobalIndexType >& gridIndex, const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+{
+
+   //int j;
+   //int j_end;
+
+   //unsigned int neighborCell;
+   //PairIndexType firstLastParticle;
+
+   for( int ck = gridIndex[ 2 ] -1; ck <= gridIndex[ 2 ] + 1; ck++ ){
+      for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
+
+         const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ] - 1, cj, ck, gridOrigin );
+         int j = view_firstLastCellParticle[ neighborCell ][ 0 ];
+
+         unsigned int neighborCell_end = ParticleSystem::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ] + 1, cj, ck, gridOrigin );
+         int j_end = view_firstLastCellParticle[ neighborCell_end ][ 1 ];
+
+         if( j_end >= numberOfParticles )
+         {
+            //j_end = -1;
+
+            neighborCell_end = ParticleSystem::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ], cj, ck, gridOrigin );
+            j_end = view_firstLastCellParticle[ neighborCell_end ][ 1 ];
+
+            if( j_end >= numberOfParticles )
+            {
+               //j_end = -1;
+
+               neighborCell_end = ParticleSystem::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ] -1, cj, ck, gridOrigin );
+               j_end = view_firstLastCellParticle[ neighborCell_end ][ 1 ];
+
+               if( j_end >= numberOfParticles )
+                  j_end = -1;
+               }
+         }
+
+         //:for( int ci = gridIndex[ 0 ] - 1; ci <= gridIndex[ 0 ] + 1; ci++ ){
+         //:   const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj, ck, gridOrigin );
+         //:   const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
+
+         //:   int j = firstLastParticle[ 0 ];
+         //:   int j_end = firstLastParticle[ 1 ];
+         //:   if( j_end >= numberOfParticles )
+         //:    	j_end = -1
+         //:} //for cells in x direction
+
+            while( ( j <= j_end ) ){
+               if( i == j ){ j++; continue; }
+               f( i, j, args... );
+               j++;
+            } //while over particle in cell
+      } //for cells in y direction
+   } //for cells in z direction
+}
+
 template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
