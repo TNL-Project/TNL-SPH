@@ -114,6 +114,8 @@ int main( int argc, char* argv[] )
    mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
    mySPHSimulation.model->coefB = SPHConfig::coefB;
    mySPHSimulation.model->rho0 = SPHConfig::rho0;
+   mySPHSimulation.model->g = { 0.f, -9.81f };
+
 
    /**
     * Read the particle file.
@@ -200,6 +202,16 @@ int main( int argc, char* argv[] )
    std::cout << "Velocity .................... " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity << std::endl;
    std::cout << "BufferWidth ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth << std::endl;
 
+   mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+
+   mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+
    /**
     * Define timers to measure computation time.
     */
@@ -231,7 +243,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template Interact< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS >();
+      mySPHSimulation.template Interact< SPH::WendlandKernel2D, DiffusiveTerm, ViscousTerm, EOS >();
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
