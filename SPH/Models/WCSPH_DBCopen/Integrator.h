@@ -219,11 +219,15 @@ public:
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
          //TODO: Ugly, ugly stuff.. Keep the scope inside, remove everything else.
          const VectorType r = view_r_buffer[ i ];
-         const VectorType r_relative = r - bufferPosition;
+         //const VectorType r_relative = r - bufferPosition;
+         const VectorType r_relative = bufferPosition - r;
 
-         if( ( r_relative, inletOrientation ) > bufferWidth[ 0 ] ) //It is possible to do for each direction. This if statemens is good.
+         //if( ( r_relative, inletOrientation ) > bufferWidth[ 0 ] ) //It is possible to do for each direction. This if statemens is good.
+         //if( ( r_relative, inletOrientation ) > 0 ) //It is possible to do for each direction. This if statemens is good.
+         if( ( r_relative, inletOrientation ) <= 0.f ) //It is possible to do for each direction. This if statemens is good.
          {
             view_inletMark[ i ] = 0;
+            printf("sc: %f ", ( r_relative, inletOrientation ));
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
@@ -258,8 +262,11 @@ public:
 
             //Generate new bufffer partice
             //const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth ; //This works in 1d
-            const VectorType r_relative = view_r_buffer[ i ] - bufferPosition;
-            const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation; //This works in 1d
+            //:const VectorType r_relative = view_r_buffer[ i ] - bufferPosition;
+            //:const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation; //This works in 1d
+            const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
+            const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation; //This works in 1d
+
             view_r_buffer[ i ] = newBufferParticle;
             view_v_buffer[ i ] = inletConstVelocity;
             view_rho_buffer[ i ] = inletConstDensity;
@@ -270,99 +277,7 @@ public:
       std::cout << "... InletBuffer - system updated." << std::endl;
    }
 
-   template< typename FluidPointer, typename OpenBoundaryPointer >
-   void
-   updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
-   {
-      const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
-      const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
-      //Buffer
-      auto view_r_buffer = openBoundary->particles->getPoints().getView();
-      auto view_v_buffer = openBoundary->variables->v.getView();
-      auto view_rho_buffer = openBoundary->variables->rho.getView();
-
-      auto view_inletMark = openBoundary->particleMark->getView();
-      view_inletMark = 1; //TODO: this can be avoided
-
-      const VectorType inletOrientation = openBoundary->parameters.orientation;
-      const VectorType inletConstVelocity = openBoundary->parameters.velocity;
-      const RealType inletConstDensity = openBoundary->parameters.density;
-      const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
-      const VectorType bufferPosition = openBoundary->parameters.position;
-
-      //Fluid ( variable arrays and integrator variable arrays )
-      auto view_r_fluid = fluid->particles->getPoints().getView();
-      auto view_v_fluid = fluid->variables->v.getView();
-      auto view_rho_fluid = fluid->variables->rho.getView();
-
-      auto view_rho_old = fluid->integratorVariables->rho_old.getView();
-      auto view_v_old = fluid->integratorVariables->v_old.getView();
-
-      auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
-      {
-         view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
-         //TODO: Ugly, ugly stuff.. Keep the scope inside, remove everything else.
-         const VectorType r = view_r_buffer[ i ];
-         const VectorType r_relative = r - bufferPosition;
-
-         if( ( r_relative, inletOrientation ) > bufferWidth[ 0 ] ) //It is possible to do for each direction. This if statemens is good.
-         {
-            view_inletMark[ i ] = 0;
-         }
-      };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
-
-      auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
-      auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
-      const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
-      std::cout << "... InletBuffer - number of retyped particles: " << numberOfRetyped << std::endl;
-
-      if( numberOfRetyped == 0 )
-         return;
-
-      //Sort particles by mark //TODO: can be this avoided?
-      thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(), view_inletMark.getArrayData() + numberOfBufferParticles,
-            thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(), view_v_buffer.getArrayData(), view_rho_buffer.getArrayData() ) ) );
-      std::cout << "... InletBuffer - particles sorted." << std::endl;
-
-      std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-      std::cout << ".................. numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
-      std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-
-      auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
-      {
-         if( view_inletMark[ i ] == 0 )
-         {
-            //Retype buffer particle to fluid
-            view_r_fluid[ numberOfParticle + i ] = view_r_buffer[ i ];
-            view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
-            view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
-            view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
-            view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
-
-            //Generate new bufffer partice
-            //const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth ; //This works in 1d
-            const VectorType r_relative = view_r_buffer[ i ] - bufferPosition;
-            const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation; //This works in 1d
-            view_r_buffer[ i ] = newBufferParticle;
-            view_v_buffer[ i ] = inletConstVelocity;
-            view_rho_buffer[ i ] = inletConstDensity;
-         }
-      };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfRetyped, createNewFluidParticles );
-
-      auto removeOldFluidParticles = [=] __cuda_callable__ ( int i ) mutable
-      {
-         if( view_inletMark[ i ] == 0 )
-         {
-            view_r_fluid[ numberOfParticle + i ] = FLT_MAX;
-         }
-      };
-
-      fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
-      std::cout << "... InletBuffer - system updated." << std::endl;
-   }
 };
 
 } // SPH
