@@ -24,6 +24,7 @@ class SPHFluidVariables
 
    SPHFluidVariables( GlobalIndexType size )
    : rho( size ), drho ( size ), p( size ), v( size ), a( size ),
+     fluidOutMark( size ), fluidOutMarkIndex( size ),
      rho_swap( size ), v_swap( size ) {}
 
    /* Variables - Fields */
@@ -32,6 +33,10 @@ class SPHFluidVariables
    ScalarArrayType p;
    VectorArrayType v;
    VectorArrayType a;
+
+   //Inlet temp
+   IndexArrayType fluidOutMark;
+   IndexArrayType fluidOutMarkIndex;
 
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
