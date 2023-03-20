@@ -290,7 +290,7 @@ public:
       auto view_rho_buffer = openBoundary->variables->rho.getView();
 
       auto view_inletMark = openBoundary->particleMark->getView();
-      view_inletMark = 1; //TODO: this can be avoided
+      view_inletMark = 0; //TODO: this can be avoided
 
       const VectorType inletOrientation = openBoundary->parameters.orientation;
       const VectorType inletConstVelocity = openBoundary->parameters.velocity;
@@ -306,7 +306,7 @@ public:
       auto view_rho_old = fluid->integratorVariables->rho_old.getView();
       auto view_v_old = fluid->integratorVariables->v_old.getView();
 
-      std::cout << "... OutletBuffer - allFieldsLoaded: " << std::endl;
+      std::cout << "... OutletBuffer - move buffer particles, " << std::endl;
       auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
@@ -317,16 +317,18 @@ public:
          //if( ( r_relative, inletOrientation ) > 0 ) //It is possible to do for each direction. This if statemens is good.
          //if( ( r_relative, inletOrientation ) <= 0.f ) //It is possible to do for each direction. This if statemens is good.
          {
-            view_inletMark[ i ] = 0;
+            view_inletMark[ i ] = 1;
             printf("sc: %f ", ( r_relative, inletOrientation ));
             printf("===============================================================================================================================");
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
+      std::cout << std::endl << ".................. moved." << std::endl;
 
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
-      const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
+      //const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
+      const GlobalIndexType numberOfRetyped = Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
       std::cout << "... OutletBuffer - number of retyped particles: " << numberOfRetyped << std::endl;
 
       //if( numberOfRetyped == 0 )
@@ -340,23 +342,27 @@ public:
       std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
       std::cout << ".................. numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
       std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+      std::cout << ".................. numberOfBufferParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+      std::cout << ".................. numberOfBufferAlocatedParticles: " << openBoundary->particles->getNumberOfAllocatedParticles() << std::endl;
 
       auto discardBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
-         if( view_inletMark[ i ] == 0 )
+         if( view_inletMark[ i ] == 1 )
          {
+
             //Discard old buffer particles
             view_r_buffer[ i ] = FLT_MAX;
             view_rho_buffer[ i ] = 0.f;
             view_v_buffer[ i ] = 0.f;
 
-
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfRetyped, discardBufferParticles );
+      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, discardBufferParticles ); //this can loop over retyped range
+
       openBoundary->particles->setNumberOfParticles( numberOfBufferParticles - numberOfRetyped );
       numberOfBufferParticles = numberOfBufferParticles - numberOfRetyped;
       std::cout << "... OutletBuffer - system updated." << std::endl;
+      std::cout << ".................. numberOfBufferParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
 
       //At this moment, oulet buffer is updated, we need to just resize the fluid.
       auto view_fluidOutMark = fluid->variables->fluidOutMark.getView();
@@ -370,7 +376,7 @@ public:
 
          if( ( r_relative, inletOrientation ) > 0 )
          {
-            view_fluidOutMark[ i ] = 0;
+            view_fluidOutMark[ i ] = 1;
             view_fluidOutMarkIndex[ i ] = i;
             printf("sc: %f ", ( r_relative, inletOrientation ));
             printf("sc: %f ", ( r_relative, inletOrientation ));
@@ -399,9 +405,9 @@ public:
       auto retypeFluidToOutlet = [=] __cuda_callable__ ( int i ) mutable
       {
          const GlobalIndexType p = view_fluidOutMarkIndex[ i ];
-         view_r_buffer[ numberOfParticle + i ] = view_r_fluid[ p ];
-         view_rho_buffer[ numberOfParticle + i ] = view_rho_fluid[ p ];
-         view_v_buffer[ numberOfParticle + i ] = view_v_fluid[ p ];
+         view_r_buffer[ numberOfBufferParticles + i ] = view_r_fluid[ p ];
+         view_rho_buffer[ numberOfBufferParticles + i ] = view_rho_fluid[ p ];
+         view_v_buffer[ numberOfBufferParticles + i ] = view_v_fluid[ p ];
 
          //Deactivate the old fluid particles
          //swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticles - i ]);
