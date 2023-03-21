@@ -306,6 +306,8 @@ public:
       auto view_rho_old = fluid->integratorVariables->rho_old.getView();
       auto view_v_old = fluid->integratorVariables->v_old.getView();
 
+      std::cout << "************************************OUTLET-START******************************************** " << std::endl;
+
       std::cout << "... OutletBuffer - move buffer particles, " << std::endl;
       auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
@@ -318,8 +320,7 @@ public:
          //if( ( r_relative, inletOrientation ) <= 0.f ) //It is possible to do for each direction. This if statemens is good.
          {
             view_inletMark[ i ] = 1;
-            printf("sc: %f ", ( r_relative, inletOrientation ));
-            printf("===============================================================================================================================");
+            printf("--> moveBufferParticles: sc: %f r: [ %f, %f ]", ( r_relative, inletOrientation ), view_r_buffer[ i ][ 0 ], view_r_buffer[ i ][ 1 ] );
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
@@ -361,12 +362,13 @@ public:
 
       openBoundary->particles->setNumberOfParticles( numberOfBufferParticles - numberOfRetyped );
       numberOfBufferParticles = numberOfBufferParticles - numberOfRetyped;
-      std::cout << "... OutletBuffer - system updated." << std::endl;
+      std::cout << "... OutletBuffer - move and discard buffer particles - system updated." << std::endl;
       std::cout << ".................. numberOfBufferParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
 
       //At this moment, oulet buffer is updated, we need to just resize the fluid.
       auto view_fluidOutMark = fluid->variables->fluidOutMark.getView();
       auto view_fluidOutMarkIndex = fluid->variables->fluidOutMarkIndex.getView();
+      view_fluidOutMark = 0;
       view_fluidOutMarkIndex = 0;
 
       auto checkFluidParticles = [=] __cuda_callable__ ( int i ) mutable
@@ -378,16 +380,15 @@ public:
          {
             view_fluidOutMark[ i ] = 1;
             view_fluidOutMarkIndex[ i ] = i;
-            printf("sc: %f ", ( r_relative, inletOrientation ));
-            printf("sc: %f ", ( r_relative, inletOrientation ));
-            printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            printf("-> checkFluidParticles: %f for r: [ %f, %f ]\n", ( r_relative, inletOrientation ), r[ 0 ], r[ 1 ] );
          }
       };
       Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticle, checkFluidParticles );
 
       auto fetchFluid = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_fluidOutMark[ i ]; };
       auto reductionFluid = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
-      const GlobalIndexType numberOfFluidToBuffer = Algorithms::reduce< DeviceType >( 0, view_fluidOutMark.getSize(), fetchFluid, reductionFluid, 0.0 ); //I like zeros baceause sort.
+      //const GlobalIndexType numberOfFluidToBuffer = Algorithms::reduce< DeviceType >( 0, view_fluidOutMark.getSize(), fetchFluid, reductionFluid, 0.0 ); //I like zeros baceause sort.
+      const GlobalIndexType numberOfFluidToBuffer = Algorithms::reduce< DeviceType >( 0, numberOfParticle, fetchFluid, reductionFluid, 0.0 ); //I like zeros baceause sort.
 
       //Sort particles by mark //TODO: can be this avoided?
       thrust::sort_by_key( thrust::device, view_fluidOutMark.getArrayData(), view_fluidOutMark.getArrayData() + numberOfParticle,
@@ -396,28 +397,34 @@ public:
 
       const GlobalIndexType numberOfParticleNew = numberOfParticle - numberOfFluidToBuffer;
 
-      std::cout << "... OutletBuffer - particles sorted." << std::endl;
+      std::cout << "... OutletBuffer - fluid to buffer - particles sorted." << std::endl;
       std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
       std::cout << ".................. numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
-      std::cout << ".................. newNumberOfParticles: " << numberOfParticleNew << std::endl;
+      std::cout << ".................. newNumberOfParticles (n - retyped): " << numberOfParticleNew << std::endl;
       std::cout << ".................. numberOfFluidToBuffer: " << numberOfFluidToBuffer << std::endl;
 
       auto retypeFluidToOutlet = [=] __cuda_callable__ ( int i ) mutable
       {
-         const GlobalIndexType p = view_fluidOutMarkIndex[ i ];
+         const GlobalIndexType p = view_fluidOutMarkIndex[ numberOfParticle - i - 1];
+         if(  view_fluidOutMark[ numberOfParticle - i - 1 ] == 1 )
+         {
+         printf( "-> retypeFluidToOutlet: p: %d \n", p );
          view_r_buffer[ numberOfBufferParticles + i ] = view_r_fluid[ p ];
          view_rho_buffer[ numberOfBufferParticles + i ] = view_rho_fluid[ p ];
          view_v_buffer[ numberOfBufferParticles + i ] = view_v_fluid[ p ];
+         printf( "-> retypeFluidToOutlet: r_bufferNew: [ %f, %f ]\n", view_r_buffer[ numberOfBufferParticles + i ][ 0 ], view_r_buffer[ numberOfBufferParticles + i ][ 1 ]);
+
 
          //Deactivate the old fluid particles
          //swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticles - i ]);
 
          view_r_fluid[ p ] = FLT_MAX;
-         swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticle - i ] );
-         swap( view_rho_fluid[ p ], view_rho_fluid[ numberOfParticle - i ] );
-         swap( view_v_fluid[ p ], view_v_fluid[ numberOfParticle - i ] );
-         swap( view_rho_old[ p ], view_rho_old[ numberOfParticle - i ] );
-         swap( view_v_old[ p ], view_v_old[ numberOfParticle - i ] );
+         swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticle - i - 1] );
+         swap( view_rho_fluid[ p ], view_rho_fluid[ numberOfParticle - i -1] );
+         swap( view_v_fluid[ p ], view_v_fluid[ numberOfParticle - i -1] );
+         swap( view_rho_old[ p ], view_rho_old[ numberOfParticle - i -1] );
+         swap( view_v_old[ p ], view_v_old[ numberOfParticle - i -1] );
+         }
 
 
       };
@@ -426,6 +433,11 @@ public:
       openBoundary->particles->setNumberOfParticles( numberOfBufferParticles + numberOfFluidToBuffer );
       fluid->particles->setNumberOfParticles( numberOfParticleNew );
       std::cout << "... OutletBuffer - upradetd." << std::endl;
+      std::cout << ".................. numberOfBufferParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+      std::cout << ".................. numberOfBufferAlocatedParticles: " << openBoundary->particles->getNumberOfAllocatedParticles() << std::endl;
+      //std::cout << ".................. bufferParticles: " << openBoundary->particles->getPoints() << std::endl;
+      std::cout << "... OutletBuffer - finished." << std::endl;
+      std::cout << "************************************OUTLET-FINISH********************************************* " << std::endl;
 
 
    }
