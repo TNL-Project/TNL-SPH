@@ -41,6 +41,12 @@ NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
    auto view_firstLastCellParticle = this->firstLastCellParticle.getView();
    const auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
 
+   if( numberOfParticles == 1 ) //temp
+   {
+      view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( 0 ), { 0, 0 } );
+      return;
+   }
+
    //resolve first particle
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( 0 ), { 0, ( view_particleCellIndex.getElement( 0 ) != view_particleCellIndex.getElement( 0+1 ) ) ? 0 : INT_MAX } ) ;
 
