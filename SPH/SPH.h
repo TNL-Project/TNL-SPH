@@ -4,6 +4,7 @@
 #include <TNL/Algorithms/reduce.h>
 
 #include "../Particles/Particles.h"
+#include "../Particles/ParticlesTraits.h"
 
 #include "Fluid.h"
 #include "Boundary.h"
@@ -11,6 +12,53 @@
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
+
+template< typename ParticleConfig >
+struct SPHSimpleFluidConfig
+{
+   using ParticleTraitsType = ParticlesTraits< ParticleConfig >;
+   using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
+   using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
+   using RealType = typename ParticleTraitsType::RealType;
+   using PointType = typename ParticleTraitsType::PointType;
+
+   GlobalIndexType sizeFluid;
+   GlobalIndexType sizeAllocatedFluid;
+
+   GlobalIndexType sizeBoundary;
+   GlobalIndexType sizeAllocatedBoundary;
+
+   IndexVectorType gridSize;
+   PointType gridOrigin;
+
+   RealType searchRadius;
+
+   template< typename Config >
+   void loadParameters()
+   {
+      this->sizeFluid = Config::numberOfParticles;
+      this->sizeAllocatedFluid = Config::numberOfAllocatedParticles;
+
+      this->sizeBoundary = Config::numberOfBoundaryParticles;
+      this->sizeAllocatedBoundary = Config::numberOfAllocatedBoundaryParticles;
+
+
+      if constexpr( ParticleConfig::spaceDimension == 2 )
+      {
+         this->gridSize = { Config::gridXsize, Config::gridYsize };
+         this->gridOrigin = { Config::gridXorigin, Config::gridYorigin };
+      }
+      else if constexpr( ParticleConfig::spaceDimension == 3 )
+      {
+         this->gridSize = { Config::gridXsize, Config::gridYsize, Config::gridZsize };
+         this->gridOrigin = { Config::gridXorigin, Config::gridYorign, Config::gridZsize };
+      }
+      //else
+      //   std::runtime_error( "SPHSimpleFluidConfig error: invalid number of dimension." );
+
+      this->searchRadius = Config::searchRadius;
+   }
+};
 
 template< typename Model, typename ParticleSystem, typename NeighborSearch >
 class SPHSimpleFluid
