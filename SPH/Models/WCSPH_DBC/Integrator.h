@@ -101,7 +101,8 @@ public:
          v_old_view[ i ] += a_view[ i ] * dt2;
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
+      //Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
 
       fluid->variables->v.swap( fluid->integratorVariables->v_old );
       fluid->variables->rho.swap( fluid->integratorVariables->rho_old );
@@ -123,7 +124,8 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
+      //Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
 
       boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
    }
@@ -152,7 +154,8 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
+      //Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
    }
 
    template< typename BoundaryPointer >
@@ -171,7 +174,8 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
+      //Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
    }
 };
 

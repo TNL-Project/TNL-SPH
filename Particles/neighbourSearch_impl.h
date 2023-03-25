@@ -27,7 +27,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::resetListWithIndices
    {
       view_firstLastCellParticle[ i ] = INT_MAX ;
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, this->firstLastCellParticle.getSize(), init );
+   Algorithms::parallelFor< DeviceType >( 0, this->firstLastCellParticle.getSize(), init );
 }
 
 template< typename ParticleConfig, typename ParticleSystem >
@@ -57,7 +57,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::particlesToCells
       if( view_particleCellIndex[ i ] != view_particleCellIndex[ i+1 ] )
          view_firstLastCellParticle[  view_particleCellIndex[ i ] ][ 1 ] =  i ;
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 1, numberOfParticles - 1, init );
+   Algorithms::parallelFor< DeviceType >( 1, numberOfParticles - 1, init );
 
    //resolve last partile
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( numberOfParticles - 1 ), { ( view_particleCellIndex.getElement( numberOfParticles -1 ) != view_particleCellIndex.getElement( numberOfParticles-2 ) ) ? numberOfParticles-1 : INT_MAX, numberOfParticles - 1 } );
@@ -247,7 +247,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach(
       const unsigned int neighborCell =  gridIndexJ * numberOfCellsInX + gridIndexI;
       this->loopOverNeighbors( i, numberOfParticles, gridIndexI, gridIndexJ, view_firstLastCellParticle, view_particleCellIndex, compareTwoParticles );
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, particles->getNumberOfParticles(), particleLoop );
+   Algorithms::parallelFor< DeviceType >( 0, particles->getNumberOfParticles(), particleLoop );
 }
 
 } // ParticleSystem

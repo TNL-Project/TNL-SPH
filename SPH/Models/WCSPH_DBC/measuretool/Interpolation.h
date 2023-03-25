@@ -148,7 +148,8 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
       }
    };
 
-   auto gridLoop = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+   //auto gridLoop = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+   auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
    {
       VectorType v = 0.f;
       RealType rho = 0.f;
@@ -169,12 +170,14 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
         view_rho_interpolation[ idx ] = 0.f;
      }
    };
-   Algorithms::ParallelFor2D< DeviceType >::exec(
-      ( LocalIndexType ) 0,
-      ( LocalIndexType ) 0,
-      ( LocalIndexType ) gridDimension[ 0 ],
-      ( LocalIndexType ) gridDimension[ 1 ],
-      gridLoop, fluid->neighborSearch, boundary->neighborSearch );
+   IndexVectorType begin{ 0, 0 };
+   Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop, fluid->neighborSearch, boundary->neighborSearch );
+   //Algorithms::ParallelFor2D< DeviceType >::exec(
+   //   ( LocalIndexType ) 0,
+   //   ( LocalIndexType ) 0,
+   //   ( LocalIndexType ) gridDimension[ 0 ],
+   //   ( LocalIndexType ) gridDimension[ 1 ],
+   //   gridLoop, fluid->neighborSearch, boundary->neighborSearch );
 }
 
 template< typename SPHConfig, typename Variables >
@@ -299,7 +302,7 @@ Interpolation< SPHConfig, Variables >::InterpolateSensors( FluidPointer& fluid, 
          view_densitySensors( sensorIndexer, i ) = 0.f;
       }
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, 2, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+   Algorithms::parallelFor< DeviceType >( 0, 2, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
 
    sensorIndexer++;
 }

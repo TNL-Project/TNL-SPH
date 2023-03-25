@@ -103,17 +103,17 @@ class GridInterpolation : public Measuretool< SPHConfig >
          }
       };
 
-      auto gridLoop = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+      auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
       {
          VectorType v = 0.f;
          RealType rho = 0.f;
          RealType gamma = 0.f;
 
-         VectorType r = { ( i + 1 ) * searchRadius , ( j + 1) * searchRadius };
+         VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * searchRadius };
          const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
-         const GlobalIndexType idx =  j * gridDimension[ 0 ] + i;
+         const GlobalIndexType idx =  i[ 1 ] * gridDimension[ 0 ] + i[ 0 ];
 
-         neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
+         neighborSearch->loopOverNeighbors( i[ 0 ], numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
 
         if( gamma > 0.5f ){
            view_v_interpolation[ idx ] = v / gamma;
@@ -124,12 +124,8 @@ class GridInterpolation : public Measuretool< SPHConfig >
            view_rho_interpolation[ idx ] = 0.f;
         }
       };
-      Algorithms::ParallelFor2D< DeviceType >::exec(
-         ( LocalIndexType ) 0,
-         ( LocalIndexType ) 0,
-         ( LocalIndexType ) gridDimension[ 0 ],
-         ( LocalIndexType ) gridDimension[ 1 ],
-         gridLoop, fluid->neighborSearch, boundary->neighborSearch );
+      IndexVectorType begin{ 0, 0 };
+      Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop, fluid->neighborSearch, boundary->neighborSearch );
    }
 
    void saveInterpolation( const std::string outputFileName )
@@ -248,7 +244,8 @@ class SensorInterpolation : public Measuretool< SPHConfig >
             view_pressureSensors( sensorIndexer, i ) = 0.f;
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+      //Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
 
       sensorIndexer++;
    }
@@ -430,7 +427,7 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
             else
                view_levels[ i ] = 0;
          };
-         Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfLevels, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+         Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
 
          auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_levels[ i ]; };
          auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
