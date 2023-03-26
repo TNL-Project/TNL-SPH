@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TNL/Logger.h>
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
 
@@ -29,6 +30,7 @@ struct SPHSimpleFluidConfig
    GlobalIndexType sizeAllocatedBoundary;
 
    IndexVectorType gridSize;
+   GlobalIndexType gridNumberOfCells;
    PointType gridOrigin;
 
    RealType searchRadius;
@@ -47,11 +49,13 @@ struct SPHSimpleFluidConfig
       {
          this->gridSize = { Config::gridXsize, Config::gridYsize };
          this->gridOrigin = { Config::gridXorigin, Config::gridYorigin };
+         this->gridNumberOfCells = Config::gridXsize * Config::gridYsize;
       }
       else if constexpr( ParticleConfig::spaceDimension == 3 )
       {
          this->gridSize = { Config::gridXsize, Config::gridYsize, Config::gridZsize };
          this->gridOrigin = { Config::gridXorigin, Config::gridYorign, Config::gridZsize };
+         this->gridNumberOfCells = Config::gridXsize * Config::gridYsize * Config::gridZsize;
       }
       //else
       //   std::runtime_error( "SPHSimpleFluidConfig error: invalid number of dimension." );
@@ -88,25 +92,37 @@ public:
 
    SPHSimpleFluid() = default;
 
-   SPHSimpleFluid( GlobalIndexType size, GlobalIndexType sizeAllocated,
-         GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
-         RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   :  model(), integrator(), fluid( size, sizeAllocated, h, numberOfCells ),
-     boundary( size_bound, sizeAllocated_bound, h, numberOfCells ){};
+   SPHSimpleFluid( SPHSimpleFluidConfig< typename ParticleSystem::Config > sphConfig )
+   :  model(),
+      integrator(),
+      fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
+      boundary( sphConfig.sizeBoundary, sphConfig.sizeAllocatedBoundary, sphConfig.searchRadius, sphConfig.gridNumberOfCells )
+   {
+      fluid->particles->setGridSize( sphConfig.gridSize );
+      fluid->particles->setGridOrigin( sphConfig.gridOrigin );
+      boundary->particles->setGridSize( sphConfig.gridSize );
+      boundary->particles->setGridOrigin( sphConfig.gridOrigin );
+   };
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
-   void PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells );
+   void
+   PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells );
 
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
-   void Interact();
+   void
+   Interact();
 
    template< typename SPHKernelFunction, typename RiemannSolver, typename EOS >
-   void Interact();
+   void
+   Interact();
+
+   void
+   writeProlog( TNL::Logger& logger ) const noexcept;
 
 //protected:
 
@@ -122,6 +138,18 @@ public:
 } // SPH
 } // ParticleSystem
 } // TNL
+
+template< typename Model, typename ParticleSystem, typename NeighborSearch >
+std::ostream&
+operator<<( std::ostream& str, const SPH::SPHSimpleFluid< Model, ParticleSystem, NeighborSearch >& sphSimulation )
+{
+   TNL::Logger logger( 100, str );
+
+   sphSimulation.writeProlog( logger );
+
+   return str;
+}
+
 
 #include "SPH_impl.h"
 

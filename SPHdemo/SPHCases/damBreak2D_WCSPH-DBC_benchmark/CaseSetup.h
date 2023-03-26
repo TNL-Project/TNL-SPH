@@ -72,6 +72,8 @@ int main( int argc, char* argv[] )
    using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
+   using ParticlesInitParameters = ParticleSystem::ParticleInitialSetup;
+
    /**
     * Particle and neighbor search model.
     */
@@ -98,25 +100,17 @@ int main( int argc, char* argv[] )
    using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
 
    /**
+    * Load simulation parameters.
+    */
+   using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
+   SPHSimulationConfig mySPHSimulationConfig;
+   mySPHSimulationConfig.template loadParameters< ParticleInitialSetup >();
+
+   /**
     * Create the simulation.
     */
-   SPHSimulation mySPHSimulation(
-         ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfAllocatedParticles,
-         ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize, 1 );
-
-
-   mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-   mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-
-   mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-   mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-
-   std::cout << "Particle grid size: " <<  mySPHSimulation.fluid->particles->getGridSize() << std::endl;
-   std::cout << "Particle grid origin: " <<  mySPHSimulation.fluid->particles->getGridOrigin() << std::endl;
-
-   std::cout << "Particle boundary grid size: " <<  mySPHSimulation.boundary->particles->getGridSize() << std::endl;
-   std::cout << "Particle boundary grid origin: " <<  mySPHSimulation.boundary->particles->getGridOrigin() << std::endl;
+   SPHSimulation mySPHSimulation( mySPHSimulationConfig );
+   std::cout << mySPHSimulation << std::endl;
 
    /**
      * TEMP.
@@ -195,7 +189,7 @@ int main( int argc, char* argv[] )
    SensorInterpolation mySensorInterpolation( TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
    SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), 4, measurementSensorsWaterLevel, SPHConfig::h, { 0.f, 1.f }, { 0.f, 0.4f }, 0.f, 0.4f );
 
-   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
+   for( unsigned int iteration = 0; iteration < 1; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 

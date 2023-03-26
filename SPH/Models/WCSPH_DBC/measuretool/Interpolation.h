@@ -148,7 +148,6 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
       }
    };
 
-   //auto gridLoop = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
    auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
    {
       VectorType v = 0.f;
@@ -172,12 +171,6 @@ Interpolation< SPHConfig, Variables >::InterpolateGrid( FluidPointer& fluid, Bou
    };
    IndexVectorType begin{ 0, 0 };
    Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop, fluid->neighborSearch, boundary->neighborSearch );
-   //Algorithms::ParallelFor2D< DeviceType >::exec(
-   //   ( LocalIndexType ) 0,
-   //   ( LocalIndexType ) 0,
-   //   ( LocalIndexType ) gridDimension[ 0 ],
-   //   ( LocalIndexType ) gridDimension[ 1 ],
-   //   gridLoop, fluid->neighborSearch, boundary->neighborSearch );
 }
 
 template< typename SPHConfig, typename Variables >

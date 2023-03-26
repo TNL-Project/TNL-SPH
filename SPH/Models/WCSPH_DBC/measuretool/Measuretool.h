@@ -244,7 +244,6 @@ class SensorInterpolation : public Measuretool< SPHConfig >
             view_pressureSensors( sensorIndexer, i ) = 0.f;
          }
       };
-      //Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
       Algorithms::parallelFor< DeviceType >( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
 
       sensorIndexer++;
