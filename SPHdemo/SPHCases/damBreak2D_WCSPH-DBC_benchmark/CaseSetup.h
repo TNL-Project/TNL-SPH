@@ -174,7 +174,7 @@ int main( int argc, char* argv[] )
 
    using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
    MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
-   SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), 4, measuretoolWaterLevel.points, SPHConfig::h, { 0.f, 1.f }, { 0.f, 0.4f }, 0.f, 0.4f );
+   SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), measuretoolWaterLevel.points, SPHConfig::h, { 0.f, 1.f }, 0.f, 0.4f );
 
    for( unsigned int iteration = 0; iteration < 1; iteration ++ )
    {

@@ -152,7 +152,7 @@ class GridInterpolation : public Measuretool< SPHConfig >
 };
 
 //----------------------------------------------------------------------------------------
-//Water level
+//Field variable sensors
 template< typename SPHConfig >
 struct MeasuretoolSensorConfig
 {
@@ -316,6 +316,30 @@ class SensorInterpolation : public Measuretool< SPHConfig >
 
 };
 
+//template< typename SPHConfig >
+//struct MeasuretoolSensorWaterLevelConfig
+//{
+//   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+//
+//   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+//   using RealType = typename SPHTraitsType::RealType;
+//   using VectorType = typename SPHTraitsType::VectorType;
+//
+//   GlobalIndexType numberOfSensors;
+//   std::vector< VectorType > sensorPoints;
+//   GlobalIndexType numberOfSavedSteps;
+//   RealType savePeriod;
+//
+//   template< typename Config >
+//   void loadParameters()
+//   {
+//      this->numberOfSensors = Config::sensorPoints.size();
+//      this->sensorPoints = Config::sensorPoints;
+//      this->numberOfSavedSteps = Config::numberOfSavedSteps;
+//      this->savePeriod = Config::savePeriod;
+//   }
+//};
+
 template< typename SPHConfig, typename SPHSimulation >
 class SensorWaterLevel : public Measuretool< SPHConfig >
 {
@@ -340,47 +364,16 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
                                                  std::index_sequence< 0, 1 >,  // Permutation
                                                  Devices::Host >;         // Device - store data on HOST
 
-   /*
    SensorWaterLevel( GlobalIndexType numberOfSavedSteps,
-                     GlobalIndexType numberOfSensors,
-                     VectorArrayType& sensorsPoints,
-                     RealType levelIncrement,
-                     VectorType& direction,
-                     VectorType& threshold )
-   : sensorPositions( numberOfSensors ),
-     direction( direction ),
-     levelIncrement( levelIncrement )
-   {
-      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
-      numberOfSensors = numberOfSensors;
-      numberOfSavedSteps = numberOfSavedSteps;
-      sensorPositions = sensorsPoints;
-
-      //New
-      numberOfLevels = TNL::Ceil( ( threshold - sensorsPoints[ 0 ], direction ) / levelIncrement );
-      levels.setSize( numberOfLevels );
-   }
-   */
-
-   SensorWaterLevel( GlobalIndexType numberOfSavedSteps,
-                     GlobalIndexType numberOfSensors,
                      std::vector< VectorType >& sensorsPoints,
-                     //VectorArrayType& sensorsPoints,
                      RealType levelIncrement,
                      VectorType direction,
-                     VectorType threshold,
                      RealType startLevel,
                      RealType endLevel )
-   : sensorPositions( sensorsPoints ),
-     numberOfSensors( sensorsPoints.size() ),
-     numberOfSavedSteps( numberOfSavedSteps ),
-     levelIncrement( levelIncrement ),
-     direction( direction ),
-     threshold( threshold )
+   : sensorPositions( sensorsPoints ), numberOfSensors( sensorsPoints.size() ), numberOfSavedSteps( numberOfSavedSteps ),
+     levelIncrement( levelIncrement ), direction( direction )
    {
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
-      //numberOfSavedSteps = numberOfSavedSteps;
-      //sensorPositions = sensorsPoints;
 
       //New
       numberOfLevels = TNL::ceil( ( endLevel - startLevel ) / levelIncrement );
@@ -388,18 +381,18 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
    }
 
    //protected:
+   GlobalIndexType numberOfSensors;
    SensorsDataArray sensors;
    VectorArrayType sensorPositions;
-   GlobalIndexType sensorIndexer = 0;
-   GlobalIndexType numberOfSensors;
+
    GlobalIndexType numberOfSavedSteps;
+   GlobalIndexType sensorIndexer = 0;
 
    //New
    IndexArrayType levels;
    GlobalIndexType numberOfLevels; //numberOfLevels = TNL::ceil( TNL::norm( endPoints - startPoint ) / levelIncrement );
    RealType levelIncrement;
    VectorType direction;
-   VectorType threshold;
 
    RealType startLevel;
    RealType endLevel;
