@@ -83,10 +83,6 @@ public:
    void
    Interaction( FluidPointer& fluid, BoudaryPointer& boundary );
 
-   /* Constants */ //Move to protected
-   RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
-   VectorType g;
-
 };
 
 } // SPH

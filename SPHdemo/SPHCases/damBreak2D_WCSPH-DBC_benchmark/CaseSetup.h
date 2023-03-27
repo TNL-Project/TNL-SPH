@@ -29,15 +29,6 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
-const std::string inputParticleFile = "damBreak2D_WCSPH-DBC_benchmark/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "damBreak2D_WCSPH-DBC_benchmark/dambreak_boundary.vtk";
-
-const float endTime = 0.75;
-//const int outputStep = 2501;
-const int outputStep = 2000;
-const int outputSensorStep = 100;
-
-std::string outputFileName = "results/particles";
 
 /**
  * SPH general toolds.
@@ -109,25 +100,21 @@ int main( int argc, char* argv[] )
    mySPHSimulationConfig.template loadParameters< ParticleInitialSetup >();
 
    /**
+    * Load simulation control (file names, time steps,...)
+    */
+   using SimulationControl = TNL::ParticleSystem::SPH::SPHSimulationControl;
+   SimulationControl mySimulationControl;
+
+   /**
     * Create the simulation.
     */
    SPHSimulation mySPHSimulation( mySPHSimulationConfig );
    std::cout << mySPHSimulation << std::endl;
 
    /**
-     * TEMP.
-     */
-   mySPHSimulation.model->h = SPHConfig::h;
-   mySPHSimulation.model->m = SPHConfig::mass;
-   mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
-   mySPHSimulation.model->coefB = SPHConfig::coefB;
-   mySPHSimulation.model->rho0 = SPHConfig::rho0;
-   mySPHSimulation.model->g = { 0.f, -9.81f };
-
-   /**
     * Read the particle file.
     */
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( mySimulationControl.inputParticleFile );
    myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.fluid->particles->getPoints() ) ;
 
    myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
@@ -137,7 +124,7 @@ int main( int argc, char* argv[] )
    myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
 
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( mySimulationControl.inputParticleFile_bound );
    myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
 
    myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
@@ -158,7 +145,7 @@ int main( int argc, char* argv[] )
     * TEMP: Determine number of interation for constant timestep.
     * Perform simulation main loop.
     */
-   int steps = endTime / SPHConfig::dtInit;
+   int steps = mySimulationControl.endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
 
    /**
@@ -170,11 +157,11 @@ int main( int argc, char* argv[] )
    //using SensorParameters = TNL::ParticleSystem::SPH::MeasuretoolSensorConfig< SPHConfig >;
    using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
    MeasuretoolInitParametersPressure measuretoolPressure;
-   SensorInterpolation mySensorInterpolation( TNL::ceil( steps / outputSensorStep ), measuretoolPressure.points );
+   SensorInterpolation mySensorInterpolation( TNL::ceil( mySimulationControl.endTime / measuretoolPressure.outputTime ), measuretoolPressure.points );
 
    using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
    MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
-   SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), measuretoolWaterLevel.points, SPHConfig::h, { 0.f, 1.f }, 0.f, 0.4f );
+   SensorWaterLevel mySensorWaterLevel( TNL::ceil( mySimulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points, SPHConfig::h, { 0.f, 1.f }, 0.f, 0.4f );
 
    for( unsigned int iteration = 0; iteration < 1; iteration ++ )
    {
@@ -214,7 +201,7 @@ int main( int argc, char* argv[] )
       /**
        * Output particle data
        */
-      if( ( iteration % outputStep ==  0) && (iteration > 0) )
+      if( ( iteration % mySimulationControl.outputStep ==  0) && (iteration > 0) )
       {
          /**
           * Compute pressure from density.
@@ -226,7 +213,7 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameFluid = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
+         std::string outputFileNameFluid = mySimulationControl.outputFileName + std::to_string( iteration ) + "_fluid.vtk";
          std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
          Writer myWriter( outputFileFluid );
          myWriter.writeParticles( *mySPHSimulation.fluid->particles );
@@ -240,7 +227,7 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameBound = outputFileName + std::to_string( iteration ) + "_boundary.vtk";
+         std::string outputFileNameBound = mySimulationControl.outputFileName + std::to_string( iteration ) + "_boundary.vtk";
          std::ofstream outputFileBound ( outputFileNameBound, std::ofstream::out );
          Writer myWriterBoundary( outputFileBound );
          myWriterBoundary.writeParticles( *mySPHSimulation.boundary->particles );
@@ -252,13 +239,13 @@ int main( int argc, char* argv[] )
          /**
           * Interpolate on the grid.
           */
-         std::string outputFileNameInterpolation = outputFileName + std::to_string( iteration ) + "_interpolation.vtk";
+         std::string outputFileNameInterpolation = mySimulationControl.outputFileName + std::to_string( iteration ) + "_interpolation.vtk";
          myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >( mySPHSimulation.fluid, mySPHSimulation.boundary );
          myInterpolation.saveInterpolation( outputFileNameInterpolation );
 
       }
 
-      if( ( iteration % outputSensorStep ==  0) && (iteration > 0) )
+      if( ( iteration % mySimulationControl.outputSensorStep ==  0) && (iteration > 0) )
       {
          mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D,
                                                             EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
@@ -269,10 +256,10 @@ int main( int argc, char* argv[] )
 
    }
 
-   std::string outputFileNameInterpolation = outputFileName + "_sensors.dat";
+   std::string outputFileNameInterpolation = mySimulationControl.outputFileName + "_sensors.dat";
    mySensorInterpolation.saveSensors( outputFileNameInterpolation );
 
-   std::string outputFileNameWaterLevel = outputFileName + "_sensorsWaterLevel.dat";
+   std::string outputFileNameWaterLevel = mySimulationControl.outputFileName + "_sensorsWaterLevel.dat";
    mySensorWaterLevel.saveSensors( outputFileNameWaterLevel );
 
    /**

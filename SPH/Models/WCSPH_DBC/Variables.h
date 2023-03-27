@@ -7,6 +7,18 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
+//TODO: How should I use this?
+template< typename SPHFluidConfig >
+class SPHFluidConstants
+{
+   public:
+   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+
+   using RealType = typename SPHFluidTraitsType::RealType;
+   using VectorType = typename SPHFluidTraitsType::VectorType;
+
+};
+
 template< typename SPHFluidConfig >
 class SPHFluidVariables
 {
