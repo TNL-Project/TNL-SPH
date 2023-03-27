@@ -72,6 +72,8 @@ int main( int argc, char* argv[] )
    using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
+   using MeasuretoolInitParametersPressure = ParticleSystem::SPH::MeasuretoolConfigForPressure< SPHConfig >;
+   using MeasuretoolInitParametersWaterLevel = ParticleSystem::SPH::MeasuretoolConfigForWaterLevel< SPHConfig >;
    using ParticlesInitParameters = ParticleSystem::ParticleInitialSetup;
 
    /**
@@ -162,32 +164,17 @@ int main( int argc, char* argv[] )
    /**
     * Measuretool draft.
     */
-   //Define measuretool points
-   std::vector< typename SPHModel::VectorType > measurementPoints = { { 1.60f - SPHConfig::h, 0.003f },
-                                                                      { 1.60f - SPHConfig::h, 0.015f  },
-                                                                      { 1.60f - SPHConfig::h, 0.03f  },
-                                                                      { 1.60f - SPHConfig::h, 0.08f  } };
-
-   typename SPHModel::VectorArrayType measurementSensors( measurementPoints );
-
-   //Define measuretool points
-   std::vector< typename SPHModel::VectorType > measurementPointsWaterLevel = { { 0.3f , 0.f + SPHConfig::h },
-                                                                                { 0.865f , 0.f + SPHConfig::h },
-                                                                                { 1.114f , 0.f + SPHConfig::h },
-                                                                                { 1.3625f , 0.f + SPHConfig::h } };
-
-   typename SPHModel::VectorArrayType measurementSensorsWaterLevel( measurementPointsWaterLevel );
-
-   //using Interpolation = TNL::ParticleSystem::SPH::Interpolation< SPHConfig, typename SPHModel::ModelVariables >;
-   //Interpolation myInterpolation( { 0.1f, 0.1f }, { 85, 45 }, { SPHConfig::h, SPHConfig::h }, TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
-
-   using GridInterpolation = TNL::ParticleSystem::SPH::GridInterpolation< SPHConfig, typename SPHModel::ModelVariables >;
-   using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig >;
-   using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig >;
-
+   using GridInterpolation = TNL::ParticleSystem::SPH::GridInterpolation< SPHConfig, SPHSimulation >;
    GridInterpolation myInterpolation( { 0.0f, 0.0f }, { 150, 70 }, { SPHConfig::h, SPHConfig::h } );
-   SensorInterpolation mySensorInterpolation( TNL::ceil( steps / outputSensorStep ), 4, measurementSensors );
-   SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), 4, measurementSensorsWaterLevel, SPHConfig::h, { 0.f, 1.f }, { 0.f, 0.4f }, 0.f, 0.4f );
+
+   //using SensorParameters = TNL::ParticleSystem::SPH::MeasuretoolSensorConfig< SPHConfig >;
+   using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
+   MeasuretoolInitParametersPressure measuretoolPressure;
+   SensorInterpolation mySensorInterpolation( TNL::ceil( steps / outputSensorStep ), measuretoolPressure.points );
+
+   using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
+   MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
+   SensorWaterLevel mySensorWaterLevel( TNL::ceil( steps / outputSensorStep ), 4, measuretoolWaterLevel.points, SPHConfig::h, { 0.f, 1.f }, { 0.f, 0.4f }, 0.f, 0.4f );
 
    for( unsigned int iteration = 0; iteration < 1; iteration ++ )
    {
@@ -266,28 +253,17 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = outputFileName + std::to_string( iteration ) + "_interpolation.vtk";
-         myInterpolation.template InterpolateGrid< typename SPHSimulation::FluidPointer,
-                                                   typename SPHSimulation::BoundaryPointer,
-                                                   SPH::WendlandKernel2D,
-                                                   typename SPHSimulation::NeighborSearchPointer >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >( mySPHSimulation.fluid, mySPHSimulation.boundary );
          myInterpolation.saveInterpolation( outputFileNameInterpolation );
-
-
 
       }
 
       if( ( iteration % outputSensorStep ==  0) && (iteration > 0) )
       {
-         mySensorInterpolation.template interpolateSensors< typename SPHSimulation::FluidPointer,
-                                                            typename SPHSimulation::BoundaryPointer,
-                                                            SPH::WendlandKernel2D,
-                                                            typename SPHSimulation::NeighborSearchPointer,
+         mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D,
                                                             EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
 
-         mySensorWaterLevel.template interpolateSensors< typename SPHSimulation::FluidPointer,
-                                                         typename SPHSimulation::BoundaryPointer,
-                                                         SPH::WendlandKernel2D,
-                                                         typename SPHSimulation::NeighborSearchPointer,
+         mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D,
                                                          EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
       }
 

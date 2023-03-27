@@ -24,7 +24,7 @@ class Measuretool
 
 };
 
-template< typename SPHConfig, typename Variables >
+template< typename SPHConfig, typename SPHSimulation >
 class GridInterpolation : public Measuretool< SPHConfig >
 {
    public:
@@ -37,9 +37,14 @@ class GridInterpolation : public Measuretool< SPHConfig >
    using RealType = typename MT::RealType;
    using VectorType = typename MT::VectorType;
 
+   using FluidPointer = typename SPHSimulation::FluidPointer;
+   using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
+   using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
+   using Variables = typename SPHSimulation::Variables;
+   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
+
    using GridType = Meshes::Grid< 2, RealType, DeviceType, GlobalIndexType >;
    using CoordinatesType = typename GridType::CoordinatesType;
-   using VariablesPointer = typename Pointers::SharedPointer< Variables, typename SPHConfig::DeviceType >;
 
    GridInterpolation( VectorType gridOrigin, CoordinatesType gridDimension, VectorType spaceSteps )
    : variables( gridDimension[ 0 ] * gridDimension[ 1 ] ), gridDimension( gridDimension )
@@ -54,9 +59,9 @@ class GridInterpolation : public Measuretool< SPHConfig >
    CoordinatesType gridDimension;
    VariablesPointer variables;
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer >
+   template< typename SPHKernelFunction >
    void
-   InterpolateGrid( FluidPointer& fluid, BoudaryPointer& boundary )
+   InterpolateGrid( FluidPointer& fluid, BoundaryPointer& boundary )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
       GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
@@ -146,7 +151,33 @@ class GridInterpolation : public Measuretool< SPHConfig >
 
 };
 
+//----------------------------------------------------------------------------------------
+//Water level
 template< typename SPHConfig >
+struct MeasuretoolSensorConfig
+{
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   GlobalIndexType numberOfSensors;
+   std::vector< VectorType > sensorPoints;
+   GlobalIndexType numberOfSavedSteps;
+   RealType savePeriod;
+
+   template< typename Config >
+   void loadParameters()
+   {
+      this->numberOfSensors = Config::sensorPoints.size();
+      this->sensorPoints = Config::sensorPoints;
+      this->numberOfSavedSteps = Config::numberOfSavedSteps;
+      this->savePeriod = Config::savePeriod;
+   }
+};
+
+template< typename SPHConfig, typename SPHSimulation >
 class SensorInterpolation : public Measuretool< SPHConfig >
 {
    public:
@@ -160,29 +191,34 @@ class SensorInterpolation : public Measuretool< SPHConfig >
    using VectorType = typename MT::VectorType;
    using VectorArrayType = typename MT::SPHTraitsType::VectorArrayType;
 
+   using FluidPointer = typename SPHSimulation::FluidPointer;
+   using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
+   using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
+
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
                                                  std::index_sequence< 0, 1 >,  // Permutation
                                                  DeviceType >;         // Device
 
-   SensorInterpolation( GlobalIndexType numberOfSavedSteps, GlobalIndexType numberOfSensors, VectorArrayType& sensorsPoints )
-   : sensorPositions( numberOfSensors ), numberOfSensors ( numberOfSensors )
+   SensorInterpolation( GlobalIndexType numberOfSavedSteps, std::vector< VectorType >& sensorsPoints )
+   : sensorPositions( sensorsPoints ),
+     numberOfSensors( sensorsPoints.size() ),
+     numberOfSavedSteps( numberOfSavedSteps )
    {
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
-      numberOfSavedSteps = numberOfSavedSteps;
-      sensorPositions = sensorsPoints;
    }
 
    //protected:
+   GlobalIndexType numberOfSensors;
    SensorsDataArray sensors;
    VectorArrayType sensorPositions;
-   GlobalIndexType sensorIndexer = 0;
-   GlobalIndexType numberOfSensors;
-   GlobalIndexType numberOfSavedSteps;
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
+   GlobalIndexType numberOfSavedSteps;
+   GlobalIndexType sensorIndexer = 0;
+
+   template<typename SPHKernelFunction, typename EOS >
    void
-   interpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary )
+   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary )
    {
 
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
@@ -280,7 +316,7 @@ class SensorInterpolation : public Measuretool< SPHConfig >
 
 };
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename SPHSimulation >
 class SensorWaterLevel : public Measuretool< SPHConfig >
 {
    public:
@@ -294,6 +330,10 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
    using VectorType = typename MT::VectorType;
    using VectorArrayType = typename MT::SPHTraitsType::VectorArrayType;
    using IndexArrayType = typename MT::SPHTraitsType::IndexArrayType;
+
+   using FluidPointer = typename SPHSimulation::FluidPointer;
+   using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
+   using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
@@ -324,21 +364,23 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
 
    SensorWaterLevel( GlobalIndexType numberOfSavedSteps,
                      GlobalIndexType numberOfSensors,
-                     VectorArrayType& sensorsPoints,
+                     std::vector< VectorType >& sensorsPoints,
+                     //VectorArrayType& sensorsPoints,
                      RealType levelIncrement,
                      VectorType direction,
                      VectorType threshold,
                      RealType startLevel,
                      RealType endLevel )
-   : sensorPositions( numberOfSensors ),
-     numberOfSensors ( numberOfSensors ),
+   : sensorPositions( sensorsPoints ),
+     numberOfSensors( sensorsPoints.size() ),
+     numberOfSavedSteps( numberOfSavedSteps ),
      levelIncrement( levelIncrement ),
      direction( direction ),
      threshold( threshold )
    {
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
-      numberOfSavedSteps = numberOfSavedSteps;
-      sensorPositions = sensorsPoints;
+      //numberOfSavedSteps = numberOfSavedSteps;
+      //sensorPositions = sensorsPoints;
 
       //New
       numberOfLevels = TNL::ceil( ( endLevel - startLevel ) / levelIncrement );
@@ -362,9 +404,9 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
    RealType startLevel;
    RealType endLevel;
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename NeighborSearchPointer, typename EOS >
+   template< typename SPHKernelFunction, typename EOS >
    void
-   interpolateSensors( FluidPointer& fluid, BoudaryPointer& boundary )
+   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary )
    {
 
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
