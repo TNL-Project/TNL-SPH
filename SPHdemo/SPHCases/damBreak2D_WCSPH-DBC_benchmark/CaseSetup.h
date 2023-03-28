@@ -29,6 +29,8 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
+#include "MeasuretoolConfig.h"
+#include "SimulationControlConfig.h"
 
 /**
  * SPH general toolds.
@@ -59,13 +61,40 @@ int main( int argc, char* argv[] )
     * Number of particles
     */
    using Device = Devices::Cuda;
+
+   /**
+    * Load simulation configs.
+    * - Particle system config:
+    *   config for definition of particle system (datatypes, dimension,...)
+    *   config with parameters of particle system (domain size, search radius,...)
+    *
+    * - Configuration of particle system.
+    *   config with initial parameters of the particle system
+    *
+    * - SPH method config:
+    *   config with parameteres and constants of the SPH method
+    *
+    * - Simulation control:
+    *   config with path to initial condition, path to store results, end time etc.
+    *
+    * - Measuretool:
+    *   config for pressure measurement
+    *   config for water level measurement
+    *   config for grid interpolation
+    */
    using ParticlesConfig = ParticleSystemConfig< Device >;
    using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
+   using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
+
+   using ParticlesInitParameters = ParticleSystem::ParticleInitialSetup;
+
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
-   using MeasuretoolInitParametersPressure = ParticleSystem::SPH::MeasuretoolConfigForPressure< SPHConfig >;
-   using MeasuretoolInitParametersWaterLevel = ParticleSystem::SPH::MeasuretoolConfigForWaterLevel< SPHConfig >;
-   using ParticlesInitParameters = ParticleSystem::ParticleInitialSetup;
+   using SimulationControl = TNL::ParticleSystem::SPH::SimulationConstrolConfiguration::SPHSimulationControl;
+
+   using MeasuretoolInitGridInterpolation = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
+   using MeasuretoolInitParametersPressure = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::MeasuretoolConfigForPressure< SPHConfig >;
+   using MeasuretoolInitParametersWaterLevel = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::MeasuretoolConfigForWaterLevel< SPHConfig >;
 
    /**
     * Particle and neighbor search model.
@@ -74,20 +103,44 @@ int main( int argc, char* argv[] )
    using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
 
    /**
-    * SPH model.
+    * Define simulation SPH model and SPH formulation.
+    *
+    * - SPHModel: is the model of used SPH method (WCSPH_DBC, WCSPH_BI, RSPH, etc.)
+    *   IMPORATANT: Constants and parameters of used model have to be defined in the SPHConfig.
+    *
+    * - SPHSimulation: defines the type of problem (simple fluid, problem with open or
+    *   moving boundaries or multiphase flows). For the chosen type of simulation,
+    *   appropriate SPH scheme is required!
     */
    using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
    using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
-    * SPH schemes.
+    * Define particular schemes of the used SPH model.
+    * Here in the case of WCSPH, we work with DiffusiveTerm, ViscousTerm and EquationOfState.
+    *
+    * IMPORATANT: Constants and parameters of used schemes have to be defined in the SPHConfig.
     */
    using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
 
    /**
-    * Particle reader and writer.
+    * Define tools of measuretool to evaluate certain values from the simulation.
+    *
+    * - Grid interpolation: In given plane, interpolate data back to continuum.
+    *
+    * - Sensors: Get time series of variables in given point:
+    *   pressure sensors
+    *   water level sensors
+    */
+   using GridInterpolation = TNL::ParticleSystem::SPH::GridInterpolation< SPHConfig, SPHSimulation >;
+
+   using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
+   using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
+
+   /**
+    * Define readers and writers to read and write initial geometry and results.
     */
    using Reader = TNL::ParticleSystem::Readers::VTKReader;
    using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
@@ -95,14 +148,12 @@ int main( int argc, char* argv[] )
    /**
     * Load simulation parameters.
     */
-   using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
    SPHSimulationConfig mySPHSimulationConfig;
    mySPHSimulationConfig.template loadParameters< ParticleInitialSetup >();
 
    /**
     * Load simulation control (file names, time steps,...)
     */
-   using SimulationControl = TNL::ParticleSystem::SPH::SPHSimulationControl;
    SimulationControl mySimulationControl;
 
    /**
@@ -113,6 +164,9 @@ int main( int argc, char* argv[] )
 
    /**
     * Read the particle file.
+    *
+    * Read particle file with fluid and read/set initial particle variables.
+    * Read particle file with boundary and read/set initial particle variables.
     */
    TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( mySimulationControl.inputParticleFile );
    myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.fluid->particles->getPoints() ) ;
@@ -136,6 +190,18 @@ int main( int argc, char* argv[] )
 
 
    /**
+    * Measuretool draft.
+    */
+   MeasuretoolInitGridInterpolation measuretoolInterpolation;
+   GridInterpolation myInterpolation( measuretoolInterpolation.gridOrigin, measuretoolInterpolation.gridSize, measuretoolInterpolation.gridStep );
+
+   MeasuretoolInitParametersPressure measuretoolPressure;
+   SensorInterpolation mySensorInterpolation( TNL::ceil( mySimulationControl.endTime / measuretoolPressure.outputTime ), measuretoolPressure.points );
+
+   MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
+   SensorWaterLevel mySensorWaterLevel( TNL::ceil( mySimulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points, SPHConfig::h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
+
+   /**
     * Define timers to measure computation time.
     */
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
@@ -148,22 +214,7 @@ int main( int argc, char* argv[] )
    int steps = mySimulationControl.endTime / SPHConfig::dtInit;
    std::cout << "Number of steps: " << steps << std::endl;
 
-   /**
-    * Measuretool draft.
-    */
-   using GridInterpolation = TNL::ParticleSystem::SPH::GridInterpolation< SPHConfig, SPHSimulation >;
-   GridInterpolation myInterpolation( { 0.0f, 0.0f }, { 150, 70 }, { SPHConfig::h, SPHConfig::h } );
-
-   //using SensorParameters = TNL::ParticleSystem::SPH::MeasuretoolSensorConfig< SPHConfig >;
-   using SensorInterpolation = TNL::ParticleSystem::SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
-   MeasuretoolInitParametersPressure measuretoolPressure;
-   SensorInterpolation mySensorInterpolation( TNL::ceil( mySimulationControl.endTime / measuretoolPressure.outputTime ), measuretoolPressure.points );
-
-   using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
-   MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
-   SensorWaterLevel mySensorWaterLevel( TNL::ceil( mySimulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points, SPHConfig::h, { 0.f, 1.f }, 0.f, 0.4f );
-
-   for( unsigned int iteration = 0; iteration < 1; iteration ++ )
+   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
    {
       std::cout << "STEP: " << iteration << std::endl;
 
