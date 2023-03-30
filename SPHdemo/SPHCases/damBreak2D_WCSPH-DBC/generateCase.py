@@ -168,3 +168,17 @@ fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round
 # Write the file out again
 with open( 'ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
+
+# Read and write (with possible edit) simulation control file.
+with open( 'template/SimulationControlConfig.h', 'r' ) as file :
+  fileSimulationControl = file.read()
+
+with open( 'SimulationControlConfig.h', 'w' ) as file:
+  file.write( fileSimulationControl )
+
+# Read and write (with possible edit) measuretool config file.
+with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
+  fileMeasuretoolConf = file.read()
+
+with open( 'MeasuretoolConfig.h', 'w' ) as file:
+  file.write( fileMeasuretoolConf )

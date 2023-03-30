@@ -87,11 +87,11 @@ int main( int argc, char* argv[] )
     *   config for water level measurement
     *   config for grid interpolation
     */
-   using ParticlesConfig = ParticleSystemConfig< Device >;
-   using ParticlesConfig_bound = ParticleSystemConfig< Device >;
+   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< Device >;
+   using ParticlesConfig_bound = ParticleSystemConfig::ParticleSystemConfig< Device >;
    using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
 
-   using ParticlesInitParameters = ParticleSystem::ParticleInitialSetup;
+   using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup;
 
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
@@ -160,7 +160,7 @@ int main( int argc, char* argv[] )
     * Load simulation parameters.
     */
    SPHSimulationConfig mySPHSimulationConfig;
-   mySPHSimulationConfig.template loadParameters< ParticleInitialSetup >();
+   mySPHSimulationConfig.template loadParameters< ParticlesInitParameters >();
 
    /**
     * Load simulation control (file names, time steps,...)
