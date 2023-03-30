@@ -142,6 +142,7 @@ fileSPHConf = fileSPHConf.replace( 'placeholderMass', str( particleMass ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderSpeedOfSound', str( speedOfSound ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderCoefB', str( coefB ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderDensity', str( rho0 ))
+fileSPHConf = fileSPHConf.replace( 'placeholderInitParticleDistance', str( dp ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderSmoothingLength', str( smoothingLentgh ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 

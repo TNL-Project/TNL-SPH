@@ -7,9 +7,10 @@ template< typename ParticlesConfig, typename Reader >
 class ReadParticles
 {
 public:
+   using GlobalIndexType = typename ParticlesConfig::GlobalIndexType;
 
-   ReadParticles( const std::string& inputFileName )
-   : reader( inputFileName )
+   ReadParticles( const std::string& inputFileName, const GlobalIndexType& numberOfParticles, const GlobalIndexType numberOfAllocatedParticles )
+   : reader( inputFileName ), numberOfParticles( numberOfParticles ), numberOfAllocatedParticles( numberOfAllocatedParticles )
    {
       reader.detectParticleSystem();
    }
@@ -18,13 +19,13 @@ public:
    void readParticles( PointArray& particles )
    {
       using ParticleSystemToReadData = typename ParticleSystem::Particles< ParticlesConfig, Devices::Host >;
-      ParticleSystemToReadData particlesToRead( ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfParticles, ParticlesConfig::searchRadius );
+      ParticleSystemToReadData particlesToRead( numberOfParticles, numberOfParticles, 0. );
       reader.template loadParticle< ParticleSystemToReadData >( particlesToRead );
 
-      PointArray pointsLoaded( ParticlesConfig::numberOfParticles );
+      PointArray pointsLoaded( numberOfParticles );
       //std::cout << "ParticlesLoaded size: " << particlesToRead.getPoints() << std::endl;
       pointsLoaded = particlesToRead.getPoints();
-      pointsLoaded.resize( ParticlesConfig::numberOfAllocatedParticles, FLT_MAX );
+      pointsLoaded.resize( numberOfAllocatedParticles, FLT_MAX );
       particles = pointsLoaded;
    }
 
@@ -35,7 +36,7 @@ public:
       Array arrayLoaded(  reader.getNumberOfPoints()  );
       arrayLoaded = std::get< std::vector< Type > >( reader.readPointData( name ) );
       //it would be nice to have type from Array::ValueType, but I need float for vector anyway.
-      arrayLoaded.resize( ParticlesConfig::numberOfAllocatedParticles, FLT_MAX );
+      arrayLoaded.resize( numberOfAllocatedParticles, FLT_MAX );
       array = arrayLoaded;
    }
 
@@ -82,6 +83,8 @@ public:
 protected:
 
    Reader reader;
+   GlobalIndexType numberOfParticles;
+   GlobalIndexType numberOfAllocatedParticles;
 
 };
 
