@@ -88,7 +88,6 @@ int main( int argc, char* argv[] )
     *   config for grid interpolation
     */
    using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< Device >;
-   using ParticlesConfig_bound = ParticleSystemConfig::ParticleSystemConfig< Device >;
    using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
 
    using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup;
@@ -178,8 +177,6 @@ int main( int argc, char* argv[] )
     * Perform simulation main loop.
     */
    TimeStepping myTimeStepping( SPHConfig::dtInit, mySimulationControl.endTime );
-   //int steps = mySimulationControl.endTime / SPHConfig::dtInit;
-   //std::cout << "Number of steps: " << steps << std::endl;
 
    /**
     * Read the particle file.
@@ -187,7 +184,8 @@ int main( int argc, char* argv[] )
     * Read particle file with fluid and read/set initial particle variables.
     * Read particle file with boundary and read/set initial particle variables.
     */
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( mySimulationControl.inputParticleFile, mySPHSimulationConfig.sizeFluid, mySPHSimulationConfig.sizeAllocatedFluid );
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader(
+         mySimulationControl.inputParticleFile, mySPHSimulationConfig.sizeFluid, mySPHSimulationConfig.sizeAllocatedFluid );
    myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.fluid->particles->getPoints() ) ;
 
    myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
@@ -197,7 +195,8 @@ int main( int argc, char* argv[] )
    myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
 
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( mySimulationControl.inputParticleFile_bound, mySPHSimulationConfig.sizeBoundary, mySPHSimulationConfig.sizeAllocatedBoundary );
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myBoundaryReader(
+         mySimulationControl.inputParticleFile_bound, mySPHSimulationConfig.sizeBoundary, mySPHSimulationConfig.sizeAllocatedBoundary );
    myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
 
    myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
