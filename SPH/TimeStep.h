@@ -10,10 +10,32 @@ class ConstantTimeStep
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
 
-   ConstantTimeStep( RealType initialTimeStep )
-   : timeStep( initialTimeStep )
+   ConstantTimeStep( RealType initialTimeStep, RealType endTime )
+   : timeStep( initialTimeStep ), endTime( endTime )
    {
       step = 0;
+      time = 0;
+   }
+
+   bool
+   runTheSimulation()
+   {
+      bool runSimulation = false;
+      if( time < endTime )
+         runSimulation = true;
+      return runSimulation;
+   }
+
+   const RealType
+   getTime() const
+   {
+      return time;
+   }
+
+   const GlobalIndexType
+   getStep() const
+   {
+      return step;
    }
 
    const RealType
@@ -28,10 +50,18 @@ class ConstantTimeStep
       timeStep = timeStep;
    }
 
+   void
+   updateTimeStep()
+   {
+      time += timeStep;
+      step += 1;
+   }
+
    protected:
    GlobalIndexType step;
    RealType time;
    RealType timeStep;
+   RealType endTime;
 
 };
 
@@ -42,29 +72,6 @@ class VariableTimeStep
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
-
-   ConstantTimeStep( RealType initialTimeStep )
-   : timeStep( initialTimeStep )
-   {
-      step = 0;
-   }
-
-   const RealType
-   getTimeStep() const
-   {
-      return dt;
-   }
-
-   //TODO: Compute time step form flow variables.
-   void
-   computeTimeStep()
-   {}
-
-   protected:
-   GlobalIndexType step;
-   RealType time;
-   RealType timeStep;
-
 };
 
 
