@@ -63,8 +63,9 @@ public:
    using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 
    /*Swap variables*/
-   //using ModelVariables = Variables;
-   //using VariablesPointer = typename Pointers::SharedPointer< FVariables, DeviceType >;
+   using FluidVariables = Variables;
+   using BoundaryVariables = SPHBoundaryVariables< SPHConfig >;
+   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
    /**
     * Constructor.

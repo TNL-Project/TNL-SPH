@@ -3,6 +3,7 @@
 #include "SPHTraits.h"
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
+#include <thrust/gather.h>
 
 namespace TNL {
 namespace ParticleSystem {

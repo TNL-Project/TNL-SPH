@@ -81,13 +81,14 @@ public:
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
    using SPHConfig = typename Model::SPHConfig;
-   using Variables = typename Model::ModelVariables;
    using IntegratorVariables = typename Model::IntegratorVariables;
 
-   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, Variables, IntegratorVariables >;
+   using FluidVariables = typename Model::FluidVariables;
+   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, FluidVariables, IntegratorVariables >;
    using FluidPointer = Pointers::SharedPointer< Fluid, DeviceType >;
 
-   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, Variables, IntegratorVariables >;
+   using BoundaryVariables = typename Model::BoundaryVariables;
+   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
    SPHSimpleFluid() = default;

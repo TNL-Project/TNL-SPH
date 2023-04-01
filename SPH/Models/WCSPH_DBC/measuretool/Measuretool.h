@@ -40,7 +40,7 @@ class GridInterpolation : public Measuretool< SPHConfig >
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
    using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
-   using Variables = typename SPHSimulation::Variables;
+   using Variables = typename SPHSimulation::FluidVariables;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
    using GridType = Meshes::Grid< 2, RealType, DeviceType, GlobalIndexType >;
