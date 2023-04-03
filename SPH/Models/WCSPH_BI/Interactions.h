@@ -27,7 +27,7 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
-class WCSPH_DBC
+class WCSPH_BI
 {
 public:
 
@@ -58,7 +58,7 @@ public:
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
 
    /* Integrator */
-   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
+   using Model = WCSPH_BI< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
    using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 
@@ -70,7 +70,7 @@ public:
    /**
     * Constructor.
     */
-   WCSPH_DBC( ) = default; //THIS WORKS
+   WCSPH_BI( ) = default; //THIS WORKS
 
    /**
     * Compute pressure from density.

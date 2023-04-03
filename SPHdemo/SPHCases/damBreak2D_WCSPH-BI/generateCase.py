@@ -10,8 +10,9 @@ boxH = 0.8
 fluidL = 0.6
 fluidH = 0.3
 
-dp = 0.002
-smoothingLentghCoef = 2**0.5
+#dp = 0.002
+dp = 0.005
+smoothingLentghCoef = 2**0.5*1.3
 
 rho0 = 1000.
 p0 = 0.

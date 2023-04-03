@@ -116,7 +116,7 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_BI< ParticleSystem, SPHConfig >;
    using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
@@ -208,6 +208,7 @@ int main( int argc, char* argv[] )
    myBoundaryReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
          mySPHSimulation.boundary->getBoundaryVariables()->n, "Normals" );
 
+
    /**
     * Define measuretool sensors.
     * - from particles to grid interpolation.
@@ -240,6 +241,12 @@ int main( int argc, char* argv[] )
       //std::cout << mySPHSimulation.fluid->particles->getPoints() << std::endl;
 
       std::cout << "Time: " << myTimeStepping.getTime() << std::endl;
+			//std::cout <<  mySPHSimulation.boundary->getBoundaryVariables()->rho << std::endl;
+			//std::cout <<  mySPHSimulation.boundary->particles->getParticleCellIndices() << std::endl;
+			//std::cout <<  mySPHSimulation.boundary->particles->getPoints() << std::endl;
+	 		//if( myTimeStepping.getStep() == 4 )
+			//	return 0;
+
 
       /**
        * Find neighbors within the SPH simulation.

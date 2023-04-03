@@ -8,7 +8,7 @@ namespace SPH {
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS  >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary )
+WCSPH_BI< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary )
 {
 
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -102,7 +102,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
          //turn off the DT for boundary
          //const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
-         *drho_i += ( -1 ) * ( v_ij, n_j ) * W * rho_j * ds; //- diffTerm;
+         *drho_i += ( -1.f ) * ( v_ij, n_j ) * W * rho_j * ds; //- diffTerm;
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
          const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ) );
@@ -143,19 +143,31 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
       neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
+      //: if( gamma_i > 0.01f )
+      //: {
+      //:    drho_i = drho_i / gamma_i;
+      //:    a_i = a_i / gamma_i;
+      //: }
+      //: else
+      //: {
+      //:    drho_i = 0.f;
+      //:    a_i = 0.f;
+      //: }
+      //: view_Drho[ i ] = drho_i;
+      //: a_i += gravity;
+      //: view_a[ i ] = a_i;
+
       if( gamma_i > 0.01f )
       {
-         drho_i = drho_i / gamma_i;
-         a_i = a_i / gamma_i;
+         view_Drho[ i ] = drho_i / gamma_i;
+         view_a[ i ] = a_i / gamma_i + gravity;
       }
       else
       {
-         drho_i = 0.f;
-         a_i = 0.f;
+         view_Drho[ i ] = 0.f;
+         view_a[ i ] = 0.f + gravity;
       }
-      view_Drho[ i ] = drho_i;
-      a_i += gravity;
-      view_a[ i ] = a_i;
+
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch );
 
@@ -171,8 +183,9 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, &rho_i, &gamma_i );
 
-      if( gamma_i > 0.001 )
+      if( gamma_i > 0.0001 ){
          view_rho_bound[ i ] = ( rho_i / gamma_i > rho0 ) ? ( rho_i / gamma_i ) : rho0;
+			}
       else
          view_rho_bound[ i ] = rho0;
 
@@ -184,7 +197,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 template< typename Particles, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles )
+WCSPH_BI< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles )
 {
    auto view_rho = variables->rho.getView();
    auto view_p = variables->p.getView();
