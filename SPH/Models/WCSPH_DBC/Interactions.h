@@ -64,7 +64,9 @@ public:
 
    /*Swap variables*/
    //using ModelVariables = Variables;
-   //using VariablesPointer = typename Pointers::SharedPointer< FVariables, DeviceType >;
+	 using FluidVariables = Variables;
+	 using BoundaryVariables = Variables;
+   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
    /**
     * Constructor.
