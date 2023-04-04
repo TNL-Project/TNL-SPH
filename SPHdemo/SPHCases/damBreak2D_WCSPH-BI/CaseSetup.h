@@ -241,11 +241,19 @@ int main( int argc, char* argv[] )
       //std::cout << mySPHSimulation.fluid->particles->getPoints() << std::endl;
 
       std::cout << "Time: " << myTimeStepping.getTime() << std::endl;
-			//std::cout <<  mySPHSimulation.boundary->getBoundaryVariables()->rho << std::endl;
-			//std::cout <<  mySPHSimulation.boundary->particles->getParticleCellIndices() << std::endl;
-			//std::cout <<  mySPHSimulation.boundary->particles->getPoints() << std::endl;
-	 		//if( myTimeStepping.getStep() == 4 )
-			//	return 0;
+      //std::cout << "Time: " << myTimeStepping.getStep() << std::endl;
+
+		//std::cout <<  mySPHSimulation.boundary->getBoundaryVariables()->rho << std::endl;
+		//std::cout <<  mySPHSimulation.boundary->particles->getParticleCellIndices() << std::endl;
+
+		//std::cout <<  mySPHSimulation.boundary->particles->getPoints() << std::endl;
+	 	//if( myTimeStepping.getStep() == 9 )
+      //{
+		//   std::cout <<  mySPHSimulation.fluid->particles->getParticleCellIndices() << std::endl;
+		//   std::cout <<  mySPHSimulation.fluid->particles->getPoints() << std::endl;
+      //}
+	 	//if( myTimeStepping.getStep() == 10 )
+		//	return 0;
 
 
       /**

@@ -121,6 +121,32 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const Globa
    } //for cells in y direction
 }
 
+//with vector TEST
+template< typename ParticleConfig, typename ParticleSystem >
+template< typename Function, typename... FunctionArgs >
+__cuda_callable__
+void
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsAnotherSet( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+{
+   //for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
+   for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
+      for( int ci = gridIndex[ 0 ] - 1; ci <= gridIndex[ 0 ] + 1; ci++ ){
+         const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj, gridSize );
+         //const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
+         const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
+         int j = firstLastParticle[ 0 ];
+         int j_end = firstLastParticle[ 1 ];
+         if( j_end >= numberOfParticles )
+          	j_end = -1;
+         while( ( j <= j_end ) ){
+            //if( i == j ){ j++; continue; }
+            f( i, j, args... );
+            j++;
+         } //while over particle in cell
+      } //for cells in x direction
+   } //for cells in y direction
+}
+
 //with vector
 template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >

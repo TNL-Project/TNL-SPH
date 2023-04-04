@@ -110,7 +110,7 @@ WCSPH_BI< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& flu
       }
    };
 
-   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho_i, RealType* gamma_i ) mutable
+   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho_i, RealType* gamma_i, GlobalIndexType*  nbsNumber) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -123,6 +123,11 @@ WCSPH_BI< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& flu
 
          *rho_i += W * m;
          *gamma_i += W * m / rho_j;
+
+         *nbsNumber += 1;
+         //if( i == 6 )
+         //   printf(" r: [ %f, %f ]j:%d ", r_j[ 0 ], r_j[ 1 ], j);
+
       }
    };
 
@@ -141,7 +146,7 @@ WCSPH_BI< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& flu
       RealType gamma_i = 0.f;
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
-      neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_bound->loopOverNeighborsAnotherSet( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       //: if( gamma_i > 0.01f )
       //: {
@@ -180,14 +185,18 @@ WCSPH_BI< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& flu
 
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
+      GlobalIndexType nbsNumber = 0;
 
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, &rho_i, &gamma_i );
+      neighborSearch->loopOverNeighborsAnotherSet( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, &rho_i, &gamma_i, &nbsNumber );
 
       if( gamma_i > 0.0001 ){
          view_rho_bound[ i ] = ( rho_i / gamma_i > rho0 ) ? ( rho_i / gamma_i ) : rho0;
 			}
       else
          view_rho_bound[ i ] = rho0;
+
+      //if( i == 6 )
+      //   printf(" r: [ %f, %f ] rho_i/gamma_i: %f, rho_bound: %f,  gamma_i: %f, nbsNumber: %d.\n", r_i[ 0 ], r_i[ 1 ], rho_i/gamma_i, view_rho_bound[ i ], gamma_i, nbsNumber );
 
    };
    SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary, fluid->neighborSearch );

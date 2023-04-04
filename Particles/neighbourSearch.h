@@ -73,6 +73,12 @@ public:
    void
    loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
 
+   //with vector TEST
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighborsAnotherSet( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
+
    //with vector
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
