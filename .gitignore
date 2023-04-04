@@ -17,3 +17,7 @@ SPHdemo/SPHCases/*/MeasuretoolConfig.h
 SPHdemo/SPHCases/*/ParticlesConfig.h
 SPHdemo/SPHCases/*/SPHCaseConfig.h
 SPHdemo/SPHCases/*/SimulationControlConfig.h
+SPHdemo/SPHCases/*/results/*
+
+# damBreak2D_WCSPH-DBC executable
+SPHdemo/SPHCases/damBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
