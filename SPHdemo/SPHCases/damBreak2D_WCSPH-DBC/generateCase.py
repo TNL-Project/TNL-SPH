@@ -182,3 +182,9 @@ with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
 
 with open( 'MeasuretoolConfig.h', 'w' ) as file:
   file.write( fileMeasuretoolConf )
+
+#resultsPath = r'C:\Program Files\arbitrary'
+import os
+resultsPath = r'./results'
+if not os.path.exists(resultsPath):
+    os.makedirs(resultsPath)
