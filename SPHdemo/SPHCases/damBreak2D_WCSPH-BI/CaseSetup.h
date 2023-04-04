@@ -330,25 +330,25 @@ int main( int argc, char* argv[] )
          /**
           * Interpolate on the grid.
           */
-         //std::string outputFileNameInterpolation = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_interpolation.vtk";
-         //myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >( mySPHSimulation.fluid, mySPHSimulation.boundary );
-         //myInterpolation.saveInterpolation( outputFileNameInterpolation );
+         std::string outputFileNameInterpolation = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_interpolation.vtk";
+         myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         myInterpolation.saveInterpolation( outputFileNameInterpolation );
 
       }
 
-      //if( myTimeStepping.getTime() > measuretoolPressureTimer )
-      //{
-      //   measuretoolPressureTimer += measuretoolPressure.outputTime;
-      //   mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D,
-      //                                                      EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
-      //}
+      if( myTimeStepping.getTime() > measuretoolPressureTimer )
+      {
+         measuretoolPressureTimer += measuretoolPressure.outputTime;
+         mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D,
+                                                            EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+      }
 
-      //if( myTimeStepping.getTime() > measuretoolWaterLevelTimer )
-      //{
-      //   measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
-      //   mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D,
-      //                                                   EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
-      //}
+      if( myTimeStepping.getTime() > measuretoolWaterLevelTimer )
+      {
+         measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
+         mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D,
+                                                         EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+      }
 
       myTimeStepping.updateTimeStep();
    }

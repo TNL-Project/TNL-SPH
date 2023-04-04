@@ -21,3 +21,4 @@ SPHdemo/SPHCases/*/results/*
 
 # damBreak2D_WCSPH-DBC executable
 SPHdemo/SPHCases/damBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
+SPHdemo/SPHCases/damBreak2D_WCSPH-BI/damBreak2D_WCSPH-BI

@@ -21,8 +21,8 @@ class SPHSimulationControl
 {
    public:
 
-   const std::string inputParticleFile = "damBreak2D_WCSPH-BI/dambreak_fluid.vtk";
-   const std::string inputParticleFile_bound = "damBreak2D_WCSPH-BI/dambreak_boundary.vtk";
+   const std::string inputParticleFile = "dambreak_fluid.vtk";
+   const std::string inputParticleFile_bound = "dambreak_boundary.vtk";
    std::string outputFileName = "results/particles";
 
    const float endTime = 0.75;
