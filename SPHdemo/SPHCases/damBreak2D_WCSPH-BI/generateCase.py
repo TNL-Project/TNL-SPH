@@ -152,11 +152,11 @@ spaceDimension = 2
 
 #Determine grid size
 import math
-gridXbegin = 1.1 * ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius
-gridYbegin = 1.1 * ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius
+gridXbegin = 1.01 * ( ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius )
+gridYbegin = 1.01 * ( ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius )
 
-gridXend = 1.1 * ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius
-gridYend = 1.1 * ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius
+gridXend = 1.01 * ( ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius )
+gridYend = 1.01 * ( ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius )
 
 gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
 gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )

@@ -1,3 +1,19 @@
 # Files with particles
 *.ptcs
 *.vtk
+
+# Output files
+*.json
+
+# Object files
+*.o
+*.cuo
+
+# pycache files
+__*__
+
+# CaseSetupFiles
+SPHdemo/SPHCases/*/MeasuretoolConfig.h
+SPHdemo/SPHCases/*/ParticlesConfig.h
+SPHdemo/SPHCases/*/SPHCaseConfig.h
+SPHdemo/SPHCases/*/SimulationControlConfig.h
