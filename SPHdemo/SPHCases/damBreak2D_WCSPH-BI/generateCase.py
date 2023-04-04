@@ -10,8 +10,8 @@ boxH = 0.8
 fluidL = 0.6
 fluidH = 0.3
 
-#dp = 0.002
-dp = 0.005
+dp = 0.002
+#dp = 0.005
 smoothingLentghCoef = 2**0.5*1.3
 
 rho0 = 1000.
@@ -21,7 +21,7 @@ numberOfBoundaryLayers = 1 #Since we use BI
 
 speedOfSound = 34.3
 CFLnumber = 0.2
-timeStep = 0.00002 #otherwise is obtained automatically
+timeStep = 0.00001 #otherwise is obtained automatically for HR
 
 write = '.vtk' #.ptcs or .vtk
 
@@ -152,11 +152,11 @@ spaceDimension = 2
 
 #Determine grid size
 import math
-gridXbegin = 1.005 * ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius
-gridYbegin = 1.005 * ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius
+gridXbegin = 1.1 * ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius
+gridYbegin = 1.1 * ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius
 
-gridXend = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius
-gridYend = 1.005 * ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius
+gridXend = 1.1 * ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius
+gridYend = 1.1 * ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius
 
 gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
 gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
