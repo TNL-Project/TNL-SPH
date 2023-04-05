@@ -24,15 +24,8 @@
  */
 #include "ParticlesConfig.h"
 #include "SPHCaseConfig.h"
-const std::string inputParticleFile = "openChannel2D_WCSPH-DBC/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "openChannel2D_WCSPH-DBC/dambreak_boundary.vtk";
-const std::string inputParticleFile_inlet = "openChannel2D_WCSPH-DBC/dambreak_inlet.vtk";
-const std::string inputParticleFile_inlet2 = "openChannel2D_WCSPH-DBC/dambreak_inlet2.vtk";
-
-const float endTime = 0.5;
-const int outputStep = 250;
-
-std::string outputFileName = "results/particles";
+#include "MeasuretoolConfig.h"
+#include "SimulationControlConfig.h"
 
 /**
  * SPH general toolds.
@@ -58,11 +51,37 @@ int main( int argc, char* argv[] )
     * Number of particles
     */
    using Device = Devices::Cuda;
-   using ParticlesConfig = ParticleSystemConfig< Device >;
-   using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
-   using ParticlesConfig_inlet = ParticleSystemConfig_inletBuffer< Device >;
-   using ParticlesConfig_inlet2 = ParticleSystemConfig_inlet2Buffer< Device >;
+
+   /**
+    * Load simulation configs.
+    * - Particle system config:
+    *   config for definition of particle system (datatypes, dimension,...)
+    *   config with parameters of particle system (domain size, search radius,...)
+    *
+    * - Configuration of particle system.
+    *   config with initial parameters of the particle system
+    *
+    * - SPH method config:
+    *   config with parameteres and constants of the SPH method
+    *
+    * - Simulation control:
+    *   config with path to initial condition, path to store results, end time etc.
+    *
+    * - Measuretool:
+    *   config for pressure measurement
+    *   config for water level measurement
+    *   config for grid interpolation
+    */
+   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< Device >;
+   using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
+
+   using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup;
+
    using SPHConfig = SPH::SPHCaseConfig< Device >;
+
+   using SimulationControl = TNL::ParticleSystem::SPH::SimulationConstrolConfiguration::SPHSimulationControl;
+
+   using MeasuretoolInitGridInterpolation = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
 
    /**
     * Particle and neighbor search model.
@@ -71,15 +90,23 @@ int main( int argc, char* argv[] )
    using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
 
    /**
-    * SPH model.
+    * Define simulation SPH model and SPH formulation.
+    *
+    * - SPHModel: is the model of used SPH method (WCSPH_DBC, WCSPH_BI, RSPH, etc.)
+    *   IMPORATANT: Constants and parameters of used model have to be defined in the SPHConfig.
+    *
+    * - SPHSimulation: defines the type of problem (simple fluid, problem with open or
+    *   moving boundaries or multiphase flows). For the chosen type of simulation,
+    *   appropriate SPH scheme is required!
     */
-   using SPHModel = typename TNL::ParticleSystem::SPH::WCSPH_DBC<
-      ParticleSystem, SPHConfig >;
-   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHOpenSystem<
-      SPHModel, ParticleSystem, NeighborSearch >;
+   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHSimulation = TNL::ParticleSystem::SPH::SPHOpenSystem< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
-    * SPH schemes.
+    * Define particular schemes of the used SPH model.
+    * Here in the case of WCSPH, we work with DiffusiveTerm, ViscousTerm and EquationOfState.
+    *
+    * IMPORATANT: Constants and parameters of used schemes have to be defined in the SPHConfig.
     */
    using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
@@ -92,12 +119,29 @@ int main( int argc, char* argv[] )
    using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
 
    /**
+    * Define time step control.
+    * There is const time step option and variable time step option.
+    */
+   using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
+
+   /**
+    * Load simulation parameters.
+    */
+   SPHSimulationConfig mySPHSimulationConfig;
+   mySPHSimulationConfig.template loadParameters< ParticlesInitParameters >();
+
+   /**
+    * Load simulation control (file names, time steps,...)
+    */
+   SimulationControl mySimulationControl;
+
+   /**
     * Create the simulation.
     */
-   SPHSimulation mySPHSimulation(
-         ParticlesConfig::numberOfParticles, ParticlesConfig::numberOfAllocatedParticles,
-         ParticlesConfig_bound::numberOfParticles, ParticlesConfig_bound::numberOfAllocatedParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize, 1 );
+   SPHSimulation mySPHSimulation( mySPHSimulationConfig );
+   std::cout << mySPHSimulation << std::endl;
+
+   //Resolve this
 
    mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet::numberOfParticles, ParticlesConfig_inlet::numberOfAllocatedParticles,
          ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
@@ -105,18 +149,7 @@ int main( int argc, char* argv[] )
    mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet2::numberOfParticles, ParticlesConfig_inlet2::numberOfAllocatedParticles,
          ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
 
-
-   /**
-     * TEMP.
-     */
-   mySPHSimulation.model->h = SPHConfig::h;
-   mySPHSimulation.model->m = SPHConfig::mass;
-   mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
-   mySPHSimulation.model->coefB = SPHConfig::coefB;
-   mySPHSimulation.model->rho0 = SPHConfig::rho0;
-   mySPHSimulation.model->g = { 0.f, -9.81f };
-
-
+   //-------------------------- up to this point
    /**
     * Read the particle file.
     */
