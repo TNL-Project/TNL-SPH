@@ -22,9 +22,9 @@ class SPHSimulationControl
    public:
 
    const std::string inputParticleFile = "openchannel_fluid.vtk";
-   const std::string inputParticleFile_bound = "openchanlnel_boundary.vtk";
-   const std::string inputParticleFile_inlet = "openchanlnel_inlet.vtk";
-   const std::string inputParticleFile_outlet = "openchanlnel_outlet.vtk";
+   const std::string inputParticleFile_bound = "openchannel_boundary.vtk";
+   const std::string inputParticleFile_inlet = "openchannel_inlet.vtk";
+   const std::string inputParticleFile_outlet = "openchannel_outlet.vtk";
    std::string outputFileName = "results/particles";
 
    const float endTime = 0.5;

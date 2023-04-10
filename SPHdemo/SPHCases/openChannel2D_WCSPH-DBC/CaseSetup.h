@@ -26,6 +26,7 @@
 #include "SPHCaseConfig.h"
 #include "MeasuretoolConfig.h"
 #include "SimulationControlConfig.h"
+#include "OpenBoundaryConfig.h"
 
 /**
  * SPH general toolds.
@@ -42,6 +43,11 @@
 #include "../../../SPH/Models/EquationOfState.h"
 #include "../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../SPH/Kernels.h"
+
+/**
+ * Time step control.
+ */
+#include "../../../SPH/TimeStep.h"
 
 using namespace TNL;
 
@@ -76,6 +82,8 @@ int main( int argc, char* argv[] )
    using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
 
    using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup;
+   using InletConfig = TNL::ParticleSystem::SPH::InletBuffer;
+   using OutletConfig = TNL::ParticleSystem::SPH::OutletBuffer;
 
    using SPHConfig = SPH::SPHCaseConfig< Device >;
 
@@ -141,13 +149,23 @@ int main( int argc, char* argv[] )
    SPHSimulation mySPHSimulation( mySPHSimulationConfig );
    std::cout << mySPHSimulation << std::endl;
 
-   //Resolve this
+   //TODO: Resolve this
+   mySPHSimulation.addOpenBoundaryPatch( ParticlesInitParameters::numberOfInletParticles,
+                                         ParticlesInitParameters::numberOfAllocatedInletParticles,
+                                         ParticlesInitParameters::searchRadius,
+                                         ParticlesInitParameters::gridXsize * ParticlesInitParameters::gridYsize );
 
-   mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet::numberOfParticles, ParticlesConfig_inlet::numberOfAllocatedParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+   mySPHSimulation.addOpenBoundaryPatch( ParticlesInitParameters::numberOfOutletParticles,
+                                         ParticlesInitParameters::numberOfAllocatedOutletParticles,
+                                         ParticlesInitParameters::searchRadius,
+                                         ParticlesInitParameters::gridXsize * ParticlesInitParameters::gridYsize );
 
-   mySPHSimulation.addOpenBoundaryPatch( ParticlesConfig_inlet2::numberOfParticles, ParticlesConfig_inlet2::numberOfAllocatedParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+   /**
+    * TEMP: Determine number of interation for constant timestep.
+    * Perform simulation main loop.
+    */
+   TimeStepping myTimeStepping( SPHConfig::dtInit, mySimulationControl.endTime );
+
 
    //-------------------------- up to this point
    /**
@@ -163,7 +181,10 @@ int main( int argc, char* argv[] )
    //:myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
    //:      mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
 
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myBoundaryReader(
+         mySimulationControl.inputParticleFile_bound,
+         ParticlesInitParameters::numberOfBoundaryParticles,
+         ParticlesInitParameters::numberOfAllocatedBoundaryParticles);
    myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
 
    myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
@@ -176,7 +197,10 @@ int main( int argc, char* argv[] )
    /**
     * Setup inlet.
     */
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig_inlet, Reader > myInletReader( inputParticleFile_inlet );
+   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myInletReader(
+         mySimulationControl.inputParticleFile_inlet,
+         ParticlesInitParameters::numberOfInletParticles,
+         ParticlesInitParameters::numberOfAllocatedInletParticles);
    myInletReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.openBoundaryPatches[ 0 ]->particles->getPoints() ) ;
 
    myInletReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
@@ -190,14 +214,14 @@ int main( int argc, char* argv[] )
     * Setup parameters for open boundary.
     */
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.orientation = {
-      SPHConfig::INLET::orientation_x, SPHConfig::INLET::orientation_y };
+      InletConfig::orientation_x, InletConfig::orientation_y };
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.velocity = {
-      SPHConfig::INLET::velocity_x, SPHConfig::INLET::velocity_y };
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.density = SPHConfig::INLET::inlet_density;
+      InletConfig::velocity_x, InletConfig::velocity_y };
+   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.density = InletConfig::inlet_density;
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth = {
-      SPHConfig::INLET::bufferWidth_x, SPHConfig::INLET::bufferWidth_y };
+      InletConfig::bufferWidth_x, InletConfig::bufferWidth_y };
    mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.position = {
-      SPHConfig::INLET::position_x, SPHConfig::INLET::position_y };
+      InletConfig::position_x, InletConfig::position_y };
 
    std::cout << "Inlet parameters: " << std::endl;
    std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.orientation << std::endl;
@@ -207,7 +231,10 @@ int main( int argc, char* argv[] )
   /**
    * Setup second inlet.
    */
-  TNL::ParticleSystem::ReadParticles< ParticlesConfig_inlet2, Reader > myInlet2Reader( inputParticleFile_inlet2 );
+  TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myInlet2Reader(
+         mySimulationControl.inputParticleFile_outlet,
+         ParticlesInitParameters::numberOfOutletParticles,
+         ParticlesInitParameters::numberOfAllocatedOutletParticles);
   myInlet2Reader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.openBoundaryPatches[ 1 ]->particles->getPoints() ) ;
 
   myInlet2Reader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
@@ -221,29 +248,29 @@ int main( int argc, char* argv[] )
    * Setup parameters for open boundary.
    */
   mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.orientation = {
-     SPHConfig::INLET2::orientation_x, SPHConfig::INLET2::orientation_y };
+     OutletConfig::orientation_x, OutletConfig::orientation_y };
   mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity = {
-     SPHConfig::INLET2::velocity_x, SPHConfig::INLET2::velocity_y };
-  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.density = SPHConfig::INLET2::inlet_density;
+     OutletConfig::velocity_x, OutletConfig::velocity_y };
+  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.density = OutletConfig::inlet_density;
   mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth = {
-     SPHConfig::INLET2::bufferWidth_x, SPHConfig::INLET2::bufferWidth_y };
+     OutletConfig::bufferWidth_x, OutletConfig::bufferWidth_y };
   mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.position = {
-     SPHConfig::INLET2::position_x, SPHConfig::INLET2::position_y };
+     OutletConfig::position_x, OutletConfig::position_y };
 
   std::cout << "Inlet2 parameters: " << std::endl;
   std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.orientation << std::endl;
   std::cout << "Velocity .................... " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity << std::endl;
   std::cout << "BufferWidth ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth << std::endl;
 
-   mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-   mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   //mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   //mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
+   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridOrigin( { ParticlesInitParameters::gridXorigin, ParticlesInitParameters::gridYorigin } );
+   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridOrigin( { ParticlesInitParameters::gridXorigin, ParticlesInitParameters::gridYorigin } );
 
-   mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-   mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   //mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   //mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
+   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridSize( { ParticlesInitParameters::gridXsize, ParticlesInitParameters::gridYsize } );
+   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridSize( { ParticlesInitParameters::gridXsize, ParticlesInitParameters::gridYsize } );
 
    /**
     * Define timers to measure computation time.
@@ -251,24 +278,19 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_inlet, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
-   /**
-    * TEMP: Determine number of interation for constant timestep.
-    * Perform simulation main loop.
-    */
-   int steps = endTime / SPHConfig::dtInit;
-   std::cout << "Number of steps: " << steps << std::endl;
-
-
-   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
+   //for( unsigned int iteration = 0; iteration < steps; iteration ++ )
+   float saveResultsTimer = 0.f;
+   while( myTimeStepping.runTheSimulation() )
    {
-      std::cout << "STEP: " << iteration << std::endl;
+      std::cout << "Time: " << myTimeStepping.getTime() << std::endl;
+      std::cout << mySPHSimulation.fluid->particles->getNumberOfParticles() << std::endl;
 
       /**
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
       mySPHSimulation.PerformNeighborSearch(
-            iteration, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+            myTimeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
@@ -286,12 +308,11 @@ int main( int argc, char* argv[] )
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
-      if( iteration % 20 == 0 ) {
+      if( myTimeStepping.getStep() % 20 == 0 ) {
          mySPHSimulation.integrator->IntegrateEuler< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
          mySPHSimulation.integrator->IntegrateEulerBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
          timer_inlet.start();
          mySPHSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 0 ] );
-         //mySPHSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 1 ] );
          mySPHSimulation.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 1 ] );
          timer_inlet.stop();
       }
@@ -300,7 +321,6 @@ int main( int argc, char* argv[] )
          mySPHSimulation.integrator->IntegrateVerletBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
          timer_inlet.start();
          mySPHSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 0 ] );
-         //mySPHSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 1 ] );
          mySPHSimulation.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 1 ] );
          timer_inlet.stop();
       }
@@ -310,8 +330,10 @@ int main( int argc, char* argv[] )
       /**
        * Output particle data
        */
-      if( ( iteration % outputStep ==  0) && (iteration > 0) )
+      if( myTimeStepping.getTime() > saveResultsTimer )
       {
+         saveResultsTimer += mySimulationControl.outputTime;
+
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
@@ -323,7 +345,7 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameFluid = outputFileName + std::to_string( iteration ) + "_fluid.vtk";
+         std::string outputFileNameFluid = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_fluid.vtk";
          std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
          Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
          myWriter.writeParticles( *mySPHSimulation.fluid->particles );
@@ -332,7 +354,7 @@ int main( int argc, char* argv[] )
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
                mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
 
-         std::string outputFileNameBoundary = outputFileName + std::to_string( iteration ) + "_boundary.vtk";
+         std::string outputFileNameBoundary = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_boundary.vtk";
          std::ofstream outputFileBoundary ( outputFileNameBoundary, std::ofstream::out );
          Writer myWriterBoundary( outputFileBoundary, VTK::FileFormat::ascii );
          myWriterBoundary.writeParticles( *mySPHSimulation.boundary->particles );
@@ -341,6 +363,8 @@ int main( int argc, char* argv[] )
          //myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
          //      mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity", 3, mySPHSimulation.boundary->particles->getNumberOfParticles() );
       }
+
+      myTimeStepping.updateTimeStep();
    }
 
    /**
@@ -349,6 +373,7 @@ int main( int argc, char* argv[] )
    float totalTime = ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
 
+   int steps = myTimeStepping.getStep();
    float totalTimePerStep = totalTime / steps;
 
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;

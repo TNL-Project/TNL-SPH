@@ -33,14 +33,14 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
    const auto view_points_inlet = openBoundary->particles->getPoints().getView();
 
    /* CONSTANT VARIABLES */
-   const RealType h = this->h;
-   const RealType m = this->m;
-   const RealType speedOfSound = this->speedOfSound;
-   const RealType coefB = this->coefB;
-   const RealType rho0 = this->rho0;
-   const RealType delta = this->delta;
-   const RealType alpha = this->alpha;
-   const VectorType gravity = this->g;
+   const RealType h = SPHConfig::h;
+   const RealType m = SPHConfig::mass;
+   const RealType speedOfSound = SPHConfig::speedOfSound;
+   const RealType coefB = SPHConfig::coefB;
+   const RealType rho0 = SPHConfig::rho0;
+   const RealType delta = SPHConfig::delta;
+   const RealType alpha = SPHConfig::alpha;
+   const VectorType gravity = SPHConfig::gravity;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_rho = fluid->variables->rho.getView();
@@ -244,7 +244,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity( V
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
    };
-   Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticles, init );
+   Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, init );
 }
 
 } // SPH

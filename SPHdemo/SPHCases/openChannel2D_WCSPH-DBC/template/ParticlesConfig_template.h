@@ -38,14 +38,14 @@ class ParticleInitialSetup
    public:
 
    static constexpr int numberOfParticles = placeholderFluidParticles;
-   static constexpr int numberOfAllocatedParticles = placeholderFluidParticles;
+   static constexpr int numberOfAllocatedParticles = placeholderAllocatedFluidParticles;
    static constexpr int numberOfBoundaryParticles = placeholderBoundaryParticles;
    static constexpr int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
 
    static constexpr int numberOfInletParticles = placeholderInletParticles;
    static constexpr int numberOfAllocatedInletParticles = placeholderAllocatedInletParticles;
    static constexpr int numberOfOutletParticles = placeholderOutletParticles;
-   static constexpr int numberOfAllocatedOutletParticles = placeholderAllocatedOuletParticles;
+   static constexpr int numberOfAllocatedOutletParticles = placeholderAllocatedOutletParticles;
 
    static constexpr float searchRadius = placeholderSearchRadius * 1.001;
    static constexpr int gridXsize = placeholderGridXSize;

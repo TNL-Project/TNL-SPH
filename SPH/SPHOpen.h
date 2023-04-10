@@ -5,6 +5,7 @@
 #include <memory> //shared_ptr
 
 #include "../Particles/Particles.h"
+#include "SPH.h"
 
 #include "Fluid.h"
 #include "Boundary.h"
@@ -47,11 +48,23 @@ public:
 
    SPHOpenSystem() = default;
 
-   SPHOpenSystem( GlobalIndexType size, GlobalIndexType sizeAllocated,
-         GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
-         RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   : model(), integrator(), fluid( size, sizeAllocated, h, numberOfCells ),
-     boundary( size_bound, sizeAllocated_bound, h, numberOfCells ){};
+   //SPHOpenSystem( GlobalIndexType size, GlobalIndexType sizeAllocated,
+   //      GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
+   //      RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
+   //: model(), integrator(), fluid( size, sizeAllocated, h, numberOfCells ),
+   //  boundary( size_bound, sizeAllocated_bound, h, numberOfCells ){};
+
+   SPHOpenSystem( SPHSimpleFluidConfig< typename ParticleSystem::Config > sphConfig )
+   :  model(),
+      integrator(),
+      fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
+      boundary( sphConfig.sizeBoundary, sphConfig.sizeAllocatedBoundary, sphConfig.searchRadius, sphConfig.gridNumberOfCells )
+   {
+      fluid->particles->setGridSize( sphConfig.gridSize );
+      fluid->particles->setGridOrigin( sphConfig.gridOrigin );
+      boundary->particles->setGridSize( sphConfig.gridSize );
+      boundary->particles->setGridOrigin( sphConfig.gridOrigin );
+   };
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -68,6 +81,9 @@ public:
     * TODO: I don't like this.
     */
    void addOpenBoundaryPatch( GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer, RealType h, GlobalIndexType numberOfCells );
+
+   void
+   writeProlog( TNL::Logger& logger ) const noexcept;
 
 //protected:
 
@@ -86,6 +102,17 @@ public:
 } // SPH
 } // ParticleSystem
 } // TNL
+
+template< typename Model, typename ParticleSystem, typename NeighborSearch >
+std::ostream&
+operator<<( std::ostream& str, const SPH::SPHOpenSystem< Model, ParticleSystem, NeighborSearch >& sphSimulation )
+{
+   TNL::Logger logger( 100, str );
+
+   sphSimulation.writeProlog( logger );
+
+   return str;
+}
 
 #include "SPHOpen_impl.h"
 

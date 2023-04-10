@@ -15,7 +15,7 @@ numberOfBoundaryLayers = 3
 
 speedOfSound = 34.3
 CFLnumber = 0.2
-timeStep = 0.00002 #otherwise is obtained automatically
+timeStep = 0.00002*0.5 #otherwise is obtained automatically
 
 write = '.vtk' #.ptcs or .vtk
 
@@ -29,7 +29,7 @@ fluidH = 0.2
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
 inletBufferPosition_x = 0.2
-inletBufferPosition_z = 0. + dp*2
+inletBufferPosition_z = 0. + dp*1
 inletBufferHeight = 0.1
 inletBufferLayers = numberOfBoundaryLayers + 1
 inletVelocity_x = 0.5
@@ -44,7 +44,7 @@ inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z *
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
 inlet2BufferPosition_x = 0.4
-inlet2BufferPosition_z = 0. + dp*2
+inlet2BufferPosition_z = 0. + dp*1
 inlet2BufferHeight = 0.15
 inlet2BufferLayers = numberOfBoundaryLayers + 1
 inlet2Velocity_x = 1.0
@@ -136,28 +136,28 @@ for layer in range( numberOfBoundaryLayers ):
 
 ### Write fluid particles
 if write == '.ptcs':
-    with open( "dambreak_fluid.ptcs", "w" ) as f:
+    with open( "openchannel_fluid.ptcs", "w" ) as f:
         f.write( str( len( fluid_rx ) ) + "\n" )
         for i in range( len( fluid_rx ) ):
             f.write( str( round( fluid_rx[ i ], 5 ) ) + " " + str( round( fluid_rz[i], 5 ) ) + " " + \
                      str( round( fluid_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
                      str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 0 ) + "\n" )
     ### Write boundary particles
-    with open("dambreak_boundary.ptcs", "w") as f:
+    with open("openchannel_boundary.ptcs", "w") as f:
         f.write( str( len( box_rx ) ) + "\n" )
         for i in range( len( box_rx ) ):
             f.write( str( round( box_rx[ i ], 5 ) ) + " " + str( round( box_rz[ i ], 5 ) ) + " " + \
                      str( round( box_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
                      str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 1 ) + "\n" )
     ### Write fluid particles
-    with open("dambreak_inlet.ptcs", "w") as f:
+    with open("openchannel_inlet.ptcs", "w") as f:
         f.write( str( len( inlet_rx ) ) + "\n" )
         for i in range( len( inlet_rx ) ):
             f.write( str( round( inlet_rx[ i ], 5 ) ) + " " + str( round( inlet_rz[ i ], 5 ) ) + " " + \
                      str( round( inlet_ry[ i ], 5 ) ) + " " + str( round( inlet_vx[ i ] ) ) + " " + str( round( inlet_vy[ i ] ) ) + " " + str( round( inlet_vz[ i ] ) ) + " " + \
                      str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 10 ) + "\n" )
     ### Write fluid particles
-    with open("dambreak_inlet2.ptcs", "w") as f:
+    with open("openchannel_inlet2.ptcs", "w") as f:
         f.write( str( len( inlet2_rx ) ) + "\n" )
         for i in range( len( inlet2_rx ) ):
             f.write( str( round( inlet2_rx[ i ], 5 ) ) + " " + str( round( inlet2_rz[ i ], 5 ) ) + " " + \
@@ -169,14 +169,14 @@ elif write == '.vtk':
     import saveParticlesVTK
     import numpy as np
 
-    r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
-    v = np.zeros( ( len( fluid_rx ), 3 ) )
-    rho = rho0 * np.ones( len( fluid_rx ) )
-    p = np.zeros( len( fluid_rx ) )
-    ptype = np.zeros( len( fluid_rx ) )
+    #r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
+    #v = np.zeros( ( len( fluid_rx ), 3 ) )
+    #rho = rho0 * np.ones( len( fluid_rx ) )
+    #p = np.zeros( len( fluid_rx ) )
+    #ptype = np.zeros( len( fluid_rx ) )
 
-    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+    #fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    #saveParticlesVTK.save_polydata( fluidToWrite, "openchannel_fluid.vtk" )
 
     r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
     v = np.zeros( ( len( box_rx ), 3 ) )
@@ -185,7 +185,7 @@ elif write == '.vtk':
     ptype = np.ones( len( box_rx ) )
 
     boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
+    saveParticlesVTK.save_polydata( boxToWrite, "openchannel_boundary.vtk" )
 
     r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
     v = np.array( ( inlet_vx, inlet_vz, inlet_vy ), dtype=float ).T #!!
@@ -194,7 +194,7 @@ elif write == '.vtk':
     ptype = np.ones( len( inlet_rx ) )
 
     inletToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( inletToWrite, "dambreak_inlet.vtk" )
+    saveParticlesVTK.save_polydata( inletToWrite, "openchannel_inlet.vtk" )
 
     r = np.array( ( inlet2_rx, inlet2_rz, inlet2_ry ), dtype=float ).T #!!
     v = np.array( ( inlet2_vx, inlet2_vz, inlet2_vy ), dtype=float ).T #!!
@@ -203,7 +203,7 @@ elif write == '.vtk':
     ptype = np.ones( len( inlet2_rx ) )
 
     inlet2ToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( inlet2ToWrite, "dambreak_inlet2.vtk" )
+    saveParticlesVTK.save_polydata( inlet2ToWrite, "openchannel_outlet.vtk" )
 else:
     print( "Invalid particle output type." )
 
@@ -240,32 +240,10 @@ fileSPHConf = fileSPHConf.replace( 'placeholderMass', str( particleMass ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderSpeedOfSound', str( speedOfSound ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderCoefB', str( coefB ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderDensity', str( rho0 ))
+fileSPHConf = fileSPHConf.replace( 'placeholderInitParticleDistance', str( dp ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderSmoothingLength', str( smoothingLentgh ) )
 fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 
-#inlet1
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Orientation_x', str( inletBufferOrientation_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Orientation_y', str( inletBufferOrientation_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Velocity_x', str( inletVelocity_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Velocity_y', str( inletVelocity_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Position_x', str( inletBufferReferencePoint_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Position_y', str( inletBufferReferencePoint_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Density', str( rho0 ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_x', str( round( inletBufferWidth, 7 ) ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1Width_y', str( 0. ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP1BufferEdge', str( round(  inletBufferEdge, 7 ) ) )
-
-#inlet2
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_x', str( inlet2BufferOrientation_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Orientation_y', str( inlet2BufferOrientation_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_x', str( inlet2Velocity_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Velocity_y', str( inlet2Velocity_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_x', str( inlet2BufferReferencePoint_x ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Position_y', str( inlet2BufferReferencePoint_z ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Density', str( rho0 ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_x', str( round( inlet2BufferWidth, 7 ) ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2Width_y', str( 0. ) )
-fileSPHConf = fileSPHConf.replace( 'placeholderOBP2BufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
 
 # Write the file out again
 with open( 'SPHCaseConfig.h', 'w' ) as file:
@@ -276,14 +254,14 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
 
 # Replace the target string
 fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( 0 ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( fluid_rx ) * 2 ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderBufferParticles', str( len( inlet_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBufferParticles', str( len( inlet_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderBuffer2Particles', str( len( inlet2_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBuffer2Particles', str( len( inlet2_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderInletParticles', str( len( inlet_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedInletParticles', str( len( inlet_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderOutletParticles', str( len( inlet2_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedOutletParticles', str( len( inlet2_rx ) ) )
 
 fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
@@ -294,3 +272,53 @@ fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round
 # Write the file out again
 with open( 'ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
+
+with open( 'template/OpenBoundaryConfig_template.h', 'r' ) as file :
+  fileOBConf = file.read()
+
+#inlet1
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Orientation_x', str( inletBufferOrientation_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Orientation_y', str( inletBufferOrientation_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Velocity_x', str( inletVelocity_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Velocity_y', str( inletVelocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Position_x', str( inletBufferPosition_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Position_y', str( inletBufferPosition_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Density', str( rho0 ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Width_x', str( round( inletBufferWidth, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1Width_y', str( 0. ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP1BufferEdge', str( round(  inletBufferEdge, 7 ) ) )
+
+#outlet
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Orientation_x', str( inlet2BufferOrientation_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Orientation_y', str( inlet2BufferOrientation_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Velocity_x', str( inlet2Velocity_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Velocity_y', str( inlet2Velocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Position_x', str( inlet2BufferPosition_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Position_y', str( inlet2BufferPosition_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Density', str( rho0 ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Width_x', str( round( inlet2BufferWidth, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2Width_y', str( 0. ) )
+fileOBConf = fileOBConf.replace( 'placeholderOBP2BufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
+
+# Write the file out again
+with open( 'OpenBoundaryConfig.h', 'w' ) as file:
+  file.write( fileOBConf )
+
+# Read and write (with possible edit) simulation control file.
+with open( 'template/SimulationControlConfig.h', 'r' ) as file :
+  fileSimulationControl = file.read()
+
+with open( 'SimulationControlConfig.h', 'w' ) as file:
+  file.write( fileSimulationControl )
+
+# Read and write (with possible edit) measuretool config file.
+with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
+  fileMeasuretoolConf = file.read()
+
+with open( 'MeasuretoolConfig.h', 'w' ) as file:
+  file.write( fileMeasuretoolConf )
+
+import os
+resultsPath = r'./results'
+if not os.path.exists( resultsPath ):
+    os.makedirs( resultsPath )

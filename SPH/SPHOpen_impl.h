@@ -84,6 +84,23 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::addOpenBoundaryPatch
    openBoundaryPatches.emplace_back( size_buffer, sizeAllocated_buffer, h, numberOfCells );
 }
 
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+void
+SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::writeProlog( TNL::Logger& logger ) const noexcept
+{
+   logger.writeParameter( "Number of fluid particles:", this->fluid->particles->getNumberOfParticles() );
+   logger.writeParameter( "Number of alloc. fluid particles:", this->fluid->particles->getNumberOfAllocatedParticles() );
+
+   logger.writeParameter( "Number of boundary particles:", this->boundary->particles->getNumberOfParticles() );
+   logger.writeParameter( "Number of alloc. boundary particles:", this->boundary->particles->getNumberOfParticles() );
+
+   logger.writeParameter( "Particle grid size: ", this->fluid->particles->getGridSize() );
+   logger.writeParameter( "Particle grid origin: ", this->fluid->particles->getGridOrigin() );
+
+   logger.writeParameter( "Particle boundary grid size: ", this->boundary->particles->getGridSize() );
+   logger.writeParameter( "Particle boundary grid origin: ", this->boundary->particles->getGridOrigin() );
+}
+
 } // SPH
 } // ParticleSystem
 } // TNL

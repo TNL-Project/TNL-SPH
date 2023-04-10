@@ -103,7 +103,7 @@ public:
          v_old_view[ i ] += a_view[ i ] * dt2;
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
 
       fluid->variables->v.swap( fluid->integratorVariables->v_old );
       fluid->variables->rho.swap( fluid->integratorVariables->rho_old );
@@ -129,7 +129,7 @@ public:
          const RealType rho_new = rho + drho_view[ i ] * dt2;
          rho_old_view[ i ] = ( rho_new > 1000.f ? rho_new : 1000.f ); //TODO: Use rho ref instead of 1000.f
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
 
       boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
    }
@@ -158,7 +158,7 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
    }
 
    template< typename BoundaryPointer >
@@ -182,7 +182,7 @@ public:
          const RealType rho_new = rho + drho_view[ i ] * dt;
          rho_view[ i ] = ( rho_new > 1000.f ? rho_new : 1000.f ); //TODO: Use rho ref instead of 1000.f
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
    }
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
@@ -230,7 +230,7 @@ public:
             printf("sc: %f ", ( r_relative, inletOrientation ));
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, moveBufferParticles );
 
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
@@ -272,7 +272,7 @@ public:
             view_rho_buffer[ i ] = inletConstDensity;
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfRetyped, createNewFluidParticles );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
       fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
       std::cout << "... InletBuffer - system updated." << std::endl;
    }
@@ -323,7 +323,7 @@ public:
             printf("--> moveBufferParticles: sc: %f r: [ %f, %f ]", ( r_relative, inletOrientation ), view_r_buffer[ i ][ 0 ], view_r_buffer[ i ][ 1 ] );
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, moveBufferParticles );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, moveBufferParticles );
       std::cout << std::endl << ".................. moved." << std::endl;
 
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
@@ -358,7 +358,7 @@ public:
 
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfBufferParticles, discardBufferParticles ); //this can loop over retyped range
+      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, discardBufferParticles ); //this can loop over retyped range
 
       openBoundary->particles->setNumberOfParticles( numberOfBufferParticles - numberOfRetyped );
       numberOfBufferParticles = numberOfBufferParticles - numberOfRetyped;
@@ -383,7 +383,7 @@ public:
             printf("-> checkFluidParticles: %f for r: [ %f, %f ]\n", ( r_relative, inletOrientation ), r[ 0 ], r[ 1 ] );
          }
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfParticle, checkFluidParticles );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticle, checkFluidParticles );
 
       auto fetchFluid = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_fluidOutMark[ i ]; };
       auto reductionFluid = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
@@ -428,7 +428,7 @@ public:
 
 
       };
-      Algorithms::ParallelFor< DeviceType >::exec( 0, numberOfFluidToBuffer, retypeFluidToOutlet );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfFluidToBuffer, retypeFluidToOutlet );
 
       openBoundary->particles->setNumberOfParticles( numberOfBufferParticles + numberOfFluidToBuffer );
       fluid->particles->setNumberOfParticles( numberOfParticleNew );
