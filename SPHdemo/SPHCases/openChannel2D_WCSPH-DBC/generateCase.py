@@ -32,7 +32,7 @@ inletBufferPosition_x = 0.2
 inletBufferPosition_z = 0. + dp*1
 inletBufferHeight = 0.1
 inletBufferLayers = numberOfBoundaryLayers + 1
-inletVelocity_x = 0.5
+inletVelocity_x = 1.
 inletVelocity_z = 0.
 
 inletBufferWidth = inletBufferLayers * dp - dp / 2
@@ -43,11 +43,11 @@ inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z *
 ## Second inlet buffer. ##
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
-inlet2BufferPosition_x = 0.4
+inlet2BufferPosition_x = 0.8
 inlet2BufferPosition_z = 0. + dp*1
 inlet2BufferHeight = 0.15
 inlet2BufferLayers = numberOfBoundaryLayers + 1
-inlet2Velocity_x = 1.0
+inlet2Velocity_x = 1.5
 inlet2Velocity_z = 0.
 
 inlet2BufferWidth = inlet2BufferLayers * dp - dp / 2
