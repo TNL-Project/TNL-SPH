@@ -17,8 +17,11 @@ SPHdemo/SPHCases/*/MeasuretoolConfig.h
 SPHdemo/SPHCases/*/ParticlesConfig.h
 SPHdemo/SPHCases/*/SPHCaseConfig.h
 SPHdemo/SPHCases/*/SimulationControlConfig.h
+SPHdemo/SPHCases/*/OpenBoundaryConfig.h
 SPHdemo/SPHCases/*/results/*
 
 # damBreak2D_WCSPH-DBC executable
 SPHdemo/SPHCases/damBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
 SPHdemo/SPHCases/damBreak2D_WCSPH-BI/damBreak2D_WCSPH-BI
+SPHdemo/SPHCases/damBreak2D_WCSPH-MDBC/damBreak2D_WCSPH-MDBC
+SPHdemo/SPHCases/openChannel2D_WCSPH-DBC/openChannel2D_WCSPH-DBC
