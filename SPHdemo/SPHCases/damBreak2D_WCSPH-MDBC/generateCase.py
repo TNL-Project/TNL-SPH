@@ -133,22 +133,24 @@ elif write == '.vtk':
     saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
 
     r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
+    mdbcGhostNodes = np.array( ( ghost_rx, ghost_rz, ghost_ry ), dtype=float ).T #!!
     v = np.zeros( ( len( box_rx ), 3 ) )
     rho = rho0 * np.ones( len( box_rx ) )
     p = np.zeros( len( box_rx ) )
     ptype = np.ones( len( box_rx ) )
 
-    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype, ghostNodes=mdbcGhostNodes )
     saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
 
-    r = np.array( ( ghost_rx, ghost_rz, ghost_ry ), dtype=float ).T #!!
-    v = np.zeros( ( len( ghost_rx ), 3 ) )
-    rho = rho0 * np.ones( len( ghost_rx ) )
-    p = np.zeros( len( ghost_rx ) )
-    ptype = np.ones( len( ghost_rx ) )
+    #Save ghost nodes - only for debug
+    #r = np.array( ( ghost_rx, ghost_rz, ghost_ry ), dtype=float ).T #!!
+    #v = np.zeros( ( len( ghost_rx ), 3 ) )
+    #rho = rho0 * np.ones( len( ghost_rx ) )
+    #p = np.zeros( len( ghost_rx ) )
+    #ptype = np.ones( len( ghost_rx ) )
 
-    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( boxToWrite, "dambreak_ghost.vtk" )
+    #boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    #saveParticlesVTK.save_polydata( boxToWrite, "dambreak_ghost.vtk" )
 else:
     print( "Invalid particle output type." )
 
