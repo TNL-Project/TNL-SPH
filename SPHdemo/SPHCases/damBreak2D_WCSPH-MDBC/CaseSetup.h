@@ -40,8 +40,8 @@
 /**
  * SPH model.
  */
-#include "../../../SPH/Models/WCSPH_DBC/Variables.h"
-#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
+#include "../../../SPH/Models/WCSPH_MDBC/Variables.h"
+#include "../../../SPH/Models/WCSPH_MDBC/Interactions.h"
 #include "../../../SPH/Models/EquationOfState.h"
 
 #include "../../../SPH/Models/EquationOfState.h"
@@ -116,7 +116,7 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_MDBC< ParticleSystem, SPHConfig >;
    using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**
@@ -205,6 +205,8 @@ int main( int argc, char* argv[] )
          mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure" );
    myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
          mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity" );
+   myBoundaryReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
+         mySPHSimulation.boundary->getBoundaryVariables()->ghostNodes, "GhostNodes" );
 
    /**
     * Define measuretool sensors.
@@ -259,11 +261,11 @@ int main( int argc, char* argv[] )
       timer_integrate.start();
       if( myTimeStepping.getStep() % 20 == 0 ) {
          mySPHSimulation.integrator->IntegrateEuler< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateEulerBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
+         //mySPHSimulation.integrator->IntegrateEulerBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
       }
       else {
          mySPHSimulation.integrator->IntegrateVerlet< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateVerletBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
+         //mySPHSimulation.integrator->IntegrateVerletBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
       }
       timer_integrate.stop();
 
@@ -293,10 +295,10 @@ int main( int argc, char* argv[] )
          myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
                mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
 
-         timer_pressure.start();
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
-         timer_pressure.stop();
-         std::cout << "Compute pressure... done. " << std::endl;
+         //timer_pressure.start();
+         //mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
+         //timer_pressure.stop();
+         //std::cout << "Compute pressure... done. " << std::endl;
 
          std::string outputFileNameBound = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_boundary.vtk";
          std::ofstream outputFileBound ( outputFileNameBound, std::ofstream::out );
@@ -333,82 +335,82 @@ int main( int argc, char* argv[] )
       myTimeStepping.updateTimeStep();
    }
 
-   std::string outputFileNameInterpolation = mySimulationControl.outputFileName + "_sensors.dat";
-   mySensorInterpolation.saveSensors( outputFileNameInterpolation );
+   //: std::string outputFileNameInterpolation = mySimulationControl.outputFileName + "_sensors.dat";
+   //: mySensorInterpolation.saveSensors( outputFileNameInterpolation );
 
-   std::string outputFileNameWaterLevel = mySimulationControl.outputFileName + "_sensorsWaterLevel.dat";
-   mySensorWaterLevel.saveSensors( outputFileNameWaterLevel );
+   //: std::string outputFileNameWaterLevel = mySimulationControl.outputFileName + "_sensorsWaterLevel.dat";
+   //: mySensorWaterLevel.saveSensors( outputFileNameWaterLevel );
 
-   /**
-    * Output simulation stats.
-    */
-   float totalTime = ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+   //: /**
+   //:  * Output simulation stats.
+   //:  */
+   //: float totalTime = ( timer_search.getRealTime() + \
+   //: + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
 
-   int steps = myTimeStepping.getStep();
-   float totalTimePerStep = totalTime / steps;
+   //: int steps = myTimeStepping.getStep();
+   //: float totalTimePerStep = totalTime / steps;
 
-   std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
-   std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
-   std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Search (percentage)........................... " << timer_search.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
-   std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Reset (percentage)......................... " << timer_search_reset.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
-   std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Index by cell (percentage)................. " << timer_search_cellIndices.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
-   std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Sort (percentage).......................... " << timer_search_sort.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
-   std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Particle to cell (percentage).............. " << timer_search_toCells.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
-   std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
-   std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
-   std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
-   std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
+   //: std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
+   //: std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
+   //: std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << "Search (percentage)........................... " << timer_search.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
+   //: std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << " - Reset (percentage)......................... " << timer_search_reset.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
+   //: std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << " - Index by cell (percentage)................. " << timer_search_cellIndices.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
+   //: std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << " - Sort (percentage).......................... " << timer_search_sort.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
+   //: std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << " - Particle to cell (percentage).............. " << timer_search_toCells.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
+   //: std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
+   //: std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
+   //: std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
+   //: std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;
+   //: std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
+   //: + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
+   //: std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
+   //: + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
-   //JsonMap
-   std::map< std::string, std::string > timeResults;
+   //: //JsonMap
+   //: std::map< std::string, std::string > timeResults;
 
-   timeResults.insert({ "search",                              std::to_string( timer_search.getRealTime()                                ) } );
-   timeResults.insert({ "search-average",                      std::to_string( timer_search.getRealTime() / steps                        ) } );
-   timeResults.insert({ "search-percentage",                   std::to_string( timer_search.getRealTime() / totalTime * 100              ) } );
-   timeResults.insert({ "search-reset",                        std::to_string( timer_search_reset.getRealTime()                          ) } );
-   timeResults.insert({ "search-reset-average",                std::to_string( timer_search_reset.getRealTime() / steps                  ) } );
-   timeResults.insert({ "search-reset-percentage",             std::to_string( timer_search_reset.getRealTime() / totalTime * 100        ) } );
-   timeResults.insert({ "search-index-by-cell ",               std::to_string( timer_search_cellIndices.getRealTime()                    ) } );
-   timeResults.insert({ "search-index-by-cell-average",        std::to_string( timer_search_cellIndices.getRealTime() / steps            ) } );
-   timeResults.insert({ "search-index-by-cell-percentage",     std::to_string( timer_search_cellIndices.getRealTime() / totalTime * 100  ) } );
-   timeResults.insert({ "search-sort",                         std::to_string( timer_search_sort.getRealTime()                           ) } );
-   timeResults.insert({ "search-sort-average",                 std::to_string( timer_search_sort.getRealTime() / steps                   ) } );
-   timeResults.insert({ "search-sort-percentage",              std::to_string( timer_search_sort.getRealTime() / totalTime * 100         ) } );
-   timeResults.insert({ "search-particles-to-cell ",           std::to_string( timer_search_toCells.getRealTime()                        ) } );
-   timeResults.insert({ "search-particles-to-cell-average",    std::to_string( timer_search_toCells.getRealTime() / steps                ) } );
-   timeResults.insert({ "search-particles-to-cell-percentage", std::to_string( timer_search_toCells.getRealTime() / totalTime * 100      ) } );
-   timeResults.insert({ "interaction",                         std::to_string( timer_interact.getRealTime()                              ) } );
-   timeResults.insert({ "interaction-average",                 std::to_string( timer_interact.getRealTime() / steps                      ) } );
-   timeResults.insert({ "interaction-percentage",              std::to_string( timer_interact.getRealTime() / totalTime * 100            ) } );
-   timeResults.insert({ "integrate",                           std::to_string( timer_integrate.getRealTime()                             ) } );
-   timeResults.insert({ "integrate-average",                   std::to_string( timer_integrate.getRealTime() / steps                     ) } );
-   timeResults.insert({ "integrate-percentage",                std::to_string( timer_integrate.getRealTime() / totalTime * 100           ) } );
-   timeResults.insert({ "pressure-update",                     std::to_string( timer_pressure.getRealTime()                              ) } );
-   timeResults.insert({ "pressure-update-average",             std::to_string( timer_pressure.getRealTime() / steps                      ) } );
-   timeResults.insert({ "pressure-update-percentage",          std::to_string( timer_pressure.getRealTime() / totalTime * 100            ) } );
-   timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
-   timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
+   //: timeResults.insert({ "search",                              std::to_string( timer_search.getRealTime()                                ) } );
+   //: timeResults.insert({ "search-average",                      std::to_string( timer_search.getRealTime() / steps                        ) } );
+   //: timeResults.insert({ "search-percentage",                   std::to_string( timer_search.getRealTime() / totalTime * 100              ) } );
+   //: timeResults.insert({ "search-reset",                        std::to_string( timer_search_reset.getRealTime()                          ) } );
+   //: timeResults.insert({ "search-reset-average",                std::to_string( timer_search_reset.getRealTime() / steps                  ) } );
+   //: timeResults.insert({ "search-reset-percentage",             std::to_string( timer_search_reset.getRealTime() / totalTime * 100        ) } );
+   //: timeResults.insert({ "search-index-by-cell ",               std::to_string( timer_search_cellIndices.getRealTime()                    ) } );
+   //: timeResults.insert({ "search-index-by-cell-average",        std::to_string( timer_search_cellIndices.getRealTime() / steps            ) } );
+   //: timeResults.insert({ "search-index-by-cell-percentage",     std::to_string( timer_search_cellIndices.getRealTime() / totalTime * 100  ) } );
+   //: timeResults.insert({ "search-sort",                         std::to_string( timer_search_sort.getRealTime()                           ) } );
+   //: timeResults.insert({ "search-sort-average",                 std::to_string( timer_search_sort.getRealTime() / steps                   ) } );
+   //: timeResults.insert({ "search-sort-percentage",              std::to_string( timer_search_sort.getRealTime() / totalTime * 100         ) } );
+   //: timeResults.insert({ "search-particles-to-cell ",           std::to_string( timer_search_toCells.getRealTime()                        ) } );
+   //: timeResults.insert({ "search-particles-to-cell-average",    std::to_string( timer_search_toCells.getRealTime() / steps                ) } );
+   //: timeResults.insert({ "search-particles-to-cell-percentage", std::to_string( timer_search_toCells.getRealTime() / totalTime * 100      ) } );
+   //: timeResults.insert({ "interaction",                         std::to_string( timer_interact.getRealTime()                              ) } );
+   //: timeResults.insert({ "interaction-average",                 std::to_string( timer_interact.getRealTime() / steps                      ) } );
+   //: timeResults.insert({ "interaction-percentage",              std::to_string( timer_interact.getRealTime() / totalTime * 100            ) } );
+   //: timeResults.insert({ "integrate",                           std::to_string( timer_integrate.getRealTime()                             ) } );
+   //: timeResults.insert({ "integrate-average",                   std::to_string( timer_integrate.getRealTime() / steps                     ) } );
+   //: timeResults.insert({ "integrate-percentage",                std::to_string( timer_integrate.getRealTime() / totalTime * 100           ) } );
+   //: timeResults.insert({ "pressure-update",                     std::to_string( timer_pressure.getRealTime()                              ) } );
+   //: timeResults.insert({ "pressure-update-average",             std::to_string( timer_pressure.getRealTime() / steps                      ) } );
+   //: timeResults.insert({ "pressure-update-percentage",          std::to_string( timer_pressure.getRealTime() / totalTime * 100            ) } );
+   //: timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
+   //: timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
 
-   TNL::Benchmarks::writeMapAsJson( timeResults, "time_measurements", ".json" );
+   //: TNL::Benchmarks::writeMapAsJson( timeResults, "time_measurements", ".json" );
    std::cout << "\nDone ... " << std::endl;
 
 }

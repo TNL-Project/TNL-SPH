@@ -43,9 +43,10 @@ WCSPH_MDBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& f
    const auto view_v = fluid->variables->v.getView();
    auto view_a = fluid->variables->a.getView();
 
-   const auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_Drho_bound = boundary->variables->drho.getView();
+   auto view_rho_bound = boundary->variables->rho.getView();
+   //auto view_Drho_bound = boundary->variables->drho.getView();
    const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
    {
@@ -116,17 +117,33 @@ WCSPH_MDBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& f
          const VectorType v_ij = v_i - v_j;
 
          const RealType F = SPHKernelFunction::F( drs, h );
+         const RealType W = SPHKernelFunction::W( drs, h );
          const VectorType gradW = r_ij * F;
 
          const RealType V = m / rho_j;
 
-         constexpr if( SPHConfig::spaceDimension == 2 )
-         {
-            *A_gn( 1, 1 ) = W * V;          *A_gn( 1, 2 ) = dr[ 0 ] * W * V;          *A_gn( 1, 3 ) = dr[ 1 ] * W * V;
-            *A_gn( 2, 1 ) = gradW[ 0 ] * V; *A_gn( 2, 2 ) = dr[ 0 ] * gradW[ 0 ] * V; *A_gn( 2, 3 ) = dr[ 1 ] * gradW[ 0 ] * V;
-            *A_gn( 3, 1 ) = gradW[ 1 ] * V; *A_gn( 3, 2 ) = dr[ 0 ] * gradW[ 1 ] * V; *A_gn( 3, 3 ) = dr[ 1 ] * gradW[ 1 ] * V;
+         Matrix A_local = 0.f;
+         VectorExtendedType b_local = 0.f;
 
-            *b_gn[ 0 ] += W * m; b_gn[ 1 ] += gradW[ 0 ] * m; b_gn[ 2 ] += gradW[ 1 ] * m;
+         //if( SPHConfig::spaceDimension == 2 )
+         //{
+         //   *A_gn( 0, 0 ) = W * V;          *A_gn( 0, 1 ) = r_ij[ 0 ] * W * V;          *A_gn( 0, 2 ) = r_ij[ 1 ] * W * V;
+         //   *A_gn( 1, 0 ) = gradW[ 0 ] * V; *A_gn( 1, 1 ) = r_ij[ 0 ] * gradW[ 0 ] * V; *A_gn( 1, 2 ) = r_ij[ 1 ] * gradW[ 0 ] * V;
+         //   *A_gn( 2, 0 ) = gradW[ 1 ] * V; *A_gn( 2, 1 ) = r_ij[ 0 ] * gradW[ 1 ] * V; *A_gn( 2, 2 ) = r_ij[ 1 ] * gradW[ 1 ] * V;
+
+         //   *b_gn[ 0 ] += W * m; b_gn[ 1 ] += gradW[ 0 ] * m; b_gn[ 2 ] += gradW[ 1 ] * m;
+         //}
+
+         if( SPHConfig::spaceDimension == 2 )
+         {
+            A_local( 0, 0 ) = W * V;          A_local( 0, 1 ) = r_ij[ 0 ] * W * V;          A_local( 0, 2 ) = r_ij[ 1 ] * W * V;
+            A_local( 1, 0 ) = gradW[ 0 ] * V; A_local( 1, 1 ) = r_ij[ 0 ] * gradW[ 0 ] * V; A_local( 1, 2 ) = r_ij[ 1 ] * gradW[ 0 ] * V;
+            A_local( 2, 0 ) = gradW[ 1 ] * V; A_local( 2, 1 ) = r_ij[ 0 ] * gradW[ 1 ] * V; A_local( 2, 2 ) = r_ij[ 1 ] * gradW[ 1 ] * V;
+
+            b_local[ 0 ] = W * m; b_local[ 1 ] = gradW[ 0 ] * m; b_local[ 2 ] = gradW[ 1 ] * m;
+
+            *A_gn += A_local;
+            *b_gn += b_local;
          }
       }
    };
@@ -160,24 +177,27 @@ WCSPH_MDBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& f
       const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i );
+      const VectorType ghostNode_i = view_ghostNode_bound[ i ];
 
-      const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
+      //const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
+      const IndexVectorType gridIndex = TNL::floor( ( ghostNode_i - gridOrigin ) / searchRadius );
 
       RealType drho_i = 0.f;
       Matrix A_gn = 0.f;
       VectorExtendedType b_gn = 0.f;
 
-
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &A_gn, &b_gn );
 
       //view_Drho_bound[ i ] = drho_i;
-      if( Determinant( A ) > 0.001 )
+      if( Matrices::Determinant( A_gn ) > 0.001 )
       {
-
+         VectorExtendedType rhoGradRho = Matrices::Solve( A_gn, b_gn );
+         VectorType r_ign = r_i - ghostNode_i;
+         view_rho_bound[ i ] = rhoGradRho[ 0 ] + rhoGradRho[ 1 ] * r_ign[ 0 ] + rhoGradRho[ 2 ] * r_ign[ 1 ];
       }
-      else if( A( 0, 0 ) > 0.f )
+      else if( A_gn( 0, 0 ) > 0.f )
       {
-         view_rho_bound[ i ] = b_gn[ 0 ] / A( 0, 0 );
+         view_rho_bound[ i ] = b_gn[ 0 ] / A_gn( 0, 0 );
       }
       else
       {
