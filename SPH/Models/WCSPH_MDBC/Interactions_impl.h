@@ -102,16 +102,16 @@ WCSPH_MDBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& f
       }
    };
 
-   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
+   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
    {
       const VectorType r_j = view_points[ j ];
-      const VectorType r_ij = r_i - r_j;
+      //const VectorType r_ij = r_i - r_j;
+      const VectorType r_ij = r_j - ghostNode_i; //FLUID_POS - GHOSTNODE_POS
       const RealType drs = l2Norm( r_ij );
       if( drs <= searchRadius )
       {
          const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j );
 
          /* Interaction */
          const VectorType v_ij = v_i - v_j;
@@ -162,7 +162,8 @@ WCSPH_MDBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& f
       RealType drho_i = 0.f;
 
       neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-      neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      //neighborSearch_bound->loopOverNeighbors( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_bound->loopOverNeighborsAnotherSet( i, numberOfParticles_bound, gridIndex, gridSize, view_firstLastCellParticle_bound, view_particleCellIndex, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       a_i += gravity;
@@ -186,23 +187,35 @@ WCSPH_MDBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& f
       Matrix A_gn = 0.f;
       VectorExtendedType b_gn = 0.f;
 
-      neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, r_i, v_i, rho_i, p_i, &A_gn, &b_gn );
+      //neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, ghostNode_i, v_i, rho_i, p_i, &A_gn, &b_gn );
+      neighborSearch->loopOverNeighborsAnotherSet( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex_bound, BoundFluid, ghostNode_i, v_i, rho_i, p_i, &A_gn, &b_gn );
 
-      //view_Drho_bound[ i ] = drho_i;
+      RealType rho_bound = 0.f;
+
       if( Matrices::Determinant( A_gn ) > 0.001 )
       {
          VectorExtendedType rhoGradRho = Matrices::Solve( A_gn, b_gn );
-         VectorType r_ign = r_i - ghostNode_i;
-         view_rho_bound[ i ] = rhoGradRho[ 0 ] + rhoGradRho[ 1 ] * r_ign[ 0 ] + rhoGradRho[ 2 ] * r_ign[ 1 ];
+         //VectorType r_ign = r_i - ghostNode_i;
+         VectorType r_ign = ghostNode_i - r_i;
+         //view_rho_bound[ i ] = rhoGradRho[ 0 ] + rhoGradRho[ 1 ] * r_ign[ 0 ] + rhoGradRho[ 2 ] * r_ign[ 1 ];
+         rho_bound = rhoGradRho[ 0 ] + rhoGradRho[ 1 ] * r_ign[ 0 ] + rhoGradRho[ 2 ] * r_ign[ 1 ];
       }
       else if( A_gn( 0, 0 ) > 0.f )
       {
-         view_rho_bound[ i ] = b_gn[ 0 ] / A_gn( 0, 0 );
+         //view_rho_bound[ i ] = b_gn[ 0 ] / A_gn( 0, 0 );
+         rho_bound = b_gn[ 0 ] / A_gn( 0, 0 );
+
       }
       else
       {
-         view_rho_bound[ i ] = 1000.f;
+         //view_rho_bound[ i ] = 1000.f;
+         rho_bound = rho0;
       }
+
+      if( rho_bound < rho0 )
+         rho_bound = rho0;
+
+      view_rho_bound[ i ] = rho_bound;
 
    };
    SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary, fluid->neighborSearch );
