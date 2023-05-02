@@ -47,7 +47,8 @@ class GridInterpolation : public Measuretool< SPHConfig >
    using CoordinatesType = typename GridType::CoordinatesType;
 
    GridInterpolation( VectorType gridOrigin, CoordinatesType gridDimension, VectorType spaceSteps )
-   : variables( gridDimension[ 0 ] * gridDimension[ 1 ] ), gridDimension( gridDimension )
+   : variables( gridDimension[ 0 ] * gridDimension[ 1 ] ), gridDimension( gridDimension ),
+     vectorArrayBuffer( gridDimension[ 0 ] * gridDimension[ 1 ] * SPHConfig::spaceDimension ) //FIXME: No comment needed.
    {
       interpolationGrid.setOrigin( gridOrigin );
       interpolationGrid.setDimensions( gridDimension );
@@ -58,6 +59,10 @@ class GridInterpolation : public Measuretool< SPHConfig >
    GridType interpolationGrid;
    CoordinatesType gridDimension;
    VariablesPointer variables;
+
+   //FIXME: Temp. buffer to save vector array
+   using ScalarArrayType = Containers::Array< RealType, DeviceType, GlobalIndexType >;
+   ScalarArrayType vectorArrayBuffer;
 
    template< typename SPHKernelFunction >
    void
@@ -147,6 +152,24 @@ class GridInterpolation : public Measuretool< SPHConfig >
       writer.writeEntities( interpolationGrid );
 
       writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
+
+      //FIXME: Workaround for vectorArray;
+      //using BufferArrayView = Containers::ArrayView< RealType, DeviceType, GlobalIndexType >;
+      //BufferArrayView vectorBuffer;
+      //vectorBuffer.bind( reinterpret_cast< RealType* >( variables->v.getData() ) , sizeof( VectorType ) * variables->v.getSize() );
+      using BufferType = Containers::Array< RealType, Devices::Host, GlobalIndexType >;
+      BufferType buffer( 3 * gridDimension[ 0 ] * gridDimension[ 1 ] );
+
+      const auto velocityView = variables->v.getView();
+      GlobalIndexType k = 0;
+      GlobalIndexType entitiesCount = gridDimension[ 0 ] * gridDimension[ 1 ];
+      for( GlobalIndexType i = 0; i < entitiesCount; i++ ) {
+         const VectorType vector = velocityView.getElement( i );
+         for( int j = 0; j < 3; j++ )
+            buffer[ k++ ] = ( j < vector.getSize() ? vector[ j ] : 0 );
+      }
+
+      writer.template writeCellData( buffer, "Velocity", 3 );
    }
 
 };

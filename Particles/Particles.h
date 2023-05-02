@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TNL/Algorithms/ParallelFor.h>
+#include <TNL/Algorithms/parallelFor.h>
 #include <TNL/Pointers/SharedPointer.h>
 #include <TNL/Algorithms/sort.h>
 
