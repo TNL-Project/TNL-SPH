@@ -154,9 +154,6 @@ class GridInterpolation : public Measuretool< SPHConfig >
       writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
 
       //FIXME: Workaround for vectorArray;
-      //using BufferArrayView = Containers::ArrayView< RealType, DeviceType, GlobalIndexType >;
-      //BufferArrayView vectorBuffer;
-      //vectorBuffer.bind( reinterpret_cast< RealType* >( variables->v.getData() ) , sizeof( VectorType ) * variables->v.getSize() );
       using BufferType = Containers::Array< RealType, Devices::Host, GlobalIndexType >;
       BufferType buffer( 3 * gridDimension[ 0 ] * gridDimension[ 1 ] );
 
