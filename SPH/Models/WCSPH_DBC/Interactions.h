@@ -1,15 +1,5 @@
 #pragma once
 
-#include <TNL/Containers/Array.h>
-#include <TNL/Containers/ArrayView.h>
-
-/**
- * Use thrust for sorting.
- **/
-#include <thrust/sort.h>
-#include <thrust/gather.h>
-#include <thrust/execution_policy.h>
-#include <thrust/iterator/zip_iterator.h>
 
 #include "../../SPHTraits.h"
 #include "Variables.h"
@@ -38,24 +28,15 @@ public:
    using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using RealType = typename SPHFluidTraitsType::RealType;
-   using PointType = typename Particles::PointType;
    using ScalarType = typename SPHFluidTraitsType::ScalarType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
    using IndexVectorType = typename SPHFluidTraitsType::IndexVectorType;
 
-   //using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
-   //using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
-
-   using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
-
-   /* VARIABLES FIELDS */
    using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-   using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
-   /* Thrust sort */
-   using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
+   /* VARIABLES FIELDS */
+   using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /* Integrator */
    using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
@@ -63,9 +44,8 @@ public:
    using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 
    /*Swap variables*/
-   //using ModelVariables = Variables;
-	 using FluidVariables = Variables;
-	 using BoundaryVariables = Variables;
+	using FluidVariables = Variables;
+	using BoundaryVariables = Variables;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
    /**
