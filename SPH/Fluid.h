@@ -1,82 +1,38 @@
 #pragma once
 
-#include "SPHTraits.h"
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
-#include <thrust/gather.h>
+#include "PhysicalObject.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename ParticleSystem, typename NeighborSearch, typename SPHCaseConfig, typename Variables, typename IntegratorVariables >
-class Fluid
+template< typename ParticleSystem,
+          typename NeighborSearch,
+          typename SPHCaseConfig,
+          typename Variables,
+          typename IntegratorVariables >
+class Fluid : public PhysicalObject< ParticleSystem, NeighborSearch, SPHCaseConfig, Variables, IntegratorVariables >
 {
    public:
-   using DeviceType = typename ParticleSystem::Device;
-   using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-   using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
-   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
-   using IntegratorVariablesPointer = typename Pointers::SharedPointer< IntegratorVariables, DeviceType >;
-
-   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using RealType = typename SPHTraitsType::RealType;
-
-   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
+   using BaseType = PhysicalObject< ParticleSystem, NeighborSearch, SPHCaseConfig, Variables, IntegratorVariables >;
+   using GlobalIndexType = typename BaseType::GlobalIndexType;
+   using RealType = typename BaseType::RealType;
+   using VariablesPointerType = typename BaseType::VariablesPointerType;
 
    Fluid( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     integratorVariables( sizeAllocated ), sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
+   : PhysicalObject< ParticleSystem, NeighborSearch, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells ) {};
 
-   VariablesPointer&
+   VariablesPointerType&
    getFluidVariables()
    {
       return this->variables;
    }
 
-   const VariablesPointer&
+   const VariablesPointerType&
    getFluidVariables() const
    {
       return this->variables;
    }
-
-   void sortParticles()
-   {
-      GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
-      auto view_particleCellIndices = particles->getParticleCellIndices().getView();
-      auto view_map = sortPermutations->getView();
-
-      sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-      //TODO: tempalte thrust device with TNL::Devices
-      thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
-            view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() );
-
-      auto view_points = particles->getPoints().getView();
-#ifdef PREFER_SPEED_OVER_MEMORY
-      auto view_points_swap = points_swap.getView();
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
-            view_points.getArrayData(), view_points_swap.getArrayData() );
-      particles->getPoints().swap( points_swap );
-#else
-      //TODO: Error or implement.
-#endif
-      variables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
-      integratorVariables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
-   }
-
-   ParticlePointer particles;
-   NeighborSearchPointer neighborSearch;
-   VariablesPointer variables;
-   IntegratorVariablesPointer integratorVariables;
-
-   IndexArrayTypePointer sortPermutations;
-
-#ifdef PREFER_SPEED_OVER_MEMORY
-   using PointArrayType = typename ParticleSystem::PointArrayType;
-   PointArrayType points_swap;
-#endif
 };
 
 }

@@ -4,6 +4,10 @@
 #include <TNL/Pointers/SharedPointer.h>
 #include <TNL/Algorithms/sort.h>
 
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+#include <thrust/gather.h>
+
 #include "ParticlesTraits.h"
 #include "GenerateCellIndex.h"
 
@@ -30,6 +34,9 @@ public:
    using NeighborsArrayType = typename ParticleTraitsType::NeighborsArrayType;
    using NeighborListType = typename ParticleTraitsType::NeighborListType;
 
+   using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //TODO: Clean up the types.
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, Device >;
+
    using CellIndexer = typename Config::CellIndexerType;
 
    /* particle related */
@@ -50,8 +57,13 @@ public:
    : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ) { }
 
    Particles( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius )
-   : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ), radius( radius ), particleCellInidices( sizeAllocated )
-   // gridCellIndices( Config::gridXsize*Config::gridYsize ), neighborsCount( sizeAllocated, 0 ), neighbors( sizeAllocated*Config::maxOfNeigborsPerParticle, 0 ) //DeactivatedAtm
+   : numberOfParticles( size ),
+     numberOfAllocatedParticles( sizeAllocated ),
+     points( sizeAllocated ),
+     points_swap( sizeAllocated ),
+     sortPermutations( sizeAllocated ),
+     radius( radius ),
+     particleCellInidices( sizeAllocated )
    {
       //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
       //3dto grid->setDimensions( Config::gridXsize, Config::gridYsize );
@@ -138,6 +150,12 @@ public:
    __cuda_callable__
    CellIndexType&
    getParticleCellIndex( GlobalIndexType particleIndex );
+
+   const IndexArrayTypePointer&
+   getSortPermutations() const;
+
+   IndexArrayTypePointer&
+   getSortPermutations();
 
    /**
     * Get cell index of given partile.
@@ -277,6 +295,10 @@ protected:
    NeighborListType neighborsList; //not used now
 
    PointArrayType points;
+   PointArrayType points_swap; //avoid a inplace sort
+
+   IndexArrayTypePointer sortPermutations;
+
    CellIndexArrayType particleCellInidices;
 
    CellIndexArrayType gridCellIndices;

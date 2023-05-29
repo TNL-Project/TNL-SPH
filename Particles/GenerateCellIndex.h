@@ -5,12 +5,16 @@
 using namespace TNL;
 using namespace TNL::ParticleSystem;
 
-template< int Dimension, typename ParticleConfig >
+//note:
+//row-major (std::index_sequence<0, 1>)
+//column-major (std::index_sequence<1, 0>)
+
+template< int Dimension, typename ParticleConfig, typename Permutation = std::index_sequence< 0, 1 > >
 class SimpleCellIndex
 {};
 
-template< typename ParticleConfig >
-class SimpleCellIndex< 2, ParticleConfig >
+template< typename ParticleConfig, typename Permutation  >
+class SimpleCellIndex< 2, ParticleConfig, Permutation >
 {
 public:
    using DeviceType = typename ParticleConfig::DeviceType;
@@ -28,39 +32,61 @@ public:
 
    static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize )
    {
-      auto f = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
       {
-         cells[ i[ 1 ] * gridSize[ 0 ] + i[ 0 ] ] = i[ 1 ] * gridSize[ 0 ] + i[ 0 ];
-      };
+         auto f = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
+         {
+            cells[ i[ 1 ] * gridSize[ 0 ] + i[ 0 ] ] = i[ 1 ] * gridSize[ 0 ] + i[ 0 ];
+         };
 
-      IndexVectorType begin{ 0, 0 };
-      Algorithms::parallelFor< DeviceType >( begin, gridSize,  f );
-      //Algorithms::ParallelFor2D< DeviceType >::exec(
-      //   ( LocalIndexType ) 0,
-      //   ( LocalIndexType ) 0,
-      //   ( LocalIndexType ) gridSize[ 0 ],
-      //   ( LocalIndexType ) gridSize[ 1 ],
-      //   f );
+         IndexVectorType begin{ 0, 0 };
+         Algorithms::parallelFor< DeviceType >( begin, gridSize,  f );
+      }
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
+      {
+         auto f = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
+         {
+            cells[ i[ 0 ] * gridSize[ 1 ] + i[ 1 ] ] = i[ 0 ] * gridSize[ 1 ] + i[ 1 ];
+         };
+
+         IndexVectorType begin{ 0, 0 };
+         Algorithms::parallelFor< DeviceType >( begin, gridSize,  f );
+      }
    }
 
    static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, const PointsView view_points, const GlobalIndexType _numberOfParticles, const IndexVectorType gridSize, const PointType gridOrigin, const RealType searchRadius  )
    {
-
-      auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
       {
-         //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
-         view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius) + TNL::floor((view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius)* gridSize[ 0 ];
-      };
-      Algorithms::parallelFor< DeviceType >( 0, _numberOfParticles, f );
+         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+         {
+            //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
+            view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius) + TNL::floor((view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius) * gridSize[ 0 ];
+         };
+         Algorithms::parallelFor< DeviceType >( 0, _numberOfParticles, f );
       }
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
+      {
+         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+         {
+            //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
+            view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius) + TNL::floor((view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius) * gridSize[ 1 ];
+         };
+         Algorithms::parallelFor< DeviceType >( 0, _numberOfParticles, f );
+      }
+   }
 
    __cuda_callable__
    static uint32_t
-   //EvaluateCellIndex( GlobalIndexType& i, GlobalIndexType& j )
    EvaluateCellIndex( const GlobalIndexType& i, const GlobalIndexType& j, const IndexVectorType& gridSize )
    {
-      //return j*_numberOfCells + i;
-      return j * gridSize[ 0 ]  + i;
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
+         return j * gridSize[ 0 ]  + i;
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
+         return i * gridSize[ 1 ]  + j;
    }
 
 };
