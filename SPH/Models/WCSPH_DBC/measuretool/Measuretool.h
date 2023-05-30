@@ -123,7 +123,14 @@ class GridInterpolation : public Measuretool< SPHConfig >
          const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
          const GlobalIndexType idx =  i[ 1 ] * gridDimension[ 0 ] + i[ 0 ];
 
-         neighborSearch->loopOverNeighbors( i[ 0 ], numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &rho, &v, &gamma );
+         neighborSearch->loopOverNeighbors(
+               i[ 0 ],
+               numberOfParticles,
+               gridIndex,
+               gridSize,
+               view_firstLastCellParticle,
+               //view_particleCellIndex, //TODO: Remove.
+               interpolate, r, &rho, &v, &gamma );
 
         if( gamma > 0.5f ){
            view_v_interpolation[ idx ] = v / gamma;
@@ -291,7 +298,14 @@ class SensorInterpolation : public Measuretool< SPHConfig >
          VectorType r = view_sensorsPositions[ i ];
          const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
-         neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &p, &v, &gamma );
+         neighborSearch->loopOverNeighbors(
+               i,
+               numberOfParticles,
+               gridIndex,
+               gridSize,
+               view_firstLastCellParticle,
+               //view_particleCellIndex, //TODO: Remove.
+               interpolate, r, &p, &v, &gamma );
 
          if( gamma > 0.5f ){
             view_pressureSensors( sensorIndexer, i ) = p / gamma;
@@ -474,7 +488,14 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
             VectorType r = view_sensorsPositions[ s ] + i * h * zax;
             const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
-            neighborSearch->loopOverNeighbors( i, numberOfParticles, gridIndex, gridSize, view_firstLastCellParticle, view_particleCellIndex, interpolate, r, &gamma );
+            neighborSearch->loopOverNeighbors(
+                  i,
+                  numberOfParticles,
+                  gridIndex,
+                  gridSize,
+                  view_firstLastCellParticle,
+                  //view_particleCellIndex, //TODO: Remove.
+                  interpolate, r, &gamma );
 
             if( gamma > 0.5f )
                view_levels[ i ] = 1;

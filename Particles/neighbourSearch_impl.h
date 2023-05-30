@@ -72,41 +72,23 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighbors()
    NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach();
 }
 
-template< typename ParticleConfig, typename ParticleSystem >
-template< typename Function, typename... FunctionArgs >
-__cuda_callable__
-void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
-{
-   for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
-      for( int ci = gridX - 1; ci <= gridX + 1; ci++ ){
-         const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
-         const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
-         int j = firstLastParticle[ 0 ];
-         int j_end = firstLastParticle[ 1 ];
-         if( j_end >= numberOfParticles )
-          	j_end = -1;
-         while( ( j <= j_end ) ){
-            if( i == j ){ j++; continue; }
-            f( i, j, args... );
-            j++;
-         } //while over particle in cell
-      } //for cells in x direction
-   } //for cells in y direction
-}
-
 //with vector
 template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors(
+      const GlobalIndexType i,
+      const GlobalIndexType& numberOfParticles,
+      const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
+      const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
+      const PairIndexArrayView& view_firstLastCellParticle,
+      //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
+      Function f, FunctionArgs... args )
 {
-   //for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
    for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
       for( int ci = gridIndex[ 0 ] - 1; ci <= gridIndex[ 0 ] + 1; ci++ ){
          const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj, gridSize );
-         //const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
          const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
          int j = firstLastParticle[ 0 ];
          int j_end = firstLastParticle[ 1 ];
@@ -126,20 +108,24 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsAnotherSet( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsAnotherSet(
+      const GlobalIndexType i,
+      const GlobalIndexType& numberOfParticles,
+      const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
+      const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
+      const PairIndexArrayView& view_firstLastCellParticle,
+      //const CellIndexArrayView& view_particleCellIndex,  //TODO: Remove.
+      Function f, FunctionArgs... args )
 {
-   //for( int cj = gridY -1; cj <= gridY + 1; cj++ ){
    for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
       for( int ci = gridIndex[ 0 ] - 1; ci <= gridIndex[ 0 ] + 1; ci++ ){
          const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj, gridSize );
-         //const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj );
          const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
          int j = firstLastParticle[ 0 ];
          int j_end = firstLastParticle[ 1 ];
          if( j_end >= numberOfParticles )
           	j_end = -1;
          while( ( j <= j_end ) ){
-            //if( i == j ){ j++; continue; }
             f( i, j, args... );
             j++;
          } //while over particle in cell
@@ -152,7 +138,14 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 3, GlobalIndexType >& gridIndex, const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors(
+      const GlobalIndexType i,
+      const GlobalIndexType& numberOfParticles,
+      const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
+      const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin,
+      const PairIndexArrayView& view_firstLastCellParticle,
+      //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
+      Function f, FunctionArgs... args )
 {
    for( int ck = gridIndex[ 2 ] -1; ck <= gridIndex[ 2 ] + 1; ck++ ){
       for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
@@ -178,7 +171,14 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsBlocks( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 3, GlobalIndexType >& gridIndex, const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsBlocks(
+      const GlobalIndexType i,
+      const GlobalIndexType& numberOfParticles,
+      const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
+      const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin,
+      const PairIndexArrayView& view_firstLastCellParticle,
+      const CellIndexArrayView& view_particleCellIndex,
+      Function f, FunctionArgs... args )
 {
    for( int ck = gridIndex[ 2 ] -1; ck <= gridIndex[ 2 ] + 1; ck++ ){
       for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
@@ -208,32 +208,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsBlocks( const
    } //for cells in z direction
 }
 
-template< typename ParticleConfig, typename ParticleSystem >
-template< typename Function, typename... FunctionArgs >
-__cuda_callable__
-void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args )
-{
-   static constexpr GlobalIndexType numberOfCellsInX = ParticleSystem::Config::gridXsize; //FIXIT
-   const unsigned int activeCell = view_particleCellIndex[ i ];
-
-   for( int ci = -1; ci <= 1; ci++ ){
-      for( int cj = -1; cj <= 1; cj++ ){
-         const unsigned int neighborCell = activeCell + cj * numberOfCellsInX + ci;
-         //const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ... );
-         const PairIndexType firstLastParticle= view_firstLastCellParticle[ neighborCell ];
-         int j = firstLastParticle[ 0 ];
-         int j_end = firstLastParticle[ 1 ];
-         if( j_end >= numberOfParticles )
-          	j_end = -1;
-         while( ( j <= j_end ) ){
-            if( i == j ){ j++; continue; }
-            f( i, j, args... );
-            j++;
-         } //while over particle in cell
-      } //for cells in y direction
-   } //for cells in x direction
-}
 
 template< typename ParticleConfig, typename ParticleSystem >
 void

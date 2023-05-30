@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "../../SPHTraits.h"
 #include "Variables.h"
 
@@ -16,14 +15,14 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
+template< typename NeighborSearch, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
 class WCSPH_DBC
 {
 public:
 
    using SPHConfig = SPHFluidConfig;
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename Particles::Device;
+   using DeviceType = typename NeighborSearch::DeviceType;
 
    using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
@@ -39,7 +38,7 @@ public:
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /* Integrator */
-   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
+   using Model = WCSPH_DBC< NeighborSearch, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
    using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 

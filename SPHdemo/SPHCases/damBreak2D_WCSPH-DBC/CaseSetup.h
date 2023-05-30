@@ -116,7 +116,7 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< NeighborSearch, SPHConfig >;
    using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
 
    /**

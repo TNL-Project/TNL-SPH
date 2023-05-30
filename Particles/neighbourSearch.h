@@ -8,6 +8,30 @@
 namespace TNL {
 namespace ParticleSystem {
 
+template< typename ParticleSystem >
+class NeighborsLoopParams
+{
+public:
+   using DeviceType = typename ParticleSystem::DeviceType;
+   using GlobalIndexType = typename ParticleSystem::ParticleSystem;
+   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
+   using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
+   using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+
+   template< typename NeighborSearchPointer >
+   NeighborsLoopParams( NeighborSearchPointer& neighborSearch )
+   : numberOfParticles( neighborSearch->getParticles()->getNumberOfParticles() ),
+     gridSize( neighborSearch->getParticles()->getGridSize() ),
+     view_firstLastCellParticle( neighborSearch->getCellFirstLastParticleList().getView() ) {}
+
+   GlobalIndexType i;
+   Containers::StaticVector< 2, GlobalIndexType > gridIndex;
+
+   const GlobalIndexType numberOfParticles;
+   const Containers::StaticVector< 2, GlobalIndexType > gridSize;
+   const PairIndexArrayView view_firstLastCellParticle;
+};
+
 template< typename ParticleConfig, typename ParticleSystem >
 class NeighborSearch
 {
@@ -28,10 +52,13 @@ public:
    using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
 
+   /* args */
+   using NeighborsLoopParams = NeighborsLoopParams< ParticleSystem >;
+
    /**
     * Constructors.
     */
-   NeighborSearch(ParticlePointer& particles, GlobalIndexType cellCount)
+   NeighborSearch( ParticlePointer& particles, GlobalIndexType cellCount )
    : particles(particles), firstLastCellParticle(cellCount)
    {
       firstLastCellParticle = INT_MAX;
@@ -52,44 +79,98 @@ public:
    void
    particlesToCells();
 
+
    /**
-    * Loop that for given particle i runs cycle over all its neighbors
-    * and exec given function f for each pair.
-    * TODO: Improve the interface and argument handling.
+    * Get particle system pointer.
+    * TODO: Move.
+    */
+   ParticlePointer&
+   getParticles()
+   {
+      return this->particles;
+   }
+
+   const ParticlePointer&
+   getParticles() const
+   {
+      return this->particles;
+   }
+
+   /**
+    * Loop over neighbor 2D.
     */
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
    void
-   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
+   loopOverNeighbors( const GlobalIndexType i,
+                      const GlobalIndexType& numberOfParticles,
+                      const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
+                      const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
+                      const PairIndexArrayView& view_firstLastCellParticle,
+                      //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
+                      Function f, FunctionArgs... args );
 
+   /**
+    * Loop over neighbor 2D - loop over another set.
+    *
+    * This is basically the same as in the previous case, but this function
+    * is able to perform interaction even for i == j, which is neccessary if
+    * the iteration goes over another set.
+    */
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
    void
-   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const GlobalIndexType& gridX, const GlobalIndexType& gridY, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
+   loopOverNeighborsAnotherSet( const GlobalIndexType i,
+                                const GlobalIndexType& numberOfParticles,
+                                const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
+                                const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
+                                const PairIndexArrayView& view_firstLastCellParticle,
+                                //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
+                                Function f, FunctionArgs... args );
+
+   /**
+    * Loop over neighbor 3D.
+    */
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighbors( const GlobalIndexType i,
+                      const GlobalIndexType& numberOfParticles,
+                      const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
+                      const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
+                      const PairIndexArrayView& view_firstLastCellParticle,
+                      //const CellIndexArrayView& view_particleCellIndex,  //TODO: Remove.
+                      Function f, FunctionArgs... args );
+
+   /**
+    * Loop over neighbor 3D - loop over another set.
+    *
+    * This is basically the same as in the previous case, but this function
+    * is able to perform interaction even for i == j, which is neccessary if
+    * the iteration goes over another set.
+    */
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighborsAnotherSet( const GlobalIndexType i,
+                                const GlobalIndexType& numberOfParticles,
+                                const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
+                                const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
+                                const PairIndexArrayView& view_firstLastCellParticle,
+                                const CellIndexArrayView& view_particleCellIndex,  //TODO: Remove.
+                                Function f, FunctionArgs... args );
 
    //with vector
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
    void
-   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
-
-   //with vector TEST
-   template< typename Function, typename... FunctionArgs >
-   __cuda_callable__
-   void
-   loopOverNeighborsAnotherSet( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 2, GlobalIndexType >& gridIndex, const Containers::StaticVector< 2, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
-
-   //with vector
-   template< typename Function, typename... FunctionArgs >
-   __cuda_callable__
-   void
-   loopOverNeighbors( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 3, GlobalIndexType >& gridIndex, const Containers::StaticVector< 3, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
-
-   //with vector
-   template< typename Function, typename... FunctionArgs >
-   __cuda_callable__
-   void
-   loopOverNeighborsBlocks( const GlobalIndexType i, const GlobalIndexType& numberOfParticles, const Containers::StaticVector< 3, GlobalIndexType >& gridIndex, const Containers::StaticVector< 3, GlobalIndexType >& gridSize, const PairIndexArrayView& view_firstLastCellParticle, const CellIndexArrayView& view_particleCellIndex, Function f, FunctionArgs... args );
+   loopOverNeighborsBlocks( const GlobalIndexType i,
+                            const GlobalIndexType& numberOfParticles,
+                            const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
+                            const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
+                            const PairIndexArrayView& view_firstLastCellParticle,
+                            const CellIndexArrayView& view_particleCellIndex,
+                            Function f, FunctionArgs... args );
 
    /**
     * Runs all necessary functions and fills neighbor list.
