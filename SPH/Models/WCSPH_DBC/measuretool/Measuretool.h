@@ -125,11 +125,10 @@ class GridInterpolation : public Measuretool< SPHConfig >
 
          neighborSearch->loopOverNeighbors(
                i[ 0 ],
-               numberOfParticles,
+               numberOfParticles, //TODO: Remove.
                gridIndex,
-               gridSize,
+               gridSize, //TODO: Remove
                view_firstLastCellParticle,
-               //view_particleCellIndex, //TODO: Remove.
                interpolate, r, &rho, &v, &gamma );
 
         if( gamma > 0.5f ){
@@ -304,7 +303,6 @@ class SensorInterpolation : public Measuretool< SPHConfig >
                gridIndex,
                gridSize,
                view_firstLastCellParticle,
-               //view_particleCellIndex, //TODO: Remove.
                interpolate, r, &p, &v, &gamma );
 
          if( gamma > 0.5f ){
@@ -494,7 +492,6 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
                   gridIndex,
                   gridSize,
                   view_firstLastCellParticle,
-                  //view_particleCellIndex, //TODO: Remove.
                   interpolate, r, &gamma );
 
             if( gamma > 0.5f )

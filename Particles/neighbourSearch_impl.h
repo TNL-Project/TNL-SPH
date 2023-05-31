@@ -83,7 +83,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors(
       const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
       const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
       const PairIndexArrayView& view_firstLastCellParticle,
-      //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
       Function f, FunctionArgs... args )
 {
    for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
@@ -114,7 +113,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsAnotherSet(
       const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
       const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
       const PairIndexArrayView& view_firstLastCellParticle,
-      //const CellIndexArrayView& view_particleCellIndex,  //TODO: Remove.
       Function f, FunctionArgs... args )
 {
    for( int cj = gridIndex[ 1 ] -1; cj <= gridIndex[ 1 ] + 1; cj++ ){
@@ -144,7 +142,6 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors(
       const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
       const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin,
       const PairIndexArrayView& view_firstLastCellParticle,
-      //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
       Function f, FunctionArgs... args )
 {
    for( int ck = gridIndex[ 2 ] -1; ck <= gridIndex[ 2 ] + 1; ck++ ){
@@ -177,7 +174,7 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighborsBlocks(
       const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
       const Containers::StaticVector< 3, GlobalIndexType >& gridOrigin,
       const PairIndexArrayView& view_firstLastCellParticle,
-      const CellIndexArrayView& view_particleCellIndex,
+      const CellIndexArrayView& view_particleCellIndex, //TODO: Remove
       Function f, FunctionArgs... args )
 {
    for( int ck = gridIndex[ 2 ] -1; ck <= gridIndex[ 2 ] + 1; ck++ ){

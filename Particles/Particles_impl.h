@@ -204,6 +204,7 @@ Particles< ParticleConfig, DeviceType >::generateRandomParticles()
 
 /* GRID RELATED TOOLS */
 template < typename ParticleConfig, typename DeviceType >
+__cuda_callable__ //TODO: Comment.
 const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
 Particles< ParticleConfig, DeviceType >::getGridSize() const
 {

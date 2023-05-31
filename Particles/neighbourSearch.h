@@ -107,7 +107,6 @@ public:
                       const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
                       const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
                       const PairIndexArrayView& view_firstLastCellParticle,
-                      //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
                       Function f, FunctionArgs... args );
 
    /**
@@ -125,7 +124,6 @@ public:
                                 const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
                                 const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
                                 const PairIndexArrayView& view_firstLastCellParticle,
-                                //const CellIndexArrayView& view_particleCellIndex, //TODO: Remove.
                                 Function f, FunctionArgs... args );
 
    /**
@@ -139,7 +137,6 @@ public:
                       const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
                       const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
                       const PairIndexArrayView& view_firstLastCellParticle,
-                      //const CellIndexArrayView& view_particleCellIndex,  //TODO: Remove.
                       Function f, FunctionArgs... args );
 
    /**
@@ -157,7 +154,6 @@ public:
                                 const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
                                 const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
                                 const PairIndexArrayView& view_firstLastCellParticle,
-                                const CellIndexArrayView& view_particleCellIndex,  //TODO: Remove.
                                 Function f, FunctionArgs... args );
 
    //with vector
@@ -169,7 +165,7 @@ public:
                             const Containers::StaticVector< 3, GlobalIndexType >& gridIndex,
                             const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
                             const PairIndexArrayView& view_firstLastCellParticle,
-                            const CellIndexArrayView& view_particleCellIndex,
+                            const CellIndexArrayView& view_particleCellIndex, //TODO: Remove
                             Function f, FunctionArgs... args );
 
    /**

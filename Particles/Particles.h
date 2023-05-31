@@ -178,6 +178,7 @@ public:
     * Get and set grid dimension.
     * The grid here is just implicit.
     */
+   __cuda_callable__ //TODO: Comment.
    const IndexVectorType
    getGridSize() const;
 
