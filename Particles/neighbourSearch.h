@@ -8,18 +8,18 @@
 namespace TNL {
 namespace ParticleSystem {
 
-template< typename ParticleSystem >
+template< typename NeighborSearch >
 class NeighborsLoopParams
 {
 public:
-   using DeviceType = typename ParticleSystem::DeviceType;
-   using GlobalIndexType = typename ParticleSystem::ParticleSystem;
+   using DeviceType = typename NeighborSearch::DeviceType;
+   using GlobalIndexType = typename NeighborSearch::GlobalIndexType;
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
-   using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
+   using CellIndexArrayView = typename Containers::ArrayView< typename NeighborSearch::CellIndexType, DeviceType >;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+   using NeighborSearchPointerType = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
 
-   template< typename NeighborSearchPointer >
-   NeighborsLoopParams( NeighborSearchPointer& neighborSearch )
+   NeighborsLoopParams( NeighborSearchPointerType& neighborSearch )
    : numberOfParticles( neighborSearch->getParticles()->getNumberOfParticles() ),
      gridSize( neighborSearch->getParticles()->getGridSize() ),
      view_firstLastCellParticle( neighborSearch->getCellFirstLastParticleList().getView() ) {}
@@ -53,7 +53,7 @@ public:
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
 
    /* args */
-   using NeighborsLoopParams = NeighborsLoopParams< ParticleSystem >;
+   using NeighborsLoopParams = NeighborsLoopParams< NeighborSearch< ParticleConfig, ParticleSystem > >;
 
    /**
     * Constructors.
@@ -107,6 +107,12 @@ public:
                       const Containers::StaticVector< 2, GlobalIndexType >& gridIndex,
                       const Containers::StaticVector< 2, GlobalIndexType >& gridSize,
                       const PairIndexArrayView& view_firstLastCellParticle,
+                      Function f, FunctionArgs... args );
+
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighbors( const NeighborsLoopParams& params,
                       Function f, FunctionArgs... args );
 
    /**

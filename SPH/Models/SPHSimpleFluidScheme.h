@@ -1,95 +1,60 @@
 #pragma once
 
-#include <TNL/Containers/Array.h>
-#include <TNL/Containers/ArrayView.h>
-
-/**
- * Use thrust for sorting.
- **/
-#include <thrust/sort.h>
-#include <thrust/gather.h>
-#include <thrust/execution_policy.h>
-#include <thrust/iterator/zip_iterator.h>
-
-#include "../../SPHTraits.h"
-#include "Variables.h"
+#include "../SPHTraits.h"
 
 /**
  * Modules used as default.
  **/
-#include "../EquationOfState.h"
-#include "../DiffusiveTerms.h"
-#include "../VisousTerms.h"
-#include "Integrator.h"
+#include "EquationOfState.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
-class WCSPH_DBC
+template< typename SPHConfig >
+class SPHSimpleFluidScheme
 {
 public:
 
-   using SPHConfig = SPHFluidConfig;
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename Particles::Device;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using DeviceType = typename SPHConfig::DeviceType;
 
-   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
-   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-   using RealType = typename SPHFluidTraitsType::RealType;
-   using PointType = typename Particles::PointType;
-   using ScalarType = typename SPHFluidTraitsType::ScalarType;
-   using VectorType = typename SPHFluidTraitsType::VectorType;
-   using IndexVectorType = typename SPHFluidTraitsType::IndexVectorType;
-
-   //using DiffusiveTerm = MolteniDiffusiveTerm< SPHFluidConfig >; //-> template
-   //using ViscousTerm = ArtificialViscosity< SPHFluidConfig >; //-> template
-
-   using ParticlePointer = typename Pointers::SharedPointer< Particles, DeviceType >;
-
-   /* VARIABLES FIELDS */
-   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-   using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
-
-   /* Thrust sort */
-   using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
-
-   /* Integrator */
-   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
-   using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
-   using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
-
-   /*Swap variables*/
-   //using ModelVariables = Variables;
-	 using FluidVariables = Variables;
-	 using BoundaryVariables = Variables;
-   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
+   /* Default modules. */
+   using EOS = TaitWeaklyCompressibleEOS< SPHConfig >;
 
    /**
     * Constructor.
     */
-   WCSPH_DBC( ) = default; //THIS WORKS
+   SPHSimpleFluidScheme() = default;
+
+   /**
+    * General interaction function.
+    */
+   template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction >
+   virtual void
+   Interaction( FluidPointer& fluid, BoudaryPointer& boundary );
 
    /**
     * Compute pressure from density.
-    * TODO: Move out.
+    * This holds for all the schemes for SimpleFluid model.
     */
-   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
-   void
-   ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles );
+   template< typename VariablesPointer& variablesPointer, typename EquationOfState = TaitWeaklyCompressibleEOS< SPHConfig > >
+   virtual void
+   ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles )
+   {
+      auto view_rho = variables->rho.getView();
+      auto view_p = variables->p.getView();
 
-   template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS  >
-   void
-   Interaction( FluidPointer& fluid, BoudaryPointer& boundary );
+      auto init = [=] __cuda_callable__ ( int i ) mutable
+      {
+         view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, init );
+   }
 
 };
 
 } // SPH
 } // ParticleSystem
 } // TNL
-
-#include "Interactions_impl.h"
 

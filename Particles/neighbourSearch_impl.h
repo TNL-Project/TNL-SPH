@@ -102,6 +102,30 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors(
    } //for cells in y direction
 }
 
+template< typename ParticleConfig, typename ParticleSystem >
+template< typename Function, typename... FunctionArgs >
+__cuda_callable__
+void
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const NeighborsLoopParams& params,
+                                                                     Function f, FunctionArgs... args )
+{
+   for( int cj = params.gridIndex[ 1 ] -1; cj <= params.gridIndex[ 1 ] + 1; cj++ ){
+      for( int ci = params.gridIndex[ 0 ] - 1; ci <= params.gridIndex[ 0 ] + 1; ci++ ){
+         const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj, params.gridSize );
+         const PairIndexType firstLastParticle= params.view_firstLastCellParticle[ neighborCell ];
+         int j = firstLastParticle[ 0 ];
+         int j_end = firstLastParticle[ 1 ];
+         if( j_end >= params.numberOfParticles )
+          	j_end = -1;
+         while( ( j <= j_end ) ){
+            if( params.i == j ){ j++; continue; }
+            f( params.i, j, args... );
+            j++;
+         } //while over particle in cell
+      } //for cells in x direction
+   } //for cells in y direction
+}
+
 //with vector TEST
 template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >

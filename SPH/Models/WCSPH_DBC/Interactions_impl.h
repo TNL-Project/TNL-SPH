@@ -27,6 +27,9 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
    const auto view_particleCellIndex_bound = boundary->particles->getParticleCellIndices().getView();
    const auto view_points_bound = boundary->particles->getPoints().getView();
 
+   typename NeighborSearch::NeighborsLoopParams fluidLoopParams( fluid->neighborSearch );
+   //typename NeighborSearch::NeighborsLoopParams fluidLoopParams = typename NeighborSearch::NeighborsLoopParams<NeighborSearchPointer>( fluid->neighborSearch );
+
    /* CONSTANT VARIABLES */
    const RealType h = SPHConfig::h;
    const RealType m = SPHConfig::mass;
@@ -139,12 +142,16 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
+      fluidLoopParams.i = i;
+      fluidLoopParams.gridIndex = gridIndex;
+
       neighborSearch->loopOverNeighbors(
-            i,
-            numberOfParticles,
-            gridIndex,
-            gridSize,
-            view_firstLastCellParticle,
+            fluidLoopParams,
+            //i,
+            //numberOfParticles,
+            //gridIndex,
+            //gridSize,
+            //view_firstLastCellParticle,
             FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       neighborSearch_bound->loopOverNeighbors(
