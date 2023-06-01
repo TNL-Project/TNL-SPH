@@ -64,11 +64,22 @@ class PhysicalObject
    }
 
    template< typename ReaderType >
-   void readParticlesAndVariables( const std::string& inputFileName )
+   void
+   readParticlesAndVariables( const std::string& inputFileName )
    {
       ReaderType reader( inputFileName, particles->getNumberOfParticles(), particles->getNumberOfAllocatedParticles() );
       reader.template readParticles< typename ParticleSystem::PointArrayType >( particles->getPoints() ) ;
       variables->readVariables( reader );
+   }
+
+   template< typename WriterType >
+   void
+   writeParticlesAndVariables( const std::string& outputFileName )
+   {
+      std::ofstream outputFileFluid ( outputFileName, std::ofstream::out );
+      WriterType writer( outputFileFluid );
+      writer.writeParticles( *particles );
+      variables->writeVariables( writer, particles->getNumberOfParticles() );
    }
 
    ParticlePointerType particles;

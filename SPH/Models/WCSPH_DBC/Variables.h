@@ -77,6 +77,14 @@ class SPHFluidVariables
       reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
    }
 
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+   }
+
 };
 
 template< typename SPHFluidConfig >

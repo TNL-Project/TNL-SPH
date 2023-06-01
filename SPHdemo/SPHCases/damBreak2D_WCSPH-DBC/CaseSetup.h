@@ -243,12 +243,12 @@ int main( int argc, char* argv[] )
        */
       timer_integrate.start();
       if( myTimeStepping.getStep() % 20 == 0 ) {
-         mySPHSimulation.integrator->IntegrateEuler< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateEulerBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
+         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit, mySPHSimulation.fluid );
+         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit, mySPHSimulation.boundary );
       }
       else {
-         mySPHSimulation.integrator->IntegrateVerlet< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateVerletBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
+         mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit, mySPHSimulation.fluid );
+         mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit, mySPHSimulation.boundary );
       }
       timer_integrate.stop();
 
@@ -270,13 +270,7 @@ int main( int argc, char* argv[] )
          std::cout << "Compute pressure... done. " << std::endl;
 
          std::string outputFileNameFluid = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_fluid.vtk";
-         std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
-         Writer myWriter( outputFileFluid );
-         myWriter.writeParticles( *mySPHSimulation.fluid->particles );
-         myWriter.template writePointData< SPHModel::ScalarArrayType >(
-               mySPHSimulation.fluid->getFluidVariables()->p, "Pressure", mySPHSimulation.fluid->particles->getNumberOfParticles(), 1 );
-         myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
+         mySPHSimulation.fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
 
          timer_pressure.start();
          mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
@@ -284,13 +278,7 @@ int main( int argc, char* argv[] )
          std::cout << "Compute pressure... done. " << std::endl;
 
          std::string outputFileNameBound = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_boundary.vtk";
-         std::ofstream outputFileBound ( outputFileNameBound, std::ofstream::out );
-         Writer myWriterBoundary( outputFileBound );
-         myWriterBoundary.writeParticles( *mySPHSimulation.boundary->particles );
-         myWriterBoundary.template writePointData< SPHModel::ScalarArrayType >(
-               mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure", mySPHSimulation.boundary->particles->getNumberOfParticles(), 1 );
-         myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity", 3, mySPHSimulation.boundary->particles->getNumberOfParticles() );
+         mySPHSimulation.boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
 
          /**
           * Interpolate on the grid.
@@ -304,15 +292,15 @@ int main( int argc, char* argv[] )
       if( myTimeStepping.getTime() > measuretoolPressureTimer )
       {
          measuretoolPressureTimer += measuretoolPressure.outputTime;
-         mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D,
-                                                            EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D, EOS >(
+               mySPHSimulation.fluid, mySPHSimulation.boundary );
       }
 
       if( myTimeStepping.getTime() > measuretoolWaterLevelTimer )
       {
          measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
-         mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D,
-                                                         EOS >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D, EOS >(
+               mySPHSimulation.fluid, mySPHSimulation.boundary );
       }
 
       myTimeStepping.updateTimeStep();
