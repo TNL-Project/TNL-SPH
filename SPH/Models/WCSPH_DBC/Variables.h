@@ -45,6 +45,10 @@ class SPHFluidVariables
    VectorArrayType v;
    VectorArrayType a;
 
+   /* Additional variable fields to avoid inmpace sort. */
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
+
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
    {
@@ -65,10 +69,14 @@ class SPHFluidVariables
       v.swap( v_swap );
    }
 
-#ifdef PREFER_SPEED_OVER_MEMORY
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-#endif
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+   }
+
 };
 
 template< typename SPHFluidConfig >

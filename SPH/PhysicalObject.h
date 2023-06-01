@@ -63,6 +63,14 @@ class PhysicalObject
       integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
    }
 
+   template< typename ReaderType >
+   void readParticlesAndVariables( const std::string& inputFileName )
+   {
+      ReaderType reader( inputFileName, particles->getNumberOfParticles(), particles->getNumberOfAllocatedParticles() );
+      reader.template readParticles< typename ParticleSystem::PointArrayType >( particles->getPoints() ) ;
+      variables->readVariables( reader );
+   }
+
    ParticlePointerType particles;
    NeighborSearchPointerType neighborSearch;
    VariablesPointerType variables;

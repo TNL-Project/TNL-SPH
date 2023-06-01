@@ -184,45 +184,30 @@ int main( int argc, char* argv[] )
     * Read particle file with fluid and read/set initial particle variables.
     * Read particle file with boundary and read/set initial particle variables.
     */
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader(
-         mySimulationControl.inputParticleFile, mySPHSimulationConfig.sizeFluid, mySPHSimulationConfig.sizeAllocatedFluid );
-   myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.fluid->particles->getPoints() ) ;
-
-   myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.fluid->getFluidVariables()->rho, "Density" );
-   myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.fluid->getFluidVariables()->p, "Pressure" );
-   myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
-
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myBoundaryReader(
-         mySimulationControl.inputParticleFile_bound, mySPHSimulationConfig.sizeBoundary, mySPHSimulationConfig.sizeAllocatedBoundary );
-   myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
-
-   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.boundary->getBoundaryVariables()->rho, "Density" );
-   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure" );
-   myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity" );
+   using SimulationReaderType = TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader >;
+   mySPHSimulation.fluid->template readParticlesAndVariables< SimulationReaderType >( mySimulationControl.inputParticleFile );
+   mySPHSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >( mySimulationControl.inputParticleFile_bound );
 
    /**
-    * Define measuretool sensors.
+    * User defined measuretool sensors.
     * - from particles to grid interpolation.
     * - sensors to measure water levels in given points
     * - sensors to measure pressure in given points
     */
    float saveResultsTimer = 0.f;
    MeasuretoolInitGridInterpolation measuretoolInterpolation;
-   GridInterpolation myInterpolation( measuretoolInterpolation.gridOrigin, measuretoolInterpolation.gridSize, measuretoolInterpolation.gridStep );
+   GridInterpolation myInterpolation( measuretoolInterpolation.gridOrigin, measuretoolInterpolation.gridSize,
+         measuretoolInterpolation.gridStep );
 
    MeasuretoolInitParametersPressure measuretoolPressure;
    float measuretoolPressureTimer = 0.f;
-   SensorInterpolation mySensorInterpolation( TNL::ceil( mySimulationControl.endTime / measuretoolPressure.outputTime ), measuretoolPressure.points );
+   SensorInterpolation mySensorInterpolation( TNL::ceil( mySimulationControl.endTime / measuretoolPressure.outputTime ),
+         measuretoolPressure.points );
 
    MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
    float measuretoolWaterLevelTimer = 0.f;
-   SensorWaterLevel mySensorWaterLevel( TNL::ceil( mySimulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points, SPHConfig::h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
+   SensorWaterLevel mySensorWaterLevel( TNL::ceil( mySimulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points,
+         SPHConfig::h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
 
    /**
     * Define timers to measure computation time.
