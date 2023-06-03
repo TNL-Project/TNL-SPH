@@ -64,9 +64,9 @@ class GridInterpolation : public Measuretool< SPHConfig >
    using ScalarArrayType = Containers::Array< RealType, DeviceType, GlobalIndexType >;
    ScalarArrayType vectorArrayBuffer;
 
-   template< typename SPHKernelFunction >
+   template< typename SPHKernelFunction, typename SPHState >
    void
-   InterpolateGrid( FluidPointer& fluid, BoundaryPointer& boundary )
+   InterpolateGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
       GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
@@ -88,8 +88,8 @@ class GridInterpolation : public Measuretool< SPHConfig >
       auto view_v_interpolation = this->variables->v.getView();
 
       /* CONSTANT VARIABLES */ //TODO: Do this like a human.
-      const RealType h = SPHConfig::h;
-      const RealType m = SPHConfig::mass;
+      const RealType h = sphState.h;
+      const RealType m = sphState.mass;
 
       const IndexVectorType gridDimension = this->gridDimension;
 
@@ -242,9 +242,9 @@ class SensorInterpolation : public Measuretool< SPHConfig >
    GlobalIndexType numberOfSavedSteps;
    GlobalIndexType sensorIndexer = 0;
 
-   template<typename SPHKernelFunction, typename EOS >
+   template<typename SPHKernelFunction, typename EOS, typename SPHState >
    void
-   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary )
+   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
    {
 
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
@@ -263,8 +263,10 @@ class SensorInterpolation : public Measuretool< SPHConfig >
       const auto view_rho = fluid->variables->rho.getView();
 
       /* CONSTANT VARIABLES */ //TODO: Do this like a human.
-      const RealType h = SPHConfig::h;
-      const RealType m = SPHConfig::mass;
+      const RealType h = sphState.h;
+      const RealType m = sphState.mass;
+
+      typename EOS::ParamsType eosParams( sphState );
 
       auto view_sensorsPositions = sensorPositions.getView();
       auto view_pressureSensors = sensors.getView();
@@ -277,7 +279,7 @@ class SensorInterpolation : public Measuretool< SPHConfig >
          if( drs <= searchRadius )
          {
             const RealType rho_j = view_rho[ j ];
-            const RealType p_j = EOS::DensityToPressure( rho_j );
+            const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
             const RealType W = SPHKernelFunction::W( drs, h );
 
             const RealType V = m / rho_j;
@@ -429,9 +431,9 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
    RealType startLevel;
    RealType endLevel;
 
-   template< typename SPHKernelFunction, typename EOS >
+   template< typename SPHKernelFunction, typename EOS, typename SPHState >
    void
-   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary )
+   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
    {
 
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
@@ -450,8 +452,8 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
       const auto view_rho = fluid->variables->rho.getView();
 
       /* CONSTANT VARIABLES */ //TODO: Do this like a human.
-      const RealType h = SPHConfig::h;
-      const RealType m = SPHConfig::mass;
+      const RealType h = sphState.h;
+      const RealType m = sphState.mass;
 
       auto view_sensorsPositions = sensorPositions.getView();
       auto view_sensors = sensors.getView();

@@ -32,6 +32,8 @@
 #include "MeasuretoolConfig.h"
 #include "SimulationControlConfig.h"
 
+#include "SPHCaseConfigTesting.h"
+
 /**
  * SPH general toolds.
  */
@@ -92,7 +94,8 @@ int main( int argc, char* argv[] )
 
    using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup;
 
-   using SPHConfig = SPH::SPHCaseConfig< Device >;
+   //using SPHConfig = SPH::SPHCaseConfig< Device >;
+   using SPHConfig = SPH::SPHParamsConfig::SPHConfig;
 
    using SimulationControl = TNL::ParticleSystem::SPH::SimulationConstrolConfiguration::SPHSimulationControl;
 
@@ -125,9 +128,9 @@ int main( int argc, char* argv[] )
     *
     * IMPORATANT: Constants and parameters of used schemes have to be defined in the SPHConfig.
     */
-   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
-   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
+   using DiffusiveTerm = typename SPH::SPHParamsConfig::DiffusiveTerm;
+   using ViscousTerm = typename SPH::SPHParamsConfig::ViscousTerm;
+   using EOS = typename SPH::SPHParamsConfig::EOS;
 
    /**
     * Define tools of measuretool to evaluate certain values from the simulation.
@@ -156,6 +159,11 @@ int main( int argc, char* argv[] )
    using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
 
    /**
+    * Testing params.
+    */
+   SPH::SPHParamsConfig sphState;
+
+   /**
     * Load simulation parameters.
     */
    SPHSimulationConfig mySPHSimulationConfig;
@@ -176,7 +184,7 @@ int main( int argc, char* argv[] )
     * TEMP: Determine number of interation for constant timestep.
     * Perform simulation main loop.
     */
-   TimeStepping myTimeStepping( SPHConfig::dtInit, mySimulationControl.endTime );
+   TimeStepping myTimeStepping( sphState.dtInit, mySimulationControl.endTime );
 
    /**
     * Read the particle file.
@@ -207,7 +215,7 @@ int main( int argc, char* argv[] )
    MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
    float measuretoolWaterLevelTimer = 0.f;
    SensorWaterLevel mySensorWaterLevel( TNL::ceil( mySimulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points,
-         SPHConfig::h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
+         sphState.h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
 
    /**
     * Define timers to measure computation time.
@@ -234,7 +242,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template Interact< SPH::WendlandKernel2D, DiffusiveTerm, ViscousTerm, EOS >();
+      mySPHSimulation.template Interact< SPH::WendlandKernel2D, DiffusiveTerm, ViscousTerm, EOS >( sphState );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -243,12 +251,12 @@ int main( int argc, char* argv[] )
        */
       timer_integrate.start();
       if( myTimeStepping.getStep() % 20 == 0 ) {
-         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit, mySPHSimulation.boundary );
+         mySPHSimulation.integrator->IntegrateEuler( sphState.dtInit, mySPHSimulation.fluid ); //TODO: Timer!
+         mySPHSimulation.integrator->IntegrateEulerBoundary( sphState.dtInit, mySPHSimulation.boundary );
       }
       else {
-         mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit, mySPHSimulation.boundary );
+         mySPHSimulation.integrator->IntegrateVerlet( sphState.dtInit, mySPHSimulation.fluid );
+         mySPHSimulation.integrator->IntegrateVerletBoundary( sphState.dtInit, mySPHSimulation.boundary );
       }
       timer_integrate.stop();
 
@@ -265,7 +273,7 @@ int main( int argc, char* argv[] )
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.fluid->variables, mySPHSimulation.fluid->particles->getNumberOfParticles() ); //TODO: FIX.
+         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.fluid->variables, mySPHSimulation.fluid->particles->getNumberOfParticles(), sphState ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -273,7 +281,7 @@ int main( int argc, char* argv[] )
          mySPHSimulation.fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
 
          timer_pressure.start();
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
+         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles(), sphState ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -284,7 +292,8 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_interpolation.vtk";
-         myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >( mySPHSimulation.fluid, mySPHSimulation.boundary );
+         myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >(
+               mySPHSimulation.fluid, mySPHSimulation.boundary, sphState );
          myInterpolation.saveInterpolation( outputFileNameInterpolation );
 
       }
@@ -293,14 +302,14 @@ int main( int argc, char* argv[] )
       {
          measuretoolPressureTimer += measuretoolPressure.outputTime;
          mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D, EOS >(
-               mySPHSimulation.fluid, mySPHSimulation.boundary );
+               mySPHSimulation.fluid, mySPHSimulation.boundary, sphState );
       }
 
       if( myTimeStepping.getTime() > measuretoolWaterLevelTimer )
       {
          measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
          mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D, EOS >(
-               mySPHSimulation.fluid, mySPHSimulation.boundary );
+               mySPHSimulation.fluid, mySPHSimulation.boundary, sphState );
       }
 
       myTimeStepping.updateTimeStep();

@@ -56,13 +56,13 @@ public:
     * Compute pressure from density.
     * TODO: Move out.
     */
-   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig > >
+   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig >, typename SPHState >
    void
-   ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles );
+   ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState );
 
-   template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS  >
+   template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState  >
    void
-   Interaction( FluidPointer& fluid, BoudaryPointer& boundary );
+   Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
 };
 

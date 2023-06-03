@@ -114,9 +114,9 @@ public:
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
    void
-   Interact();
+   Interact( SPHState& sphState );
 
    template< typename SPHKernelFunction, typename RiemannSolver, typename EOS >
    void

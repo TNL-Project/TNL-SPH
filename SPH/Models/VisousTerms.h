@@ -7,20 +7,28 @@ namespace SPH {
 template< typename SPHCaseConfig >
 class ArtificialViscosity
 {
-public:
+   public:
    using RealType = typename SPHCaseConfig::RealType; //fix this
 
-   static constexpr RealType coefAV = ( -2.f ) * SPHCaseConfig::alpha * SPHCaseConfig::speedOfSound; //?
-   static constexpr RealType h = SPHCaseConfig::h;
-   static constexpr RealType epsilon = SPHCaseConfig::eps;
-   static constexpr RealType preventZero = h * h * epsilon;
+   struct ParamsType
+   {
+     template< typename SPHState >
+     ParamsType( SPHState sphState )
+     : h( sphState.h ),
+       coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
+       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+
+     const RealType h;
+     const RealType coefAV;
+     const RealType preventZero;
+   };
 
    __cuda_callable__
    static RealType
-   Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv )
+   Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv, const ParamsType& params )
    {
-      const RealType mu = h * drdv / ( drs * drs + preventZero );
-      return ( drdv < 0.f ) ? ( coefAV * mu / ( rhoI + rhoJ ) ) : ( 0.f );
+      const RealType mu = params.h * drdv / ( drs * drs + params.preventZero );
+      return ( drdv < 0.f ) ? ( params.coefAV * mu / ( rhoI + rhoJ ) ) : ( 0.f );
    }
 };
 

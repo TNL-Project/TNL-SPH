@@ -52,13 +52,13 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact()
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact( SPHState& sphState )
 {
    model->template Interaction<
       FluidPointer, BoundaryPointer, NeighborSearchPointer,
-      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary );
+      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, sphState );
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >

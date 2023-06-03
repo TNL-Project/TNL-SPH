@@ -10,16 +10,24 @@ class TaitWeaklyCompressibleEOS
 public:
    using RealType = typename SPHCaseConfig::RealType; //fix this
 
-   static constexpr RealType rho0 = SPHCaseConfig::rho0;
-   static constexpr RealType coefB = SPHCaseConfig::coefB;
+   struct ParamsType
+   {
+     template< typename SPHState >
+     ParamsType( SPHState sphState )
+     : rho0( sphState.rho0 ),
+       coefB( sphState.coefB ) {}
+
+     const RealType rho0;
+     const RealType coefB;
+   };
 
    __cuda_callable__
    static RealType
-   DensityToPressure( RealType rho )
+   DensityToPressure( const RealType& rho, const ParamsType& params )
    {
       const RealType gamma = 7.f;
-      const RealType relativeDensity = rho / rho0;
-      return coefB * ( powf( relativeDensity, gamma ) - 1.f );
+      const RealType relativeDensity = rho / params.rho0;
+      return params.coefB * ( powf( relativeDensity, gamma ) - 1.f );
    }
 };
 

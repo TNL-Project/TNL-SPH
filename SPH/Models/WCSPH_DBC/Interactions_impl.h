@@ -6,9 +6,9 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename NeighborSearch, typename SPHFluidConfig, typename Variables >
-template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS  >
+template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary )
+WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState )
 {
 
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -28,17 +28,16 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
    const auto view_points_bound = boundary->particles->getPoints().getView();
 
    typename NeighborSearch::NeighborsLoopParams fluidLoopParams( fluid->neighborSearch );
-   //typename NeighborSearch::NeighborsLoopParams fluidLoopParams = typename NeighborSearch::NeighborsLoopParams<NeighborSearchPointer>( fluid->neighborSearch );
+   typename NeighborSearch::NeighborsLoopParams boundaryLoopParams( boundary->neighborSearch );
 
    /* CONSTANT VARIABLES */
-   const RealType h = SPHConfig::h;
-   const RealType m = SPHConfig::mass;
-   const RealType speedOfSound = SPHConfig::speedOfSound;
-   const RealType coefB = SPHConfig::coefB;
-   const RealType rho0 = SPHConfig::rho0;
-   const RealType delta = SPHConfig::delta;
-   const RealType alpha = SPHConfig::alpha;
-   const VectorType gravity = SPHConfig::gravity;
+   const RealType h = sphState.h;
+   const RealType m = sphState.mass;
+   const VectorType gravity = sphState.gravity;
+
+   typename DiffusiveTerm::ParamsType diffusiveTermsParams( sphState );
+   typename ViscousTerm::ParamsType viscousTermTermsParams( sphState );
+   typename EOS::ParamsType eosParams( sphState );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_rho = fluid->variables->rho.getView();
@@ -60,7 +59,7 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       {
          const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j );
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
 
          /* Interaction: */
          const VectorType v_ij = v_i - v_j;
@@ -68,12 +67,12 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
          const RealType F = SPHKernelFunction::F( drs, h );
          const VectorType gradW = r_ij * F;
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
          const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
          *drho_i += ( v_ij, gradW ) * m - diffTerm;
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ) );
+         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermTermsParams );
          *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
       }
    };
@@ -88,7 +87,7 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       {
          const VectorType v_j = view_v_bound[ j ];
          const RealType rho_j = view_rho_bound[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j );
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
 
          /* Interaction: */
          const VectorType v_ij = v_i - v_j;
@@ -96,12 +95,12 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
          const RealType F = SPHKernelFunction::F( drs, h );
          const VectorType gradW = r_ij * F;
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
          const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
          *drho_i += ( v_ij, gradW ) * m - diffTerm;
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ) );
+         const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermTermsParams );
          *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
       }
    };
@@ -116,7 +115,7 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       {
          const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j );
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
 
          /* Interaction */
          const VectorType v_ij = v_i - v_j;
@@ -124,7 +123,7 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
          const RealType F = SPHKernelFunction::F( drs, h );
          const VectorType gradW = r_ij * F;
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs );
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
          const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
          *drho_i += ( v_ij, gradW ) * m - diffTerm;
       }
@@ -135,7 +134,7 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       const VectorType r_i = view_points[ i ];
       const VectorType v_i = view_v[ i ];
       const RealType rho_i = view_rho[ i ];
-      const RealType p_i = EOS::DensityToPressure( rho_i );
+      const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
       const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
 
@@ -154,12 +153,16 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
             //view_firstLastCellParticle,
             FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
+      boundaryLoopParams.i = i;
+      boundaryLoopParams.gridIndex = gridIndex;
+
       neighborSearch_bound->loopOverNeighbors(
-            i,
-            numberOfParticles_bound,
-            gridIndex,
-            gridSize,
-            view_firstLastCellParticle_bound,
+            boundaryLoopParams,
+            //i,
+            //numberOfParticles_bound,
+            //gridIndex,
+            //gridSize,
+            //view_firstLastCellParticle_bound,
             FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
@@ -173,18 +176,22 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       const VectorType r_i = view_points_bound[ i ];
       const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
-      const RealType p_i = EOS::DensityToPressure( rho_i );
+      const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
       const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
 
       RealType drho_i = 0.f;
 
+      fluidLoopParams.i = i;
+      fluidLoopParams.gridIndex = gridIndex;
+
       neighborSearch->loopOverNeighbors(
-            i,
-            numberOfParticles,
-            gridIndex,
-            gridSize,
-            view_firstLastCellParticle,
+            fluidLoopParams,
+            //i,
+            //numberOfParticles,
+            //gridIndex,
+            //gridSize,
+            //view_firstLastCellParticle,
             BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
@@ -195,16 +202,18 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
 
 
 template< typename NeighborSearch, typename SPHFluidConfig, typename Variables >
-template< typename EquationOfState >
+template< typename EquationOfState, typename SPHState >
 void
-WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles )
+WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState )
 {
    auto view_rho = variables->rho.getView();
    auto view_p = variables->p.getView();
 
+   typename EOS::ParamsType eosParams( sphState );
+
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
-      view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ] );
+      view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, init );
 }
