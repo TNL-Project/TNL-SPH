@@ -32,6 +32,12 @@ class PhysicalObject
    : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
      integratorVariables( sizeAllocated ) {};
 
+   const GlobalIndexType
+   getNumberOfParticles() const
+   {
+      return this->particles->getNumberOfParticles();
+   }
+
    ParticlePointerType&
    getParticles()
    {

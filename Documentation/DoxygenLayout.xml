@@ -3,6 +3,7 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
+    <tab type="user" visible="yes" title="SPH models" url="@ref Models" />
     <tab type="user" visible="yes" title="Examples" url="@ref Examples" />
   </navindex>
 </doxygenlayout>

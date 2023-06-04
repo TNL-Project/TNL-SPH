@@ -91,9 +91,11 @@ public:
    using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
+   using SPHSimpleFluidConfig = SPHSimpleFluidConfig< typename ParticleSystem::Config >;
+
    SPHSimpleFluid() = default;
 
-   SPHSimpleFluid( SPHSimpleFluidConfig< typename ParticleSystem::Config > sphConfig )
+   SPHSimpleFluid( SPHSimpleFluidConfig sphConfig )
    :  model(),
       integrator(),
       fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
