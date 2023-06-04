@@ -1,6 +1,11 @@
 #pragma once
 
+#include "../../../SPH/Models/EquationOfState.h"
+#include "../../../SPH/Models/DiffusiveTerms.h"
+#include "../../../SPH/Models/VisousTerms.h"
+
 #include "../../../SPH/SPHTraits.h"
+#include <TNL/Devices/Cuda.h>
 #include <limits>
 
 namespace TNL {
@@ -15,69 +20,83 @@ namespace SPH {
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename Device>
-class SPHCaseConfig
+class SPHParamsConfig
 {
    public:
-   using DeviceType = Device;
 
-   /**
-    * Definition of basics data types for variables and indices.
-    */
-   using GlobalIndexType = int;
-   using LocalIndexType = int;
-   using CellIndexType = int;
-   using RealType = float;
+   class SPHConfig
+   {
+      public:
+      /**
+       * Define the device on which the code should run.
+       */
+      using DeviceType = TNL::Devices::Cuda;
 
-   /**
-    * Define the space dimension of the problem.
-    */
-   static constexpr int spaceDimension = placeholderDimension;
+      /**
+       * Definition of basics data types for fluid variables and indices.
+       */
+      using GlobalIndexType = int;
+      using LocalIndexType = int;
+      using CellIndexType = int;
+      using RealType = float;
+
+      /**
+       * Define the space dimension of the problem.
+       */
+      static constexpr int spaceDimension = placeholderDimension;
+   };
 
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]
     * - dp - initial particle distance [m]
     */
-   static constexpr float dp = placeholderInitParticleDistancef;
-   static constexpr float h = placeholderSmoothingLengthf;
+   float dp = placeholderInitParticleDistancef;
+   float h = placeholderSmoothingLengthf;
 
    /**
     * Define Basics SPH constants.
     * - mass - particle mass [kg]
-    * - speedOfSound - numerical speed of sound used in the SPH calculations [m/s]
-    * - coefB - coefficient of the Tait equation of state coefB = c^2 * rho0 / gamma
-    * - rho0 - referential density of the fluid [kg/m^3]
     */
-   static constexpr float mass = placeholderMassf;
-   static constexpr float speedOfSound = placeholderSpeedOfSoundf;
-   static constexpr float coefB = placeholderCoefBf;
-   static constexpr float rho0 = placeholderDensityf;
+   float mass = placeholderMassf;
 
    /**
     * Define coefficient of diffusive term (DT), [-].
     */
-   static constexpr float delta = 0.1f;
+   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
+   float delta = 0.1f;
 
    /**
     * Define coefficient of artificial viscosity.
     */
-   static constexpr float alpha = 0.02f;
+   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
+   float alpha = 0.02f;
+
+   /**
+    * Define equation of state and its constants.
+    * - speedOfSound - numerical speed of sound used in the SPH calculations [m/s]
+    * - coefB - coefficient of the Tait equation of state coefB = c^2 * rho0 / gamma
+    * - rho0 - referential density of the fluid [kg/m^3]
+    */
+   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
+   float speedOfSound = placeholderSpeedOfSoundf;
+   float coefB = placeholderCoefBf;
+   float rho0 = placeholderDensityf;
 
    /**
     * Define initial timestep [s].
     */
-   static constexpr float dtInit = placeholderTimeStepf;
+   float dtInit = placeholderTimeStepf;
 
    /**
     * Define external forces [m^2 / s].
     */
-   static constexpr float gravity[ 2 ] { 0.f, -9.81f };
+   float gravity[ 2 ] { 0.f, -9.81f };
 
    /**
     * Define constant to prevent zero in denominator [-].
     */
-   static constexpr float eps = 0.001f;
+   float eps = 0.001f;
 };
 
 
