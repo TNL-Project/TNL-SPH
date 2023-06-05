@@ -74,14 +74,11 @@ int main( int argc, char* argv[] )
     */
    using Settings = ParticleSystem::SPH::SPHParamsConfig;
    using SPHConfig = Settings::SPHConfig;
+
    using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SPHConfig::DeviceType >;
-
-
-   using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup; //TODO: Ugly, ugly thing...
-
+   using ParticlesInitParams = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
 
    using SimulationControl = SPH::SimulationConstrolConfiguration::SPHSimulationControl;
-
 
    /**
     * Particle and neighbor search model.
@@ -101,7 +98,6 @@ int main( int argc, char* argv[] )
     */
    using SPHModel = SPH::WCSPH_DBC< NeighborSearch, SPHConfig >;
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
-   using SPHSimulationConfig = typename SPHSimulation::SPHSimpleFluidConfig;
 
    /**
     * Define time step control.
@@ -117,30 +113,37 @@ int main( int argc, char* argv[] )
    using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
 
    /**
-    * Testing params.
+    * Create instance of Settings class, which is object holding all the
+    * necessary SPH constants, informations about terms in particular scheme etc.
     */
-   SPH::SPHParamsConfig sphState;
+   Settings sphState;
 
    /**
-    * Load simulation parameters.
-    */
-   SPHSimulationConfig sphSimulationConfig;
-   sphSimulationConfig.template loadParameters< ParticlesInitParameters >();
-
-   /**
-    * Load simulation control (file names, time steps,...)
+    * Create instance of Simulation control class, which is object holding all the
+    * information about end time, results saving times, paths to the input files
+    * and paths to store results.
     */
    SimulationControl simulationControl;
 
+
    /**
-    * Create the simulation.
+    * Create instance of class with neccessary initial information to create particle system
+    * and thus to initialize SPH simulation.
     */
-   SPHSimulation sphSimulation( sphSimulationConfig );
+   ParticlesInitParams particleSystemInit;
+
+   /**
+    * Create the main object - SPH simulation itself. The constructor requires
+    * struct containing information to create and allocate particle system and neighbor search,
+    * which includes number of particles for fluid and boundary, background grid size and its
+    * origin and search radius.
+    */
+   SPHSimulation sphSimulation( particleSystemInit );
    std::cout << sphSimulation << std::endl;
 
    /**
-    * TEMP: Determine number of interation for constant timestep.
-    * Perform simulation main loop.
+    * Create instance of timeStepper, which is a class controling the time step,
+    * duration of the simulation etc.
     */
    TimeStepping timeStepping( sphState.dtInit, simulationControl.endTime );
 
@@ -213,10 +216,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sphSimulation.template Interact< SPH::WendlandKernel2D,
-                                         Settings::DiffusiveTerm,
-                                         Settings::ViscousTerm,
-                                         Settings::EOS >( sphState );
+      sphSimulation.template Interact< SPH::WendlandKernel2D, Settings::DiffusiveTerm, Settings::ViscousTerm, Settings::EOS >( sphState );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -268,8 +268,7 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template InterpolateGrid< SPH::WendlandKernel2D >(
-               sphSimulation.fluid, sphSimulation.boundary, sphState );
+         interpolator.template InterpolateGrid< SPH::WendlandKernel2D >( sphSimulation.fluid, sphSimulation.boundary, sphState );
          interpolator.saveInterpolation( outputFileNameInterpolation );
 
       }

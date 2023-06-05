@@ -91,15 +91,18 @@ public:
    using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
-   using SPHSimpleFluidConfig = SPHSimpleFluidConfig< typename ParticleSystem::Config >;
+   //using SPHSimpleFluidConfig = SPHSimpleFluidConfig< typename ParticleSystem::Config >;
 
    SPHSimpleFluid() = default;
 
-   SPHSimpleFluid( SPHSimpleFluidConfig sphConfig )
+   template< typename SPHSimpleFluidInit >
+   SPHSimpleFluid( SPHSimpleFluidInit sphConfig )
    :  model(),
       integrator(),
-      fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
-      boundary( sphConfig.sizeBoundary, sphConfig.sizeAllocatedBoundary, sphConfig.searchRadius, sphConfig.gridNumberOfCells )
+      //fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
+      //boundary( sphConfig.sizeBoundary, sphConfig.sizeAllocatedBoundary, sphConfig.searchRadius, sphConfig.gridNumberOfCells )
+      fluid( sphConfig.numberOfParticles, sphConfig.numberOfAllocatedParticles, sphConfig.searchRadius, sphConfig.numberOfGridCells ),
+      boundary( sphConfig.numberOfBoundaryParticles, sphConfig.numberOfAllocatedBoundaryParticles, sphConfig.searchRadius, sphConfig.numberOfGridCells )
    {
       fluid->particles->setGridSize( sphConfig.gridSize );
       fluid->particles->setGridOrigin( sphConfig.gridOrigin );
