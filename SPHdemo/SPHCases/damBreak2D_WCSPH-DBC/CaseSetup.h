@@ -72,18 +72,18 @@ int main( int argc, char* argv[] )
     * - Simulation control:
     *   config with path to initial condition, path to store results, end time etc.
     */
-   using Settings = ParticleSystem::SPH::SPHParamsConfig;
-   using SPHConfig = Settings::SPHConfig;
+   using SimulationControl = SPH::SimulationControlConfiguration::SPHSimulationControl;
 
-   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SPHConfig::DeviceType >;
-   using ParticlesInitParams = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
+   using SPHConfig = SPH::SPHConfig::SPHConfig< SimulationControl::DeviceType >;
+   using SPHParams = SPH::SPHConfig::SPHParamsConfig< SPHConfig >;
 
-   using SimulationControl = SPH::SimulationConstrolConfiguration::SPHSimulationControl;
+   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SimulationControl::DeviceType >;
+   using ParticlesParams = ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
 
    /**
     * Particle and neighbor search model.
     */
-   using ParticleSystem = Particles< ParticlesConfig, SPHConfig::DeviceType >;
+   using ParticleSystem = Particles< ParticlesConfig, SimulationControl::DeviceType >;
    using NeighborSearch = NeighborSearch< ParticlesConfig, ParticleSystem >;
 
    /**
@@ -113,10 +113,10 @@ int main( int argc, char* argv[] )
    using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
 
    /**
-    * Create instance of Settings class, which is object holding all the
+    * Create instance of SPHParams class, which is object holding all the
     * necessary SPH constants, informations about terms in particular scheme etc.
     */
-   Settings sphState;
+   SPHParams sphParams;
 
    /**
     * Create instance of Simulation control class, which is object holding all the
@@ -125,12 +125,11 @@ int main( int argc, char* argv[] )
     */
    SimulationControl simulationControl;
 
-
    /**
     * Create instance of class with neccessary initial information to create particle system
     * and thus to initialize SPH simulation.
     */
-   ParticlesInitParams particleSystemInit;
+   ParticlesParams particlesParams;
 
    /**
     * Create the main object - SPH simulation itself. The constructor requires
@@ -138,14 +137,14 @@ int main( int argc, char* argv[] )
     * which includes number of particles for fluid and boundary, background grid size and its
     * origin and search radius.
     */
-   SPHSimulation sphSimulation( particleSystemInit );
+   SPHSimulation sphSimulation( particlesParams );
    std::cout << sphSimulation << std::endl;
 
    /**
     * Create instance of timeStepper, which is a class controling the time step,
     * duration of the simulation etc.
     */
-   TimeStepping timeStepping( sphState.dtInit, simulationControl.endTime );
+   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
 
    /**
     * Read the particle file.
@@ -191,7 +190,7 @@ int main( int argc, char* argv[] )
    MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
    float measuretoolWaterLevelTimer = 0.f;
    SensorWaterLevel sensorWaterLevel( TNL::ceil( simulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points,
-         sphState.h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
+         sphParams.h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
 
    /**
     * Define timers to measure computation time.
@@ -216,7 +215,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sphSimulation.template Interact< SPH::WendlandKernel2D, Settings::DiffusiveTerm, Settings::ViscousTerm, Settings::EOS >( sphState );
+      sphSimulation.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -247,8 +246,8 @@ int main( int argc, char* argv[] )
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         sphSimulation.model->template ComputePressureFromDensity< Settings::EOS >(
-               sphSimulation.fluid->variables, sphSimulation.fluid->getNumberOfParticles(), sphState ); //TODO: FIX.
+         sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
+               sphSimulation.fluid->variables, sphSimulation.fluid->getNumberOfParticles(), sphParams ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -256,8 +255,8 @@ int main( int argc, char* argv[] )
          sphSimulation.fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
 
          timer_pressure.start();
-         sphSimulation.model->template ComputePressureFromDensity< Settings::EOS >(
-               sphSimulation.boundary->variables, sphSimulation.boundary->getNumberOfParticles(), sphState ); //TODO: FIX.
+         sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
+               sphSimulation.boundary->variables, sphSimulation.boundary->getNumberOfParticles(), sphParams ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -268,7 +267,7 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template InterpolateGrid< SPH::WendlandKernel2D >( sphSimulation.fluid, sphSimulation.boundary, sphState );
+         interpolator.template InterpolateGrid< SPH::WendlandKernel2D >( sphSimulation.fluid, sphSimulation.boundary, sphParams );
          interpolator.saveInterpolation( outputFileNameInterpolation );
 
       }
@@ -276,15 +275,15 @@ int main( int argc, char* argv[] )
       if( timeStepping.getTime() > measuretoolPressureTimer )
       {
          measuretoolPressureTimer += measuretoolPressure.outputTime;
-         sensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D, Settings::EOS >(
-               sphSimulation.fluid, sphSimulation.boundary, sphState );
+         sensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D, SPHParams::EOS >(
+               sphSimulation.fluid, sphSimulation.boundary, sphParams );
       }
 
       if( timeStepping.getTime() > measuretoolWaterLevelTimer )
       {
          measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
-         sensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D, Settings::EOS >(
-               sphSimulation.fluid, sphSimulation.boundary, sphState );
+         sensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D, SPHParams::EOS >(
+               sphSimulation.fluid, sphSimulation.boundary, sphParams );
       }
 
       timeStepping.updateTimeStep();

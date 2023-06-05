@@ -5,12 +5,40 @@
 #include "../../../SPH/Models/VisousTerms.h"
 
 #include "../../../SPH/SPHTraits.h"
-#include <TNL/Devices/Cuda.h>
 #include <limits>
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
+namespace SPHConfig {
+
+/**
+ * TYPES OF SPH SMULATION SYSTEM AND SCHEMES (necessary)
+ *
+ * This class is used to store parameters necessary for sph system,
+ * i.e. data types for quantities and indices. It also defines dimension
+ * and attributes of simulated system.
+ *
+ * It is necessary to enter TYPES for:
+ * - GlobalIndexType
+ * - LocalIndexType
+ * - CellIndexType
+ * - RealType
+ */
+template< typename Device >
+class SPHConfig
+{
+   public:
+   using DeviceType = Device;
+
+   using GlobalIndexType = int;
+   using LocalIndexType = int;
+   using CellIndexType = int;
+   using RealType = float;
+
+   static constexpr int spaceDimension = placeholderDimension;
+};
+
 
 /**
  * PARAMETERS OF SPH SIMULATION AND SCHEMES (necessary)
@@ -20,32 +48,10 @@ namespace SPH {
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
+template< typename SPHConfig >
 class SPHParamsConfig
 {
    public:
-
-   class SPHConfig
-   {
-      public:
-      /**
-       * Define the device on which the code should run.
-       */
-      using DeviceType = TNL::Devices::Cuda;
-
-      /**
-       * Definition of basics data types for fluid variables and indices.
-       */
-      using GlobalIndexType = int;
-      using LocalIndexType = int;
-      using CellIndexType = int;
-      using RealType = float;
-
-      /**
-       * Define the space dimension of the problem.
-       */
-      static constexpr int spaceDimension = placeholderDimension;
-   };
-
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]
@@ -100,6 +106,7 @@ class SPHParamsConfig
 };
 
 
+} //namespace SPHConfig
 } //SPH
 } //namespace ParticleSystem
 } //namespace TNL
