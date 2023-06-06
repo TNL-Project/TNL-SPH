@@ -90,7 +90,7 @@ int main( int argc, char* argv[] )
     * Define simulation SPH model and SPH formulation.
     *
     * - SPHModel: is the model of used SPH method (WCSPH_DBC, WCSPH_BI, RSPH, etc.)
-    *   IMPORATANT: Constants and parameters of used model have to be defined in the SPHConfig.
+    *   IMPORTANT: Constants and parameters of used model have to be defined in the SPHConfig.
     *
     * - SPHSimulation: defines the type of problem (simple fluid, problem with open or
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
@@ -243,7 +243,7 @@ int main( int argc, char* argv[] )
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
-          * Its useful for output anywal.
+          * Its useful for output anyway
           */
          timer_pressure.start();
          sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(

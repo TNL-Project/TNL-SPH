@@ -10,7 +10,6 @@ template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearc
 void
 WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState )
 {
-
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
@@ -18,14 +17,6 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
 
    const VectorType gridOrigin = fluid->particles->getGridOrigin();
    const IndexVectorType gridSize = fluid->particles->getGridSize();
-
-   const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
-   const auto view_points = fluid->particles->getPoints().getView();
-
-   const auto view_firstLastCellParticle_bound = boundary->neighborSearch->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex_bound = boundary->particles->getParticleCellIndices().getView();
-   const auto view_points_bound = boundary->particles->getPoints().getView();
 
    typename NeighborSearch::NeighborsLoopParams fluidLoopParams( fluid->neighborSearch );
    typename NeighborSearch::NeighborsLoopParams boundaryLoopParams( boundary->neighborSearch );
@@ -40,11 +31,13 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
    typename EOS::ParamsType eosParams( sphState );
 
    /* VARIABLES AND FIELD ARRAYS */
+   const auto view_points = fluid->particles->getPoints().getView();
    const auto view_rho = fluid->variables->rho.getView();
    auto view_Drho = fluid->variables->drho.getView();
    const auto view_v = fluid->variables->v.getView();
    auto view_a = fluid->variables->a.getView();
 
+   const auto view_points_bound = boundary->particles->getPoints().getView();
    const auto view_rho_bound = boundary->variables->rho.getView();
    auto view_Drho_bound = boundary->variables->drho.getView();
    const auto view_v_bound = boundary->variables->v.getView();
@@ -144,26 +137,12 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       fluidLoopParams.i = i;
       fluidLoopParams.gridIndex = gridIndex;
 
-      neighborSearch->loopOverNeighbors(
-            fluidLoopParams,
-            //i,
-            //numberOfParticles,
-            //gridIndex,
-            //gridSize,
-            //view_firstLastCellParticle,
-            FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch->loopOverNeighbors( fluidLoopParams, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       boundaryLoopParams.i = i;
       boundaryLoopParams.gridIndex = gridIndex;
 
-      neighborSearch_bound->loopOverNeighbors(
-            boundaryLoopParams,
-            //i,
-            //numberOfParticles_bound,
-            //gridIndex,
-            //gridSize,
-            //view_firstLastCellParticle_bound,
-            FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
+      neighborSearch_bound->loopOverNeighbors( boundaryLoopParams, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       a_i += gravity;
@@ -185,14 +164,7 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       fluidLoopParams.i = i;
       fluidLoopParams.gridIndex = gridIndex;
 
-      neighborSearch->loopOverNeighbors(
-            fluidLoopParams,
-            //i,
-            //numberOfParticles,
-            //gridIndex,
-            //gridSize,
-            //view_firstLastCellParticle,
-            BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
+      neighborSearch->loopOverNeighbors( fluidLoopParams, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
 
