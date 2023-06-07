@@ -51,7 +51,8 @@
 /**
  * Measuretool draft.
  */
-#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
+//#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
+#include "../../../SPH/shared/Measuretool.h"
 
 using namespace TNL::ParticleSystem;
 
@@ -171,12 +172,11 @@ int main( int argc, char* argv[] )
     *   config for grid interpolation
     *    - sensors to measure pressure in given points
     */
-   using GridInterpolation = SPH::GridInterpolation< SPHConfig, SPHSimulation >;
+   using GridInterpolation = SPH::InterpolateToGrid< SPHConfig, SPHSimulation >;
    using MeasuretoolInitGridInterpolation = SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
-   MeasuretoolInitGridInterpolation measuretoolInterpolation;
+   MeasuretoolInitGridInterpolation interpolateGridParams;
    float saveResultsTimer = 0.f;
-   GridInterpolation interpolator( measuretoolInterpolation.gridOrigin, measuretoolInterpolation.gridSize,
-         measuretoolInterpolation.gridStep );
+   GridInterpolation interpolator( interpolateGridParams );
 
    using SensorInterpolation = SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
    using MeasuretoolInitParametersPressure = SPH::MeasuretoolConfiguration::MeasuretoolConfigForPressure< SPHConfig >;
@@ -267,15 +267,15 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template InterpolateGrid< SPH::WendlandKernel2D >( sphSimulation.fluid, sphSimulation.boundary, sphParams );
-         interpolator.saveInterpolation( outputFileNameInterpolation );
+         interpolator.template interpolate< SPH::WendlandKernel2D >( sphSimulation.fluid, sphSimulation.boundary, sphParams );
+         interpolator.save( outputFileNameInterpolation );
 
       }
 
       if( timeStepping.getTime() > measuretoolPressureTimer )
       {
          measuretoolPressureTimer += measuretoolPressure.outputTime;
-         sensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D, SPHParams::EOS >(
+         sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
                sphSimulation.fluid, sphSimulation.boundary, sphParams );
       }
 
@@ -290,7 +290,7 @@ int main( int argc, char* argv[] )
    }
 
    std::string outputFileNameInterpolation = simulationControl.outputFileName + "_sensors.dat";
-   sensorInterpolation.saveSensors( outputFileNameInterpolation );
+   sensorInterpolation.save( outputFileNameInterpolation );
 
    std::string outputFileNameWaterLevel = simulationControl.outputFileName + "_sensorsWaterLevel.dat";
    sensorWaterLevel.saveSensors( outputFileNameWaterLevel );

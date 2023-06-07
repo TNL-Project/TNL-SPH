@@ -76,6 +76,8 @@ public:
    using PointType = typename ParticleSystem::PointType; //remove
    using RealType = typename ParticleSystem::RealType;
 
+   using NeighborSearchType = NeighborSearch; //Added due to measure tool
+
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;

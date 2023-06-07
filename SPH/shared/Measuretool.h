@@ -10,10 +10,12 @@ namespace SPH {
 template< typename SPHConfig, typename SPHSimulation >
 class InterpolateToGrid
 {
-   public:
+public:
+
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
 
+   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
    using RealType = typename SPHTraitsType::RealType;
@@ -21,6 +23,7 @@ class InterpolateToGrid
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
+   using NeighborSearch = typename SPHSimulation::NeighborSearchType;
    using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
    using Variables = typename SPHSimulation::FluidVariables;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
@@ -28,75 +31,45 @@ class InterpolateToGrid
    using GridType = Meshes::Grid< 2, RealType, DeviceType, GlobalIndexType >;
    using CoordinatesType = typename GridType::CoordinatesType;
 
-   //template< typename InterpolationConfigType >
-   InterpolateToGrid( VectorType gridOrigin, CoordinatesType gridDimension, VectorType spaceSteps )
-   : variables( gridDimension[ 0 ] * gridDimension[ 1 ] ), gridDimension( gridDimension ),
-     vectorArrayBuffer( gridDimension[ 0 ] * gridDimension[ 1 ] * SPHConfig::spaceDimension ) //FIXME: No comment needed.
+   template< typename InterpolationConfigType >
+   InterpolateToGrid( InterpolationConfigType configInit )
+   : variables( configInit.gridSize[ 0 ] * configInit.gridSize[ 1 ] ),
+     gridDimension( configInit.gridSize )
    {
-      interpolationGrid.setOrigin( gridOrigin );
-      interpolationGrid.setDimensions( gridDimension );
-      interpolationGrid.setSpaceSteps( spaceSteps );
+      interpolationGrid.setOrigin( configInit.gridOrigin );
+      interpolationGrid.setDimensions( configInit.gridSize );
+      interpolationGrid.setSpaceSteps( configInit.gridStep );
    }
 
    template< typename SPHKernelFunction, typename SPHState >
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
-   template< typename SPHKernelFunction, typename SPHState >
    void
    save( const std::string outputFileName );
 
-   //protected:
+protected:
+
    GridType interpolationGrid;
    CoordinatesType gridDimension;
    VariablesPointer variables;
 
-   //FIXME: Temp. buffer to save vector array
-   using ScalarArrayType = Containers::Array< RealType, DeviceType, GlobalIndexType >;
-   ScalarArrayType vectorArrayBuffer;
 
-
-};
-
-//----------------------------------------------------------------------------------------
-//Field variable sensors
-template< typename SPHConfig >
-struct MeasuretoolSensorConfig
-{
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using RealType = typename SPHTraitsType::RealType;
-   using VectorType = typename SPHTraitsType::VectorType;
-
-   GlobalIndexType numberOfSensors;
-   std::vector< VectorType > sensorPoints;
-   GlobalIndexType numberOfSavedSteps;
-   RealType savePeriod;
-
-   template< typename Config >
-   void loadParameters()
-   {
-      this->numberOfSensors = Config::sensorPoints.size();
-      this->sensorPoints = Config::sensorPoints;
-      this->numberOfSavedSteps = Config::numberOfSavedSteps;
-      this->savePeriod = Config::savePeriod;
-   }
 };
 
 template< typename SPHConfig, typename SPHSimulation >
-class SensorInterpolation : public Measuretool< SPHConfig >
+class SensorInterpolation
 {
    public:
-   using MT = Measuretool< SPHConfig >;
-   using DeviceType = typename MT::DeviceType;
+   using DeviceType = typename SPHConfig::DeviceType;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
-   using LocalIndexType = typename MT::LocalIndexType;
-   using GlobalIndexType = typename MT::GlobalIndexType;
-   using IndexVectorType = typename MT::IndexVectorType;
-   using RealType = typename MT::RealType;
-   using VectorType = typename MT::VectorType;
-   using VectorArrayType = typename MT::SPHTraitsType::VectorArrayType;
+   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -115,160 +88,37 @@ class SensorInterpolation : public Measuretool< SPHConfig >
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
    }
 
-   //protected:
+   template<typename SPHKernelFunction, typename EOS, typename SPHState >
+   void
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+
+   void
+   save( const std::string outputFileName );
+
+protected:
+
    GlobalIndexType numberOfSensors;
    SensorsDataArray sensors;
    VectorArrayType sensorPositions;
 
    GlobalIndexType numberOfSavedSteps;
    GlobalIndexType sensorIndexer = 0;
-
-   template<typename SPHKernelFunction, typename EOS, typename SPHState >
-   void
-   interpolateSensors( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
-   {
-
-      /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
-      GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-      GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
-
-      const VectorType gridOrigin = fluid->particles->getGridOrigin();
-      const IndexVectorType gridSize = fluid->particles->getGridSize();
-
-      const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
-      const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
-
-      /* VARIABLES AND FIELD ARRAYS */
-      const auto view_points = fluid->particles->getPoints().getView();
-      const auto view_rho = fluid->variables->rho.getView();
-
-      /* CONSTANT VARIABLES */ //TODO: Do this like a human.
-      const RealType h = sphState.h;
-      const RealType m = sphState.mass;
-
-      typename EOS::ParamsType eosParams( sphState );
-
-      auto view_sensorsPositions = sensorPositions.getView();
-      auto view_pressureSensors = sensors.getView();
-
-      auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* p, VectorType* v, RealType* gamma ) mutable
-      {
-         const VectorType r_j = view_points[ j ];
-         const VectorType r_ij = r_i - r_j;
-         const RealType drs = l2Norm( r_ij );
-         if( drs <= searchRadius )
-         {
-            const RealType rho_j = view_rho[ j ];
-            const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
-            const RealType W = SPHKernelFunction::W( drs, h );
-
-            const RealType V = m / rho_j;
-
-            //*rho += W * m;
-            *p += p_j * W * V;
-            *gamma += W * V;
-         }
-      };
-
-      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, GlobalIndexType sensorIndexer ) mutable
-      {
-         RealType p = 0.f;
-         VectorType v = 0.f;
-         RealType gamma = 0.f;
-
-         VectorType r = view_sensorsPositions[ i ];
-         const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
-
-         neighborSearch->loopOverNeighbors(
-               i,
-               numberOfParticles,
-               gridIndex,
-               gridSize,
-               view_firstLastCellParticle,
-               interpolate, r, &p, &v, &gamma );
-
-         if( gamma > 0.5f ){
-            view_pressureSensors( sensorIndexer, i ) = p / gamma;
-         }
-         else{
-            view_pressureSensors( sensorIndexer, i ) = 0.f;
-         }
-      };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
-
-      sensorIndexer++;
-   }
-
-   void
-   saveSensors( const std::string outputFileName )
-   {
-      using HostSensorsDataArray = Containers::NDArray< RealType,
-                                                        Containers::SizesHolder< int, 0, 0 >,
-                                                        std::index_sequence< 0, 1 >,
-                                                        Devices::Host >;
-      HostSensorsDataArray sensorsDataHost;
-      sensorsDataHost = sensors;
-      const auto view_sensorsDataHost = sensorsDataHost.getView();
-
-      std::cout << std::endl << "MEASURETOOL - SAVING DATA :" << std::endl;
-      std::cout << "Number of sensors............................. " << numberOfSensors << " ." << std::endl;
-      std::cout << "Number of saved time steps.................... " << sensorIndexer << " ." << std::endl;
-      std::cout << "Ouput filename................................ " << outputFileName << " ." << std::endl;
-
-      std::ofstream sensorsFile;
-      sensorsFile.open( outputFileName );
-      sensorsFile << "#Data from measuretool:\n";
-      for( int i = 0; i < sensorIndexer; i++ ){
-         sensorsFile << i;
-         for( int j = 0; j < numberOfSensors; j++ ){
-            sensorsFile << " " <<  view_sensorsDataHost( i, j );
-         }
-         sensorsFile << std::endl;
-      }
-      sensorsFile.close();
-   }
-
 };
 
-//template< typename SPHConfig >
-//struct MeasuretoolSensorWaterLevelConfig
-//{
-//   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-//
-//   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-//   using RealType = typename SPHTraitsType::RealType;
-//   using VectorType = typename SPHTraitsType::VectorType;
-//
-//   GlobalIndexType numberOfSensors;
-//   std::vector< VectorType > sensorPoints;
-//   GlobalIndexType numberOfSavedSteps;
-//   RealType savePeriod;
-//
-//   template< typename Config >
-//   void loadParameters()
-//   {
-//      this->numberOfSensors = Config::sensorPoints.size();
-//      this->sensorPoints = Config::sensorPoints;
-//      this->numberOfSavedSteps = Config::numberOfSavedSteps;
-//      this->savePeriod = Config::savePeriod;
-//   }
-//};
-
 template< typename SPHConfig, typename SPHSimulation >
-class SensorWaterLevel : public Measuretool< SPHConfig >
+class SensorWaterLevel
 {
    public:
-   using MT = Measuretool< SPHConfig >;
-   using DeviceType = typename MT::DeviceType;
+   using DeviceType = typename SPHConfig::DeviceType;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
-   using LocalIndexType = typename MT::LocalIndexType;
-   using GlobalIndexType = typename MT::GlobalIndexType;
-   using IndexVectorType = typename MT::IndexVectorType;
-   using RealType = typename MT::RealType;
-   using VectorType = typename MT::VectorType;
-   using VectorArrayType = typename MT::SPHTraitsType::VectorArrayType;
-   using IndexArrayType = typename MT::SPHTraitsType::IndexArrayType;
+   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -429,4 +279,6 @@ class SensorWaterLevel : public Measuretool< SPHConfig >
 } // SPH
 } // ParticleSystem
 } // TNL
+
+#include "Measuretool.hpp"
 
