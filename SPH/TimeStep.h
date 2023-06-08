@@ -1,3 +1,5 @@
+#include <map>
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -5,7 +7,8 @@ namespace SPH {
 template< typename SPHConfig >
 class ConstantTimeStep
 {
-   public:
+public:
+
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -57,11 +60,33 @@ class ConstantTimeStep
       step += 1;
    }
 
-   protected:
+   void
+   addOutputTimer( const std::string keyword, const RealType outputTime )
+   {
+      outputTimers.insert({ keyword , { outputTime, this->getTime() } } );
+   }
+
+   bool
+   checkOutputTimer( const std::string keyword )
+   {
+      if( this->getTime() > this->outputTimers[ keyword ].second )
+      {
+         this->outputTimers[ keyword ].second += this->outputTimers[ keyword ].first;
+         return true;
+      }
+
+      return false;
+   }
+
+protected:
+
    GlobalIndexType step;
    RealType time;
    RealType timeStep;
    RealType endTime;
+
+   //control timers for arbitrary outpus
+   std::map< std::string, std::pair< RealType, RealType > > outputTimers;
 
 };
 

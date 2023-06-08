@@ -144,8 +144,11 @@ int main( int argc, char* argv[] )
    /**
     * Create instance of timeStepper, which is a class controling the time step,
     * duration of the simulation etc.
+    *
+    * Add output timer to control saving to files.
     */
    TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
     * Read the particle file.
@@ -175,20 +178,19 @@ int main( int argc, char* argv[] )
    using GridInterpolation = SPH::InterpolateToGrid< SPHConfig, SPHSimulation >;
    using MeasuretoolInitGridInterpolation = SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
    MeasuretoolInitGridInterpolation interpolateGridParams;
-   float saveResultsTimer = 0.f;
    GridInterpolation interpolator( interpolateGridParams );
 
    using SensorInterpolation = SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
    using MeasuretoolInitParametersPressure = SPH::MeasuretoolConfiguration::MeasuretoolConfigForPressure< SPHConfig >;
    MeasuretoolInitParametersPressure measuretoolPressure;
-   float measuretoolPressureTimer = 0.f;
+   timeStepping.addOutputTimer( "sensor_pressure", measuretoolPressure.outputTime );
    SensorInterpolation sensorInterpolation( TNL::ceil( simulationControl.endTime / measuretoolPressure.outputTime ),
          measuretoolPressure.points );
 
    using MeasuretoolInitParametersWaterLevel = SPH::MeasuretoolConfiguration::MeasuretoolConfigForWaterLevel< SPHConfig >;
    using SensorWaterLevel = SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
    MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
-   float measuretoolWaterLevelTimer = 0.f;
+   timeStepping.addOutputTimer( "sensor_waterLevel", measuretoolWaterLevel.outputTime );
    SensorWaterLevel sensorWaterLevel( TNL::ceil( simulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points,
          sphParams.h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
 
@@ -230,10 +232,8 @@ int main( int argc, char* argv[] )
       /**
        * Output particle data
        */
-      if( timeStepping.getTime() > saveResultsTimer )
+      if( timeStepping.checkOutputTimer( "save_results" ) )
       {
-         saveResultsTimer += simulationControl.outputTime;
-
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
@@ -266,16 +266,14 @@ int main( int argc, char* argv[] )
 
       }
 
-      if( timeStepping.getTime() > measuretoolPressureTimer )
+      if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
-         measuretoolPressureTimer += measuretoolPressure.outputTime;
          sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
                sphSimulation.fluid, sphSimulation.boundary, sphParams );
       }
 
-      if( timeStepping.getTime() > measuretoolWaterLevelTimer )
+      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
       {
-         measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
          sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
                sphSimulation.fluid, sphSimulation.boundary, sphParams );
       }
