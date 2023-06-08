@@ -223,15 +223,9 @@ int main( int argc, char* argv[] )
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
-      if( timeStepping.getStep() % 20 == 0 ) {
-         sphSimulation.integrator->IntegrateEuler( timeStepping.getTimeStep(), sphSimulation.fluid ); //TODO: Timer!
-         sphSimulation.integrator->IntegrateEulerBoundary( timeStepping.getTimeStep(), sphSimulation.boundary );
-      }
-      else {
-         sphSimulation.integrator->IntegrateVerlet( timeStepping.getTimeStep(), sphSimulation.fluid );
-         sphSimulation.integrator->IntegrateVerletBoundary( timeStepping.getTimeStep(), sphSimulation.boundary );
-      }
+      sphSimulation.integrator->integratStepVerlet( sphSimulation.fluid, sphSimulation.boundary, timeStepping );
       timer_integrate.stop();
+      std::cout << "Integrate... done. " << std::endl;
 
       /**
        * Output particle data
@@ -282,7 +276,7 @@ int main( int argc, char* argv[] )
       if( timeStepping.getTime() > measuretoolWaterLevelTimer )
       {
          measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
-         sensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D, SPHParams::EOS >(
+         sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
                sphSimulation.fluid, sphSimulation.boundary, sphParams );
       }
 
@@ -293,7 +287,7 @@ int main( int argc, char* argv[] )
    sensorInterpolation.save( outputFileNameInterpolation );
 
    std::string outputFileNameWaterLevel = simulationControl.outputFileName + "_sensorsWaterLevel.dat";
-   sensorWaterLevel.saveSensors( outputFileNameWaterLevel );
+   sensorWaterLevel.save( outputFileNameWaterLevel );
 
    /**
     * Output simulation stats.
