@@ -122,7 +122,8 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       }
    };
 
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i,
+         NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
    {
       const VectorType r_i = view_points[ i ];
       const VectorType v_i = view_v[ i ];

@@ -27,7 +27,7 @@ class GridInterpolationConfig
 
    VectorType gridOrigin = { 0.f, 0.f };
    IndexVectorType gridSize = { 150, 70 };
-   VectorType gridStep = { SPHConfig::h, SPHConfig::h };
+   VectorType gridStep = { placeholderInitParticleDistancef, placeholderInitParticleDistancef };
 };
 
 /**
@@ -52,10 +52,10 @@ class MeasuretoolConfigForPressure
    const float outputTime = 2e-3f;
 
    std::vector< VectorType > points{
-   { 1.60f - SPHConfig::h, 0.003f },
-   { 1.60f - SPHConfig::h, 0.015f },
-   { 1.60f - SPHConfig::h, 0.03f  },
-   { 1.60f - SPHConfig::h, 0.08f  } };
+   { 1.60f - placeholderSmoothingLengthf, 0.003f },
+   { 1.60f - placeholderSmoothingLengthf, 0.015f },
+   { 1.60f - placeholderSmoothingLengthf, 0.03f  },
+   { 1.60f - placeholderSmoothingLengthf, 0.08f  } };
 };
 
 /**
@@ -82,10 +82,10 @@ class MeasuretoolConfigForWaterLevel
    const float outputTime = 2e-3f;
 
    std::vector< VectorType > points{
-   { 0.3f,    0.f + SPHConfig::h },
-   { 0.865f,  0.f + SPHConfig::h },
-   { 1.114f,  0.f + SPHConfig::h },
-   { 1.3625f, 0.f + SPHConfig::h } };
+   { 0.3f,    0.f + placeholderSmoothingLengthf },
+   { 0.865f,  0.f + placeholderSmoothingLengthf },
+   { 1.114f,  0.f + placeholderSmoothingLengthf },
+   { 1.3625f, 0.f + placeholderSmoothingLengthf } };
 
    const VectorType direction = { 0.f, 1.f };
    const RealType startMeasureAtLevel = 0.f;

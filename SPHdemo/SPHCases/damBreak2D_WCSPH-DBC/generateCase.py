@@ -180,6 +180,10 @@ with open( 'SimulationControlConfig.h', 'w' ) as file:
 with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
   fileMeasuretoolConf = file.read()
 
+# Replace the target string
+fileMeasuretoolConf = fileMeasuretoolConf.replace( 'placeholderInitParticleDistance', str( dp ) )
+fileMeasuretoolConf = fileMeasuretoolConf.replace( 'placeholderSmoothingLength', str( smoothingLentgh ) )
+
 with open( 'MeasuretoolConfig.h', 'w' ) as file:
   file.write( fileMeasuretoolConf )
 

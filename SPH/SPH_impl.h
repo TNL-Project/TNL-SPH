@@ -72,6 +72,18 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact()
 }
 
 template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Writer >
+void
+SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::save( const std::string& outputFileName, const int step )
+{
+   std::string outputFileNameFluid = outputFileName + std::to_string( step ) + "_fluid.vtk";
+   fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
+
+   std::string outputFileNameBound = outputFileName + std::to_string( step ) + "_boundary.vtk";
+   boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
+}
+
+template< typename Variables, typename ParticleSystem, typename NeighborSearch >
 void
 SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::writeProlog( TNL::Logger& logger ) const noexcept
 {

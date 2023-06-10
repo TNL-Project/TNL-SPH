@@ -245,17 +245,13 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameFluid = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_fluid.vtk";
-         sphSimulation.fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
-
          timer_pressure.start();
          sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
                sphSimulation.boundary->variables, sphSimulation.boundary->getNumberOfParticles(), sphParams ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameBound = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_boundary.vtk";
-         sphSimulation.boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
+         sphSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
 
          /**
           * Interpolate on the grid.

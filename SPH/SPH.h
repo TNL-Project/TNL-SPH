@@ -129,6 +129,10 @@ public:
    void
    Interact();
 
+   template< typename Writer >
+   void
+   save( const std::string& outputFilename, const int step );
+
    void
    writeProlog( TNL::Logger& logger ) const noexcept;
 
