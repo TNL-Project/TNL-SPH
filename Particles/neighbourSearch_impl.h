@@ -72,6 +72,24 @@ NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighbors()
    NeighborSearch< ParticleConfig, ParticleSystem >::searchForNeighborsWithForEach();
 }
 
+template< typename ParticleConfig, typename ParticleSystem >
+template< typename Function, typename... FunctionArgs >
+__cuda_callable__
+void
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const NeighborsLoopParams& params,
+                                                                     Function f, FunctionArgs... args )
+{
+   if constexpr( IndexVectorType::getSize() == 2 ){
+      loopOverNeighbors2D( params, f, args... );
+   }
+   else if constexpr( IndexVectorType::getSize() == 3 ){
+      loopOverNeighbors3D( params, f, args... );
+   }
+   else{
+      static_assert( IndexVectorType::getSize(), "neighbor loop search is implemented only for 2 and 3 dims" );
+   }
+}
+
 //with vector
 template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
@@ -106,8 +124,8 @@ template< typename ParticleConfig, typename ParticleSystem >
 template< typename Function, typename... FunctionArgs >
 __cuda_callable__
 void
-NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors( const NeighborsLoopParams& params,
-                                                                     Function f, FunctionArgs... args )
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors2D( const NeighborsLoopParams& params,
+                                                                       Function f, FunctionArgs... args )
 {
    for( int cj = params.gridIndex[ 1 ] -1; cj <= params.gridIndex[ 1 ] + 1; cj++ ){
       for( int ci = params.gridIndex[ 0 ] - 1; ci <= params.gridIndex[ 0 ] + 1; ci++ ){
@@ -180,6 +198,33 @@ NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors(
             while( ( j <= j_end ) ){
                if( i == j ){ j++; continue; }
                f( i, j, args... );
+               j++;
+            } //while over particle in cell
+         } //for cells in x direction
+      } //for cells in y direction
+   } //for cells in z direction
+}
+
+//with vector
+template< typename ParticleConfig, typename ParticleSystem >
+template< typename Function, typename... FunctionArgs >
+__cuda_callable__
+void
+NeighborSearch< ParticleConfig, ParticleSystem >::loopOverNeighbors3D( const NeighborsLoopParams& params,
+                                                                       Function f, FunctionArgs... args )
+{
+   for( int ck = params.gridIndex[ 2 ] -1; ck <= params.gridIndex[ 2 ] + 1; ck++ ){
+      for( int cj = params.gridIndex[ 1 ] -1; cj <= params.gridIndex[ 1 ] + 1; cj++ ){
+         for( int ci = params.gridIndex[ 0 ] - 1; ci <= params.gridIndex[ 0 ] + 1; ci++ ){
+            const unsigned int neighborCell = ParticleSystem::CellIndexer::EvaluateCellIndex( ci, cj, ck, params.gridOrigin );
+            const PairIndexType firstLastParticle = params.view_firstLastCellParticle[ neighborCell ];
+            int j = firstLastParticle[ 0 ];
+            int j_end = firstLastParticle[ 1 ];
+            if( j_end >= params.numberOfParticles )
+             	j_end = -1;
+            while( ( j <= j_end ) ){
+               if( params.i == j ){ j++; continue; }
+               f( params.i, j, args... );
                j++;
             } //while over particle in cell
          } //for cells in x direction

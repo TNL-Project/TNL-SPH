@@ -18,10 +18,16 @@ public:
    using CellIndexArrayView = typename Containers::ArrayView< typename NeighborSearch::CellIndexType, DeviceType >;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
    using NeighborSearchPointerType = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
+   using PointType = typename NeighborSearch::PointType;
+   using CellIndexer = typename NeighborSearch::CellIndexer;
+   using IndexVectorType = typename NeighborSearch::IndexVectorType;
+   using RealType = typename NeighborSearch::RealType;
 
    NeighborsLoopParams( NeighborSearchPointerType& neighborSearch )
    : numberOfParticles( neighborSearch->getParticles()->getNumberOfParticles() ),
      gridSize( neighborSearch->getParticles()->getGridSize() ),
+     gridOrigin( neighborSearch->getParticles()->getGridOrigin() ),
+     searchRadius( neighborSearch->getParticles()->getSearchRadius() ),
      view_firstLastCellParticle( neighborSearch->getCellFirstLastParticleList().getView() ) {}
 
    GlobalIndexType i;
@@ -29,7 +35,10 @@ public:
 
    const GlobalIndexType numberOfParticles;
    const Containers::StaticVector< 2, GlobalIndexType > gridSize;
+   //const typename NeighborSearch::IndexVectorType gridSize;
    const PairIndexArrayView view_firstLastCellParticle;
+   const PointType gridOrigin;
+   const RealType searchRadius;
 };
 
 template< typename ParticleConfig, typename ParticleSystem >
@@ -51,6 +60,11 @@ public:
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
    using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+
+   /* necessary for args */
+   using IndexVectorType = typename ParticleSystem::IndexVectorType;
+   using PointType = typename ParticleSystem::PointType;
+   using CellIndexer = typename ParticleConfig::CellIndexerType;
 
    /* args */
    using NeighborsLoopParams = NeighborsLoopParams< NeighborSearch< ParticleConfig, ParticleSystem > >;
@@ -97,6 +111,16 @@ public:
    }
 
    /**
+    * Wrapper for loop over neighbor to specify
+    * the dimension in case we use parametric struct with argument.
+    */
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighbors( const NeighborsLoopParams& params,
+                      Function f, FunctionArgs... args );
+
+   /**
     * Loop over neighbor 2D.
     */
    template< typename Function, typename... FunctionArgs >
@@ -112,8 +136,8 @@ public:
    template< typename Function, typename... FunctionArgs >
    __cuda_callable__
    void
-   loopOverNeighbors( const NeighborsLoopParams& params,
-                      Function f, FunctionArgs... args );
+   loopOverNeighbors2D( const NeighborsLoopParams& params,
+                        Function f, FunctionArgs... args );
 
    /**
     * Loop over neighbor 2D - loop over another set.
@@ -144,6 +168,12 @@ public:
                       const Containers::StaticVector< 3, GlobalIndexType >& gridSize,
                       const PairIndexArrayView& view_firstLastCellParticle,
                       Function f, FunctionArgs... args );
+
+   template< typename Function, typename... FunctionArgs >
+   __cuda_callable__
+   void
+   loopOverNeighbors3D( const NeighborsLoopParams& params,
+                        Function f, FunctionArgs... args );
 
    /**
     * Loop over neighbor 3D - loop over another set.
@@ -204,4 +234,5 @@ protected:
 } // TNL
 
 #include "neighbourSearch_impl.h"
+#include "neighborSearchLoop.h"
 
