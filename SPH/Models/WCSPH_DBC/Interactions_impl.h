@@ -15,14 +15,8 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   const VectorType gridOrigin = fluid->particles->getGridOrigin();
-   const IndexVectorType gridSize = fluid->particles->getGridSize();
-
-   //typename NeighborSearch::NeighborsLoopParams fluidLoopParams( fluid->neighborSearch );
-   //typename NeighborSearch::NeighborsLoopParams boundaryLoopParams( boundary->neighborSearch );
-
-   typename NeighborSearch::NeighborsLoopParams fluidLoopParams( fluid->neighborSearch );
-   typename NeighborSearch::NeighborsLoopParams boundaryLoopParams( boundary->neighborSearch );
+   typename NeighborSearch::NeighborsLoopParams searchInFluid( fluid->neighborSearch );
+   typename NeighborSearch::NeighborsLoopParams searchInBound( boundary->neighborSearch );
 
    /* CONSTANT VARIABLES */
    const RealType h = sphState.h;
@@ -125,35 +119,6 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       }
    };
 
-   //auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i,
-   //      NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
-   //{
-   //   const VectorType r_i = view_points[ i ];
-   //   const VectorType v_i = view_v[ i ];
-   //   const RealType rho_i = view_rho[ i ];
-   //   const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-
-   //   const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
-
-   //   VectorType a_i = 0.f;
-   //   RealType drho_i = 0.f;
-
-   //   fluidLoopParams.i = i;
-   //   fluidLoopParams.gridIndex = gridIndex;
-
-   //   neighborSearch->loopOverNeighbors( fluidLoopParams, FluidFluid, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-
-   //   boundaryLoopParams.i = i;
-   //   boundaryLoopParams.gridIndex = gridIndex;
-
-   //   neighborSearch_bound->loopOverNeighbors( boundaryLoopParams, FluidBound, r_i, v_i, rho_i, p_i, &drho_i, &a_i );
-
-   //   view_Drho[ i ] = drho_i;
-   //   a_i += gravity;
-   //   view_a[ i ] = a_i;
-   //};
-   //SPHParallelFor::exec( 0, numberOfParticles, particleLoop, fluid->neighborSearch, boundary->neighborSearch );
-
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points[ i ];
@@ -164,35 +129,14 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
-      NeighborsLoop::exec( i, r_i, fluidLoopParams, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
-      NeighborsLoop::exec( i, r_i, boundaryLoopParams, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+      NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
+      NeighborsLoop::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       a_i += gravity;
       view_a[ i ] = a_i;
    };
    SPHParallelFor::exec( 0, numberOfParticles, particleLoop );
-
-   //auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch ) mutable
-   //{
-   //   const VectorType r_i = view_points_bound[ i ];
-   //   const VectorType v_i = view_v_bound[ i ];
-   //   const RealType rho_i = view_rho_bound[ i ];
-   //   const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-
-   //   const IndexVectorType gridIndex = TNL::floor( ( r_i - gridOrigin ) / searchRadius );
-
-   //   RealType drho_i = 0.f;
-
-   //   fluidLoopParams.i = i;
-   //   fluidLoopParams.gridIndex = gridIndex;
-
-   //   neighborSearch->loopOverNeighbors( fluidLoopParams, BoundFluid, r_i, v_i, rho_i, p_i, &drho_i );
-
-   //   view_Drho_bound[ i ] = drho_i;
-
-   //};
-   //SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary, fluid->neighborSearch );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -203,14 +147,13 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
 
       RealType drho_i = 0.f;
 
-      NeighborsLoop::exec( i, r_i, fluidLoopParams, BoundFluid, v_i, rho_i, p_i, &drho_i );
+      NeighborsLoop::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
 
    };
    SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary );
 }
-
 
 template< typename NeighborSearch, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState, typename SPHState >

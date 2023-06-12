@@ -15,6 +15,7 @@ CUDA_ARCH := auto
 
 # compilers
 CXX := g++
+#CXX := clang++
 CUDA_CXX := nvcc
 
 # host compiler flags
