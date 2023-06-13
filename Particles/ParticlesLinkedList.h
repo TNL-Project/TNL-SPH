@@ -4,6 +4,8 @@
 #include <TNL/Pointers/SharedPointer.h>
 #include <TNL/Algorithms/sort.h>
 
+#include <limits> //UINT_MAX
+
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
@@ -15,15 +17,46 @@
 namespace TNL {
 namespace ParticleSystem {
 
+template< typename ParticleSystem >
+class NeighborsLoopParams
+{
+public:
+   using DeviceType = typename ParticleSystem::DeviceType;
+   using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
+   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
+   using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
+   using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+   using ParticleSystemPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
+   using PointType = typename ParticleSystem::PointType;
+   using CellIndexer = typename ParticleSystem::CellIndexer;
+   using IndexVectorType = typename ParticleSystem::IndexVectorType;
+   using RealType = typename ParticleSystem::RealType;
+
+   NeighborsLoopParams( ParticleSystemPointerType& neighborSearch )
+   : numberOfParticles( neighborSearch->getParticles()->getNumberOfParticles() ),
+     gridSize( neighborSearch->getParticles()->getGridSize() ),
+     gridOrigin( neighborSearch->getParticles()->getGridOrigin() ),
+     searchRadius( neighborSearch->getParticles()->getSearchRadius() ),
+     view_firstLastCellParticle( neighborSearch->getCellFirstLastParticleList().getView() ) {}
+
+   GlobalIndexType i;
+   Containers::StaticVector< 2, GlobalIndexType > gridIndex;
+
+   const GlobalIndexType numberOfParticles;
+   const Containers::StaticVector< 2, GlobalIndexType > gridSize;
+   //const typename ParticleSystem::IndexVectorType gridSize;
+   const PairIndexArrayView view_firstLastCellParticle;
+   const PointType gridOrigin;
+   const RealType searchRadius;
+};
+
 template < typename ParticleConfig, typename DeviceType >
-class Particles : public Particles {
+class ParticlesLinkedList : public Particles< ParticleConfig, DeviceType > {
 public:
 
    using Device = DeviceType;
    using Config = ParticleConfig;
    using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
-
-   static constexpr int spaceDimension = 2;
 
    /* common */
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
@@ -49,256 +82,51 @@ public:
    using GridType = typename ParticleTraitsType::GridType;
    using GridPointer = typename ParticleTraitsType::GridPointer;
 
+   /* neighbor list related */
+   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
+   using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
+   using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+
+   /* args */
+   using NeighborsLoopParams = NeighborsLoopParams< ParticlesLinkedList< ParticleConfig, DeviceType > >;
+
    /**
     * Constructors.
     */
-   Particles() = default;
+   ParticlesLinkedList() = default;
 
-   Particles( GlobalIndexType size, GlobalIndexType sizeAllocated )
-   : numberOfParticles( size ), numberOfAllocatedParticles( sizeAllocated ), points( sizeAllocated ) { }
-
-   Particles( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius )
-   : numberOfParticles( size ),
-     numberOfAllocatedParticles( sizeAllocated ),
-     points( sizeAllocated ),
-     points_swap( sizeAllocated ),
-     sortPermutations( sizeAllocated ),
-     radius( radius ),
-     particleCellInidices( sizeAllocated )
+   ParticlesLinkedList( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius, GlobalIndexType cellCount )
+   : Particles< ParticleConfig, DeviceType >( size, sizeAllocated, radius ),
+     firstLastCellParticle( cellCount )
    {
-      //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
-      //3dto grid->setDimensions( Config::gridXsize, Config::gridYsize );
-      //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
-      //neighborsList.setSegmentsSizes( sizeAllocated, Config::maxOfNeigborsPerParticle ); DeactivatedAtm
+      firstLastCellParticle = INT_MAX;
    }
 
-   /* PARTICLE RELATED TOOLS */
-
    /**
-    * Get dimension of particle system.
+    * Get list of first and last particle in cells.
     */
-   static constexpr int
-   getParticleDimension();
+   const PairIndexArrayType&
+   getCellFirstLastParticleList() const;
+
+   PairIndexArrayType&
+   getCellFirstLastParticleList();
 
    /**
-    * Get search radius.
-    */
-   __cuda_callable__
-   const RealType
-   getSearchRadius() const;
-
-   /**
-    * Get number of particles in particle system.
-    */
-   __cuda_callable__
-   GlobalIndexType
-   getNumberOfParticles();
-
-   __cuda_callable__
-   const GlobalIndexType
-   getNumberOfParticles() const;
-
-   __cuda_callable__
-   const GlobalIndexType
-   getNumberOfAllocatedParticles() const;
-
-   void
-   setNumberOfParticles( GlobalIndexType newNumberOfParticles );
-
-   /**
-    * Get particle (i.e. point) positions.
-    */
-   const typename ParticleTraitsType::PointArrayType& // -> using..
-   getPoints() const;
-
-   typename ParticleTraitsType::PointArrayType& // -> using..
-   getPoints();
-
-   /**
-    * Get position of given particle.
-    */
-   __cuda_callable__
-   const PointType&
-   getPoint( GlobalIndexType particleIndex ) const;
-
-   __cuda_callable__
-   PointType&
-   getPoint( GlobalIndexType particleIndex );
-
-   /**
-    * Set position of given particle.
-    */
-   __cuda_callable__
-   void
-   setPoint( GlobalIndexType particleIndex, PointType point);
-
-   /**
-    * Get particle cell indices.
-    */
-   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getParticleCellIndices() const;
-
-   typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getParticleCellIndices();
-
-   /**
-    * Get cell index of given partile.
-    */
-   __cuda_callable__
-   const CellIndexType&
-   getParticleCellIndex( GlobalIndexType particleIndex ) const;
-
-   __cuda_callable__
-   CellIndexType&
-   getParticleCellIndex( GlobalIndexType particleIndex );
-
-   const IndexArrayTypePointer&
-   getSortPermutations() const;
-
-   IndexArrayTypePointer&
-   getSortPermutations();
-
-   /**
-    * Get cell index of given partile.
+    * Reset the list with first and last particle in cell.
     */
    void
-   computeParticleCellIndices();
+   resetListWithIndices(); //protected?
 
    /**
-    * Sort particles by its cell index.
-    */
-   void sortParticles();
-
-   /* PARTICLE RELATED TEMP TOOLS */
-
-   void generateRandomParticles(); //used only for tests
-
-   /* GRID RELATED TOOLS */
-
-   /**
-    * Get and set grid dimension.
-    * The grid here is just implicit.
-    */
-   __cuda_callable__ //TODO: Comment.
-   const IndexVectorType
-   getGridSize() const;
-
-   void
-   setGridSize( IndexVectorType gridSize );
-
-   /**
-    * Get and set grid origin.
-    * The grid here is just implicit.
-    */
-   const PointType
-   getGridOrigin() const;
-
-   void
-   setGridOrigin( PointType gridOrigin );
-
-   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getGridCellIndices() const;
-
-   typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getGridCellIndices();
-
-   __cuda_callable__
-   const CellIndexType&
-   getGridCellIndex( GlobalIndexType cellIndex ) const;
-
-   __cuda_callable__
-   CellIndexType&
-   getGridCellIndex( GlobalIndexType cellIndex );
-
-   void computeGridCellIndices();
-
-   /* general */
-   void GetParticlesInformations();
-
-   /* NEIGHBOR LIST RELATED TOOL */
-
-   /**
-    * Return list with neighbor particles.
-    */
-   const NeighborsArrayType& // -> using..
-   getNeighborsList() const;
-
-   NeighborsArrayType& // -> using..
-   getNeighborsList();
-
-   /**
-    * Return jth neighbor of particle i.
-    */
-   __cuda_callable__
-   const GlobalIndexType&
-   getNeighbor( GlobalIndexType i, GlobalIndexType j ) const;
-
-   __cuda_callable__
-   GlobalIndexType&
-   getNeighbor( GlobalIndexType i, GlobalIndexType j );
-
-   /**
-    * Return list with numbers of particles.
-    */
-   const NeighborsCountArrayType& // -> using..
-   getNeighborsCountList() const;
-
-   NeighborsCountArrayType& // -> using..
-   getNeighborsCountList();
-
-   /**
-    * Return number of neighbors for particle i.
-    */
-   __cuda_callable__
-   const LocalIndexType&
-   getNeighborsCount( GlobalIndexType particleIndex ) const;
-
-   __cuda_callable__
-   LocalIndexType&
-   getNeighborsCount( GlobalIndexType particleIndex );
-
-   /**
-    * Set j as neighbor for particle i.
-    */
-   __cuda_callable__
-   void
-   setNeighbor( GlobalIndexType i, GlobalIndexType j );
-
-   /**
-    * Remove all neighbors and clear the neighbor list.
+    * Assign to each cell index of first contained particle.
     */
    void
-   resetNeighborList();
+   particlesToCells();
 
-   /**
-    * Print/save neighbor whole neighbor list.
-    */
-   void
-   saveNeighborList(std::string neigborListFile);
 
 protected:
 
-   /* particle related*/
-   GlobalIndexType numberOfAllocatedParticles;
-   GlobalIndexType numberOfParticles;
-   GlobalIndexType gridSize;
-
-   /* grid related */
-   PointType gridOrigin; //atm we use only implicit grid.
-   IndexVectorType gridDimension; //atm we use only implicit grid.
-
-   //search radius
-   RealType radius;
-
-   PointArrayType points;
-   PointArrayType points_swap; //avoid a inplace sort
-   IndexArrayTypePointer sortPermutations;
-
-   CellIndexArrayType particleCellInidices;
-
-   CellIndexArrayType gridCellIndices;
-
-   //linked list
+   //neighborsearch related;
    PairIndexArrayType firstLastCellParticle;
 
 };
@@ -306,5 +134,5 @@ protected:
 } //namespace Particles
 } //namespace TNL
 
-#include "Particles_impl.h"
+#include "ParticlesLinkedList.hpp"
 

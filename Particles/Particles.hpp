@@ -197,9 +197,6 @@ void
 Particles< ParticleConfig, DeviceType >::generateRandomParticles()
 {
    std::cout << " Doesn't work at this moment. " << std::endl;
-   //typename Particles< ParticleConfig, DeviceType>::PointArrayType aux_points(this->numberOfParticles);
-   //aux_points.forAllElements( [=] __cuda_callable__ ( LocalIndexType i, PointType& value ) { });
-   //this->points = aux_points;
 }
 
 /* GRID RELATED TOOLS */
@@ -266,118 +263,5 @@ Particles< ParticleConfig, DeviceType >::getGridCellIndex(GlobalIndexType cellIn
    return this->gridCellIndices[ cellIndex ];
 }
 
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::computeGridCellIndices()
-{
-   auto view = this->gridCellIndices.getView();
-   auto view_points = this->points.getView();
-   CellIndexer::ComputeCellIndex( view, view_points, gridSize );
-}
-
-/* general */
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType>::GetParticlesInformations()
-{
-   std::cout << "Number of particles: " << numberOfParticles << std::endl;
-   std::cout << "Search radius: " << radius << std::endl;
-   std::cout << "Grid details:\n" << *grid << std::endl;
-   std::cout << "Neighbor list: " << neighborsList << std::endl;
-}
-
-/* NEIGHBOR LIST RELATED TOOLS */
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::NeighborsArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsList() const
-{
-   return neighbors;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::NeighborsArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsList()
-{
-   return neighbors;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighbor( GlobalIndexType i, GlobalIndexType j ) const
-{
-   return neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle ) * i + j ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighbor( GlobalIndexType i, GlobalIndexType j )
-{
-   return neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle ) * i + j ];
-}
-
-//Neighbors count:
-
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::NeighborsCountArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCountList() const
-{
-   return neighborsCount;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::NeighborsCountArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCountList()
-{
-   return neighborsCount;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::LocalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCount( GlobalIndexType particleIndex ) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->neighborsCount[ particleIndex ];
-}
-
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::LocalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCount( GlobalIndexType particleIndex )
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->neighborsCount[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-void
-Particles< ParticleConfig, DeviceType >::setNeighbor( GlobalIndexType i, GlobalIndexType j )
-{
-   neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle )*i + neighborsCount[ i ] ] = j;
-   neighborsCount[ i ]++;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::resetNeighborList()
-{
-   neighbors = 0;
-   neighborsCount = 0;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::saveNeighborList(std::string neigborListFile)
-{
-   points.save( neigborListFile );
-}
-
 } //namespace TNL
 } //namespace Particles
-

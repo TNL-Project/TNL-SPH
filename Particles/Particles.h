@@ -209,100 +209,22 @@ public:
    CellIndexType&
    getGridCellIndex( GlobalIndexType cellIndex );
 
-   void computeGridCellIndices();
-
-   /* general */
-   void GetParticlesInformations();
-
-   /* NEIGHBOR LIST RELATED TOOL */
-
-   /**
-    * Return list with neighbor particles.
-    */
-   const NeighborsArrayType& // -> using..
-   getNeighborsList() const;
-
-   NeighborsArrayType& // -> using..
-   getNeighborsList();
-
-   /**
-    * Return jth neighbor of particle i.
-    */
-   __cuda_callable__
-   const GlobalIndexType&
-   getNeighbor( GlobalIndexType i, GlobalIndexType j ) const;
-
-   __cuda_callable__
-   GlobalIndexType&
-   getNeighbor( GlobalIndexType i, GlobalIndexType j );
-
-   /**
-    * Return list with numbers of particles.
-    */
-   const NeighborsCountArrayType& // -> using..
-   getNeighborsCountList() const;
-
-   NeighborsCountArrayType& // -> using..
-   getNeighborsCountList();
-
-   /**
-    * Return number of neighbors for particle i.
-    */
-   __cuda_callable__
-   const LocalIndexType&
-   getNeighborsCount( GlobalIndexType particleIndex ) const;
-
-   __cuda_callable__
-   LocalIndexType&
-   getNeighborsCount( GlobalIndexType particleIndex );
-
-   /**
-    * Set j as neighbor for particle i.
-    */
-   __cuda_callable__
-   void
-   setNeighbor( GlobalIndexType i, GlobalIndexType j );
-
-   /**
-    * Remove all neighbors and clear the neighbor list.
-    */
-   void
-   resetNeighborList();
-
-   /**
-    * Print/save neighbor whole neighbor list.
-    */
-   void
-   saveNeighborList(std::string neigborListFile);
-
 protected:
 
-   /* particle related*/
+   //information about particle system
    GlobalIndexType numberOfAllocatedParticles;
    GlobalIndexType numberOfParticles;
    GlobalIndexType gridSize;
-
-   /* grid related */
-   PointType gridOrigin; //atm we use only implicit grid.
-   IndexVectorType gridDimension; //atm we use only implicit grid.
-
-   GridPointer grid; // not used now
-
    RealType radius;
 
-   NeighborsCountArrayType neighborsCount;
-   NeighborsArrayType neighbors;
+   //related to implicit grid
+   PointType gridOrigin;
+   IndexVectorType gridDimension;
 
-   NeighborListType neighborsList; //not used now
-
+   //actual points
    PointArrayType points;
    PointArrayType points_swap; //avoid a inplace sort
-
    IndexArrayTypePointer sortPermutations;
-
-   CellIndexArrayType particleCellInidices;
-
-   CellIndexArrayType gridCellIndices;
 
 };
 

@@ -1,383 +1,82 @@
-#include "Particles.h"
+#include "ParticlesLinkedList.h"
 
 namespace TNL {
 namespace ParticleSystem {
 
-/* PARTICLE RELATED TOOLS */
-
 template< typename ParticleConfig, typename DeviceType >
-constexpr int
-Particles< ParticleConfig, DeviceType>::getParticleDimension()
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PairIndexArrayType&
+ParticlesLinkedList< ParticleConfig, DeviceType >::getCellFirstLastParticleList() const
 {
-   return spaceDimension;
+   return firstLastCellParticle;
 }
 
 template< typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
-Particles< ParticleConfig, DeviceType>::getNumberOfParticles()
+typename ParticlesLinkedList< ParticleConfig, DeviceType >::PairIndexArrayType&
+ParticlesLinkedList< ParticleConfig, DeviceType >::getCellFirstLastParticleList()
 {
-   return numberOfParticles;
-}
-
-template< typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
-Particles< ParticleConfig, DeviceType>::getNumberOfParticles() const
-{
-   return numberOfParticles;
-}
-
-template< typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
-Particles< ParticleConfig, DeviceType>::getNumberOfAllocatedParticles() const
-{
-   return numberOfAllocatedParticles;
+   return firstLastCellParticle;
 }
 
 template< typename ParticleConfig, typename DeviceType >
 void
-Particles< ParticleConfig, DeviceType >::setNumberOfParticles( GlobalIndexType newNumberOfParticles )
+ParticlesLinkedList< ParticleConfig, DeviceType >::resetListWithIndices
+()
 {
-   this->numberOfParticles = newNumberOfParticles;
+   auto view_firstLastCellParticle = this->firstLastCellParticle.getView();
+   auto init = [=] __cuda_callable__ ( int i ) mutable
+   {
+      view_firstLastCellParticle[ i ] = INT_MAX ;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, this->firstLastCellParticle.getSize(), init );
 }
 
 template< typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::RealType
-Particles< ParticleConfig, DeviceType>::getSearchRadius() const
-{
-   return radius;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointArrayType&
-Particles< ParticleConfig, DeviceType >::getPoints() const
-{
-   return points;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointArrayType&
-Particles< ParticleConfig, DeviceType >::getPoints()
-{
-   return points;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::PointType&
-Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->points[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::PointType&
-Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex)
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->points[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
 void
-Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, PointType point)
+ParticlesLinkedList< ParticleConfig, DeviceType >::particlesToCells
+()
 {
-   this->points[ particleIndex ] = point;
-}
+   const GlobalIndexType numberOfParticles = this->getNumberOfParticles();
 
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndices() const
-{
-   return particleCellInidices;
-}
+   if( numberOfParticles == 0 ) //temp
+      return;
 
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndices()
-{
-   return particleCellInidices;
-}
+   auto view_firstLastCellParticle = this->firstLastCellParticle.getView();
+   const auto view_particleCellIndex = this->particles->getParticleCellIndices().getView();
 
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndex(GlobalIndexType particleIndex) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->particleCellInidices[ particleIndex ];
-}
+   if( numberOfParticles == 1 ) //temp
+   {
+      view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( 0 ), { 0, 0 } );
+      return;
+   }
 
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndex(GlobalIndexType particleIndex)
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->particleCellInidices[ particleIndex ];
-}
+   //resolve first particle
+   view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( 0 ),
+         { 0, ( view_particleCellIndex.getElement( 0 ) != view_particleCellIndex.getElement( 0+1 ) ) ? 0 : INT_MAX } ) ;
 
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
-Particles< ParticleConfig, DeviceType >::getSortPermutations() const
-{
-   return this->sortPermutations;
-}
+   auto init = [=] __cuda_callable__ ( int i ) mutable
+   {
+      if( view_particleCellIndex[ i ] != view_particleCellIndex[ i-1 ] )
+         view_firstLastCellParticle[  view_particleCellIndex[ i ] ][ 0 ] = i ;
+      if( view_particleCellIndex[ i ] != view_particleCellIndex[ i+1 ] )
+         view_firstLastCellParticle[  view_particleCellIndex[ i ] ][ 1 ] =  i ;
+   };
+   Algorithms::parallelFor< DeviceType >( 1, numberOfParticles - 1, init );
 
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
-Particles< ParticleConfig, DeviceType >::getSortPermutations()
-{
-   return this->sortPermutations;
-}
+   //resolve last partile
+   //I think there is bug in the initial version. In case there are two particles in the last cell, the first particle in last cell is overwritten.
+   /*
+   view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( numberOfParticles - 1 ),
+         { ( view_particleCellIndex.getElement( numberOfParticles -1 ) != view_particleCellIndex.getElement( numberOfParticles-2 ) ) ? numberOfParticles-1 : INT_MAX, numberOfParticles - 1 } );
+   */
+   //Workaround
+   PairIndexType lastActiveCellContains = view_firstLastCellParticle.getElement( view_particleCellIndex.getElement( numberOfParticles - 1 ) );
+   view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( numberOfParticles - 1 ),
+         { ( view_particleCellIndex.getElement( numberOfParticles -1 ) != view_particleCellIndex.getElement( numberOfParticles-2 ) ) ? numberOfParticles-1 : lastActiveCellContains[ 0 ], numberOfParticles - 1 } );
 
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::computeParticleCellIndices()
-{
-   GlobalIndexType _numberOfParticles = this->numberOfParticles;
 
-   auto view = this->particleCellInidices.getView();
-   auto view_points = this->points.getView();
-
-   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles, gridDimension, gridOrigin, radius );
-}
-
-//template < typename ParticleConfig, typename DeviceType >
-//void
-//Particles< ParticleConfig, DeviceType >::sortParticles()
-//{
-//   auto view_particleCellIndices = this->particleCellInidices.getView();
-//   auto view_points = this->points.getView();
-//   Algorithms::sort< DeviceType, GlobalIndexType >(
-//       0, this->numberOfParticles,
-//       [=] __cuda_callable__ ( int i, int j ) -> bool {
-//         return view_particleCellIndices[ i ] < view_particleCellIndices[ j ]; },
-//       [=] __cuda_callable__ ( int i, int j ) mutable {
-//         swap( view_particleCellIndices[ i ], view_particleCellIndices[ j ] );
-//         swap( view_points[ i ], view_points[ j ] ); } );
-//}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::sortParticles()
-{
-
-   GlobalIndexType numberOfParticle = this->getNumberOfParticles();
-   auto view_particleCellIndices = this->getParticleCellIndices().getView();
-   auto view_map = this->sortPermutations->getView();
-
-   sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
-         view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() ); //TODO: replace thrust::device
-
-   auto view_points = this->getPoints().getView();
-   auto view_points_swap = this->points_swap.getView();
-   thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
-         view_points.getArrayData(), view_points_swap.getArrayData() );
-   this->getPoints().swap( this->points_swap );
-}
-
-/* PARTICLE RELATED TEMP TOOLS */
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::generateRandomParticles()
-{
-   std::cout << " Doesn't work at this moment. " << std::endl;
-   //typename Particles< ParticleConfig, DeviceType>::PointArrayType aux_points(this->numberOfParticles);
-   //aux_points.forAllElements( [=] __cuda_callable__ ( LocalIndexType i, PointType& value ) { });
-   //this->points = aux_points;
-}
-
-/* GRID RELATED TOOLS */
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__ //TODO: Comment.
-const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
-Particles< ParticleConfig, DeviceType >::getGridSize() const
-{
-   return gridDimension;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::setGridSize( IndexVectorType gridSize )
-{
-   gridDimension = gridSize;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::PointType
-Particles< ParticleConfig, DeviceType >::getGridOrigin() const
-{
-   return gridOrigin;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
-{
-   gridOrigin = gridBegin; //FIXME: Names.
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndices() const
-{
-   return gridCellIndices;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndices()
-{
-   return gridCellIndices;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndex(GlobalIndexType cellIndex) const
-{
-   TNL_ASSERT_GE( cellIndex, 0, "invalid cell index" );
-   TNL_ASSERT_LT( cellIndex, numberOfParticles, "invalid cell index" ); //CIDX
-   return this->gridCellIndices[ cellIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndex(GlobalIndexType cellIndex)
-{
-   TNL_ASSERT_GE( cellIndex, 0, "invalid cell index" );
-   TNL_ASSERT_LT( cellIndex, numberOfParticles, "invalid cell index" ); //CIDX
-   return this->gridCellIndices[ cellIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::computeGridCellIndices()
-{
-   auto view = this->gridCellIndices.getView();
-   auto view_points = this->points.getView();
-   CellIndexer::ComputeCellIndex( view, view_points, gridSize );
-}
-
-/* general */
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType>::GetParticlesInformations()
-{
-   std::cout << "Number of particles: " << numberOfParticles << std::endl;
-   std::cout << "Search radius: " << radius << std::endl;
-   std::cout << "Grid details:\n" << *grid << std::endl;
-   std::cout << "Neighbor list: " << neighborsList << std::endl;
-}
-
-/* NEIGHBOR LIST RELATED TOOLS */
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::NeighborsArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsList() const
-{
-   return neighbors;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::NeighborsArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsList()
-{
-   return neighbors;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighbor( GlobalIndexType i, GlobalIndexType j ) const
-{
-   return neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle ) * i + j ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::GlobalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighbor( GlobalIndexType i, GlobalIndexType j )
-{
-   return neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle ) * i + j ];
-}
-
-//Neighbors count:
-
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::NeighborsCountArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCountList() const
-{
-   return neighborsCount;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::NeighborsCountArrayType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCountList()
-{
-   return neighborsCount;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::LocalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCount( GlobalIndexType particleIndex ) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->neighborsCount[ particleIndex ];
 }
 
 
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::LocalIndexType&
-Particles< ParticleConfig, DeviceType >::getNeighborsCount( GlobalIndexType particleIndex )
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->neighborsCount[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-void
-Particles< ParticleConfig, DeviceType >::setNeighbor( GlobalIndexType i, GlobalIndexType j )
-{
-   neighbors[ ( ParticleConfig::maxOfNeigborsPerParticle )*i + neighborsCount[ i ] ] = j;
-   neighborsCount[ i ]++;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::resetNeighborList()
-{
-   neighbors = 0;
-   neighborsCount = 0;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::saveNeighborList(std::string neigborListFile)
-{
-   points.save( neigborListFile );
-}
 
 } //namespace TNL
 } //namespace Particles
-
