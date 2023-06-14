@@ -48,6 +48,8 @@ public:
 	using BoundaryVariables = Variables;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
+   using ParticlesType = Particles;
+
    /**
     * Constructor.
     */

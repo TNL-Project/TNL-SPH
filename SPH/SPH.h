@@ -64,19 +64,16 @@ struct SPHSimpleFluidConfig
    }
 };
 
-template< typename Model, typename ParticleSystem >
+template< typename Model >
 class SPHSimpleFluid
 {
 public:
 
-   using DeviceType = typename ParticleSystem::Device;
+   using DeviceType = typename Model::DeviceType;
+   using ParticleSystemType = typename Model::ParticlesType;; //Added due to measure tool
+   using ParticleSystem = typename Model::ParticlesType;; //Added due to measure tool
 
-   using LocalIndexType = typename ParticleSystem::LocalIndexType;
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
-   using PointType = typename ParticleSystem::PointType; //remove
-   using RealType = typename ParticleSystem::RealType;
-
-   using ParticleSystemType = ParticleSystem; //Added due to measure tool
 
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
@@ -148,9 +145,9 @@ public:
 } // ParticleSystem
 } // TNL
 
-template< typename Model, typename ParticleSystem >
+template< typename Model >
 std::ostream&
-operator<<( std::ostream& str, const SPH::SPHSimpleFluid< Model, ParticleSystem >& sphSimulation )
+operator<<( std::ostream& str, const SPH::SPHSimpleFluid< Model >& sphSimulation )
 {
    TNL::Logger logger( 100, str );
 

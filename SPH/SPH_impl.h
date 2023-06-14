@@ -4,9 +4,9 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Variables, typename ParticleSystem >
+template< typename Model >
 void
-SPHSimpleFluid< Variables, ParticleSystem >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
+SPHSimpleFluid< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
 {
    /**
     * Compute gird nad partice cell indices.
@@ -51,28 +51,28 @@ SPHSimpleFluid< Variables, ParticleSystem >::PerformNeighborSearch( GlobalIndexT
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
 
-template< typename Variables, typename ParticleSystem >
+template< typename Model >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Variables, ParticleSystem >::Interact( SPHState& sphState )
+SPHSimpleFluid< Model >::Interact( SPHState& sphState )
 {
    model->template Interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
          fluid, boundary, sphState );
 }
 
-template< typename Variables, typename ParticleSystem >
+template< typename Model >
 template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Variables, ParticleSystem >::Interact( SPHState& sphState )
+SPHSimpleFluid< Model >::Interact( SPHState& sphState )
 {
    model->template Interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, RiemannSolver, EOS >(
          fluid, boundary, sphState );
 }
 
-template< typename Variables, typename ParticleSystem >
+template< typename Model >
 template< typename Writer >
 void
-SPHSimpleFluid< Variables, ParticleSystem >::save( const std::string& outputFileName, const int step )
+SPHSimpleFluid< Model >::save( const std::string& outputFileName, const int step )
 {
    std::string outputFileNameFluid = outputFileName + std::to_string( step ) + "_fluid.vtk";
    fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
@@ -81,9 +81,9 @@ SPHSimpleFluid< Variables, ParticleSystem >::save( const std::string& outputFile
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
 }
 
-template< typename Variables, typename ParticleSystem >
+template< typename Model >
 void
-SPHSimpleFluid< Variables, ParticleSystem >::writeProlog( TNL::Logger& logger ) const noexcept
+SPHSimpleFluid< Model >::writeProlog( TNL::Logger& logger ) const noexcept
 {
    logger.writeParameter( "Number of fluid particles:", this->fluid->particles->getNumberOfParticles() );
    logger.writeParameter( "Number of alloc. fluid particles:", this->fluid->particles->getNumberOfAllocatedParticles() );

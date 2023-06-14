@@ -97,7 +97,7 @@ int main( int argc, char* argv[] )
     *   appropriate SPH scheme is required!
     */
    using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel, ParticleSystem  >;
+   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**
     * Define time step control.
