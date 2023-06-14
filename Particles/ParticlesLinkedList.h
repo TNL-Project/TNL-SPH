@@ -26,18 +26,18 @@ public:
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
    using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
-   using ParticleSystemPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
+   using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using PointType = typename ParticleSystem::PointType;
    using CellIndexer = typename ParticleSystem::CellIndexer;
    using IndexVectorType = typename ParticleSystem::IndexVectorType;
    using RealType = typename ParticleSystem::RealType;
 
-   NeighborsLoopParams( ParticleSystemPointerType& neighborSearch )
-   : numberOfParticles( neighborSearch->getParticles()->getNumberOfParticles() ),
-     gridSize( neighborSearch->getParticles()->getGridSize() ),
-     gridOrigin( neighborSearch->getParticles()->getGridOrigin() ),
-     searchRadius( neighborSearch->getParticles()->getSearchRadius() ),
-     view_firstLastCellParticle( neighborSearch->getCellFirstLastParticleList().getView() ) {}
+   NeighborsLoopParams( ParticlesPointerType& particles )
+   : numberOfParticles( particles->getNumberOfParticles() ),
+     gridSize( particles->getGridSize() ),
+     gridOrigin( particles->getGridOrigin() ),
+     searchRadius( particles->getSearchRadius() ),
+     view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
 
    GlobalIndexType i;
    Containers::StaticVector< 2, GlobalIndexType > gridIndex;
@@ -50,11 +50,11 @@ public:
    const RealType searchRadius;
 };
 
-template < typename ParticleConfig, typename DeviceType >
-class ParticlesLinkedList : public Particles< ParticleConfig, DeviceType > {
+template < typename ParticleConfig, typename Device >
+class ParticlesLinkedList : public Particles< ParticleConfig, Device > {
 public:
 
-   using Device = DeviceType;
+   using DeviceType = Device;
    using Config = ParticleConfig;
    using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
 
@@ -97,10 +97,31 @@ public:
 
    ParticlesLinkedList( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius, GlobalIndexType cellCount )
    : Particles< ParticleConfig, DeviceType >( size, sizeAllocated, radius ),
+     particleCellInidices( sizeAllocated ),
      firstLastCellParticle( cellCount )
    {
       firstLastCellParticle = INT_MAX;
    }
+
+   /**
+    * Get particle cell indices.
+    */
+   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   getParticleCellIndices() const;
+
+   typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   getParticleCellIndices();
+
+   /**
+    * Get cell index of given partile.
+    */
+   __cuda_callable__
+   const CellIndexType&
+   getParticleCellIndex( GlobalIndexType particleIndex ) const;
+
+   __cuda_callable__
+   CellIndexType&
+   getParticleCellIndex( GlobalIndexType particleIndex );
 
    /**
     * Get list of first and last particle in cells.
@@ -111,6 +132,18 @@ public:
    PairIndexArrayType&
    getCellFirstLastParticleList();
 
+   /**
+    * Get cell index of given partile.
+    */
+   void
+   computeParticleCellIndices();
+
+   /**
+    * Sort particles by its cell index.
+    */
+   void sortParticles();
+
+   //NEIGHBOR SEARCH UTILITIES
    /**
     * Reset the list with first and last particle in cell.
     */
@@ -127,6 +160,7 @@ public:
 protected:
 
    //neighborsearch related;
+   CellIndexArrayType particleCellInidices;
    PairIndexArrayType firstLastCellParticle;
 
 };

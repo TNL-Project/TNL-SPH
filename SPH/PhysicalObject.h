@@ -14,13 +14,12 @@ class PhysicalObjectMetada
 
 };
 
-template< typename ParticleSystem, typename NeighborSearch, typename SPHCaseConfig, typename Variables, typename IntegratorVariables >
+template< typename ParticleSystem, typename SPHCaseConfig, typename Variables, typename IntegratorVariables >
 class PhysicalObject
 {
    public:
    using DeviceType = typename ParticleSystem::Device;
    using ParticlePointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-   using NeighborSearchPointerType = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using VariablesPointerType = typename Pointers::SharedPointer< Variables, DeviceType >;
    using IntegratorVariablesPointerType = typename Pointers::SharedPointer< IntegratorVariables, DeviceType >;
 
@@ -29,8 +28,7 @@ class PhysicalObject
    using RealType = typename SPHTraitsType::RealType;
 
    PhysicalObject( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     integratorVariables( sizeAllocated ) {};
+   : particles( size, sizeAllocated, h, numberOfCells ), variables( sizeAllocated ),integratorVariables( sizeAllocated ) {};
 
    const GlobalIndexType
    getNumberOfParticles() const
@@ -89,7 +87,6 @@ class PhysicalObject
    }
 
    ParticlePointerType particles;
-   NeighborSearchPointerType neighborSearch;
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;
 };

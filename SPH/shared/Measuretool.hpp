@@ -12,11 +12,8 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   const VectorType gridOrigin = fluid->particles->getGridOrigin();
-   const IndexVectorType gridSize = fluid->particles->getGridSize();
-
-   typename NeighborSearch::NeighborsLoopParams fluidLoopParams( fluid->neighborSearch );
-   typename NeighborSearch::NeighborsLoopParams boundaryLoopParams( boundary->neighborSearch );
+   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -53,21 +50,21 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
       }
    };
 
-   auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i,
-         NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound ) mutable
+   auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
    {
       VectorType v = 0.f;
       RealType rho = 0.f;
       RealType gamma = 0.f;
 
       VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * searchRadius };
-      const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+      //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
       const GlobalIndexType idx =  i[ 1 ] * gridDimension[ 0 ] + i[ 0 ];
 
-      fluidLoopParams.i = i[ 0 ];
-      fluidLoopParams.gridIndex = gridIndex;
+      //fluidLoopParams.i = i[ 0 ];
+      //fluidLoopParams.gridIndex = gridIndex;
+      //neighborSearch->loopOverNeighbors( fluidLoopParams, interpolate, r, &rho, &v, &gamma );
 
-      neighborSearch->loopOverNeighbors( fluidLoopParams, interpolate, r, &rho, &v, &gamma );
+      NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
 
      if( gamma > 0.5f ){
         view_v_interpolation[ idx ] = v / gamma;
@@ -79,7 +76,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
      }
    };
    IndexVectorType begin{ 0, 0 };
-   Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop, fluid->neighborSearch, boundary->neighborSearch );
+   Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop );
 
 }
 
@@ -130,8 +127,8 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
    const VectorType gridOrigin = fluid->particles->getGridOrigin();
    const IndexVectorType gridSize = fluid->particles->getGridSize();
 
-   const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
+   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -165,22 +162,23 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
       }
    };
 
-   auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, GlobalIndexType sensorIndexer ) mutable
+   auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, GlobalIndexType sensorIndexer ) mutable
    {
       RealType p = 0.f;
       VectorType v = 0.f;
       RealType gamma = 0.f;
 
       VectorType r = view_sensorsPositions[ i ];
-      const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+      //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
-      neighborSearch->loopOverNeighbors(
-            i,
-            numberOfParticles,
-            gridIndex,
-            gridSize,
-            view_firstLastCellParticle,
-            interpolate, r, &p, &v, &gamma );
+      //neighborSearch->loopOverNeighbors(
+      //      i,
+      //      numberOfParticles,
+      //      gridIndex,
+      //      gridSize,
+      //      view_firstLastCellParticle,
+      //      interpolate, r, &p, &v, &gamma );
+      NeighborsLoop::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
 
       if( gamma > 0.5f ){
          view_pressureSensors( sensorIndexer, i ) = p / gamma;
@@ -189,7 +187,7 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
          view_pressureSensors( sensorIndexer, i ) = 0.f;
       }
    };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfSensors, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+   Algorithms::parallelFor< DeviceType >( 0, numberOfSensors, sensorsLoop, this->sensorIndexer );
 
    sensorIndexer++;
 }
@@ -238,8 +236,8 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    const VectorType gridOrigin = fluid->particles->getGridOrigin();
    const IndexVectorType gridSize = fluid->particles->getGridSize();
 
-   const auto view_firstLastCellParticle = fluid->neighborSearch->getCellFirstLastParticleList().getView();
-   const auto view_particleCellIndex = fluid->particles->getParticleCellIndices().getView();
+   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -274,28 +272,29 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
       const VectorType startPoint = 0.f;
       view_levels = 0.f;
 
-      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, NeighborSearchPointer& neighborSearch, NeighborSearchPointer& neighborSearch_bound, GlobalIndexType sensorIndexer ) mutable
+      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, GlobalIndexType sensorIndexer ) mutable
       {
          RealType gamma = 0.f;
          const VectorType zax = { 0.f, 1.f };
          //VectorType r = view_sensorsPositions[ 0 ] + i * levelIncrement * zax;
          VectorType r = view_sensorsPositions[ s ] + i * h * zax;
-         const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
+         //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
-         neighborSearch->loopOverNeighbors(
-               i,
-               numberOfParticles,
-               gridIndex,
-               gridSize,
-               view_firstLastCellParticle,
-               interpolate, r, &gamma );
+         //neighborSearch->loopOverNeighbors(
+         //      i,
+         //      numberOfParticles,
+         //      gridIndex,
+         //      gridSize,
+         //      view_firstLastCellParticle,
+         //      interpolate, r, &gamma );
+         NeighborsLoop::exec( i, r, searchInFluid, interpolate, &gamma );
 
          if( gamma > 0.5f )
             view_levels[ i ] = 1;
          else
             view_levels[ i ] = 0;
       };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop, fluid->neighborSearch, boundary->neighborSearch, this->sensorIndexer );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop, this->sensorIndexer );
 
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_levels[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };

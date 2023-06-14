@@ -62,8 +62,7 @@ public:
      points( sizeAllocated ),
      points_swap( sizeAllocated ),
      sortPermutations( sizeAllocated ),
-     radius( radius ),
-     particleCellInidices( sizeAllocated )
+     radius( radius )
    {
       //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
       //3dto grid->setDimensions( Config::gridXsize, Config::gridYsize );
@@ -131,26 +130,6 @@ public:
    void
    setPoint( GlobalIndexType particleIndex, PointType point);
 
-   /**
-    * Get particle cell indices.
-    */
-   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getParticleCellIndices() const;
-
-   typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getParticleCellIndices();
-
-   /**
-    * Get cell index of given partile.
-    */
-   __cuda_callable__
-   const CellIndexType&
-   getParticleCellIndex( GlobalIndexType particleIndex ) const;
-
-   __cuda_callable__
-   CellIndexType&
-   getParticleCellIndex( GlobalIndexType particleIndex );
-
    const IndexArrayTypePointer&
    getSortPermutations() const;
 
@@ -160,13 +139,13 @@ public:
    /**
     * Get cell index of given partile.
     */
-   void
-   computeParticleCellIndices();
+   //void
+   //computeParticleCellIndices();
 
-   /**
-    * Sort particles by its cell index.
-    */
-   void sortParticles();
+   ///**
+   // * Sort particles by its cell index.
+   // */
+   //void sortParticles();
 
    /* PARTICLE RELATED TEMP TOOLS */
 
@@ -195,20 +174,6 @@ public:
    void
    setGridOrigin( PointType gridOrigin );
 
-   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getGridCellIndices() const;
-
-   typename ParticleTraitsType::CellIndexArrayType& // -> using..
-   getGridCellIndices();
-
-   __cuda_callable__
-   const CellIndexType&
-   getGridCellIndex( GlobalIndexType cellIndex ) const;
-
-   __cuda_callable__
-   CellIndexType&
-   getGridCellIndex( GlobalIndexType cellIndex );
-
 protected:
 
    //information about particle system
@@ -231,5 +196,5 @@ protected:
 } //namespace Particles
 } //namespace TNL
 
-#include "Particles_impl.h"
+#include "Particles.hpp"
 

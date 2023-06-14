@@ -94,40 +94,6 @@ Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, P
 }
 
 template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndices() const
-{
-   return particleCellInidices;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndices()
-{
-   return particleCellInidices;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndex(GlobalIndexType particleIndex) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->particleCellInidices[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getParticleCellIndex(GlobalIndexType particleIndex)
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->particleCellInidices[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
 Particles< ParticleConfig, DeviceType >::getSortPermutations() const
@@ -143,17 +109,17 @@ Particles< ParticleConfig, DeviceType >::getSortPermutations()
    return this->sortPermutations;
 }
 
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::computeParticleCellIndices()
-{
-   GlobalIndexType _numberOfParticles = this->numberOfParticles;
-
-   auto view = this->particleCellInidices.getView();
-   auto view_points = this->points.getView();
-
-   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles, gridDimension, gridOrigin, radius );
-}
+//template < typename ParticleConfig, typename DeviceType >
+//void
+//Particles< ParticleConfig, DeviceType >::computeParticleCellIndices()
+//{
+//   GlobalIndexType _numberOfParticles = this->numberOfParticles;
+//
+//   auto view = this->particleCellInidices.getView();
+//   auto view_points = this->points.getView();
+//
+//   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles, gridDimension, gridOrigin, radius );
+//}
 
 //template < typename ParticleConfig, typename DeviceType >
 //void
@@ -170,25 +136,25 @@ Particles< ParticleConfig, DeviceType >::computeParticleCellIndices()
 //         swap( view_points[ i ], view_points[ j ] ); } );
 //}
 
-template < typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::sortParticles()
-{
-
-   GlobalIndexType numberOfParticle = this->getNumberOfParticles();
-   auto view_particleCellIndices = this->getParticleCellIndices().getView();
-   auto view_map = this->sortPermutations->getView();
-
-   sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
-         view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() ); //TODO: replace thrust::device
-
-   auto view_points = this->getPoints().getView();
-   auto view_points_swap = this->points_swap.getView();
-   thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
-         view_points.getArrayData(), view_points_swap.getArrayData() );
-   this->getPoints().swap( this->points_swap );
-}
+//template < typename ParticleConfig, typename DeviceType >
+//void
+//Particles< ParticleConfig, DeviceType >::sortParticles()
+//{
+//
+//   GlobalIndexType numberOfParticle = this->getNumberOfParticles();
+//   auto view_particleCellIndices = this->getParticleCellIndices().getView();
+//   auto view_map = this->sortPermutations->getView();
+//
+//   sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
+//   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
+//         view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() ); //TODO: replace thrust::device
+//
+//   auto view_points = this->getPoints().getView();
+//   auto view_points_swap = this->points_swap.getView();
+//   thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
+//         view_points.getArrayData(), view_points_swap.getArrayData() );
+//   this->getPoints().swap( this->points_swap );
+//}
 
 /* PARTICLE RELATED TEMP TOOLS */
 
@@ -227,40 +193,6 @@ void
 Particles< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
 {
    gridOrigin = gridBegin; //FIXME: Names.
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndices() const
-{
-   return gridCellIndices;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::CellIndexArrayType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndices()
-{
-   return gridCellIndices;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndex(GlobalIndexType cellIndex) const
-{
-   TNL_ASSERT_GE( cellIndex, 0, "invalid cell index" );
-   TNL_ASSERT_LT( cellIndex, numberOfParticles, "invalid cell index" ); //CIDX
-   return this->gridCellIndices[ cellIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::CellIndexType&
-Particles< ParticleConfig, DeviceType >::getGridCellIndex(GlobalIndexType cellIndex)
-{
-   TNL_ASSERT_GE( cellIndex, 0, "invalid cell index" );
-   TNL_ASSERT_LT( cellIndex, numberOfParticles, "invalid cell index" ); //CIDX
-   return this->gridCellIndices[ cellIndex ];
 }
 
 } //namespace TNL

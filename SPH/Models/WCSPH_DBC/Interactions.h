@@ -16,14 +16,14 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename NeighborSearch, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
+template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
 class WCSPH_DBC
 {
 public:
 
    using SPHConfig = SPHFluidConfig;
    using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename NeighborSearch::DeviceType;
+   using DeviceType = typename SPHConfig::DeviceType; //TODO:Resolve
 
    using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
@@ -39,7 +39,7 @@ public:
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
    /* Integrator */
-   using Model = WCSPH_DBC< NeighborSearch, SPHFluidConfig >;
+   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
    using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
 
@@ -61,7 +61,7 @@ public:
    void
    ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState );
 
-   template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState  >
+   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState  >
    void
    Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 

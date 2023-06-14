@@ -4,7 +4,7 @@
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
 
-#include "../Particles/Particles.h"
+//#include "../Particles/Particles.h"
 #include "../Particles/ParticlesTraits.h"
 
 #include "Fluid.h"
@@ -64,7 +64,7 @@ struct SPHSimpleFluidConfig
    }
 };
 
-template< typename Model, typename ParticleSystem, typename NeighborSearch >
+template< typename Model, typename ParticleSystem >
 class SPHSimpleFluid
 {
 public:
@@ -76,21 +76,20 @@ public:
    using PointType = typename ParticleSystem::PointType; //remove
    using RealType = typename ParticleSystem::RealType;
 
-   using NeighborSearchType = NeighborSearch; //Added due to measure tool
+   using ParticleSystemType = ParticleSystem; //Added due to measure tool
 
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-   using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
    using SPHConfig = typename Model::SPHConfig;
    using IntegratorVariables = typename Model::IntegratorVariables;
 
    using FluidVariables = typename Model::FluidVariables;
-   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, FluidVariables, IntegratorVariables >;
+   using Fluid = Fluid< ParticleSystem, SPHConfig, FluidVariables, IntegratorVariables >;
    using FluidPointer = Pointers::SharedPointer< Fluid, DeviceType >;
 
    using BoundaryVariables = typename Model::BoundaryVariables;
-   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, BoundaryVariables, IntegratorVariables >;
+   using Boundary = Boundary< ParticleSystem, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
    //using SPHSimpleFluidConfig = SPHSimpleFluidConfig< typename ParticleSystem::Config >;
@@ -101,8 +100,6 @@ public:
    SPHSimpleFluid( SPHSimpleFluidInit sphConfig )
    :  model(),
       integrator(),
-      //fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
-      //boundary( sphConfig.sizeBoundary, sphConfig.sizeAllocatedBoundary, sphConfig.searchRadius, sphConfig.gridNumberOfCells )
       fluid( sphConfig.numberOfParticles, sphConfig.numberOfAllocatedParticles, sphConfig.searchRadius, sphConfig.numberOfGridCells ),
       boundary( sphConfig.numberOfBoundaryParticles, sphConfig.numberOfAllocatedBoundaryParticles, sphConfig.searchRadius, sphConfig.numberOfGridCells )
    {
@@ -125,9 +122,9 @@ public:
    void
    Interact( SPHState& sphState );
 
-   template< typename SPHKernelFunction, typename RiemannSolver, typename EOS >
+   template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
    void
-   Interact();
+   Interact( SPHState& sphState );
 
    template< typename Writer >
    void
@@ -151,9 +148,9 @@ public:
 } // ParticleSystem
 } // TNL
 
-template< typename Model, typename ParticleSystem, typename NeighborSearch >
+template< typename Model, typename ParticleSystem >
 std::ostream&
-operator<<( std::ostream& str, const SPH::SPHSimpleFluid< Model, ParticleSystem, NeighborSearch >& sphSimulation )
+operator<<( std::ostream& str, const SPH::SPHSimpleFluid< Model, ParticleSystem >& sphSimulation )
 {
    TNL::Logger logger( 100, str );
 

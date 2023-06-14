@@ -2,6 +2,7 @@
 #include <TNL/Containers/NDArray.h>
 
 #include "../SPHTraits.h"
+#include "../../Particles/neighborSearchLoop.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -21,15 +22,17 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
+
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
-   using NeighborSearch = typename SPHSimulation::NeighborSearchType;
-   using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
    using Variables = typename SPHSimulation::FluidVariables;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
    using GridType = Meshes::Grid< 2, RealType, DeviceType, GlobalIndexType >;
    using CoordinatesType = typename GridType::CoordinatesType;
+
+   //temp
+   using ParticleSystem = typename SPHSimulation::ParticleSystemType;
 
    template< typename InterpolationConfigType >
    InterpolateToGrid( InterpolationConfigType configInit )
@@ -73,7 +76,9 @@ class SensorInterpolation
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
-   using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
+
+   //temp
+   using ParticleSystem = typename SPHSimulation::ParticleSystemType;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
@@ -122,7 +127,9 @@ class SensorWaterLevel
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
-   using NeighborSearchPointer = typename SPHSimulation::NeighborSearchPointer;
+
+   //temp
+   using ParticleSystem = typename SPHSimulation::ParticleSystemType;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder

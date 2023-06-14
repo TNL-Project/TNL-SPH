@@ -4,22 +4,22 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Variables, typename ParticleSystem >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
+SPHSimpleFluid< Variables, ParticleSystem >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
 {
    /**
     * Compute gird nad partice cell indices.
     */
    timer_reset.start();
-   fluid->neighborSearch->resetListWithIndices();
+   fluid->particles->resetListWithIndices();
    if( step == 0 )
-      boundary->neighborSearch->resetListWithIndices();
+      boundary->particles->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
-   if( step == 0 ) //TODO: do this better, i. e. move this to constructor
-   fluid->particles->computeGridCellIndices(); //with current settings, I dont need to do this
+   //deprecated: if( step == 0 ) //TODO: do this better, i. e. move this to constructor
+   //deprecated: fluid->particles->computeGridCellIndices(); //with current settings, I dont need to do this
 
    timer_cellIndices.start();
    fluid->particles->computeParticleCellIndices();
@@ -44,37 +44,35 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSear
     * Bucketing, particles to cells.
     */
    timer_toCells.start();
-   fluid->neighborSearch->particlesToCells();
+   fluid->particles->particlesToCells();
    if( step == 0 )
-      boundary->neighborSearch->particlesToCells();
+      boundary->particles->particlesToCells();
    timer_toCells.stop();
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Variables, typename ParticleSystem >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact( SPHState& sphState )
+SPHSimpleFluid< Variables, ParticleSystem >::Interact( SPHState& sphState )
 {
-   model->template Interaction<
-      FluidPointer, BoundaryPointer, NeighborSearchPointer,
-      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, sphState );
+   model->template Interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, sphState );
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-template< typename SPHKernelFunction, typename RiemannSolver, typename EOS >
+template< typename Variables, typename ParticleSystem >
+template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::Interact()
+SPHSimpleFluid< Variables, ParticleSystem >::Interact( SPHState& sphState )
 {
-   model->template Interaction<
-      FluidPointer, BoundaryPointer, NeighborSearchPointer,
-      SPHKernelFunction, RiemannSolver, EOS >( fluid, boundary );
+   model->template Interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, RiemannSolver, EOS >(
+         fluid, boundary, sphState );
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Variables, typename ParticleSystem >
 template< typename Writer >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::save( const std::string& outputFileName, const int step )
+SPHSimpleFluid< Variables, ParticleSystem >::save( const std::string& outputFileName, const int step )
 {
    std::string outputFileNameFluid = outputFileName + std::to_string( step ) + "_fluid.vtk";
    fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
@@ -83,9 +81,9 @@ SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::save( const std::st
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Variables, typename ParticleSystem >
 void
-SPHSimpleFluid< Variables, ParticleSystem, NeighborSearch >::writeProlog( TNL::Logger& logger ) const noexcept
+SPHSimpleFluid< Variables, ParticleSystem >::writeProlog( TNL::Logger& logger ) const noexcept
 {
    logger.writeParameter( "Number of fluid particles:", this->fluid->particles->getNumberOfParticles() );
    logger.writeParameter( "Number of alloc. fluid particles:", this->fluid->particles->getNumberOfAllocatedParticles() );

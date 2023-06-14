@@ -5,18 +5,18 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename NeighborSearch, typename SPHFluidConfig, typename Variables >
-template< typename FluidPointer, typename BoudaryPointer, typename NeighborSearchPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
+template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
+template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState )
+WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   typename NeighborSearch::NeighborsLoopParams searchInFluid( fluid->neighborSearch );
-   typename NeighborSearch::NeighborsLoopParams searchInBound( boundary->neighborSearch );
+   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* CONSTANT VARIABLES */
    const RealType h = sphState.h;
@@ -155,10 +155,10 @@ WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::Interaction( FluidPointe
    SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary );
 }
 
-template< typename NeighborSearch, typename SPHFluidConfig, typename Variables >
+template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState, typename SPHState >
 void
-WCSPH_DBC< NeighborSearch, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState )
+WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState )
 {
    auto view_rho = variables->rho.getView();
    auto view_p = variables->p.getView();
