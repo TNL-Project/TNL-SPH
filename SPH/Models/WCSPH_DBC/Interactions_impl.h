@@ -6,7 +6,13 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
-template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
+template< typename FluidPointer,
+          typename BoudaryPointer,
+          typename SPHKernelFunction,
+          typename DiffusiveTerm,
+          typename ViscousTerm,
+          typename EOS,
+          typename SPHState >
 void
 WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid,
                                                                      BoudaryPointer& boundary,

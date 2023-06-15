@@ -24,29 +24,14 @@ public:
 
    static constexpr int spaceDimension = 2;
 
-   /* common */
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
    using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
    using RealType = typename ParticleTraitsType::RealType;
-   using CellIndexType = typename ParticleTraitsType::CellIndexType;
-   using CellIndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //nn
-   using NeighborsCountArrayType = typename ParticleTraitsType::NeighborsCountArrayType;
-   using NeighborsArrayType = typename ParticleTraitsType::NeighborsArrayType;
-   using NeighborListType = typename ParticleTraitsType::NeighborListType;
 
-   using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //TODO: Clean up the types.
+   using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType;
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, Device >;
-
-   using CellIndexer = typename Config::CellIndexerType;
-
-   /* particle related */
    using PointType = typename ParticleTraitsType::PointType;
-   using PointArrayType = typename ParticleTraitsType::PointArrayType; //nn
-
-   /* grid related */
-   using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
-   using GridType = typename ParticleTraitsType::GridType;
-   using GridPointer = typename ParticleTraitsType::GridPointer;
+   using PointArrayType = typename ParticleTraitsType::PointArrayType;
 
    /**
     * Constructors.
@@ -62,15 +47,7 @@ public:
      points( sizeAllocated ),
      points_swap( sizeAllocated ),
      sortPermutations( sizeAllocated ),
-     radius( radius )
-   {
-      //grid->setSpaceSteps( { Config::searchRadius, Config::searchRadius } ); //removed
-      //3dto grid->setDimensions( Config::gridXsize, Config::gridYsize );
-      //grid->setOrigin( { Config::gridXbegin, Config::gridYbegin } ); //removed
-      //neighborsList.setSegmentsSizes( sizeAllocated, Config::maxOfNeigborsPerParticle ); DeactivatedAtm
-   }
-
-   /* PARTICLE RELATED TOOLS */
+     radius( radius ) { }
 
    /**
     * Get dimension of particle system.
@@ -100,16 +77,19 @@ public:
    const GlobalIndexType
    getNumberOfAllocatedParticles() const;
 
+   /**
+    * Set number of particles in particle system.
+    */
    void
    setNumberOfParticles( GlobalIndexType newNumberOfParticles );
 
    /**
     * Get particle (i.e. point) positions.
     */
-   const typename ParticleTraitsType::PointArrayType& // -> using..
+   const PointArrayType&
    getPoints() const;
 
-   typename ParticleTraitsType::PointArrayType& // -> using..
+   PointArrayType&
    getPoints();
 
    /**
@@ -130,61 +110,21 @@ public:
    void
    setPoint( GlobalIndexType particleIndex, PointType point);
 
+   /**
+    * Get list of prermutation for particles reordering.
+    */
    const IndexArrayTypePointer&
    getSortPermutations() const;
 
    IndexArrayTypePointer&
    getSortPermutations();
 
-   /**
-    * Get cell index of given partile.
-    */
-   //void
-   //computeParticleCellIndices();
-
-   ///**
-   // * Sort particles by its cell index.
-   // */
-   //void sortParticles();
-
-   /* PARTICLE RELATED TEMP TOOLS */
-
-   void generateRandomParticles(); //used only for tests
-
-   /* GRID RELATED TOOLS */
-
-   /**
-    * Get and set grid dimension.
-    * The grid here is just implicit.
-    */
-   __cuda_callable__ //TODO: Comment.
-   const IndexVectorType
-   getGridSize() const;
-
-   void
-   setGridSize( IndexVectorType gridSize );
-
-   /**
-    * Get and set grid origin.
-    * The grid here is just implicit.
-    */
-   const PointType
-   getGridOrigin() const;
-
-   void
-   setGridOrigin( PointType gridOrigin );
-
 protected:
 
    //information about particle system
    GlobalIndexType numberOfAllocatedParticles;
    GlobalIndexType numberOfParticles;
-   GlobalIndexType gridSize;
    RealType radius;
-
-   //related to implicit grid
-   PointType gridOrigin;
-   IndexVectorType gridDimension;
 
    //actual points
    PointArrayType points;

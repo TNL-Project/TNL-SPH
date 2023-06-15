@@ -3,6 +3,36 @@
 namespace TNL {
 namespace ParticleSystem {
 
+/* GRID RELATED TOOLS */
+template < typename ParticleConfig, typename DeviceType >
+__cuda_callable__ //TODO: Comment.
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
+ParticlesLinkedList< ParticleConfig, DeviceType >::getGridSize() const
+{
+   return gridDimension;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+ParticlesLinkedList< ParticleConfig, DeviceType >::setGridSize( IndexVectorType gridSize )
+{
+   gridDimension = gridSize;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PointType
+ParticlesLinkedList< ParticleConfig, DeviceType >::getGridOrigin() const
+{
+   return gridOrigin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+ParticlesLinkedList< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
+{
+   gridOrigin = gridBegin; //FIXME: Names.
+}
+
 template< typename ParticleConfig, typename Device >
 const typename ParticlesLinkedList< ParticleConfig, Device >::PairIndexArrayType&
 ParticlesLinkedList< ParticleConfig, Device >::getCellFirstLastParticleList() const

@@ -57,37 +57,25 @@ public:
    using DeviceType = Device;
    using Config = ParticleConfig;
    using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
+   using BaseType = Particles< ParticleConfig, Device >;
 
    /* common */
-   using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
-   using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
-   using RealType = typename ParticleTraitsType::RealType;
-   using CellIndexType = typename ParticleTraitsType::CellIndexType;
-   using CellIndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //nn
-   using NeighborsCountArrayType = typename ParticleTraitsType::NeighborsCountArrayType;
-   using NeighborsArrayType = typename ParticleTraitsType::NeighborsArrayType;
-   using NeighborListType = typename ParticleTraitsType::NeighborListType;
+   using GlobalIndexType = typename BaseType::GlobalIndexType;
+   using LocalIndexType = typename BaseType::LocalIndexType;
+   using RealType = typename BaseType::RealType;
+   using PointType = typename BaseType::PointType;
+   using PointArrayType = typename BaseType::PointArrayType;
 
-   using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //TODO: Clean up the types.
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, Device >;
-
+   /* neighbor search related */
    using CellIndexer = typename Config::CellIndexerType;
 
-   /* particle related */
-   using PointType = typename ParticleTraitsType::PointType;
-   using PointArrayType = typename ParticleTraitsType::PointArrayType; //nn
-
-   /* grid related */
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
-   using GridType = typename ParticleTraitsType::GridType;
-   using GridPointer = typename ParticleTraitsType::GridPointer;
+   using CellIndexType = typename ParticleTraitsType::CellIndexType;
+   using CellIndexArrayType = typename ParticleTraitsType::CellIndexArrayType;
+   using PairIndexType = typename ParticleTraitsType::PairIndexType;
+   using PairIndexArrayType = typename ParticleTraitsType::PairIndexArrayType;
 
-   /* neighbor list related */
-   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
-   using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
-   using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
-
-   /* args */
+   /* args for neighbors loop */
    using NeighborsLoopParams = NeighborsLoopParams< ParticlesLinkedList< ParticleConfig, DeviceType > >;
 
    /**
@@ -103,13 +91,30 @@ public:
       firstLastCellParticle = INT_MAX;
    }
 
+   __cuda_callable__ //TODO: Comment.
+   const IndexVectorType
+   getGridSize() const;
+
+   void
+   setGridSize( IndexVectorType gridSize );
+
+   /**
+    * Get and set grid origin.
+    * The grid here is just implicit.
+    */
+   const PointType
+   getGridOrigin() const;
+
+   void
+   setGridOrigin( PointType gridOrigin );
+
    /**
     * Get particle cell indices.
     */
-   const typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   const CellIndexArrayType& // -> using..
    getParticleCellIndices() const;
 
-   typename ParticleTraitsType::CellIndexArrayType& // -> using..
+   CellIndexArrayType& // -> using..
    getParticleCellIndices();
 
    /**
@@ -143,7 +148,6 @@ public:
     */
    void sortParticles();
 
-   //NEIGHBOR SEARCH UTILITIES
    /**
     * Reset the list with first and last particle in cell.
     */
@@ -156,10 +160,13 @@ public:
    void
    particlesToCells();
 
-
 protected:
 
-   //neighborsearch related;
+   //related to implicit grid
+   PointType gridOrigin;
+   IndexVectorType gridDimension;
+
+   //related to search for neighbors
    CellIndexArrayType particleCellInidices;
    PairIndexArrayType firstLastCellParticle;
 

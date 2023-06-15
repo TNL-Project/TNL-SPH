@@ -63,7 +63,13 @@ public:
    void
    ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState );
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState  >
+   template< typename FluidPointer,
+             typename BoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename SPHState  >
    void
    Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
