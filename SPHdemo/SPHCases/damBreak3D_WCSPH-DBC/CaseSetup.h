@@ -9,8 +9,9 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/Particles.h"
-#include "../../../Particles/neighbourSearch.h"
+#include "../../../Particles/ParticlesLinkedList.h"
+//#include "../../../Particles/Particles.h"
+//#include "../../../Particles/neighbourSearch.h"
 
 /**
  * Particle system reader.
@@ -83,8 +84,7 @@ int main( int argc, char* argv[] )
    /**
     * Particle and neighbor search model.
     */
-   using ParticleSystem = Particles< ParticlesConfig, SimulationControl::DeviceType >;
-   using NeighborSearch = NeighborSearch< ParticlesConfig, ParticleSystem >;
+   using ParticleSystem = ParticlesLinkedList< ParticlesConfig, SimulationControl::DeviceType >;
 
    /**
     * Define simulation SPH model and SPH formulation.
@@ -96,8 +96,8 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = SPH::WCSPH_DBC< NeighborSearch, SPHConfig >;
-   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
+   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**
     * Define time step control.
