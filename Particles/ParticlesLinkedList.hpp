@@ -3,9 +3,7 @@
 namespace TNL {
 namespace ParticleSystem {
 
-/* GRID RELATED TOOLS */
 template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__ //TODO: Comment.
 const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
 ParticlesLinkedList< ParticleConfig, DeviceType >::getGridSize() const
 {
@@ -30,7 +28,7 @@ template < typename ParticleConfig, typename DeviceType >
 void
 ParticlesLinkedList< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
 {
-   gridOrigin = gridBegin; //FIXME: Names.
+   gridOrigin = gridBegin;
 }
 
 template< typename ParticleConfig, typename Device >
@@ -76,7 +74,7 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
    auto view = this->particleCellInidices.getView();
    auto view_points = this->points.getView();
 
-   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles, this->gridDimension, this->gridOrigin, this->radius );
+   CellIndexer::ComputeParticleCellIndex( view, view_points, _numberOfParticles, gridDimension, gridOrigin, this->radius );
 }
 
 template < typename ParticleConfig, typename Device >
@@ -99,7 +97,6 @@ ParticlesLinkedList< ParticleConfig, Device >::sortParticles()
    this->getPoints().swap( this->points_swap );
 }
 
-//neighborSearch utilities
 template< typename ParticleConfig, typename Device >
 void
 ParticlesLinkedList< ParticleConfig, Device >::resetListWithIndices
@@ -156,10 +153,7 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( numberOfParticles - 1 ),
          { ( view_particleCellIndex.getElement( numberOfParticles -1 ) != view_particleCellIndex.getElement( numberOfParticles-2 ) ) ? numberOfParticles-1 : lastActiveCellContains[ 0 ], numberOfParticles - 1 } );
 
-
 }
-
-
 
 } //namespace TNL
 } //namespace Particles

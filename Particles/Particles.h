@@ -29,7 +29,7 @@ public:
    using RealType = typename ParticleTraitsType::RealType;
 
    using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, Device >;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, Device >; //TODO: Do I need this?
    using PointType = typename ParticleTraitsType::PointType;
    using PointArrayType = typename ParticleTraitsType::PointArrayType;
 

@@ -28,8 +28,6 @@ public:
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using PointType = typename ParticleTraitsType::PointType;
 
-   //static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridXsize;
-
    static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize )
    {
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
@@ -55,14 +53,19 @@ public:
       }
    }
 
-   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, const PointsView view_points, const GlobalIndexType _numberOfParticles, const IndexVectorType gridSize, const PointType gridOrigin, const RealType searchRadius  )
+   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices,
+                                         const PointsView view_points,
+                                         const GlobalIndexType _numberOfParticles,
+                                         const IndexVectorType gridSize,
+                                         const PointType gridOrigin,
+                                         const RealType searchRadius  )
    {
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
       {
          auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
-            //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
-            view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius) + TNL::floor((view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius) * gridSize[ 0 ];
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) + \
+                                           TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ];
          };
          Algorithms::parallelFor< DeviceType >( 0, _numberOfParticles, f );
       }
@@ -71,8 +74,8 @@ public:
       {
          auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
-            //is necessary to norm particle coordinates to cell index, moreover 2D,3D,...
-            view_particeCellIndices[ i ] = TNL::floor((view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius) + TNL::floor((view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius) * gridSize[ 1 ];
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
+                                           TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
          };
          Algorithms::parallelFor< DeviceType >( 0, _numberOfParticles, f );
       }
@@ -106,8 +109,6 @@ public:
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using PointType = typename ParticleTraitsType::PointType;
 
-   //static constexpr GlobalIndexType _numberOfCells = ParticleConfig::gridXsize;
-   //static constexpr GlobalIndexType _numberOfCellsY = ParticleConfig::gridYsize;
 
    static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize  )
    {

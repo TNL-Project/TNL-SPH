@@ -21,16 +21,17 @@ template< typename ParticleSystem >
 class NeighborsLoopParams
 {
 public:
+
    using DeviceType = typename ParticleSystem::DeviceType;
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
-   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
-   using CellIndexArrayView = typename Containers::ArrayView< typename ParticleSystem::CellIndexType, DeviceType >;
+   using RealType = typename ParticleSystem::RealType;
+   using PointType = typename ParticleSystem::PointType;
+   using IndexVectorType = typename ParticleSystem::IndexVectorType;
+   using PairIndexType = typename ParticleSystem::PairIndexType;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
    using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-   using PointType = typename ParticleSystem::PointType;
+
    using CellIndexer = typename ParticleSystem::CellIndexer;
-   using IndexVectorType = typename ParticleSystem::IndexVectorType;
-   using RealType = typename ParticleSystem::RealType;
 
    NeighborsLoopParams( ParticlesPointerType& particles )
    : numberOfParticles( particles->getNumberOfParticles() ),
@@ -39,15 +40,12 @@ public:
      searchRadius( particles->getSearchRadius() ),
      view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
 
-   GlobalIndexType i;
-   Containers::StaticVector< 2, GlobalIndexType > gridIndex;
-
    const GlobalIndexType numberOfParticles;
-   const Containers::StaticVector< 2, GlobalIndexType > gridSize;
-   //const typename ParticleSystem::IndexVectorType gridSize;
-   const PairIndexArrayView view_firstLastCellParticle;
+   const IndexVectorType gridSize;
    const PointType gridOrigin;
    const RealType searchRadius;
+
+   const PairIndexArrayView view_firstLastCellParticle;
 };
 
 template < typename ParticleConfig, typename Device >
@@ -91,7 +89,6 @@ public:
       firstLastCellParticle = INT_MAX;
    }
 
-   __cuda_callable__ //TODO: Comment.
    const IndexVectorType
    getGridSize() const;
 
@@ -111,10 +108,10 @@ public:
    /**
     * Get particle cell indices.
     */
-   const CellIndexArrayType& // -> using..
+   const CellIndexArrayType&
    getParticleCellIndices() const;
 
-   CellIndexArrayType& // -> using..
+   CellIndexArrayType&
    getParticleCellIndices();
 
    /**
@@ -146,7 +143,8 @@ public:
    /**
     * Sort particles by its cell index.
     */
-   void sortParticles();
+   void
+   sortParticles();
 
    /**
     * Reset the list with first and last particle in cell.

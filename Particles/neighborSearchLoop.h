@@ -9,9 +9,7 @@ struct NeighborsLoop
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
    static void
-   exec( //const typename NeighborsLoopParams::GlobalIndexType& i,
-         typename NeighborsLoopParams::GlobalIndexType i,
-         //const typename NeighborsLoopParams::PointType& r_i,
+   exec( typename NeighborsLoopParams::GlobalIndexType i,
          typename NeighborsLoopParams::PointType r_i,
          const NeighborsLoopParams& params,
          Function f, FunctionArgs... args )
