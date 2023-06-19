@@ -1,26 +1,43 @@
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 #
-# damBreak2D_WCSPH-DBC_benchmark
+# case: damBreak2D_WCSPH-DBC
 #
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 
+### Parameters of the case necessary for case creation:
+
+# Dimensions of box:
 boxL = 1.61
 boxH = 0.8
 
+# Dimensions of the fluid box
 fluidL = 0.6
 fluidH = 0.3
 
+# Initial particle distance (dp):
 dp = 0.002
+
+# Smoothing length coefitient:
+# smoothing length (h) = smoothing length coef (Coef_h) * initial particle distance (d_p)
+# [ h = Coef_h * dp ]
 smoothingLentghCoef = 2**0.5
 
+# Referential density of the medium (rho0):
 rho0 = 1000.
-p0 = 0.
+p0 = 0. #DELETE
 
+# Number of boundary layers:
 numberOfBoundaryLayers = 3
 
+# Numerical speed of sound (c0):
 speedOfSound = 34.3
+
+# Initial time step.
+# In case, that initial time step is not defined, is computed automatically.
+timeStep = 0.00002
+
+# CFL number (CFL):
 CFLnumber = 0.2
-timeStep = 0.00002 #otherwise is obtained automatically
 
 write = '.vtk' #.ptcs or .vtk
 

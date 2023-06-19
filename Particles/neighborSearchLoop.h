@@ -36,7 +36,6 @@ struct NeighborsLoop2D
    }
 };
 
-
 struct NeighborsLoop3D
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
