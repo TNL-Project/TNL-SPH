@@ -177,6 +177,18 @@ public:
       //Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
       Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
    }
+
+   template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
+   void
+   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
+   {
+      if( timeStepping.getStep() % 20 == 0 ) {
+         IntegrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+      }
+      else {
+         IntegrateVerlet( timeStepping.getTimeStep(), fluid );
+      }
+   }
 };
 
 } // SPH

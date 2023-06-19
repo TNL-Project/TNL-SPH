@@ -1,7 +1,9 @@
+#include <TNL/Devices/Cuda.h>
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
-namespace SimulationConstrolConfiguration {
+namespace SimulationControlConfiguration {
 
 /**
  * PARAMETERS FOR SIMULATION CONTROL (necessary)
@@ -11,6 +13,7 @@ namespace SimulationConstrolConfiguration {
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  * It is necessary to enter:
+ * - DeviceType - device, on which the simulation is to run
  * - const std::string inputParticleFile - input file with initial particle configuration
  * - const std::string inputParticleFile_bound - input file with initial boundary configuration
  * - std::string outputFilaName - path to store results
@@ -20,6 +23,7 @@ namespace SimulationConstrolConfiguration {
 class SPHSimulationControl
 {
    public:
+   using DeviceType = TNL::Devices::Cuda;
 
    const std::string inputParticleFile = "dambreak_fluid.vtk";
    const std::string inputParticleFile_bound = "dambreak_boundary.vtk";
@@ -29,7 +33,7 @@ class SPHSimulationControl
    const float outputTime = 0.04f;
 };
 
-} //SimulationConstrolConfiguration
+} //SimulationControlConfiguration
 } //SPH
 } //ParticleSystem
 } //TNL

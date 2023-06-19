@@ -45,6 +45,10 @@ class SPHFluidVariables
    VectorArrayType v;
    VectorArrayType a;
 
+   /* Additional variable fields to avoid inmpace sort. */
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
+
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
    {
@@ -65,38 +69,56 @@ class SPHFluidVariables
       v.swap( v_swap );
    }
 
-#ifdef PREFER_SPEED_OVER_MEMORY
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-#endif
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+   }
+
 };
+
 
 template< typename SPHFluidConfig >
 class SPHBoundaryVariables
 {
-  public:
-  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   public:
+   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
 
-  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
+   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+   using RealType = typename SPHFluidTraitsType::RealType;
 
-  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
+   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
-  using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
-  using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
+   using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
 
-  SPHBoundaryVariables( GlobalIndexType size )
-  : rho( size ), drho ( size ), p( size ), v( size ), a( size ), n( size ),
-    rho_swap( size ), v_swap( size ), n_swap( size ) {}
+   SPHBoundaryVariables( GlobalIndexType size )
+   : rho( size ), drho ( size ), p( size ), v( size ), a( size ), n( size ),
+     rho_swap( size ), v_swap( size ), n_swap( size ) {}
 
-  /* Variables - Fields */
-  ScalarArrayType rho;
-  ScalarArrayType drho;
-  ScalarArrayType p;
-  VectorArrayType v;
-  VectorArrayType a;
-  VectorArrayType n;
+   /* Variables - Fields */
+   ScalarArrayType rho;
+   ScalarArrayType drho;
+   ScalarArrayType p;
+   VectorArrayType v;
+   VectorArrayType a;
+   VectorArrayType n;
+
+   /* Additional variable fields to avoid inmpace sort. */
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
+   VectorArrayType n_swap;
 
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
@@ -123,11 +145,22 @@ class SPHBoundaryVariables
       n.swap( n_swap );
    }
 
-#ifdef PREFER_SPEED_OVER_MEMORY
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-   VectorArrayType n_swap;
-#endif
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+      reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( n, "Normals" ); //FIXME!
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+   }
 
 };
 
