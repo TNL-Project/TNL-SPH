@@ -5,7 +5,7 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 boxL = 1.61
-boxH = 0.8
+boxH = 1.0
 
 fluidL = 0.6
 fluidH = 0.3
@@ -88,7 +88,8 @@ box_nz.append( 0.5**0.5 )
 # right wall
 for layer in range( numberOfBoundaryLayers ):
     for z in range( boxH_n - 1 ):
-        box_rx.append( x_last + dp * layer )
+        #box_rx.append( x_last + dp * layer )
+        box_rx.append( x_last + dp )
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( ( z + 1 ) * dp )
         box_nx.append( -1. )
