@@ -57,6 +57,7 @@
  */
 //#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
 #include "../../../SPH/shared/Measuretool.h"
+#include "../../../SPH/shared/ElasticBounce.h"
 
 using namespace TNL;
 
@@ -102,6 +103,9 @@ int main( int argc, char* argv[] )
     */
    using SPHModel = SPH::WCSPH_BI< ParticleSystem, SPHConfig >;
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
+
+   //I dont know where to place this yet.
+   using BoundaryCorrection = SPH::ElasticBounce< ParticleSystem, SPHConfig >;
 
    /**
     * Define time step control.
@@ -202,6 +206,7 @@ int main( int argc, char* argv[] )
     */
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
+   TNL::Timer timer_boundaryCorrection;
 
    while( timeStepping.runTheSimulation() )
    {
@@ -223,6 +228,14 @@ int main( int argc, char* argv[] )
       sphSimulation.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
+
+      /**
+       * Boundary correction.
+       */
+      timer_boundaryCorrection.start();
+      if( sphParams.boundaryElasticBounce )
+         BoundaryCorrection::boundaryCorrection( sphSimulation.fluid, sphSimulation.boundary, sphParams );
+      timer_boundaryCorrection.stop();
 
       /**
        * Perform time integration, i.e. update particle positions.
@@ -290,7 +303,10 @@ int main( int argc, char* argv[] )
     * Output simulation stats.
     */
    float totalTime = ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+                       timer_interact.getRealTime() + \
+                       timer_integrate.getRealTime() + \
+                       timer_pressure.getRealTime()  + \
+                       timer_boundaryCorrection.getRealTime() );
 
    int steps = timeStepping.getStep();
    float totalTimePerStep = totalTime / steps;
@@ -314,6 +330,9 @@ int main( int argc, char* argv[] )
    std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
    std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
    std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
+   std::cout << "Boundary correction........................... " << timer_boundaryCorrection.getRealTime() << " sec." << std::endl;
+   std::cout << "Boundary correction (average time per step)... " << timer_boundaryCorrection.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Boundary correction (percentage).............. " << timer_boundaryCorrection.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
    std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
    std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
@@ -346,6 +365,9 @@ int main( int argc, char* argv[] )
    timeResults.insert({ "interaction",                         std::to_string( timer_interact.getRealTime()                              ) } );
    timeResults.insert({ "interaction-average",                 std::to_string( timer_interact.getRealTime() / steps                      ) } );
    timeResults.insert({ "interaction-percentage",              std::to_string( timer_interact.getRealTime() / totalTime * 100            ) } );
+   timeResults.insert({ "boundary-correction",                 std::to_string( timer_boundaryCorrection.getRealTime()                    ) } );
+   timeResults.insert({ "boundary-correction-average",         std::to_string( timer_boundaryCorrection.getRealTime() / steps            ) } );
+   timeResults.insert({ "boundary-correction-percentage",      std::to_string( timer_boundaryCorrection.getRealTime() / totalTime * 100  ) } );
    timeResults.insert({ "integrate",                           std::to_string( timer_integrate.getRealTime()                             ) } );
    timeResults.insert({ "integrate-average",                   std::to_string( timer_integrate.getRealTime() / steps                     ) } );
    timeResults.insert({ "integrate-percentage",                std::to_string( timer_integrate.getRealTime() / totalTime * 100           ) } );

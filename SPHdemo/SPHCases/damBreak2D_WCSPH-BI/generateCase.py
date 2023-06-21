@@ -21,7 +21,7 @@ numberOfBoundaryLayers = 1 #Since we use BI
 
 speedOfSound = 34.3
 CFLnumber = 0.2
-timeStep = 0.00002 #otherwise is obtained automatically for HR
+timeStep = 0.000025 #otherwise is obtained automatically for HR
 
 write = '.vtk' #.ptcs or .vtk
 

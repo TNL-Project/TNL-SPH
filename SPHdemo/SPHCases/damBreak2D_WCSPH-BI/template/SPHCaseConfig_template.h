@@ -104,6 +104,18 @@ class SPHParamsConfig
     * Define constant to prevent zero in denominator [-].
     */
    float eps = 0.001f;
+
+   /**
+    * Define if bounce back is used for the boundary conditions.
+    * It is additional technique to prevent the particles goes through the
+    * boundary, used together with the BI formulation.
+    * - mu - kinetic energy conservation during the elastic bounce [-]
+    */
+   bool boundaryElasticBounce = true;
+
+   float elasticFactor = 1.f;
+   float r_box = dp * 1.5f;
+   float minimalDistanceFactor = 0.5f;
 };
 
 } //namespace SPHConfig
