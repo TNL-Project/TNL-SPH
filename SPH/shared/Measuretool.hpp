@@ -116,7 +116,10 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFil
 template< typename SPHConfig, typename SPHSimulation >
 template<typename SPHKernelFunction, typename EOS, typename SPHState >
 void
-SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
+                                                              BoundaryPointer& boundary,
+                                                              SPHState& sphState,
+                                                              bool includeBoundary )
 {
 
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */ //TODO: Do this like a human.
@@ -134,7 +137,10 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
    const auto view_points = fluid->particles->getPoints().getView();
    const auto view_rho = fluid->variables->rho.getView();
 
-   /* CONSTANT VARIABLES */ //TODO: Do this like a human.
+   const auto view_points_boundary = boundary->particles->getPoints().getView();
+   const auto view_rho_boundary = boundary->variables->rho.getView();
+
+   /* CONSTANT VARIABLES */
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
 
@@ -143,7 +149,8 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
    auto view_sensorsPositions = sensorPositions.getView();
    auto view_pressureSensors = sensors.getView();
 
-   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* p, VectorType* v, RealType* gamma ) mutable
+   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
+         VectorType& r_i, RealType* p, VectorType* v, RealType* gamma ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -153,7 +160,25 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
          const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
          const RealType W = SPHKernelFunction::W( drs, h );
+         const RealType V = m / rho_j;
 
+         //*rho += W * m;
+         *p += p_j * W * V;
+         *gamma += W * V;
+      }
+   };
+
+   auto interpolateBoundary = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
+         VectorType& r_i, RealType* p, VectorType* v, RealType* gamma ) mutable
+   {
+      const VectorType r_j = view_points_boundary[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius )
+      {
+         const RealType rho_j = view_rho_boundary[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
+         const RealType W = SPHKernelFunction::W( drs, h );
          const RealType V = m / rho_j;
 
          //*rho += W * m;
@@ -169,16 +194,11 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
       RealType gamma = 0.f;
 
       VectorType r = view_sensorsPositions[ i ];
-      //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
 
-      //neighborSearch->loopOverNeighbors(
-      //      i,
-      //      numberOfParticles,
-      //      gridIndex,
-      //      gridSize,
-      //      view_firstLastCellParticle,
-      //      interpolate, r, &p, &v, &gamma );
       NeighborsLoop::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
+      if( includeBoundary ){
+         NeighborsLoop::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
+      }
 
       if( gamma > 0.5f ){
          view_pressureSensors( sensorIndexer, i ) = p / gamma;

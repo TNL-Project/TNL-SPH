@@ -50,12 +50,13 @@ class MeasuretoolConfigForPressure
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
 
    const float outputTime = 2e-3f;
+   bool includeBoundary = true;
 
    std::vector< VectorType > points{
-   { 1.60f - placeholderSmoothingLengthf, 0.003f },
-   { 1.60f - placeholderSmoothingLengthf, 0.015f },
-   { 1.60f - placeholderSmoothingLengthf, 0.03f  },
-   { 1.60f - placeholderSmoothingLengthf, 0.08f  } };
+   { 1.61f, 0.003f },
+   { 1.61f, 0.015f },
+   { 1.61f, 0.03f  },
+   { 1.61f, 0.08f  } };
 };
 
 /**

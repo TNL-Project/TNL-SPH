@@ -21,7 +21,7 @@ numberOfBoundaryLayers = 1 #Since we use BI
 
 speedOfSound = 34.3
 CFLnumber = 0.2
-timeStep = 0.000025 #otherwise is obtained automatically for HR
+timeStep = 0.00002 #otherwise is obtained automatically for HR
 
 write = '.vtk' #.ptcs or .vtk
 
@@ -60,7 +60,7 @@ for layer in range( numberOfBoundaryLayers ):
 
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
-    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 - 2 ):
+    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 - 1 ):
         box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) + 1 ) * dp )
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( 0. - layer * dp )

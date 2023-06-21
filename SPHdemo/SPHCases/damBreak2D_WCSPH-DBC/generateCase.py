@@ -70,7 +70,7 @@ for layer in range( numberOfBoundaryLayers ):
 
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
-    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 ):
+    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 + 1 ):
         box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( 0. - layer * dp )

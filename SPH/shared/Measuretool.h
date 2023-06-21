@@ -95,7 +95,7 @@ class SensorInterpolation
 
    template<typename SPHKernelFunction, typename EOS, typename SPHState >
    void
-   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, bool includeBoundary );
 
    void
    save( const std::string outputFileName );

@@ -264,7 +264,7 @@ int main( int argc, char* argv[] )
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
          sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
-               sphSimulation.fluid, sphSimulation.boundary, sphParams );
+               sphSimulation.fluid, sphSimulation.boundary, sphParams, measuretoolPressure.includeBoundary );
       }
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
