@@ -4,7 +4,6 @@
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
 
-//#include "../Particles/Particles.h"
 #include "../Particles/ParticlesTraits.h"
 
 #include "Fluid.h"
@@ -38,8 +37,6 @@ public:
    using BoundaryVariables = typename Model::BoundaryVariables;
    using Boundary = Boundary< ParticleSystem, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
-
-   //using SPHSimpleFluidConfig = SPHSimpleFluidConfig< typename ParticleSystem::Config >;
 
    SPHSimpleFluid() = default;
 

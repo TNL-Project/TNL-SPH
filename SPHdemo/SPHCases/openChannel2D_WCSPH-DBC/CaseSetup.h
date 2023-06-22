@@ -8,8 +8,7 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/Particles.h"
-#include "../../../Particles/neighbourSearch.h"
+#include "../../../Particles/ParticlesLinkedList.h"
 
 /**
  * Particle system reader.
@@ -22,11 +21,11 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-#include "ParticlesConfig.h"
+#include "ParticlesConfigNew.h"
 #include "SPHCaseConfig.h"
 #include "MeasuretoolConfig.h"
 #include "SimulationControlConfig.h"
-#include "OpenBoundaryConfig.h"
+#include "OpenBoundaryConfigNew.h"
 
 /**
  * SPH general toolds.
@@ -49,7 +48,7 @@
  */
 #include "../../../SPH/TimeStep.h"
 
-using namespace TNL;
+using namespace TNL::ParticleSystem;
 
 int main( int argc, char* argv[] )
 {
@@ -78,24 +77,19 @@ int main( int argc, char* argv[] )
     *   config for water level measurement
     *   config for grid interpolation
     */
-   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< Device >;
-   using SPHSimulationConfig = TNL::ParticleSystem::SPH::SPHSimpleFluidConfig< ParticlesConfig >;
+   using SimulationControl = SPH::SimulationControlConfiguration::SPHSimulationControl;
 
-   using ParticlesInitParameters = ParticleSystem::ParticleSystemConfig::ParticleInitialSetup;
-   using InletConfig = TNL::ParticleSystem::SPH::InletBuffer;
-   using OutletConfig = TNL::ParticleSystem::SPH::OutletBuffer;
+   using SPHConfig = SPH::SPHConfig::SPHConfig< SimulationControl::DeviceType >;
+   using SPHParams = SPH::SPHConfig::SPHParamsConfig< SPHConfig >;
 
-   using SPHConfig = SPH::SPHCaseConfig< Device >;
+   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SimulationControl::DeviceType >;
+   using ParticlesParams = ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
 
-   using SimulationControl = TNL::ParticleSystem::SPH::SimulationConstrolConfiguration::SPHSimulationControl;
-
-   using MeasuretoolInitGridInterpolation = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
 
    /**
     * Particle and neighbor search model.
     */
-   using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
-   using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
+   using ParticleSystem = ParticlesLinkedList< ParticlesConfig, SimulationControl::DeviceType >;
 
    /**
     * Define simulation SPH model and SPH formulation.
@@ -107,24 +101,8 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = TNL::ParticleSystem::SPH::SPHOpenSystem< SPHModel, ParticleSystem, NeighborSearch >;
-
-   /**
-    * Define particular schemes of the used SPH model.
-    * Here in the case of WCSPH, we work with DiffusiveTerm, ViscousTerm and EquationOfState.
-    *
-    * IMPORATANT: Constants and parameters of used schemes have to be defined in the SPHConfig.
-    */
-   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
-   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
-
-   /**
-    * Particle reader and writer.
-    */
-   using Reader = TNL::ParticleSystem::Readers::VTKReader;
-   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
+   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHSimulation = SPH::SPHOpenSystem< SPHModel >;
 
    /**
     * Define time step control.
@@ -133,144 +111,85 @@ int main( int argc, char* argv[] )
    using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
 
    /**
-    * Load simulation parameters.
+    * Particle reader and writer.
     */
-   SPHSimulationConfig mySPHSimulationConfig;
-   mySPHSimulationConfig.template loadParameters< ParticlesInitParameters >();
+   using Reader = TNL::ParticleSystem::Readers::VTKReader;
+   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
+   using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
 
    /**
-    * Load simulation control (file names, time steps,...)
+    * Create instance of SPHParams class, which is object holding all the
+    * necessary SPH constants, informations about terms in particular scheme etc.
     */
-   SimulationControl mySimulationControl;
+   SPHParams sphParams;
+   TNL::ParticleSystem::SPH::InletBuffer< SPHConfig > inletBufferParams;
+   TNL::ParticleSystem::SPH::OutletBuffer< SPHConfig > outletBufferParams;
 
    /**
-    * Create the simulation.
+    * Create instance of Simulation control class, which is object holding all the
+    * information about end time, results saving times, paths to the input files
+    * and paths to store results.
     */
-   SPHSimulation mySPHSimulation( mySPHSimulationConfig );
-   std::cout << mySPHSimulation << std::endl;
+   SimulationControl simulationControl;
+
+   /**
+    * Create instance of class with neccessary initial information to create particle system
+    * and thus to initialize SPH simulation.
+    */
+   ParticlesParams particlesParams;
+
+   /**
+    * Create the main object - SPH simulation itself. The constructor requires
+    * struct containing information to create and allocate particle system and neighbor search,
+    * which includes number of particles for fluid and boundary, background grid size and its
+    * origin and search radius.
+    */
+   SPHSimulation sphSimulation( particlesParams );
+   std::cout << sphSimulation << std::endl;
+
+   /**
+    * Create instance of timeStepper, which is a class controling the time step,
+    * duration of the simulation etc.
+    *
+    * Add output timer to control saving to files.
+    */
+   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    //TODO: Resolve this
-   mySPHSimulation.addOpenBoundaryPatch( ParticlesInitParameters::numberOfInletParticles,
-                                         ParticlesInitParameters::numberOfAllocatedInletParticles,
-                                         ParticlesInitParameters::searchRadius,
-                                         ParticlesInitParameters::gridXsize * ParticlesInitParameters::gridYsize );
-
-   mySPHSimulation.addOpenBoundaryPatch( ParticlesInitParameters::numberOfOutletParticles,
-                                         ParticlesInitParameters::numberOfAllocatedOutletParticles,
-                                         ParticlesInitParameters::searchRadius,
-                                         ParticlesInitParameters::gridXsize * ParticlesInitParameters::gridYsize );
+   sphSimulation.addOpenBoundaryPatch( particlesParams );
 
    /**
     * TEMP: Determine number of interation for constant timestep.
     * Perform simulation main loop.
     */
-   TimeStepping myTimeStepping( SPHConfig::dtInit, mySimulationControl.endTime );
-
-
-   //-------------------------- up to this point
-   /**
-    * Read the particle file.
-    */
-   //:TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
-   //:myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.fluid->particles->getPoints() ) ;
-
-   //:myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-   //:      mySPHSimulation.fluid->getFluidVariables()->rho, "Density" );
-   //:myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-   //:      mySPHSimulation.fluid->getFluidVariables()->p, "Pressure" );
-   //:myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-   //:      mySPHSimulation.fluid->getFluidVariables()->v, "Velocity" );
-
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myBoundaryReader(
-         mySimulationControl.inputParticleFile_bound,
-         ParticlesInitParameters::numberOfBoundaryParticles,
-         ParticlesInitParameters::numberOfAllocatedBoundaryParticles);
-   myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.boundary->particles->getPoints() ) ;
-
-   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.boundary->getBoundaryVariables()->rho, "Density" );
-   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure" );
-   myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity" );
+   TimeStepping myTimeStepping( sphParams.dtInit, simulationControl.endTime );
+   timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
-    * Setup inlet.
+    * Read the particle file and setup the inlets and outlets.
     */
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myInletReader(
-         mySimulationControl.inputParticleFile_inlet,
-         ParticlesInitParameters::numberOfInletParticles,
-         ParticlesInitParameters::numberOfAllocatedInletParticles);
-   myInletReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.openBoundaryPatches[ 0 ]->particles->getPoints() ) ;
+   sphSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile_bound );
 
-   myInletReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.openBoundaryPatches[ 0 ]->getOpenBoundaryVariables()->rho, "Density" );
-   myInletReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.openBoundaryPatches[ 0 ]->getOpenBoundaryVariables()->p, "Pressure" );
-   myInletReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.openBoundaryPatches[ 0 ]->getOpenBoundaryVariables()->v, "Velocity" );
+   sphSimulation.openBoundaryPatches[ 0 ]->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile_inlet );
+   sphSimulation.openBoundaryPatches[ 0 ]->readOpenBoundaryParameters( inletBufferParams );
 
-   /**
-    * Setup parameters for open boundary.
-    */
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.orientation = {
-      InletConfig::orientation_x, InletConfig::orientation_y };
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.velocity = {
-      InletConfig::velocity_x, InletConfig::velocity_y };
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.density = InletConfig::inlet_density;
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth = {
-      InletConfig::bufferWidth_x, InletConfig::bufferWidth_y };
-   mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.position = {
-      InletConfig::position_x, InletConfig::position_y };
+   sphSimulation.openBoundaryPatches[ 1 ]->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile_outlet );
+   sphSimulation.openBoundaryPatches[ 1 ]->readOpenBoundaryParameters( outletBufferParams );
+
 
    std::cout << "Inlet parameters: " << std::endl;
-   std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.orientation << std::endl;
-   std::cout << "Velocity .................... " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.velocity << std::endl;
-   std::cout << "BufferWidth ................. " << mySPHSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth << std::endl;
-
-  /**
-   * Setup second inlet.
-   */
-  TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myInlet2Reader(
-         mySimulationControl.inputParticleFile_outlet,
-         ParticlesInitParameters::numberOfOutletParticles,
-         ParticlesInitParameters::numberOfAllocatedOutletParticles);
-  myInlet2Reader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.openBoundaryPatches[ 1 ]->particles->getPoints() ) ;
-
-  myInlet2Reader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-        mySPHSimulation.openBoundaryPatches[ 1 ]->getOpenBoundaryVariables()->rho, "Density" );
-  myInlet2Reader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-        mySPHSimulation.openBoundaryPatches[ 1 ]->getOpenBoundaryVariables()->p, "Pressure" );
-  myInlet2Reader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
-        mySPHSimulation.openBoundaryPatches[ 1 ]->getOpenBoundaryVariables()->v, "Velocity" );
-
-  /**
-   * Setup parameters for open boundary.
-   */
-  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.orientation = {
-     OutletConfig::orientation_x, OutletConfig::orientation_y };
-  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity = {
-     OutletConfig::velocity_x, OutletConfig::velocity_y };
-  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.density = OutletConfig::inlet_density;
-  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth = {
-     OutletConfig::bufferWidth_x, OutletConfig::bufferWidth_y };
-  mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.position = {
-     OutletConfig::position_x, OutletConfig::position_y };
+   std::cout << "Orientation ................. " << sphSimulation.openBoundaryPatches[ 0 ]->parameters.orientation << std::endl;
+   std::cout << "Velocity .................... " << sphSimulation.openBoundaryPatches[ 0 ]->parameters.velocity << std::endl;
+   std::cout << "BufferWidth ................. " << sphSimulation.openBoundaryPatches[ 0 ]->parameters.bufferWidth << std::endl;
 
   std::cout << "Inlet2 parameters: " << std::endl;
-  std::cout << "Orientation ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.orientation << std::endl;
-  std::cout << "Velocity .................... " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.velocity << std::endl;
-  std::cout << "BufferWidth ................. " << mySPHSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth << std::endl;
-
-   //mySPHSimulation.fluid->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-   //mySPHSimulation.boundary->particles->setGridOrigin( { ParticlesConfig::gridXbegin, ParticlesConfig::gridYbegin } );
-   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridOrigin( { ParticlesInitParameters::gridXorigin, ParticlesInitParameters::gridYorigin } );
-   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridOrigin( { ParticlesInitParameters::gridXorigin, ParticlesInitParameters::gridYorigin } );
-
-   //mySPHSimulation.fluid->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-   //mySPHSimulation.boundary->particles->setGridSize( { ParticlesConfig::gridXsize, ParticlesConfig::gridYsize } );
-   mySPHSimulation.openBoundaryPatches[ 0 ]->particles->setGridSize( { ParticlesInitParameters::gridXsize, ParticlesInitParameters::gridYsize } );
-   mySPHSimulation.openBoundaryPatches[ 1 ]->particles->setGridSize( { ParticlesInitParameters::gridXsize, ParticlesInitParameters::gridYsize } );
+  std::cout << "Orientation ................. " << sphSimulation.openBoundaryPatches[ 1 ]->parameters.orientation << std::endl;
+  std::cout << "Velocity .................... " << sphSimulation.openBoundaryPatches[ 1 ]->parameters.velocity << std::endl;
+  std::cout << "BufferWidth ................. " << sphSimulation.openBoundaryPatches[ 1 ]->parameters.bufferWidth << std::endl;
 
    /**
     * Define timers to measure computation time.
@@ -278,18 +197,16 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_inlet, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
-   //for( unsigned int iteration = 0; iteration < steps; iteration ++ )
-   float saveResultsTimer = 0.f;
-   while( myTimeStepping.runTheSimulation() )
+   while( timeStepping.runTheSimulation() )
    {
       std::cout << "Time: " << myTimeStepping.getTime() << std::endl;
-      std::cout << mySPHSimulation.fluid->particles->getNumberOfParticles() << std::endl;
+      std::cout << sphSimulation.fluid->particles->getNumberOfParticles() << std::endl;
 
       /**
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
-      mySPHSimulation.PerformNeighborSearch(
+      sphSimulation.PerformNeighborSearch(
             myTimeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
@@ -298,7 +215,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template Interact< SPH::WendlandKernel2D, DiffusiveTerm, ViscousTerm, EOS >();
+      sphSimulation.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -308,60 +225,31 @@ int main( int argc, char* argv[] )
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
-      if( myTimeStepping.getStep() % 20 == 0 ) {
-         mySPHSimulation.integrator->IntegrateEuler< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateEulerBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
-         timer_inlet.start();
-         mySPHSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 0 ] );
-         mySPHSimulation.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 1 ] );
-         timer_inlet.stop();
-      }
-      else {
-         mySPHSimulation.integrator->IntegrateVerlet< typename SPHSimulation::FluidPointer >( SPHConfig::dtInit, mySPHSimulation.fluid );
-         mySPHSimulation.integrator->IntegrateVerletBoundary< typename SPHSimulation::BoundaryPointer >( SPHConfig::dtInit, mySPHSimulation.boundary );
-         timer_inlet.start();
-         mySPHSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 0 ] );
-         mySPHSimulation.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoudaryPatchPointer >( SPHConfig::dtInit, mySPHSimulation.fluid, mySPHSimulation.openBoundaryPatches[ 1 ] );
-         timer_inlet.stop();
-      }
+      sphSimulation.integrator->integratStepVerlet( sphSimulation.fluid, sphSimulation.boundary, timeStepping );
+      sphSimulation.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sphSimulation.fluid, sphSimulation.openBoundaryPatches[ 0 ] );
+      sphSimulation.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sphSimulation.fluid, sphSimulation.openBoundaryPatches[ 1 ] );
       timer_integrate.stop();
       std::cout << "Integration... done. " << std::endl;
 
       /**
        * Output particle data
        */
-      if( myTimeStepping.getTime() > saveResultsTimer )
+      if( timeStepping.checkOutputTimer( "save_results" ) )
       {
-         saveResultsTimer += mySimulationControl.outputTime;
-
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.fluid->variables, mySPHSimulation.fluid->particles->getNumberOfParticles() ); //TODO: FIX.
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >( mySPHSimulation.boundary->variables, mySPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
+         sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
+               sphSimulation.fluid->variables, sphSimulation.fluid->getNumberOfParticles(), sphParams ); //TODO: FIX.
+         sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
+               sphSimulation.boundary->variables, sphSimulation.boundary->getNumberOfParticles(), sphParams ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameFluid = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_fluid.vtk";
-         std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
-         Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
-         myWriter.writeParticles( *mySPHSimulation.fluid->particles );
-         myWriter.template writePointData< SPHModel::ScalarArrayType >(
-               mySPHSimulation.fluid->getFluidVariables()->rho, "Density", mySPHSimulation.fluid->particles->getNumberOfParticles(), 1 );
-         myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               mySPHSimulation.fluid->getFluidVariables()->v, "Velocity", 3, mySPHSimulation.fluid->particles->getNumberOfParticles() );
-
-         std::string outputFileNameBoundary = mySimulationControl.outputFileName + std::to_string( myTimeStepping.getStep() ) + "_boundary.vtk";
-         std::ofstream outputFileBoundary ( outputFileNameBoundary, std::ofstream::out );
-         Writer myWriterBoundary( outputFileBoundary, VTK::FileFormat::ascii );
-         myWriterBoundary.writeParticles( *mySPHSimulation.boundary->particles );
-         myWriterBoundary.template writePointData< SPHModel::ScalarArrayType >(
-               mySPHSimulation.boundary->getBoundaryVariables()->p, "Pressure", mySPHSimulation.boundary->particles->getNumberOfParticles(), 1 );
-         //myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-         //      mySPHSimulation.boundary->getBoundaryVariables()->v, "Velocity", 3, mySPHSimulation.boundary->particles->getNumberOfParticles() );
+         sphSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
       }
 
       myTimeStepping.updateTimeStep();

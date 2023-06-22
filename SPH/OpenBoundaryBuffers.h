@@ -1,92 +1,65 @@
 #pragma once
 
-#include "SPHTraits.h"
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
-#include <thrust/gather.h>
+#include "PhysicalObject.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename ParticleSystem, typename NeighborSearch, typename SPHCaseConfig, typename Variables >
-class OpenBoundaryBuffer_orthogonal
+template< typename ParticleSystem,
+          typename SPHCaseConfig,
+          typename Variables,
+          typename IntegratorVariables >
+class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >
 {
    public:
-   using DeviceType = typename ParticleSystem::Device;
-   using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-   using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
-   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
+   using BaseType = PhysicalObject< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >;
+   using GlobalIndexType = typename BaseType::GlobalIndexType;
+   using RealType = typename BaseType::RealType;
+   using VariablesPointerType = typename BaseType::VariablesPointerType;
 
-   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using RealType = typename SPHTraitsType::RealType;
+   using SPHTraitsType = typename BaseType::SPHTraitsType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, DeviceType >;
+   OpenBoundary( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
+   : PhysicalObject< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells ) {};
 
-   OpenBoundaryBuffer_orthogonal( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, sizeAllocated, h ), neighborSearch( particles, numberOfCells ), variables( sizeAllocated ),
-     particleMark( sizeAllocated ), sortPermutations( sizeAllocated ), points_swap( sizeAllocated ) {};
 
-   VariablesPointer&
+   VariablesPointerType&
    getOpenBoundaryVariables()
    {
       return this->variables;
    }
 
-   const VariablesPointer&
+   const VariablesPointerType&
    getOpenBoundaryVariables() const
    {
       return this->variables;
    }
 
-   void sortParticles()
+   template< typename Params >
+   void
+   readOpenBoundaryParameters( Params config )
    {
-      GlobalIndexType numberOfParticle = particles->getNumberOfParticles();
-      auto view_particleCellIndices = particles->getParticleCellIndices().getView();
-      auto view_map = sortPermutations->getView();
+      parameters.position = config.position;
+      parameters.orientation = config.orientation;
+      parameters.bufferWidth = config.bufferWidth;
 
-      sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-      //TODO: tempalte thrust device with TNL::Devices
-      thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
-            view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() );
-
-      auto view_points = particles->getPoints().getView();
-#ifdef PREFER_SPEED_OVER_MEMORY
-      auto view_points_swap = points_swap.getView();
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
-            view_points.getArrayData(), view_points_swap.getArrayData() );
-      particles->getPoints().swap( points_swap );
-#else
-      //TODO: Error or implement.
-#endif
-      variables->sortVariables( sortPermutations, particles->getNumberOfParticles() );
+      parameters.density = config.density;
+      parameters.velocity = config.velocity;
    }
 
-   struct Parameters
+   struct OpenBoundaryParameters
    {
-      VectorType orientation;
       VectorType position;
-      VectorType velocity;
-      RealType density;
-
+      VectorType orientation;
       VectorType bufferWidth;
+
+      RealType density;
+      VectorType velocity;
+
    };
-   Parameters parameters;
-
-   ParticlePointer particles;
-   NeighborSearchPointer neighborSearch;
-   VariablesPointer variables;
-
-   IndexArrayTypePointer sortPermutations;
-   IndexArrayTypePointer particleMark;
-
-#ifdef PREFER_SPEED_OVER_MEMORY
-   using PointArrayType = typename ParticleSystem::PointArrayType;
-   PointArrayType points_swap;
-#endif
+   OpenBoundaryParameters parameters;
 };
 
 }

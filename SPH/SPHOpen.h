@@ -4,7 +4,7 @@
 #include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
 
-#include "../Particles/Particles.h"
+#include "../Particles/ParticlesTraits.h"
 #include "SPH.h"
 
 #include "Fluid.h"
@@ -15,57 +15,55 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Model, typename ParticleSystem, typename NeighborSearch >
+template< typename Model >
 class SPHOpenSystem
 {
 public:
 
-   using DeviceType = typename ParticleSystem::Device;
+   using DeviceType = typename Model::DeviceType;
+   using ParticleSystemType = typename Model::ParticlesType;; //Added due to measure tool
+   using ParticleSystem = typename Model::ParticlesType;; //Added due to measure tool
 
-   using LocalIndexType = typename ParticleSystem::LocalIndexType;
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
-   using PointType = typename ParticleSystem::PointType; //remove
-   using RealType = typename ParticleSystem::RealType;
 
    using ParticlePointer = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
-   using NeighborSearchPointer = typename Pointers::SharedPointer< NeighborSearch, DeviceType >;
    using ModelPointer = typename Pointers::SharedPointer< Model, DeviceType >;
    using IntegratorPointer = typename Pointers::SharedPointer< typename Model::Integrator, DeviceType >; // draft
-
    using SPHConfig = typename Model::SPHConfig;
    using IntegratorVariables = typename Model::IntegratorVariables;
 
    using FluidVariables = typename Model::FluidVariables;
-   using Fluid = Fluid< ParticleSystem, NeighborSearch, SPHConfig, FluidVariables, IntegratorVariables >;
+   using Fluid = Fluid< ParticleSystem, SPHConfig, FluidVariables, IntegratorVariables >;
    using FluidPointer = Pointers::SharedPointer< Fluid, DeviceType >;
 
    using BoundaryVariables = typename Model::BoundaryVariables;
-   using Boundary = Boundary< ParticleSystem, NeighborSearch, SPHConfig, BoundaryVariables, IntegratorVariables >;
+   using Boundary = Boundary< ParticleSystem, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
-   using OpenBoundaryPatch = OpenBoundaryBuffer_orthogonal< ParticleSystem, NeighborSearch, SPHConfig, FluidVariables >;
-   using OpenBoudaryPatchPointer = Pointers::SharedPointer< OpenBoundaryPatch, DeviceType >;
-   using OpenBoudaryPatchesPointerArray = Containers::Array< OpenBoudaryPatchPointer, DeviceType >;
+   using OpenBoundary = OpenBoundary< ParticleSystem, SPHConfig, FluidVariables, IntegratorVariables >;
+   using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
 
    SPHOpenSystem() = default;
 
-   //SPHOpenSystem( GlobalIndexType size, GlobalIndexType sizeAllocated,
-   //      GlobalIndexType size_bound, GlobalIndexType sizeAllocated_bound,
-   //      RealType h, GlobalIndexType numberOfCells, GlobalIndexType numberOfInlets )
-   //: model(), integrator(), fluid( size, sizeAllocated, h, numberOfCells ),
-   //  boundary( size_bound, sizeAllocated_bound, h, numberOfCells ){};
-
-   SPHOpenSystem( SPHSimpleFluidConfig< typename ParticleSystem::Config > sphConfig )
+   template< typename SPHOpenSystemInit >
+   SPHOpenSystem( SPHOpenSystemInit sphConfig )
    :  model(),
       integrator(),
-      fluid( sphConfig.sizeFluid, sphConfig.sizeAllocatedFluid, sphConfig.searchRadius, sphConfig.gridNumberOfCells ),
-      boundary( sphConfig.sizeBoundary, sphConfig.sizeAllocatedBoundary, sphConfig.searchRadius, sphConfig.gridNumberOfCells )
+      fluid( sphConfig.numberOfParticles, sphConfig.numberOfAllocatedParticles, sphConfig.searchRadius, sphConfig.numberOfGridCells ),
+      boundary( sphConfig.numberOfBoundaryParticles, sphConfig.numberOfAllocatedBoundaryParticles, sphConfig.searchRadius, sphConfig.numberOfGridCells )
    {
       fluid->particles->setGridSize( sphConfig.gridSize );
       fluid->particles->setGridOrigin( sphConfig.gridOrigin );
       boundary->particles->setGridSize( sphConfig.gridSize );
       boundary->particles->setGridOrigin( sphConfig.gridOrigin );
    };
+
+   /**
+    * TODO: I don't like this.
+    */
+   template< typename SPHOpenSystemInit >
+   void
+   addOpenBoundaryPatch( SPHOpenSystemInit sphConfig );
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -75,13 +73,12 @@ public:
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
-   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
-   void Interact();
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
+   void Interact( SPHState& sphState );
 
-   /**
-    * TODO: I don't like this.
-    */
-   void addOpenBoundaryPatch( GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer, RealType h, GlobalIndexType numberOfCells );
+   template< typename Writer >
+   void
+   save( const std::string& outputFilename, const int step );
 
    void
    writeProlog( TNL::Logger& logger ) const noexcept;
@@ -90,9 +87,7 @@ public:
 
    FluidPointer fluid;
    BoundaryPointer boundary;
-
-   //OpenBoudaryPatchesPointerArray openBoundaryPatches;
-   std::vector< OpenBoudaryPatchPointer > openBoundaryPatches;
+   std::vector< OpenBoundaryPointer > openBoundaryPatches;
 
    ModelPointer model;
 
@@ -104,9 +99,9 @@ public:
 } // ParticleSystem
 } // TNL
 
-template< typename Model, typename ParticleSystem, typename NeighborSearch >
+template< typename Model >
 std::ostream&
-operator<<( std::ostream& str, const SPH::SPHOpenSystem< Model, ParticleSystem, NeighborSearch >& sphSimulation )
+operator<<( std::ostream& str, const SPH::SPHOpenSystem< Model >& sphSimulation )
 {
    TNL::Logger logger( 100, str );
 

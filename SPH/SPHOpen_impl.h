@@ -1,12 +1,13 @@
 #include "SPH.h"
+#include "SPHOpen.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Model >
 void
-SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
+SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
 {
    /**
     * Compute gird nad partice cell indices.
@@ -67,26 +68,47 @@ SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::PerformNeighborSearc
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
-template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS >
+template< typename Model >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::Interact()
+SPHOpenSystem< Model >::Interact( SPHState& sphState )
 {
    model->template Interaction<
-      FluidPointer, BoundaryPointer, OpenBoudaryPatchPointer, NeighborSearchPointer,
-      SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( fluid, boundary, openBoundaryPatches[ 0 ] );
+      FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+            fluid, boundary, openBoundaryPatches[ 0 ] );
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Model >
+template< typename SPHOpenSystemInit >
 void
-SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::addOpenBoundaryPatch( GlobalIndexType size_buffer, GlobalIndexType sizeAllocated_buffer, RealType h, GlobalIndexType numberOfCells )
+SPHOpenSystem< Model >::addOpenBoundaryPatch( SPHOpenSystemInit sphConfig )
 {
-   openBoundaryPatches.emplace_back( size_buffer, sizeAllocated_buffer, h, numberOfCells );
+   for( int i = 0; i < std::size( sphConfig.numberOfOpenBoundaryParticles ); i++ ){
+      openBoundaryPatches.emplace_back( sphConfig.numberOfOpenBoundaryParticles[ i ],
+                                        sphConfig.numberOfAllocatedBoundaryParticles[ i ],
+                                        sphConfig.searchRadius,
+                                        sphConfig.numberOfGridCells );
+      openBoundaryPatches[ 0 ]->particles->setGridSize( sphConfig.gridSize );
+      openBoundaryPatches[ 0 ]->particles->setGridOrigin( sphConfig.gridOrigin );
+   }
+
 }
 
-template< typename Variables, typename ParticleSystem, typename NeighborSearch >
+template< typename Model >
+template< typename Writer >
 void
-SPHOpenSystem< Variables, ParticleSystem, NeighborSearch >::writeProlog( TNL::Logger& logger ) const noexcept
+SPHOpenSystem< Model >::save( const std::string& outputFileName, const int step )
+{
+   std::string outputFileNameFluid = outputFileName + std::to_string( step ) + "_fluid.vtk";
+   fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
+
+   std::string outputFileNameBound = outputFileName + std::to_string( step ) + "_boundary.vtk";
+   boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
+}
+
+template< typename Model >
+void
+SPHOpenSystem< Model >::writeProlog( TNL::Logger& logger ) const noexcept
 {
    logger.writeParameter( "Number of fluid particles:", this->fluid->particles->getNumberOfParticles() );
    logger.writeParameter( "Number of alloc. fluid particles:", this->fluid->particles->getNumberOfAllocatedParticles() );
