@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "PhysicalObject.h"
 
 namespace TNL {
@@ -41,6 +42,7 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
    void
    readOpenBoundaryParameters( Params config )
    {
+      parameters.identifier = config.identifier;
       parameters.position = config.position;
       parameters.orientation = config.orientation;
       parameters.bufferWidth = config.bufferWidth;
@@ -51,6 +53,7 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
 
    struct OpenBoundaryParameters
    {
+      std::string identifier;
       VectorType position;
       VectorType orientation;
       VectorType bufferWidth;
@@ -60,6 +63,8 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
 
    };
    OpenBoundaryParameters parameters;
+
+   //zone grid
 };
 
 }

@@ -104,6 +104,12 @@ SPHOpenSystem< Model >::save( const std::string& outputFileName, const int step 
 
    std::string outputFileNameBound = outputFileName + std::to_string( step ) + "_boundary.vtk";
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
+
+   for( auto& openBoundaryPatch : openBoundaryPatches ){
+      std::string outputFileNameOpenBound = outputFileName + std::to_string( step ) +\
+                                            "_" + openBoundaryPatch->parameters.identifier + ".vtk";
+      openBoundaryPatch->template writeParticlesAndVariables< Writer >( outputFileNameOpenBound );
+   }
 }
 
 template< typename Model >

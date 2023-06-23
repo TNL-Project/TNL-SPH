@@ -288,6 +288,9 @@ public:
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
       fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+
+      //added
+      view_v_buffer = inletConstVelocity;
       std::cout << "... InletBuffer - system updated." << std::endl;
    }
 
@@ -452,7 +455,6 @@ public:
       //std::cout << ".................. bufferParticles: " << openBoundary->particles->getPoints() << std::endl;
       std::cout << "... OutletBuffer - finished." << std::endl;
       std::cout << "************************************OUTLET-FINISH********************************************* " << std::endl;
-
 
    }
 

@@ -227,10 +227,8 @@ int main( int argc, char* argv[] )
       /**
        * Output particle data
        */
-      std::cout << "saving time: " << simulationControl.outputTime << std::endl;
       if( timeStepping.checkOutputTimer( "save_results" ) )
       {
-         std::cout << "SAVING FILES *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-" << std::endl;
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
