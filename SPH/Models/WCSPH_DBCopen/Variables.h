@@ -7,6 +7,18 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
+//TODO: How should I use this?
+template< typename SPHFluidConfig >
+class SPHFluidConstants
+{
+   public:
+   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+
+   using RealType = typename SPHFluidTraitsType::RealType;
+   using VectorType = typename SPHFluidTraitsType::VectorType;
+
+};
+
 template< typename SPHFluidConfig >
 class SPHFluidVariables
 {
@@ -24,8 +36,7 @@ class SPHFluidVariables
 
    SPHFluidVariables( GlobalIndexType size )
    : rho( size ), drho ( size ), p( size ), v( size ), a( size ),
-     fluidOutMark( size ), fluidOutMarkIndex( size ),
-     rho_swap( size ), v_swap( size ) {}
+     rho_swap( size ), v_swap( size ), fluidOutMark( size ), fluidOutMarkIndex( size ) {}
 
    /* Variables - Fields */
    ScalarArrayType rho;
@@ -37,6 +48,10 @@ class SPHFluidVariables
    //Inlet temp
    IndexArrayType fluidOutMark;
    IndexArrayType fluidOutMarkIndex;
+
+   /* Additional variable fields to avoid inmpace sort. */
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
 
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
@@ -58,10 +73,38 @@ class SPHFluidVariables
       v.swap( v_swap );
    }
 
-#ifdef PREFER_SPEED_OVER_MEMORY
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-#endif
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+   }
+
+};
+
+template< typename SPHFluidConfig >
+class SPHOpenBoundaryVariables : public SPHFluidVariables< SPHFluidConfig >
+{
+
+   public:
+   using BaseType = SPHFluidVariables< SPHFluidConfig >;
+   using SPHTraitsType = typename BaseType::SPHFluidTraitsType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+
+   SPHOpenBoundaryVariables( GlobalIndexType size )
+   : SPHFluidVariables< SPHFluidConfig >( size ), particleMark( size ) {};
+
+   IndexArrayType particleMark;
 };
 
 template< typename SPHFluidConfig >

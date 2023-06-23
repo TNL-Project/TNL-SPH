@@ -160,13 +160,6 @@ int main( int argc, char* argv[] )
    sphSimulation.addOpenBoundaryPatch( particlesParams );
 
    /**
-    * TEMP: Determine number of interation for constant timestep.
-    * Perform simulation main loop.
-    */
-   TimeStepping myTimeStepping( sphParams.dtInit, simulationControl.endTime );
-   timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
-
-   /**
     * Read the particle file and setup the inlets and outlets.
     */
    sphSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
@@ -199,7 +192,7 @@ int main( int argc, char* argv[] )
 
    while( timeStepping.runTheSimulation() )
    {
-      std::cout << "Time: " << myTimeStepping.getTime() << std::endl;
+      std::cout << "Time: " << timeStepping.getTime() << std::endl;
       std::cout << sphSimulation.fluid->particles->getNumberOfParticles() << std::endl;
 
       /**
@@ -207,7 +200,7 @@ int main( int argc, char* argv[] )
        */
       timer_search.start();
       sphSimulation.PerformNeighborSearch(
-            myTimeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+            timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
@@ -234,8 +227,10 @@ int main( int argc, char* argv[] )
       /**
        * Output particle data
        */
+      std::cout << "saving time: " << simulationControl.outputTime << std::endl;
       if( timeStepping.checkOutputTimer( "save_results" ) )
       {
+         std::cout << "SAVING FILES *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-" << std::endl;
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
@@ -252,7 +247,7 @@ int main( int argc, char* argv[] )
          sphSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
       }
 
-      myTimeStepping.updateTimeStep();
+      timeStepping.updateTimeStep();
    }
 
    /**
@@ -261,7 +256,7 @@ int main( int argc, char* argv[] )
    float totalTime = ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
 
-   int steps = myTimeStepping.getStep();
+   int steps = timeStepping.getStep();
    float totalTimePerStep = totalTime / steps;
 
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;

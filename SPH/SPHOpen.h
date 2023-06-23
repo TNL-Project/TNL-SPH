@@ -40,7 +40,8 @@ public:
    using Boundary = Boundary< ParticleSystem, SPHConfig, BoundaryVariables, IntegratorVariables >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
-   using OpenBoundary = OpenBoundary< ParticleSystem, SPHConfig, FluidVariables, IntegratorVariables >;
+   using OpenBoundaryVariables = typename Model::OpenBoundaryVariables;
+   using OpenBoundary = OpenBoundary< ParticleSystem, SPHConfig, OpenBoundaryVariables, IntegratorVariables >;
    using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
 
    SPHOpenSystem() = default;

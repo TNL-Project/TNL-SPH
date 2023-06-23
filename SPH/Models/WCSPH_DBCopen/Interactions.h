@@ -46,6 +46,7 @@ public:
    /*Swap variables*/
 	using FluidVariables = Variables;
 	using BoundaryVariables = Variables;
+   using OpenBoundaryVariables = SPHOpenBoundaryVariables< SPHFluidConfig >;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
 
    using ParticlesType = Particles;

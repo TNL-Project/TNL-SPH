@@ -51,7 +51,7 @@ const typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexType&
 ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndex( GlobalIndexType particleIndex ) const
 {
    TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
+   TNL_ASSERT_LT( particleIndex, this->numberOfParticles, "invalid particle index" );
    return this->particleCellInidices[ particleIndex ];
 }
 
@@ -61,7 +61,7 @@ typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexType&
 ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndex( GlobalIndexType particleIndex )
 {
    TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
+   TNL_ASSERT_LT( particleIndex, this->numberOfParticles, "invalid particle index" );
    return this->particleCellInidices[ particleIndex ];
 }
 

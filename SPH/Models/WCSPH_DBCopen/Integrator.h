@@ -211,7 +211,7 @@ public:
       auto view_v_buffer = openBoundary->variables->v.getView();
       auto view_rho_buffer = openBoundary->variables->rho.getView();
 
-      auto view_inletMark = openBoundary->particleMark->getView();
+      auto view_inletMark = openBoundary->variables->particleMark.getView();
       view_inletMark = 1; //TODO: this can be avoided
 
       const VectorType inletOrientation = openBoundary->parameters.orientation;
@@ -303,7 +303,7 @@ public:
       auto view_v_buffer = openBoundary->variables->v.getView();
       auto view_rho_buffer = openBoundary->variables->rho.getView();
 
-      auto view_inletMark = openBoundary->particleMark->getView();
+      auto view_inletMark = openBoundary->variables->particleMark.getView();
       view_inletMark = 0; //TODO: this can be avoided
 
       const VectorType inletOrientation = openBoundary->parameters.orientation;

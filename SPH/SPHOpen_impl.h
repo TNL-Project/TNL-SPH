@@ -13,18 +13,18 @@ SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer&
     * Compute gird nad partice cell indices.
     */
    timer_reset.start();
-   fluid->neighborSearch->resetListWithIndices();
+   fluid->particles->resetListWithIndices();
    //openBoundaryPatches[ 0 ]->neighborSearch->resetListWithIndices();
    for( auto& openBoundaryPatch : openBoundaryPatches )
-      openBoundaryPatch->neighborSearch->resetListWithIndices();
+      openBoundaryPatch->particles->resetListWithIndices();
 
    if( step == 0 )
-      boundary->neighborSearch->resetListWithIndices();
+      boundary->particles->resetListWithIndices();
    timer_reset.stop();
    std::cout << " - neighborSearch->resetListWithIndices();... done" << std::endl;
 
-   if( step == 0 ) //TODO: do this better, i. e. move this to constructor
-   fluid->particles->computeGridCellIndices(); //with current settings, I dont need to do this
+   //if( step == 0 ) //TODO: do this better, i. e. move this to constructor
+   //fluid->particles->computeGridCellIndices(); //with current settings, I dont need to do this
 
    timer_cellIndices.start();
    fluid->particles->computeParticleCellIndices();
@@ -57,13 +57,13 @@ SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer&
     * Bucketing, particles to cells.
     */
    timer_toCells.start();
-   fluid->neighborSearch->particlesToCells();
+   fluid->particles->particlesToCells();
    //openBoundaryPatches[ 0 ]->neighborSearch->particlesToCells();
    for( auto& openBoundaryPatch : openBoundaryPatches )
-      openBoundaryPatch->neighborSearch->particlesToCells();
+      openBoundaryPatch->particles->particlesToCells();
 
    if( step == 0 )
-      boundary->neighborSearch->particlesToCells();
+      boundary->particles->particlesToCells();
    timer_toCells.stop();
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
@@ -75,7 +75,7 @@ SPHOpenSystem< Model >::Interact( SPHState& sphState )
 {
    model->template Interaction<
       FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
-            fluid, boundary, openBoundaryPatches[ 0 ] );
+            fluid, boundary, openBoundaryPatches[ 0 ], sphState );
 }
 
 template< typename Model >
@@ -85,7 +85,7 @@ SPHOpenSystem< Model >::addOpenBoundaryPatch( SPHOpenSystemInit sphConfig )
 {
    for( int i = 0; i < std::size( sphConfig.numberOfOpenBoundaryParticles ); i++ ){
       openBoundaryPatches.emplace_back( sphConfig.numberOfOpenBoundaryParticles[ i ],
-                                        sphConfig.numberOfAllocatedBoundaryParticles[ i ],
+                                        sphConfig.numberOfAllocatedOpenBoundaryParticles[ i ],
                                         sphConfig.searchRadius,
                                         sphConfig.numberOfGridCells );
       openBoundaryPatches[ 0 ]->particles->setGridSize( sphConfig.gridSize );
