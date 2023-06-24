@@ -154,7 +154,7 @@ public:
     */
    template< typename SPHObjectPointer >
    void
-   updateLocalSimulationInfo( SimulationSubdomainInfo& subdomainInfo, const SPHObjectPointer& sphObject );
+   updateLocalSimulationInfo( SimulationSubdomainInfo& subdomainInfo, SPHObjectPointer& sphObject );
 
    template< typename Array >
    void

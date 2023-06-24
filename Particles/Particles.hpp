@@ -64,6 +64,20 @@ Particles< ParticleConfig, DeviceType >::getPoints()
 }
 
 template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointArrayType&
+Particles< ParticleConfig, DeviceType >::getPointsSwap() const
+{
+   return points_swap;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointArrayType&
+Particles< ParticleConfig, DeviceType >::getPointsSwap()
+{
+   return points_swap;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::PointType&
 Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex) const

@@ -93,6 +93,15 @@ public:
    getPoints();
 
    /**
+    * Get particle (i.e. point) positions.
+    */
+   const PointArrayType&
+   getPointsSwap() const;
+
+   PointArrayType&
+   getPointsSwap();
+
+   /**
     * Get position of given particle.
     */
    __cuda_callable__

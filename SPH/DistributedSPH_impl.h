@@ -38,7 +38,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::getFirstLastParticleInColumnOfCells(
          gridColumn, 1, gridSize );
    const GlobalIndexType indexOfLastColumnCell = ParticleSystem::CellIndexer::EvaluateCellIndex(
          gridColumn, gridSize[ 1 ] - 1, gridSize );
-   const auto view_firstLastCellParticle = sphObject->neighborSearch->getCellFirstLastParticleList().getConstView(
+   const auto view_firstLastCellParticle = sphObject->particles->getCellFirstLastParticleList().getConstView(
          indexOfFirstColumnCell, indexOfLastColumnCell );
 
    auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
@@ -56,7 +56,7 @@ template< typename SPHSimulation >
 template< typename SPHObjectPointer >
 void
 DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( SimulationSubdomainInfo& subdomainInfo,
-                                                                                               const SPHObjectPointer& sphObject )
+                                                                       SPHObjectPointer& sphObject )
 {
    const int rank = communicator.rank();
    const int nproc = communicator.size();
@@ -73,6 +73,9 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
       subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+      sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
    }
 
    //if( rank in between )
@@ -89,6 +92,9 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
 
       //is this safe? -in case that arrangeRecievedAndLocalData updates number of particles, then yes
       subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
+
+      sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
    }
 
    //For load balancing
@@ -347,7 +353,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::writeProlog( TNL::Logger& logger ) c
    logger.writeParameter( "Number of boundary particles:",
                            this->localSimulation.boundary->particles->getNumberOfParticles() );
    logger.writeParameter( "Number of alloc. boundary particles:",
-                           this->localSimulation.boundary->particles->getNumberOfParticles() );
+                           this->localSimulation.boundary->particles->getNumberOfAllocatedParticles() );
 
    logger.writeParameter( "Grid start cell index: ",
                            this->localSimulationInfo.gridIdxBegin );
