@@ -19,8 +19,9 @@ class SPHSimpleFluid
 public:
 
    using DeviceType = typename Model::DeviceType;
-   using ParticleSystemType = typename Model::ParticlesType;; //Added due to measure tool
-   using ParticleSystem = typename Model::ParticlesType;; //Added due to measure tool
+   using ParticleSystemType = typename Model::ParticlesType;; //Added due to measure tool.
+   using ParticleSystem = typename Model::ParticlesType;; //Added due to measure tool.
+   using ModelType = Model; //Added due to distributed simulation.
 
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
 

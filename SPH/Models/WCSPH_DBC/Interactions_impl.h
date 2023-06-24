@@ -19,14 +19,11 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
                                                                      SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
-   const RealType searchRadius = fluid->particles->getSearchRadius();
-
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
    typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* CONSTANT VARIABLES */
+   const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
    const VectorType gravity = sphState.gravity;
@@ -144,7 +141,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   SPHParallelFor::exec( 0, numberOfParticles, particleLoop );
+   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle(), particleLoop );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -160,7 +157,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
       view_Drho_bound[ i ] = drho_i;
 
    };
-   SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary );
+   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle(), particleLoopBoundary );
 }
 
 template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >

@@ -28,7 +28,35 @@ class PhysicalObject
    using RealType = typename SPHTraitsType::RealType;
 
    PhysicalObject( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
-   : particles( size, sizeAllocated, h, numberOfCells ), variables( sizeAllocated ),integratorVariables( sizeAllocated ) {};
+   : particles( size, sizeAllocated, h, numberOfCells ),
+     variables( sizeAllocated ),
+     integratorVariables( sizeAllocated ),
+     firstActiveParticle( 0 ),
+     lastActiveParticle( size ) {};
+
+   const GlobalIndexType
+   getFirstActiveParticle() const
+   {
+      return this->firstActiveParticle;
+   }
+
+   void
+   setFirstActiveParticle( GlobalIndexType firstActiveParticle )
+   {
+      this->firstActiveParticle = firstActiveParticle;
+   }
+
+   const GlobalIndexType
+   getLastActiveParticle() const
+   {
+      return this->lastActiveParticle;
+   }
+
+   void
+   setLastActiveParticle( GlobalIndexType lastActiveParticle )
+   {
+      this->lastActiveParticle = lastActiveParticle;
+   }
 
    const GlobalIndexType
    getNumberOfParticles() const
@@ -86,6 +114,11 @@ class PhysicalObject
       variables->writeVariables( writer, particles->getNumberOfParticles() );
    }
 
+   //Some additional informations
+   GlobalIndexType firstActiveParticle = 0;
+   GlobalIndexType lastActiveParticle = 0;
+
+   //Properties of physical object
    ParticlePointerType particles;
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;
