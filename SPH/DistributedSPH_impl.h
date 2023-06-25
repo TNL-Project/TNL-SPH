@@ -75,7 +75,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
 
       sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
-      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn + 1; //TODO: FIX!
    }
 
    //if( rank in between )
@@ -94,7 +94,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
 
       sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
-      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn + 1; //TODO: FIX!
    }
 
    //For load balancing
@@ -341,6 +341,26 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdo
    }
 
 }
+
+//implement standard interaction functions aswell for distributed
+template< typename SPHSimulation >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
+void
+DistributedSPHSimpleFluid< SPHSimulation >::interact( SPHState& sphState )
+{
+   localSimulation.template Interact< SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( sphState );
+}
+
+template< typename SPHSimulation >
+template< typename Writer >
+void
+DistributedSPHSimpleFluid< SPHSimulation >::save( const std::string& outputFileName, const int step )
+{
+   const int rank = communicator.rank();
+   std::string outputFileNameWithRank = outputFileName + "_rank" + std::to_string( rank ) + "_";
+   localSimulation.template save< Writer >( outputFileNameWithRank, step );
+}
+
 
 template< typename SPHSimulation >
 void

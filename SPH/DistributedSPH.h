@@ -201,6 +201,16 @@ public:
    void
    writeProlog( TNL::Logger& logger ) const noexcept;
 
+   //implement standard interaction functions aswell for distributed
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
+   void
+   interact( SPHState& sphState );
+
+   template< typename Writer >
+   void
+   save( const std::string& outputFilename, const int step );
+
+
 //protected:
 
    SPHSimulation localSimulation;

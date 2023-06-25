@@ -176,22 +176,14 @@ int main( int argc, char* argv[] )
     * Read particle file with fluid and read/set initial particle variables.
     * Read particle file with boundary and read/set initial particle variables.
     */
-   if( TNL::MPI::GetRank() == 0 )
-   {
-      localSPHSimulation.fluid->template readParticlesAndVariables< SimulationReaderType >(
-            simulationControl.inputParticleFile[ 0 ] );
-      localSPHSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
-            simulationControl.inputParticleFile_bound[ 0 ] );
-   }
+   localSPHSimulation.fluid->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile[ TNL::MPI::GetRank() ] );
+   localSPHSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile_bound[ TNL::MPI::GetRank() ] );
 
-   if( TNL::MPI::GetRank() == 1 )
-   {
-      localSPHSimulation.fluid->template readParticlesAndVariables< SimulationReaderType >(
-            simulationControl.inputParticleFile[ 1 ] );
-      localSPHSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
-            simulationControl.inputParticleFile_bound[ 1 ] );
-   }
-
+    /**
+     *
+     */
    DistributedSPHSimulation distributedSPHSimulation( std::move( localSPHSimulation ) );
 
    distributedSPHSimulation.localSimulationInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
@@ -265,6 +257,11 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
+     // distributedSPHSimulation.template interact< SPH::WendlandKernel2D,
+     //                                             SPHParams::DiffusiveTerm,
+     //                                             SPHParams::ViscousTerm,
+     //                                             SPHParams::EOS >( sphParams );
+
       distributedSPHSimulation.localSimulation.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
             sphParams );
       timer_interact.stop();
@@ -478,7 +475,7 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-
+         //distributedSPHSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
          std::string outputFileNameFluid;
 
          if( TNL::MPI::GetRank() == 0 )
