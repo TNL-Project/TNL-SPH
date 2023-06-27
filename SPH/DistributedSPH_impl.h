@@ -68,8 +68,9 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
    {
       gridColumnBegin = subdomainInfo.gridIdxEnd;
 
-      const PairIndexType firstLastParticle = getFirstLastParticleInColumnOfCells( gridColumnBegin,
-                                                                                   sphObject );
+      //const PairIndexType firstLastParticle = getFirstLastParticleInColumnOfCells( gridColumnBegin,
+      //                                                                             sphObject );
+      const PairIndexType firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
       subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
       subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
@@ -84,8 +85,9 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
    {
       gridColumnEnd = subdomainInfo.gridIdxBegin;
 
-      const PairIndexType firstLastParticle = getFirstLastParticleInColumnOfCells( gridColumnEnd,
-                                                                                   sphObject );
+      //const PairIndexType firstLastParticle = getFirstLastParticleInColumnOfCells( gridColumnEnd,
+      //                                                                             sphObject );
+      const PairIndexType firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
       subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
       subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;

@@ -158,6 +158,12 @@ public:
    void
    particlesToCells();
 
+   /**
+    * Find first and last particle in grid column.
+    */
+   PairIndexType
+   getFirstLastParticleInColumnOfCells( const GlobalIndexType& gridColumn );
+
 protected:
 
    //related to implicit grid

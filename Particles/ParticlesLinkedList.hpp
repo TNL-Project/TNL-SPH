@@ -155,5 +155,30 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells
 
 }
 
+//move to detail
+template< typename ParticleConfig, typename Device >
+typename ParticlesLinkedList< ParticleConfig, Device >::PairIndexType
+ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInColumnOfCells( const GlobalIndexType& gridColumn )
+{
+   //static_assert( std::is_same< CellIndexer::, DeviceType >::value, "mismatched DeviceType of the array" );
+
+   const GlobalIndexType indexOfFirstColumnCell = CellIndexer::EvaluateCellIndex( gridColumn, 1, gridDimension );
+   const GlobalIndexType indexOfLastColumnCell = CellIndexer::EvaluateCellIndex(
+         gridColumn, gridDimension[ 1 ] - 1, gridDimension );
+   const auto view_firstLastCellParticle = firstLastCellParticle.getConstView( indexOfFirstColumnCell, indexOfLastColumnCell );
+
+   auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
+   auto reduction_vect = [=] __cuda_callable__ ( const PairIndexType& a, const PairIndexType& b ) -> PairIndexType
+   { return { min( a[ 0 ], b[ 0 ] ), max( a[ 1 ], ( b[ 1 ] < INT_MAX ) ? b[ 1 ] : -1 ) }; };
+
+   PairIndexType identity = { INT_MAX , INT_MIN };
+   PairIndexType firstLastParticle = Algorithms::reduce< Devices::Cuda >(
+         0, view_firstLastCellParticle.getSize(), fetch_vect, reduction_vect, identity );
+
+   return firstLastParticle;
+}
+
+
+
 } //namespace TNL
 } //namespace Particles

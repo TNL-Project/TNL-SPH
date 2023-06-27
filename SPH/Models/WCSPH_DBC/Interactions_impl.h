@@ -68,7 +68,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
          const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermTermsParams );
-         *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
+         *a_i += ( -1.0f ) * ( p_term + visco ) * gradW * m;
       }
    };
 
@@ -96,7 +96,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
          const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermTermsParams );
-         *a_i += ( -1.0f ) * ( p_term + visco )* gradW * m;
+         *a_i += ( -1.0f ) * ( p_term + visco ) * gradW * m;
       }
    };
 
@@ -155,7 +155,6 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
       NeighborsLoop::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
 
       view_Drho_bound[ i ] = drho_i;
-
    };
    SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle(), particleLoopBoundary );
 }

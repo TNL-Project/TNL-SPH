@@ -31,9 +31,9 @@
  */
 //#include "ParticlesConfig.h"
 #include "ParticlesConfigNew.h"
-#include "SPHCaseConfig.h"
+#include "SPHCaseConfigNew.h"
 #include "MeasuretoolConfig.h"
-#include "SimulationControlConfig.h"
+#include "SimulationControlConfigNew.h"
 
 #include "DistributedSimulationConfig.h"
 
@@ -257,13 +257,10 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-     // distributedSPHSimulation.template interact< SPH::WendlandKernel2D,
-     //                                             SPHParams::DiffusiveTerm,
-     //                                             SPHParams::ViscousTerm,
-     //                                             SPHParams::EOS >( sphParams );
-
-      distributedSPHSimulation.localSimulation.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
-            sphParams );
+      distributedSPHSimulation.template interact< SPH::WendlandKernel2D,
+                                                  SPHParams::DiffusiveTerm,
+                                                  SPHParams::ViscousTerm,
+                                                  SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -475,55 +472,7 @@ int main( int argc, char* argv[] )
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         //distributedSPHSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
-         std::string outputFileNameFluid;
-
-         if( TNL::MPI::GetRank() == 0 )
-            outputFileNameFluid = simulationControl.outputFileName + "_RANK0_" + std::to_string( timeStepping.getStep() ) + "_fluid.vtk";
-
-         if( TNL::MPI::GetRank() == 1 )
-            outputFileNameFluid = simulationControl.outputFileName + "_RANK1_" + std::to_string( timeStepping.getStep() ) + "_fluid.vtk";
-
-         std::ofstream outputFileFluid ( outputFileNameFluid, std::ofstream::out );
-         Writer myWriter( outputFileFluid, VTK::FileFormat::ascii );
-         myWriter.writeParticles( *distributedSPHSimulation.localSimulation.fluid->particles );
-         myWriter.template writePointData< SPHModel::ScalarArrayType >(
-               distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->p,
-               "Pressure",
-               distributedSPHSimulation.localSimulation.fluid->particles->getNumberOfParticles(),
-               1 );
-         myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v,
-               "Velocity",
-               3,
-               distributedSPHSimulation.localSimulation.fluid->particles->getNumberOfParticles() );
-
-         //timer_pressure.start();
-         //localSPHSimulation.model->template ComputePressureFromDensity< EOS >( localSPHSimulation.boundary->variables, localSPHSimulation.boundary->particles->getNumberOfParticles() ); //TODO: FIX.
-         //timer_pressure.stop();
-         //std::cout << "Compute pressure... done. " << std::endl;
-
-         std::string outputFileNameBound;
-
-         if( TNL::MPI::GetRank() == 0 )
-            outputFileNameBound = simulationControl.outputFileName + "_RANK0_" + std::to_string( timeStepping.getStep() ) + "_boundary.vtk";
-
-         if( TNL::MPI::GetRank() == 1 )
-            outputFileNameBound = simulationControl.outputFileName + "_RANK1_" +std::to_string( timeStepping.getStep() ) + "_boundary.vtk";
-
-         std::ofstream outputFileBound ( outputFileNameBound, std::ofstream::out );
-         Writer myWriterBoundary( outputFileBound );
-         myWriterBoundary.writeParticles( *distributedSPHSimulation.localSimulation.boundary->particles );
-         myWriterBoundary.template writePointData< SPHModel::ScalarArrayType >(
-               distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->p,
-               "Pressure",
-               distributedSPHSimulation.localSimulation.boundary->particles->getNumberOfParticles(),
-               1 );
-         myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v,
-               "Velocity",
-               3,
-               distributedSPHSimulation.localSimulation.boundary->particles->getNumberOfParticles() );
+         distributedSPHSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
 
          ///**
          // * Interpolate on the grid.
