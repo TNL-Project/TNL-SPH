@@ -9,8 +9,7 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/ParticlesLinkedListFloating.h"
-//#include "../../../Particles/neighbourSearch.h"
+#include "../../../Particles/ParticlesLinkedList.h"
 
 /**
  * Particle system reader.
