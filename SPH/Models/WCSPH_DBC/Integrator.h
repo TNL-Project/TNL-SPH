@@ -54,6 +54,26 @@ class IntegratorVariables
       v_old.swap( v_old_swap );
    }
 
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho_old = rho_old.getView();
+      auto view_v_old = v_old.getView();
+
+      auto view_rho_old_swap = rho_old_swap.getView();
+      auto view_v_old_swap = v_old_swap.getView();
+
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho_old.getArrayData() + firstActiveParticle, view_rho_old_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v_old.getArrayData() + firstActiveParticle, view_v_old_swap.getArrayData() + firstActiveParticle );
+
+      rho_old.swap( rho_old_swap );
+      v_old.swap( v_old_swap );
+   }
+
    ScalarArrayType rho_old;
    VectorArrayType v_old;
 

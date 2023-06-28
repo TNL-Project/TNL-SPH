@@ -73,6 +73,20 @@ ParticlesLinkedList< ParticleConfig, Device >::getCellFirstLastParticleList()
    return firstLastCellParticle;
 }
 
+template< typename ParticleConfig, typename Device >
+const typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexArrayType&
+ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndices() const
+{
+   return particleCellInidices;
+}
+
+template< typename ParticleConfig, typename Device >
+typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexArrayType&
+ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndices()
+{
+   return particleCellInidices;
+}
+
 template < typename ParticleConfig, typename Device >
 __cuda_callable__
 const typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexType&
@@ -123,10 +137,10 @@ ParticlesLinkedList< ParticleConfig, Device >::sortParticles()
    auto view_points = this->getPoints().getView();
    auto view_points_swap = this->points_swap.getView();
    thrust::gather( thrust::device,
-                   view_map.getArrayData() + firstActiveParticle,
-                   view_map.getArrayData() + lastActiveParticle + 1,
-                   view_points.getArrayData(),
-                   view_points_swap.getArrayData() ); //TODO: replace thrust::device
+                   view_map.getArrayData(),
+                   view_map.getArrayData() + numberOfParticle,
+                   view_points.getArrayData() + firstActiveParticle,
+                   view_points_swap.getArrayData() + firstActiveParticle ); //TODO: replace thrust::device
    this->getPoints().swap( this->points_swap );
 }
 
@@ -162,7 +176,7 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells()
 
    //resolve first particle
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( firstActiveParticle ),
-         { 0, ( view_particleCellIndex.getElement( firstActiveParticle ) != view_particleCellIndex.getElement( firstActiveParticle + 1 ) ) ? 0 : INT_MAX } ) ;
+         { firstActiveParticle, ( view_particleCellIndex.getElement( firstActiveParticle ) != view_particleCellIndex.getElement( firstActiveParticle + 1 ) ) ? firstActiveParticle : INT_MAX } ) ; //careful with the firstActiveParticle instead of 0
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -171,7 +185,7 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells()
       if( view_particleCellIndex[ i ] != view_particleCellIndex[ i+1 ] )
          view_firstLastCellParticle[  view_particleCellIndex[ i ] ][ 1 ] =  i ;
    };
-   Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle, init ); // [0, N-1)
+   Algorithms::parallelFor< DeviceType >( firstActiveParticle + 1, lastActiveParticle, init ); // [1, N-1)
 
    //resolve last partile
    //I think there is bug in the initial version. In case there are two particles in the last cell, the first particle in last cell is overwritten.

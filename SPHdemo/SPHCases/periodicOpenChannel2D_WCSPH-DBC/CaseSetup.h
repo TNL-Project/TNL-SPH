@@ -9,8 +9,7 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/ParticlesLinkedList.h"
-//#include "../../../Particles/neighbourSearch.h"
+#include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
  * Particle system reader.
@@ -175,8 +174,8 @@ int main( int argc, char* argv[] )
    //std::cout << "preshift LP: " << sph.boundary->getParticles()->getPoints().getElement(
    //      sph.boundary->getLastActiveParticle() ) << std::endl;
 
-   //PeriodicBoundary::initialize( sph.fluid, particlesParams );
-   //PeriodicBoundary::initialize( sph.boundary, particlesParams );
+   PeriodicBoundary::initialize( sph.fluid, particlesParams );
+   PeriodicBoundary::initialize( sph.boundary, particlesParams );
 
    //std::cout << "postshift: " << sph.boundary->getParticles()->getPoints() << std::endl;
    //std::cout << "postshift FP: " << sph.boundary->getParticles()->getPoints().getElement(
@@ -227,14 +226,25 @@ int main( int argc, char* argv[] )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
 
+
       /**
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
       sph.PerformNeighborSearch(
-            timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+            0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
+
+      std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
+      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
+      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
+      std::cout << " postapl: " << sph.boundary->getPoints() << std::endl;
+
+      std::cout << "FluidFirstParticle: " << sph.fluid->getFirstActiveParticle() << std::endl;
+      std::cout << "FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
+      std::cout << "FluidLastParticle: " << sph.fluid->getLastActiveParticle() << std::endl;
+      std::cout << "FluidLastParticle - particle: " << sph.fluid->particles->getLastActiveParticle() << std::endl;
 
       /**
        * Perform interaction with given model.

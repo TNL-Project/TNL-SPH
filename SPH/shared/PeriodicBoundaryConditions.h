@@ -23,10 +23,13 @@ public:
 
    using PairIndexType = typename ParticlesType::PairIndexType;
 
-   template< typename ArrayView >
-   void
-   copyPartOfArray( ArrayView& view, GlobalIndexType fromPosition, GlobalIndexType toPosition, GlobalIndexType size )
+   template< typename Array >
+   static void
+   copyPartOfArray( Array& array, GlobalIndexType fromPosition, GlobalIndexType toPosition, GlobalIndexType size )
    {
+      //static assert
+      auto view = array.getView();
+
       auto copyToSwap = [ = ] __cuda_callable__ ( GlobalIndexType i ) mutable
       {
          view[ toPosition + i ] = view[ fromPosition + i ];
@@ -34,15 +37,17 @@ public:
       Algorithms::parallelFor< DeviceType >( 0, size, copyToSwap );
    }
 
-   template< typename ArrayView >
-   void
-   copyPartOfPoints( ArrayView& view,
+   template< typename Array >
+   static void
+   copyPartOfPoints( Array& array,
                      GlobalIndexType fromPosition,
                      GlobalIndexType toPosition,
                      GlobalIndexType size,
                      VectorType coordinatesDifference )
    {
       //static assert
+      auto view = array.getView();
+
       auto copyToSwap = [ = ] __cuda_callable__ ( GlobalIndexType i ) mutable
       {
          view[ toPosition + i ] = view[ fromPosition + i ] + coordinatesDifference;
@@ -88,39 +93,47 @@ public:
       const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ];
       const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ];
 
+      std::cout << "coordinatesDifference: " << coordinatesDifference << std::endl;
+      std::cout << "flpfb: " << firstAndLastParticleInFirstBlock << std::endl;
+      std::cout << "flplb: " << firstAndLastParticleInLastBlock << std::endl;
+      std::cout << "firstActiveParticle: " << firstActiveParticle << std::endl;
+      std::cout << "lastActiveParticle: " << lastActiveParticle << std::endl;
+      std::cout << "sizeToCopyFirstBlock: " << sizeToCopyFirstBlock << std::endl;
+      std::cout << "sizeToCopyLastBlock: " << sizeToCopyLastBlock << std::endl;
+
       //check array capacitis
 
       //Copy data from periodic patch A to periodic patch B:
-      copyPartOfPoints( physicalObject.getPoints().getView(),
-                       firstAndLastParticleInFirstBlock[ 0 ],
-                       firstActiveParticle,
-                       sizeToCopyFirstBlock,
-                       coordinatesDifference );
+      copyPartOfPoints( physicalObject->getPoints(),
+                        firstAndLastParticleInFirstBlock[ 0 ],
+                        lastActiveParticle + 1,
+                        sizeToCopyFirstBlock,
+                        coordinatesDifference );
 
-      copyPartOfArray( physicalObject.getVariables()->rho.getView(),
+      copyPartOfArray( physicalObject->getVariables()->rho,
                        firstAndLastParticleInFirstBlock[ 0 ],
-                       firstActiveParticle,
+                       lastActiveParticle + 1,
                        sizeToCopyFirstBlock );
 
-      copyPartOfArray( physicalObject.getVariables()->v.getView(),
+      copyPartOfArray( physicalObject->getVariables()->v,
                        firstAndLastParticleInFirstBlock[ 0 ],
-                       firstActiveParticle,
+                       lastActiveParticle + 1,
                        sizeToCopyFirstBlock );
 
       //Copy data from periodic patch B to periodic patch A:
-      copyPartOfPoints( physicalObject.getPoints().getView(),
-                       firstAndLastParticleInFirstBlock[ 1 ],
-                       firstActiveParticle - sizeToCopyLastBlock,
-                       sizeToCopyFirstBlock,
-                       ( -1.f ) * coordinatesDifference );
+      copyPartOfPoints( physicalObject->getPoints(),
+                        firstAndLastParticleInLastBlock[ 0 ],
+                        firstActiveParticle - sizeToCopyLastBlock,
+                        sizeToCopyFirstBlock,
+                        ( -1.f ) * coordinatesDifference );
 
-      copyPartOfArray( physicalObject.getVariables()->rho.getView(),
-                       firstAndLastParticleInFirstBlock[ 1 ],
+      copyPartOfArray( physicalObject->getVariables()->rho,
+                       firstAndLastParticleInLastBlock[ 0 ],
                        firstActiveParticle - sizeToCopyLastBlock,
                        sizeToCopyFirstBlock );
 
-      copyPartOfArray( physicalObject.getVariables()->v.getView(),
-                       firstAndLastParticleInFirstBlock[ 1 ],
+      copyPartOfArray( physicalObject->getVariables()->v,
+                       firstAndLastParticleInLastBlock[ 0 ],
                        firstActiveParticle - sizeToCopyLastBlock,
                        sizeToCopyFirstBlock );
 
@@ -153,7 +166,9 @@ public:
                     numberOfParticles );
 
       physicalObject->setFirstActiveParticle( shiftInMemory );
-      physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles ); //FIXME!!! - 1 flp error
+      physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
+      physicalObject->particles->setFirstActiveParticle( shiftInMemory );
+      physicalObject->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
    }
 
 

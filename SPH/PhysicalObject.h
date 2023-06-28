@@ -76,6 +76,18 @@ class PhysicalObject
       return this->particles;
    }
 
+   typename ParticleSystem::PointArrayType&
+   getPoints()
+   {
+      return this->particles->getPoints();
+   }
+
+   const typename ParticleSystem::PointArrayType&
+   getPoints() const
+   {
+      return this->particles->getPoints();
+   }
+
    virtual VariablesPointerType&
    getVariables()
    {
@@ -91,8 +103,12 @@ class PhysicalObject
    void sortParticles()
    {
       particles->sortParticles();
-      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
-      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      //variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      //integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      variables->sortVariables(
+            particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
+      integratorVariables->sortVariables(
+            particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
    }
 
    template< typename ReaderType >
