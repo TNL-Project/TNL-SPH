@@ -42,9 +42,9 @@ class ParticleInitialSetup
    using PointType = typename ParticlesTraitsType::PointType;
 
    const int numberOfParticles = placeholderFluidParticles;
-   const int numberOfAllocatedParticles = placeholderFluidParticles;
+   const int numberOfAllocatedParticles = placeholderAllocatedFluidParticles;
    const int numberOfBoundaryParticles = placeholderBoundaryParticles;
-   const int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
+   const int numberOfAllocatedBoundaryParticles = placeholderAllocatedBoundaryParticles;
 
    const float searchRadius = placeholderSearchRadius * 1.001;
    const int gridXsize = placeholderGridXSize;

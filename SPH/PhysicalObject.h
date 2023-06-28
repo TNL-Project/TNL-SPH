@@ -32,7 +32,7 @@ class PhysicalObject
      variables( sizeAllocated ),
      integratorVariables( sizeAllocated ),
      firstActiveParticle( 0 ),
-     lastActiveParticle( size ) {};
+     lastActiveParticle( size - 1 ) {};
 
    const GlobalIndexType
    getFirstActiveParticle() const

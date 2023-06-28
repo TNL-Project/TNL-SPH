@@ -141,7 +141,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle(), particleLoop );
+   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -156,7 +156,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointe
 
       view_Drho_bound[ i ] = drho_i;
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle(), particleLoopBoundary );
+   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >

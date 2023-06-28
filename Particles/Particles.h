@@ -9,7 +9,6 @@
 #include <thrust/gather.h>
 
 #include "ParticlesTraits.h"
-#include "GenerateCellIndex.h"
 
 namespace TNL {
 namespace ParticleSystem {

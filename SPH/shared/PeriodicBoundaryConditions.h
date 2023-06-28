@@ -21,7 +21,7 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   using ParirIndexType = typename ParticlesType::ParirIndexType;
+   using PairIndexType = typename ParticlesType::PairIndexType;
 
    template< typename ArrayView >
    void
@@ -51,8 +51,9 @@ public:
    }
 
    template< typename Array >
-   void
-   arrangeArray( Array& arrayCopy, Array& arrayPaste,
+   static void
+   arrangeArray( Array& arrayCopy,
+                 Array& arrayPaste,
                  GlobalIndexType fromPosition,
                  GlobalIndexType toPosition,
                  GlobalIndexType size )
@@ -70,15 +71,15 @@ public:
    }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
-   void
+   static void
    applyPeriodicBoundaryCondition( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const VectorType coordinatesDifference = particlesParams.periodicBoundaryDistance;
 
       //find the limits at start and at the end
-      const ParirIndexType firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      const PairIndexType firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithLeftPeriodicity );
-      const ParirIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithRightPeriodicity );
 
       const GlobalIndexType firstActiveParticle = physicalObject->getFirstActiveParticle();
@@ -126,30 +127,33 @@ public:
    }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
-   void
+   static void
    initialize( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const GlobalIndexType numberOfParticles = physicalObject->getNumberOfParticles();
       const GlobalIndexType numberOfAllocatedParticles = physicalObject->particles->getNumberOfAllocatedParticles();
       const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticles ) / 2 );
 
-      arrangeArray( physicalObject.getParticles()->getPoints().getView(),
-                    physicalObject.getParticles()->getPoints().getView(),
+      arrangeArray( physicalObject->getParticles()->getPoints(),
+                    physicalObject->getParticles()->getPointsSwap(),
                     0,
                     shiftInMemory,
                     numberOfParticles );
 
-      arrangeArray( physicalObject.getVariables()->rho.getView(),
-                    physicalObject.getVariables()->rho_swap.getView(),
+      arrangeArray( physicalObject->getVariables()->rho,
+                    physicalObject->getVariables()->rho_swap,
                     0,
                     shiftInMemory,
                     numberOfParticles );
 
-      arrangeArray( physicalObject.getVariables()->v.getView(),
-                    physicalObject.getVariables()->v_swap.getView(),
+      arrangeArray( physicalObject->getVariables()->v,
+                    physicalObject->getVariables()->v_swap,
                     0,
                     shiftInMemory,
                     numberOfParticles );
+
+      physicalObject->setFirstActiveParticle( shiftInMemory );
+      physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles ); //FIXME!!! - 1 flp error
    }
 
 
