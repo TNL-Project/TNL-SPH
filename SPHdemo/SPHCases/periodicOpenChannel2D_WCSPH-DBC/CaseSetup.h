@@ -165,6 +165,9 @@ int main( int argc, char* argv[] )
    sph.boundary->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_bound );
 
+   //std::string n1 = simulationControl.outputFileName + "_postLoad_";
+   //sph.template save< Writer >( n1, timeStepping.getStep() );
+
    /**
     * Initialize periodic boundary conditions.
     */
@@ -176,6 +179,15 @@ int main( int argc, char* argv[] )
 
    PeriodicBoundary::initialize( sph.fluid, particlesParams );
    PeriodicBoundary::initialize( sph.boundary, particlesParams );
+
+   //std::string n2 = simulationControl.outputFileName + "_postInitialize_";
+   //sph.template save< Writer >( n2, timeStepping.getStep() );
+
+
+   //sph.fluid->getFluidVariables()->rho = 1000.f;
+   //sph.fluid->getFluidVariables()->rho_swap = 1000.f;
+   //sph.boundary->getBoundaryVariables()->rho = 1000.f;
+   //sph.boundary->getBoundaryVariables()->rho_swap = 1000.f;
 
    //std::cout << "postshift: " << sph.boundary->getParticles()->getPoints() << std::endl;
    //std::cout << "postshift FP: " << sph.boundary->getParticles()->getPoints().getElement(
@@ -222,9 +234,54 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
+   /**
+    * Init for periodic boundary.
+    */
+   sph.PerformNeighborSearch(
+         0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+
+
    while( timeStepping.runTheSimulation() )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
+
+      //std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
+      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
+      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
+      //std::cout << " postapl: " << sph.boundary->getPoints() << std::endl;
+
+      //std::string n3 = simulationControl.outputFileName + "_postPBCapplication_";
+      //sph.template save< Writer >( n3, timeStepping.getStep() );
+
+      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle: " << sph.fluid->getFirstActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - cooords: " << sph.fluid->getPoints().getElement(
+         sph.fluid->getFirstActiveParticle() ) << std::endl;
+      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
+         sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
+
+      std::cout << " ~~~ PBCDEBUG: FluidLastParticle: " << sph.fluid->getLastActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: FluidLastParticle - cooords: " << sph.fluid->getPoints().getElement(
+         sph.fluid->getLastActiveParticle() ) << std::endl;
+      std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle: " << sph.fluid->particles->getLastActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
+         sph.fluid->particles->getLastActiveParticle() ) << std::endl;
+
+      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle: " << sph.boundary->getFirstActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
+         sph.boundary->getFirstActiveParticle() ) << std::endl;
+      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - particle: " << sph.boundary->particles->getFirstActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - particle - cooords: " << sph.boundary->getPoints().getElement(
+         sph.boundary->particles->getFirstActiveParticle() ) << std::endl;
+
+      std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle: " << sph.boundary->getLastActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
+         sph.boundary->getLastActiveParticle() ) << std::endl;
+      std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle - particle: " << sph.boundary->particles->getLastActiveParticle() << std::endl;
+      std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle - particle - cooords: " << sph.boundary->getPoints().getElement(
+         sph.boundary->particles->getLastActiveParticle() ) << std::endl;
+
+      //std::cout << sph.fluid->particles->getFirstLastCellParticleList() << std::endl;
 
       /**
        * Find neighbors within the SPH simulation.
@@ -235,17 +292,6 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
-      //std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
-      /*
-      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
-      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
-      */
-      //std::cout << " postapl: " << sph.boundary->getPoints() << std::endl;
-
-      std::cout << "FluidFirstParticle: " << sph.fluid->getFirstActiveParticle() << std::endl;
-      std::cout << "FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
-      std::cout << "FluidLastParticle: " << sph.fluid->getLastActiveParticle() << std::endl;
-      std::cout << "FluidLastParticle - particle: " << sph.fluid->particles->getLastActiveParticle() << std::endl;
 
       /**
        * Perform interaction with given model.
@@ -263,7 +309,7 @@ int main( int argc, char* argv[] )
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
 
-      //PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
+      PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
 
       /**
        * Output particle data
@@ -276,14 +322,12 @@ int main( int argc, char* argv[] )
           * Its useful for output anyway
           */
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >(
-               sph.fluid->variables, sph.fluid->getNumberOfParticles(), sphParams ); //TODO: FIX.
+         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >(
-               sph.boundary->variables, sph.boundary->getNumberOfParticles(), sphParams ); //TODO: FIX.
+         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 

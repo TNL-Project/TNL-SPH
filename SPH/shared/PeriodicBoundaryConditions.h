@@ -90,8 +90,8 @@ public:
       const GlobalIndexType firstActiveParticle = physicalObject->getFirstActiveParticle();
       const GlobalIndexType lastActiveParticle = physicalObject->getLastActiveParticle();
 
-      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ];
-      const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ];
+      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
+      const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
 
       std::cout << "coordinatesDifference: " << coordinatesDifference << std::endl;
       std::cout << "flpfb: " << firstAndLastParticleInFirstBlock << std::endl;
@@ -102,7 +102,7 @@ public:
       std::cout << "sizeToCopyLastBlock: " << sizeToCopyLastBlock << std::endl;
 
       //check array capacitis
-      return;
+      //return;
 
       //Copy data from periodic patch A to periodic patch B:
       copyPartOfPoints( physicalObject->getPoints(),
@@ -138,6 +138,15 @@ public:
                        firstActiveParticle - sizeToCopyLastBlock,
                        sizeToCopyFirstBlock );
 
+      //physicalObject->setFirstActiveParticle( shiftInMemory );
+      //physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
+
+      std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
+      std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyLastBlock - 1 << std::endl;
+      physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
+      physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyLastBlock - 1 ); //FIXME!!!
+      const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyLastBlock - 1 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
+      physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
    }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >

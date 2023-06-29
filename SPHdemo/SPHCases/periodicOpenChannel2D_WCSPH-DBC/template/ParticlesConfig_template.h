@@ -56,8 +56,10 @@ class ParticleInitialSetup
 
    /* Setup periodic boundary conditions */
    const PointType periodicBoundaryDistance = { placeholderPeriodicityLengthf, 0.f };
-   int indexOfColumnWithLeftPeriodicity = placeholderFirstPeriodicColumn;
-   int indexOfColumnWithRightPeriodicity = placeholderLastPeriodicColumn;
+   //int indexOfColumnWithLeftPeriodicity = placeholderFirstPeriodicColumn;
+   //int indexOfColumnWithRightPeriodicity = placeholderLastPeriodicColumn;
+   int indexOfColumnWithLeftPeriodicity = 1;
+   int indexOfColumnWithRightPeriodicity = 53;
 };
 
 /**

@@ -48,11 +48,13 @@ waterLevel_n = round( waterLevel / dp )
 ### Generate fluid particles
 fluid_rx = []; fluid_ry = []; fluid_rz = []
 
+rhovect = [] #debug
 for x in range( channelWidth_n ):
     for z in range( waterLevel_n ):
         fluid_rx.append( dp / 2 + dp * x )
         fluid_ry.append( 0. ) #we use only 2D case
         fluid_rz.append( dp * ( z + 1 ) )
+        rhovect.append( x )
 
 ### Generate boundary particles
 wall_rx = []; wall_ry = []; wall_rz = []
@@ -91,6 +93,7 @@ elif write == '.vtk':
     r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
     v = np.zeros( ( len( fluid_rx ), 3 ) )
     rho = rho0 * np.ones( len( fluid_rx ) )
+    #rho = np.array( rhovect, dtype=float ).T
     p = np.zeros( len( fluid_rx ) )
     ptype = np.zeros( len( fluid_rx ) )
 

@@ -34,7 +34,7 @@ public:
    using CellIndexer = typename ParticleSystem::CellIndexer;
 
    NeighborsLoopParams( ParticlesPointerType& particles )
-   : numberOfParticles( particles->getLastActiveParticle() ), //getNumberOfParticles
+   : numberOfParticles( particles->getNumberOfParticles() ), //getNumberOfParticles
      gridSize( particles->getGridSize() ),
      gridOrigin( particles->getGridOrigin() ),
      searchRadius( particles->getSearchRadius() ),

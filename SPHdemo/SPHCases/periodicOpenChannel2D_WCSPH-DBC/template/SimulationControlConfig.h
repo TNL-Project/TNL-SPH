@@ -29,8 +29,10 @@ class SPHSimulationControl
    const std::string inputParticleFile_bound = "periodicOpenChannel_boundary.vtk";
    std::string outputFileName = "results/particles";
 
-   const float endTime = 0.75;
-   const float outputTime = 0.04f;
+   //const float endTime = 0.75;
+   //const float outputTime = 0.04f;
+   const float endTime = 4e-05f;
+   const float outputTime = 2e-05f;
 };
 
 } //SimulationControlConfiguration
