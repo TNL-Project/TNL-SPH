@@ -237,13 +237,16 @@ int main( int argc, char* argv[] )
    /**
     * Init for periodic boundary.
     */
-   sph.PerformNeighborSearch(
-         0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+   //sph.PerformNeighborSearch(
+   //      0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
 
 
    while( timeStepping.runTheSimulation() )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
+
+      sph.PerformNeighborSearch(
+            0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
 
       //std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
       PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );

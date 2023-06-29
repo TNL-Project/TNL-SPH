@@ -147,6 +147,13 @@ public:
       physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyLastBlock - 1 ); //FIXME!!!
       const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyLastBlock - 1 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
       physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
+
+      //std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
+      //std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyLastBlock - 2 << std::endl;
+      //physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
+      //physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyLastBlock - 2 ); //FIXME!!!
+      //const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyLastBlock - 2 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
+      //physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
    }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
@@ -196,10 +203,14 @@ public:
       auto f = [=] __cuda_callable__ ( int i ) mutable
       {
          VectorType r = points_view[ i ];
-         if(  r[ 0 ] > 0.3f )
+         if(  r[ 0 ] > 0.3f ){
             points_view[ i ] = r - coordinatesDifference;
-         else if ( r[ 0 ] < 0.f )
+            printf(" --------------------------- FLOW FROM FRONT TO BACK ------------------------------ \n");
+         }
+         else if ( r[ 0 ] < 0.f ){
             points_view[ i ] = r + coordinatesDifference;
+            printf(" --OPOSIT------------------------- FLOW FROM FRONT TO BACK -----------------------------OPOSIT- \n");
+         }
       };
       Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ], f );
    }
