@@ -43,16 +43,16 @@ public:
    /* TEMPORARY, AWFUL, AWFUL WAY HOW TO WRITE VECTORS */
    template< typename Array, typename Type >
    void
-   writeVector( const Array& array, const std::string& name, const int numberOfComponents, const int numberOfElements );
+   writeVector( const Array& array, const std::string& name,  const int numberOfElementsm, const int writeFromElement, const int numberOfComponents );
 
    /* TEMP for opensystem */
    template< typename Array >
    void
-   writePointData( const Array& array, const std::string& name,  const int numberOfElements, int numberOfComponents = 1 );
+   writePointData( const Array& array, const std::string& name,  const int numberOfElements, const int writeFromElement, int numberOfComponents = 1 );
 
    template< typename Array >
    void
-   writeDataArray( const Array& array, const std::string& name,  const int numberOfElements, int numberOfComponents = 1 );
+   writeDataArray( const Array& array, const std::string& name,  const int numberOfElements, const int writeFromElement, int numberOfComponents = 1 );
 
 protected:
    void

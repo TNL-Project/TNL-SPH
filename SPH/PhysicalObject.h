@@ -127,7 +127,7 @@ class PhysicalObject
       std::ofstream outputFileFluid ( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( *particles );
-      variables->writeVariables( writer, particles->getNumberOfParticles() );
+      variables->writeVariables( writer, particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
    }
 
    //Some additional informations

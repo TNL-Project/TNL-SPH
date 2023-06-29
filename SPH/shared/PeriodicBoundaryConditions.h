@@ -102,6 +102,7 @@ public:
       std::cout << "sizeToCopyLastBlock: " << sizeToCopyLastBlock << std::endl;
 
       //check array capacitis
+      return;
 
       //Copy data from periodic patch A to periodic patch B:
       copyPartOfPoints( physicalObject->getPoints(),
@@ -171,6 +172,33 @@ public:
       physicalObject->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
    }
 
+   template< typename PhysicalObjectPointer, typename ParticlesConfig >
+   static void
+   applyPeriodicBoundaryConditionPostIntegration( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
+   {
+      const VectorType coordinatesDifference = particlesParams.periodicBoundaryDistance;
+      auto points_view = physicalObject->getPoints().getView();
+
+      const PairIndexType firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+            particlesParams.indexOfColumnWithLeftPeriodicity );
+      const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+            particlesParams.indexOfColumnWithRightPeriodicity );
+
+      auto f = [=] __cuda_callable__ ( int i ) mutable
+      {
+         VectorType r = points_view[ i ];
+         if(  r[ 0 ] > 0.3f )
+            points_view[ i ] = r - coordinatesDifference;
+         else if ( r[ 0 ] < 0.f )
+            points_view[ i ] = r + coordinatesDifference;
+      };
+      Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ], f );
+   }
+
+protected:
+
+   //PairIndexType firstAndLastParticleInLastBlock;
+   //PairIndexType lastAndLastParticleInLastBlock;
 
 };
 

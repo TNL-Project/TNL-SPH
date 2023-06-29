@@ -226,7 +226,6 @@ int main( int argc, char* argv[] )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
 
-
       /**
        * Find neighbors within the SPH simulation.
        */
@@ -236,10 +235,12 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
-      std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
+      //std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
+      /*
       PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
       PeriodicBoundary::applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
-      std::cout << " postapl: " << sph.boundary->getPoints() << std::endl;
+      */
+      //std::cout << " postapl: " << sph.boundary->getPoints() << std::endl;
 
       std::cout << "FluidFirstParticle: " << sph.fluid->getFirstActiveParticle() << std::endl;
       std::cout << "FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
@@ -261,6 +262,8 @@ int main( int argc, char* argv[] )
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, timeStepping );
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
+
+      //PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
 
       /**
        * Output particle data
@@ -289,23 +292,23 @@ int main( int argc, char* argv[] )
          /**
           * Interpolate on the grid.
           */
-         std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
-         interpolator.save( outputFileNameInterpolation );
+         //std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
+         //interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
+         //interpolator.save( outputFileNameInterpolation );
 
       }
 
-      if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
-      {
-         sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
-               sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
-      }
+      //if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
+      //{
+      //   sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+      //         sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
+      //}
 
-      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
-      {
-         sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
-               sph.fluid, sph.boundary, sphParams );
-      }
+      //if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
+      //{
+      //   sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+      //         sph.fluid, sph.boundary, sphParams );
+      //}
 
       timeStepping.updateTimeStep();
    }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <limits>
 
 #include "VTKWriter.h"
@@ -165,7 +166,8 @@ VTKWriter< ParticleSystem >::writePointsTemp( const ParticleSystem& particles )
 
       pointsCount = particles.getNumberOfParticles();
       str << "POINTS " << pointsCount << " " << getType< typename ParticleSystem::RealType >() << std::endl;
-      for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+      //for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+      for( int i = particles.getFirstActiveParticle(); i < particles.getLastActiveParticle() + 1; i++ ) {
          const auto& point = hostBuffer.getElement( i );
          for( int j = 0; j < point.getSize(); j++ )
             writeValue( format, str, point[ j ] );
@@ -210,7 +212,7 @@ VTKWriter< ParticleSystem >::writeValue( VTK::FileFormat format, std::ostream& s
 template< typename ParticleSystem >
 template< typename Array, typename Type >
 void
-VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string& name, const int numberOfComponents, const int numberOfElements )
+VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string& name, const int numberOfElements, const int writeFromElement, const int numberOfComponents )
 {
    /* write point data */
    //: if( array.getSize() / numberOfComponents != typename Array::IndexType( pointsCount ) )
@@ -234,12 +236,14 @@ VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string&
          template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
       HostArray hostBuffer;
       hostBuffer = array;
-      hostBuffer.resize( numberOfElements );
+      //hostBuffer.resize( numberOfElements );
+      //hostBuffer.resize( writeFromElement + numberOfElements );
 
    /* write points */
       pointsCount = hostBuffer.getSize();
       str << "VECTORS " << name << " " << getType< Type >() << std::endl;
-      for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+      //for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+      for( int i = writeFromElement; i < writeFromElement + numberOfElements; i++ ) {
          const auto& point = array.getElement( i );
          for( int j = 0; j < point.getSize(); j++ )
             writeValue( format, str, point[ j ] );
@@ -256,7 +260,7 @@ VTKWriter< ParticleSystem >::writeVector( const Array& array, const std::string&
 template< typename ParticleSystem >
 template< typename Array >
 void
-VTKWriter< ParticleSystem >::writePointData( const Array& array, const std::string& name, const int numberOfElements, const int numberOfComponents )
+VTKWriter< ParticleSystem >::writePointData( const Array& array, const std::string& name, const int numberOfElements, const int writeFromElement, const int numberOfComponents )
 {
    //if( array.getSize() / numberOfComponents != typename Array::IndexType( pointsCount ) )
    //   throw std::length_error( "Mismatched array size for POINT_DATA section: " + std::to_string( array.getSize() )
@@ -272,14 +276,14 @@ VTKWriter< ParticleSystem >::writePointData( const Array& array, const std::stri
       str << std::endl << "POINT_DATA " << pointsCount << std::endl;
    ++pointDataArrays;
 
-   writeDataArray( array, name, numberOfElements, numberOfComponents );
+   writeDataArray( array, name, numberOfElements, writeFromElement, numberOfComponents );
 }
 
 
 template< typename ParticleSystem >
 template< typename Array >
 void
-VTKWriter< ParticleSystem >::writeDataArray( const Array& array, const std::string& name, const int numberOfElements, const int numberOfComponents )
+VTKWriter< ParticleSystem >::writeDataArray( const Array& array, const std::string& name, const int numberOfElements, const int writeFromElement, const int numberOfComponents )
 {
    // use a host buffer if direct access to the array elements is not possible
    if( std::is_same< typename Array::DeviceType, Devices::Cuda >::value ) {
@@ -287,8 +291,8 @@ VTKWriter< ParticleSystem >::writeDataArray( const Array& array, const std::stri
          template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
       HostArray hostBuffer;
       hostBuffer = array;
-      hostBuffer.resize( numberOfElements );
-      writeDataArray( hostBuffer, name, numberOfElements, numberOfComponents );
+      //hostBuffer.resize( numberOfElements );
+      writeDataArray( hostBuffer, name, numberOfElements, writeFromElement, numberOfComponents );
       return;
    }
 
@@ -304,7 +308,9 @@ VTKWriter< ParticleSystem >::writeDataArray( const Array& array, const std::stri
       str << "VECTORS " << name << " " << getType< typename Array::ValueType >() << std::endl;
    }
 
-   for( typename Array::IndexType i = 0; i < array.getSize(); i++ ) {
+   //for( typename Array::IndexType i = 0; i < array.getSize(); i++ ) {
+   std::cout << "WRITE VALUE FROM: " << writeFromElement << "WRITETOELEMNT: " << ( writeFromElement + numberOfElements ) << std::endl;
+   for( typename Array::IndexType i = writeFromElement; i < ( writeFromElement + numberOfElements ); i++ ) {
       writeValue( format, str, array[ i ] );
       if( format == VTK::FileFormat::ascii )
          str << "\n";

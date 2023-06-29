@@ -99,10 +99,10 @@ class SPHFluidVariables
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
-      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 ); //TODO: Obvious.
    }
 
 };
