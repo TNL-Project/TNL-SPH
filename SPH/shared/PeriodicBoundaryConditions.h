@@ -90,8 +90,11 @@ public:
       const GlobalIndexType firstActiveParticle = physicalObject->getFirstActiveParticle();
       const GlobalIndexType lastActiveParticle = physicalObject->getLastActiveParticle();
 
-      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
-      const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
+      //workaround
+      //const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
+      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstActiveParticle + 1;
+      //const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
+      const GlobalIndexType sizeToCopyLastBlock = lastActiveParticle - firstAndLastParticleInLastBlock[ 0 ] + 1;
 
       std::cout << "coordinatesDifference: " << coordinatesDifference << std::endl;
       std::cout << "flpfb: " << firstAndLastParticleInFirstBlock << std::endl;
@@ -125,27 +128,34 @@ public:
       copyPartOfPoints( physicalObject->getPoints(),
                         firstAndLastParticleInLastBlock[ 0 ],
                         firstActiveParticle - sizeToCopyLastBlock,
-                        sizeToCopyFirstBlock,
+                        sizeToCopyLastBlock,
                         ( -1.f ) * coordinatesDifference );
 
       copyPartOfArray( physicalObject->getVariables()->rho,
                        firstAndLastParticleInLastBlock[ 0 ],
                        firstActiveParticle - sizeToCopyLastBlock,
-                       sizeToCopyFirstBlock );
+                       sizeToCopyLastBlock );
 
       copyPartOfArray( physicalObject->getVariables()->v,
                        firstAndLastParticleInLastBlock[ 0 ],
                        firstActiveParticle - sizeToCopyLastBlock,
-                       sizeToCopyFirstBlock );
+                       sizeToCopyLastBlock );
 
       //physicalObject->setFirstActiveParticle( shiftInMemory );
       //physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
 
+      //std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
+      //std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyLastBlock - 1 << std::endl;
+      //physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
+      //physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyLastBlock - 1 ); //FIXME!!!
+      //const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyLastBlock - 1 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
+      //physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
+
       std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
-      std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyLastBlock - 1 << std::endl;
+      std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyFirstBlock - 1 << std::endl;
       physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
-      physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyLastBlock - 1 ); //FIXME!!!
-      const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyLastBlock - 1 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
+      physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock - 1 ); //FIXME!!!
+      const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyFirstBlock - 1 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
       physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
 
       //std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
@@ -200,19 +210,30 @@ public:
       const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithRightPeriodicity );
 
-      auto f = [=] __cuda_callable__ ( int i ) mutable
+      //workaround
+      const GlobalIndexType lastParticle = physicalObject->getLastActiveParticle();
+
+      std::cout << "RETYPER: firstActiveParticle: " << firstAndLastParticleInFirstBlock << std::endl;
+      std::cout << "RETYPER: lastActiveParticle: " << firstAndLastParticleInLastBlock << std::endl;
+
+      auto last = [=] __cuda_callable__ ( int i ) mutable
       {
          VectorType r = points_view[ i ];
-         if(  r[ 0 ] > 0.3f ){
+         if(  r[ 0 ] >= 0.3f ){
             points_view[ i ] = r - coordinatesDifference;
-            printf(" --------------------------- FLOW FROM FRONT TO BACK ------------------------------ \n");
-         }
-         else if ( r[ 0 ] < 0.f ){
-            points_view[ i ] = r + coordinatesDifference;
-            printf(" --OPOSIT------------------------- FLOW FROM FRONT TO BACK -----------------------------OPOSIT- \n");
+            printf(" Retyping i = %d, from [ %f, %f ] to [ %f, %f ]. \n", i, r[ 0 ], r[ 1 ] ,(r - coordinatesDifference)[ 0 ], (r - coordinatesDifference)[ 1 ]);
          }
       };
-      Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ], f );
+      //Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ] + 1, last );
+      Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], lastParticle, last );
+
+      auto first = [=] __cuda_callable__ ( int i ) mutable
+      {
+         VectorType r = points_view[ i ];
+         if ( r[ 0 ] <= 0.f )
+            points_view[ i ] = r + coordinatesDifference;
+      };
+      Algorithms::parallelFor< DeviceType >( firstAndLastParticleInFirstBlock[ 0 ], firstAndLastParticleInFirstBlock[ 1 ] + 1, first );
    }
 
 protected:

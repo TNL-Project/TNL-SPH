@@ -242,6 +242,7 @@ int main( int argc, char* argv[] )
 
 
    while( timeStepping.runTheSimulation() )
+   //while( timeStepping.getStep() < 1060 )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
 
@@ -261,14 +262,16 @@ int main( int argc, char* argv[] )
          sph.fluid->getFirstActiveParticle() ) << std::endl;
       std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
       std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
-         sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
+         sph.fluid->particles->getFirstActiveParticle() ) << " cidx: " << sph.fluid->particles->getParticleCellIndices().getElement(
+         sph.fluid->particles->getFirstActiveParticle() )  << std::endl;
 
       std::cout << " ~~~ PBCDEBUG: FluidLastParticle: " << sph.fluid->getLastActiveParticle() << std::endl;
       std::cout << " ~~~ PBCDEBUG: FluidLastParticle - cooords: " << sph.fluid->getPoints().getElement(
          sph.fluid->getLastActiveParticle() ) << std::endl;
       std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle: " << sph.fluid->particles->getLastActiveParticle() << std::endl;
       std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
-         sph.fluid->particles->getLastActiveParticle() ) << std::endl;
+         sph.fluid->particles->getLastActiveParticle() ) << " cidx: " << sph.fluid->particles->getParticleCellIndices().getElement(
+         sph.fluid->particles->getLastActiveParticle() )  << std::endl;
 
       std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle: " << sph.boundary->getFirstActiveParticle() << std::endl;
       std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
@@ -313,6 +316,11 @@ int main( int argc, char* argv[] )
       std::cout << "Integrate... done. " << std::endl;
 
       PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
+
+      //spsdebuf
+      std::cout << " --> missing particle: " << sph.fluid->getPoints().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
+      std::cout << " --> missing particle: " << sph.fluid->getParticles()->getParticleCellIndices().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
+
 
       /**
        * Output particle data
