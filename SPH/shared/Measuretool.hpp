@@ -8,10 +8,6 @@ void
 InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
-   const RealType searchRadius = fluid->particles->getSearchRadius();
-
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
    typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
@@ -26,8 +22,10 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
    /* CONSTANT VARIABLES */
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
+   const RealType searchRadius = fluid->particles->getSearchRadius();
 
    const IndexVectorType gridDimension = this->gridDimension;
+   const VectorType gridSize = this->stepSize;
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
@@ -57,8 +55,10 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
       RealType gamma = 0.f;
 
       VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * searchRadius };
+      //VectorType r = { ( i[ 0 ] + 1 ) * stepSize[ 0 ] , ( i[ 1 ] + 1 ) * stepSize[ 1 ] };
       //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
       const GlobalIndexType idx =  i[ 1 ] * gridDimension[ 0 ] + i[ 0 ];
+      //const GlobalIndexType idx =  i[ 0 ] * gridDimension[ 1 ] + i[ 1 ];
 
       //fluidLoopParams.i = i[ 0 ];
       //fluidLoopParams.gridIndex = gridIndex;

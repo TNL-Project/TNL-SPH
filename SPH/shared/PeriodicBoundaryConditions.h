@@ -91,10 +91,10 @@ public:
       const GlobalIndexType lastActiveParticle = physicalObject->getLastActiveParticle();
 
       //workaround
-      //const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
-      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstActiveParticle + 1;
-      //const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
-      const GlobalIndexType sizeToCopyLastBlock = lastActiveParticle - firstAndLastParticleInLastBlock[ 0 ] + 1;
+      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
+      //const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstActiveParticle + 1;
+      const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
+      //const GlobalIndexType sizeToCopyLastBlock = lastActiveParticle - firstAndLastParticleInLastBlock[ 0 ] + 1;
 
       std::cout << "coordinatesDifference: " << coordinatesDifference << std::endl;
       std::cout << "flpfb: " << firstAndLastParticleInFirstBlock << std::endl;
@@ -219,18 +219,18 @@ public:
       auto last = [=] __cuda_callable__ ( int i ) mutable
       {
          VectorType r = points_view[ i ];
-         if(  r[ 0 ] >= 0.3f ){
-            points_view[ i ] = r - coordinatesDifference;
+         if(  r[ 0 ] > 0.15 ){
+            points_view[ i ] = r - coordinatesDifference*0.999;
             printf(" Retyping i = %d, from [ %f, %f ] to [ %f, %f ]. \n", i, r[ 0 ], r[ 1 ] ,(r - coordinatesDifference)[ 0 ], (r - coordinatesDifference)[ 1 ]);
          }
       };
-      //Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ] + 1, last );
-      Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], lastParticle, last );
+      Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ] + 1, last );
+      //Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], lastParticle, last );
 
       auto first = [=] __cuda_callable__ ( int i ) mutable
       {
          VectorType r = points_view[ i ];
-         if ( r[ 0 ] <= 0.f )
+         if ( r[ 0 ] < -0.15f )
             points_view[ i ] = r + coordinatesDifference;
       };
       Algorithms::parallelFor< DeviceType >( firstAndLastParticleInFirstBlock[ 0 ], firstAndLastParticleInFirstBlock[ 1 ] + 1, first );

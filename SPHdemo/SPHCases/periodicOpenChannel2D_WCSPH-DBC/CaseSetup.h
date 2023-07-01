@@ -237,8 +237,8 @@ int main( int argc, char* argv[] )
    /**
     * Init for periodic boundary.
     */
-   //sph.PerformNeighborSearch(
-   //      0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+   sph.PerformNeighborSearch(
+         0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
 
 
    while( timeStepping.runTheSimulation() )
@@ -246,8 +246,8 @@ int main( int argc, char* argv[] )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
 
-      sph.PerformNeighborSearch(
-            0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+      //sph.PerformNeighborSearch(
+      //      0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
 
       //std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
       PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
@@ -257,35 +257,35 @@ int main( int argc, char* argv[] )
       //std::string n3 = simulationControl.outputFileName + "_postPBCapplication_";
       //sph.template save< Writer >( n3, timeStepping.getStep() );
 
-      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle: " << sph.fluid->getFirstActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - cooords: " << sph.fluid->getPoints().getElement(
-         sph.fluid->getFirstActiveParticle() ) << std::endl;
-      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
-         sph.fluid->particles->getFirstActiveParticle() ) << " cidx: " << sph.fluid->particles->getParticleCellIndices().getElement(
-         sph.fluid->particles->getFirstActiveParticle() )  << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidFirstParticle: " << sph.fluid->getFirstActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - cooords: " << sph.fluid->getPoints().getElement(
+      //   sph.fluid->getFirstActiveParticle() ) << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle: " << sph.fluid->particles->getFirstActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidFirstParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
+      //   sph.fluid->particles->getFirstActiveParticle() ) << " cidx: " << sph.fluid->particles->getParticleCellIndices().getElement(
+      //   sph.fluid->particles->getFirstActiveParticle() )  << std::endl;
 
-      std::cout << " ~~~ PBCDEBUG: FluidLastParticle: " << sph.fluid->getLastActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: FluidLastParticle - cooords: " << sph.fluid->getPoints().getElement(
-         sph.fluid->getLastActiveParticle() ) << std::endl;
-      std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle: " << sph.fluid->particles->getLastActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
-         sph.fluid->particles->getLastActiveParticle() ) << " cidx: " << sph.fluid->particles->getParticleCellIndices().getElement(
-         sph.fluid->particles->getLastActiveParticle() )  << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidLastParticle: " << sph.fluid->getLastActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidLastParticle - cooords: " << sph.fluid->getPoints().getElement(
+      //   sph.fluid->getLastActiveParticle() ) << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle: " << sph.fluid->particles->getLastActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: FluidLastParticle - particle - cooords: " << sph.fluid->getPoints().getElement(
+      //   sph.fluid->particles->getLastActiveParticle() ) << " cidx: " << sph.fluid->particles->getParticleCellIndices().getElement(
+      //   sph.fluid->particles->getLastActiveParticle() )  << std::endl;
 
-      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle: " << sph.boundary->getFirstActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
-         sph.boundary->getFirstActiveParticle() ) << std::endl;
-      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - particle: " << sph.boundary->particles->getFirstActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - particle - cooords: " << sph.boundary->getPoints().getElement(
-         sph.boundary->particles->getFirstActiveParticle() ) << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle: " << sph.boundary->getFirstActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
+      //   sph.boundary->getFirstActiveParticle() ) << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - particle: " << sph.boundary->particles->getFirstActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - particle - cooords: " << sph.boundary->getPoints().getElement(
+      //   sph.boundary->particles->getFirstActiveParticle() ) << std::endl;
 
-      std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle: " << sph.boundary->getLastActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
-         sph.boundary->getLastActiveParticle() ) << std::endl;
-      std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle - particle: " << sph.boundary->particles->getLastActiveParticle() << std::endl;
-      std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle - particle - cooords: " << sph.boundary->getPoints().getElement(
-         sph.boundary->particles->getLastActiveParticle() ) << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle: " << sph.boundary->getLastActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryFirstParticle - cooords: " << sph.boundary->getPoints().getElement(
+      //   sph.boundary->getLastActiveParticle() ) << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle - particle: " << sph.boundary->particles->getLastActiveParticle() << std::endl;
+      //std::cout << " ~~~ PBCDEBUG: BoundaryLastParticle - particle - cooords: " << sph.boundary->getPoints().getElement(
+      //   sph.boundary->particles->getLastActiveParticle() ) << std::endl;
 
       //std::cout << sph.fluid->particles->getFirstLastCellParticleList() << std::endl;
 
@@ -315,12 +315,12 @@ int main( int argc, char* argv[] )
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
 
-      PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
+       PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
 
       //spsdebuf
-      std::cout << " --> missing particle: " << sph.fluid->getPoints().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
-      std::cout << " --> missing particle: " << sph.fluid->getParticles()->getParticleCellIndices().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
-
+//      std::cout << " --> missing particle: " << sph.fluid->getPoints().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
+//      std::cout << " --> missing particle: " << sph.fluid->getParticles()->getParticleCellIndices().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;
+//
 
       /**
        * Output particle data
@@ -347,9 +347,9 @@ int main( int argc, char* argv[] )
          /**
           * Interpolate on the grid.
           */
-         //std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         //interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
-         //interpolator.save( outputFileNameInterpolation );
+         std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
+         interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
+         interpolator.save( outputFileNameInterpolation );
 
       }
 

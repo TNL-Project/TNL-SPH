@@ -37,7 +37,8 @@ public:
    template< typename InterpolationConfigType >
    InterpolateToGrid( InterpolationConfigType configInit )
    : variables( configInit.gridSize[ 0 ] * configInit.gridSize[ 1 ] ),
-     gridDimension( configInit.gridSize )
+     gridDimension( configInit.gridSize ),
+     stepSize( configInit.gridStep )
    {
       interpolationGrid.setOrigin( configInit.gridOrigin );
       interpolationGrid.setDimensions( configInit.gridSize );
@@ -56,6 +57,8 @@ protected:
    GridType interpolationGrid;
    CoordinatesType gridDimension;
    VariablesPointer variables;
+
+   VectorType stepSize;
 
 
 };

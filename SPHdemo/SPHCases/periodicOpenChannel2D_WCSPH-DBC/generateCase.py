@@ -11,7 +11,7 @@
 
 # Dimensions of the fluid wall, resp channel [m]:
 channelWidth = 0.3
-waterLevel = 0.3
+waterLevel = 0.2
 
 # Initial particle distance (dp)[m]:
 dp = 0.002
@@ -51,7 +51,7 @@ fluid_rx = []; fluid_ry = []; fluid_rz = []
 rhovect = [] #debug
 for x in range( channelWidth_n ):
     for z in range( waterLevel_n ):
-        fluid_rx.append( dp / 2 + dp * x )
+        fluid_rx.append( -channelWidth/2 +  dp / 2 + dp * x )
         fluid_ry.append( 0. ) #we use only 2D case
         fluid_rz.append( dp * ( z + 1 ) )
         rhovect.append( x )
@@ -62,7 +62,7 @@ wall_rx = []; wall_ry = []; wall_rz = []
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
     for x in range( wallL_n ):
-        wall_rx.append( dp / 2  + x  * dp )
+        wall_rx.append( -channelWidth/2 + dp / 2  + x  * dp )
         wall_ry.append( 0. ) #we use only 2D case
         wall_rz.append( 0. - layer * dp )
 
@@ -123,10 +123,10 @@ spaceDimension = 2
 
 #Determine grid size
 import math
-gridXbegin = ( 0 - searchRadius )
+gridXbegin = ( -channelWidth/2 - searchRadius )
 gridYbegin = 1.01 * ( ( min( min( fluid_rz ), min( wall_rz ) ) ) - searchRadius )
 
-gridXend = ( ( channelWidth - dp / 2 ) + searchRadius )
+gridXend = ( ( channelWidth/2 - dp / 2 ) + searchRadius )
 gridYend = 1.01 * ( ( max( max( fluid_rz ), max( wall_rz ) ) ) + searchRadius )
 
 gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
