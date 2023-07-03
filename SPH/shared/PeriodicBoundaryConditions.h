@@ -76,7 +76,7 @@ public:
    }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
-   static void
+   void
    applyPeriodicBoundaryCondition( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const VectorType coordinatesDifference = particlesParams.periodicBoundaryDistance;
@@ -86,6 +86,9 @@ public:
             particlesParams.indexOfColumnWithLeftPeriodicity );
       const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithRightPeriodicity );
+
+      this->firstAndLastParticleInFirstBlock_stored = firstAndLastParticleInFirstBlock;
+      this->firstAndLastParticleInLastBlock_stored = firstAndLastParticleInLastBlock;
 
       const GlobalIndexType firstActiveParticle = physicalObject->getFirstActiveParticle();
       const GlobalIndexType lastActiveParticle = physicalObject->getLastActiveParticle();
@@ -103,6 +106,10 @@ public:
       std::cout << "lastActiveParticle: " << lastActiveParticle << std::endl;
       std::cout << "sizeToCopyFirstBlock: " << sizeToCopyFirstBlock << std::endl;
       std::cout << "sizeToCopyLastBlock: " << sizeToCopyLastBlock << std::endl;
+      if( firstAndLastParticleInFirstBlock[ 0 ] != firstActiveParticle ){
+         std::cout << "FIRST PARTICLE DOESNT MATCH!!!" << std::endl;
+         exit( 0 );
+      }
 
       //check array capacitis
       //return;
@@ -152,10 +159,12 @@ public:
       //physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
 
       std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
-      std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyFirstBlock - 1 << std::endl;
+      std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyFirstBlock - 0 << std::endl;
+      //std::cout << "setting the end of particle range to size: " << lastActiveParticle + sizeToCopyFirstBlock << std::endl;
       physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
-      physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock - 1 ); //FIXME!!!
-      const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyFirstBlock - 1 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
+      physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock - 0 ); //FIXME!!!
+      //physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock ); //FIXME!!!
+      const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyFirstBlock - 0 ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
       physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
 
       //std::cout << "setting the start of particle range to size: " << firstActiveParticle - sizeToCopyLastBlock << std::endl;
@@ -193,13 +202,15 @@ public:
                     numberOfParticles );
 
       physicalObject->setFirstActiveParticle( shiftInMemory );
+      //physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
       physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
       physicalObject->particles->setFirstActiveParticle( shiftInMemory );
+      //physicalObject->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
       physicalObject->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME!!!
    }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
-   static void
+   void
    applyPeriodicBoundaryConditionPostIntegration( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const VectorType coordinatesDifference = particlesParams.periodicBoundaryDistance;
@@ -210,6 +221,9 @@ public:
       const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithRightPeriodicity );
 
+      //const PairIndexType firstAndLastParticleInFirstBlock = this->firstAndLastParticleInFirstBlock_stored;
+      //const PairIndexType firstAndLastParticleInLastBlock = this->firstAndLastParticleInLastBlock_stored;
+
       //workaround
       const GlobalIndexType lastParticle = physicalObject->getLastActiveParticle();
 
@@ -219,9 +233,15 @@ public:
       auto last = [=] __cuda_callable__ ( int i ) mutable
       {
          VectorType r = points_view[ i ];
-         if(  r[ 0 ] > 0.15 ){
-            points_view[ i ] = r - coordinatesDifference*0.999;
-            printf(" Retyping i = %d, from [ %f, %f ] to [ %f, %f ]. \n", i, r[ 0 ], r[ 1 ] ,(r - coordinatesDifference)[ 0 ], (r - coordinatesDifference)[ 1 ]);
+         if(  r[ 0 ] > 0.08f ){
+         //if(  r[ 0 ] > 0.13995 ){
+            //points_view[ i ] = r - coordinatesDifference*0.999;
+            points_view[ i ] = r - coordinatesDifference;
+            //if ( TNL::floor((points_view[ i ][ 0 ]  + 0.148 ) / 0.008 ) == 0 )
+            //   points_view[ i ][ 0 ] += 0.0001;
+
+            printf(" Retyping i = %d, from [ %f, %f ] to [ %f, %f ], from oldCell: %f, to new cell: %f. \n", i, r[ 0 ], r[ 1 ] ,(r - coordinatesDifference)[ 0 ], (r - coordinatesDifference)[ 1 ],
+                  TNL::floor((r[ 0 ] + 0.148) / 0.008), TNL::floor((points_view[ i ][ 0 ]  + 0.148 ) / 0.008 ) );
          }
       };
       Algorithms::parallelFor< DeviceType >( firstAndLastParticleInLastBlock[ 0 ], firstAndLastParticleInLastBlock[ 1 ] + 1, last );
@@ -230,7 +250,7 @@ public:
       auto first = [=] __cuda_callable__ ( int i ) mutable
       {
          VectorType r = points_view[ i ];
-         if ( r[ 0 ] < -0.15f )
+         if ( r[ 0 ] < -0.08f )
             points_view[ i ] = r + coordinatesDifference;
       };
       Algorithms::parallelFor< DeviceType >( firstAndLastParticleInFirstBlock[ 0 ], firstAndLastParticleInFirstBlock[ 1 ] + 1, first );
@@ -238,8 +258,11 @@ public:
 
 protected:
 
-   //PairIndexType firstAndLastParticleInLastBlock;
-   //PairIndexType lastAndLastParticleInLastBlock;
+   PairIndexType firstAndLastParticleInLastBlock_stored;
+   PairIndexType firstAndLastParticleInFirstBlock_stored;
+
+   PairIndexType firstAndLastParticleInLastBlock_storedBound;
+   PairIndexType firstAndLastParticleInFirstBlock_storedBound;
 
 };
 

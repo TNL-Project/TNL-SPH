@@ -66,6 +66,13 @@ public:
       outputTimers.insert({ keyword , { outputTime, this->getTime() } } );
    }
 
+   void
+   changeOutputTimer( const std::string keyword, const RealType outputTime )
+   {
+      this->outputTimers[ keyword ].first = outputTime;
+      this->outputTimers[ keyword ].second = this->getTime();
+   }
+
    bool
    checkOutputTimer( const std::string keyword )
    {

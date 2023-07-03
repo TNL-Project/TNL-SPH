@@ -144,6 +144,7 @@ int main( int argc, char* argv[] )
     */
    SPHSimulation sph( particlesParams );
    std::cout << sph << std::endl;
+   PeriodicBoundary periodicBoundary; //Periodic boundary
 
    /**
     * Create instance of timeStepper, which is a class controling the time step,
@@ -242,16 +243,16 @@ int main( int argc, char* argv[] )
 
 
    while( timeStepping.runTheSimulation() )
-   //while( timeStepping.getStep() < 1060 )
+   //while( timeStepping.getStep() < 3 )
    {
       std::cout << "Time: " << timeStepping.getTime() << std::endl;
 
-      //sph.PerformNeighborSearch(
-      //      0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+      sph.PerformNeighborSearch(
+            0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
 
       //std::cout << " preapl: " << sph.boundary->getPoints() << std::endl;
-      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
-      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
+      periodicBoundary.applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
+      periodicBoundary.applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
       //std::cout << " postapl: " << sph.boundary->getPoints() << std::endl;
 
       //std::string n3 = simulationControl.outputFileName + "_postPBCapplication_";
@@ -315,7 +316,7 @@ int main( int argc, char* argv[] )
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
 
-       PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
+      periodicBoundary.applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
 
       //spsdebuf
 //      std::cout << " --> missing particle: " << sph.fluid->getPoints().getElement( 22947 + sph.fluid->particles->getFirstActiveParticle() ) << std::endl;

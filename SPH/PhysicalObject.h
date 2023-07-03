@@ -128,6 +128,9 @@ class PhysicalObject
       WriterType writer( outputFileFluid );
       writer.writeParticles( *particles );
       variables->writeVariables( writer, particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
+
+      //temp
+      writer.template writePointData< typename ParticleSystem::CellIndexArrayType >( particles->getParticleCellIndices(), "GridIndex", particles->getNumberOfParticles(), particles->getFirstActiveParticle(), 1 );
    }
 
    //Some additional informations

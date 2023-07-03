@@ -24,8 +24,8 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
    const RealType m = sphState.mass;
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   const IndexVectorType gridDimension = this->gridDimension;
-   const VectorType gridSize = this->stepSize;
+   const IndexVectorType _gridDimension = this->gridDimension;
+   const VectorType _gridStep = this->gridStep;
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
@@ -54,26 +54,23 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
       RealType rho = 0.f;
       RealType gamma = 0.f;
 
-      VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * searchRadius };
-      //VectorType r = { ( i[ 0 ] + 1 ) * stepSize[ 0 ] , ( i[ 1 ] + 1 ) * stepSize[ 1 ] };
+      //VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * searchRadius };
+      const VectorType r = { ( i[ 0 ] + 1 ) * _gridStep[ 0 ] , ( i[ 1 ] + 1 ) * _gridStep[ 1 ] };
+      //printf( "r = [ %f, %f ]", r[ 0 ], r[ 1 ] );
       //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
-      const GlobalIndexType idx =  i[ 1 ] * gridDimension[ 0 ] + i[ 0 ];
+      const GlobalIndexType idx =  i[ 1 ] * _gridDimension[ 0 ] + i[ 0 ];
       //const GlobalIndexType idx =  i[ 0 ] * gridDimension[ 1 ] + i[ 1 ];
-
-      //fluidLoopParams.i = i[ 0 ];
-      //fluidLoopParams.gridIndex = gridIndex;
-      //neighborSearch->loopOverNeighbors( fluidLoopParams, interpolate, r, &rho, &v, &gamma );
 
       NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
 
-     if( gamma > 0.5f ){
-        view_v_interpolation[ idx ] = v / gamma;
-        view_rho_interpolation[ idx ] = rho /gamma;
-     }
-     else{
-        view_v_interpolation[ idx ] = 0.f;
-        view_rho_interpolation[ idx ] = 0.f;
-     }
+      if( gamma > 0.5f ){
+         view_v_interpolation[ idx ] = v / gamma;
+         view_rho_interpolation[ idx ] = rho /gamma;
+      }
+      else{
+         view_v_interpolation[ idx ] = 0.f;
+         view_rho_interpolation[ idx ] = 0.f;
+      }
    };
    IndexVectorType begin{ 0, 0 };
    Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop );

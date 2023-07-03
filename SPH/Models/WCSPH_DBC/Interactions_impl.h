@@ -173,7 +173,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensi
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   Algorithms::parallelFor< DeviceType >( physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle(), init );
+   Algorithms::parallelFor< DeviceType >( physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
 }
 
 } // SPH
