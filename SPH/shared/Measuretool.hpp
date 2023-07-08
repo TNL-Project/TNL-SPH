@@ -26,6 +26,8 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
 
    const IndexVectorType _gridDimension = this->gridDimension;
    const VectorType _gridStep = this->gridStep;
+   const VectorType _gridOrigin = this->interpolationGrid.getOrigin();
+   std::cout << " Interpolation grid origin: " << _gridOrigin << std::endl;
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
@@ -54,8 +56,9 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
       RealType rho = 0.f;
       RealType gamma = 0.f;
 
-      //VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * searchRadius };
-      const VectorType r = { ( i[ 0 ] + 1 ) * _gridStep[ 0 ] , ( i[ 1 ] + 1 ) * _gridStep[ 1 ] };
+      //VectorType r = { ( i[ 0 ] + 1 ) * searchRadius , ( i[ 1 ] + 1 ) * search +Radius };
+      const VectorType r = { ( i[ 0 ] + 1 ) * _gridStep[ 0 ] + _gridOrigin[ 0 ],
+                             ( i[ 1 ] + 1 ) * _gridStep[ 1 ] + _gridOrigin[ 1 ]  };
       //printf( "r = [ %f, %f ]", r[ 0 ], r[ 1 ] );
       //const IndexVectorType gridIndex = TNL::floor( ( r - gridOrigin ) / searchRadius );
       const GlobalIndexType idx =  i[ 1 ] * _gridDimension[ 0 ] + i[ 0 ];

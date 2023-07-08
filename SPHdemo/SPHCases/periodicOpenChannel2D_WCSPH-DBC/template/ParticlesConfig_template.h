@@ -46,7 +46,7 @@ class ParticleInitialSetup
    const int numberOfBoundaryParticles = placeholderBoundaryParticles;
    const int numberOfAllocatedBoundaryParticles = placeholderAllocatedBoundaryParticles;
 
-   const float searchRadius = placeholderSearchRadius * 1.001;
+   const float searchRadius = placeholderSearchRadiusf;
    const int gridXsize = placeholderGridXSize;
    const int gridYsize = placeholderGridYSize;
    const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf };
@@ -56,10 +56,8 @@ class ParticleInitialSetup
 
    /* Setup periodic boundary conditions */
    const PointType periodicBoundaryDistance = { placeholderPeriodicityLengthf, 0.f };
-   //int indexOfColumnWithLeftPeriodicity = placeholderFirstPeriodicColumn;
-   //int indexOfColumnWithRightPeriodicity = placeholderLastPeriodicColumn;
-   int indexOfColumnWithLeftPeriodicity = 1;
-   int indexOfColumnWithRightPeriodicity = 53;
+   int indexOfColumnWithLeftPeriodicity = placeholderFirstPeriodicColumn;
+   int indexOfColumnWithRightPeriodicity = placeholderLastPeriodicColumn - 1;
 };
 
 /**
