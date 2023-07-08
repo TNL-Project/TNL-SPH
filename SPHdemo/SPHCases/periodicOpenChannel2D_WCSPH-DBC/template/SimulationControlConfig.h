@@ -31,8 +31,8 @@ class SPHSimulationControl
 
    //const float endTime = 0.75;
    //const float outputTime = 0.04f;
-   const float endTime = 4e-05f;
-   const float outputTime = 2e-05f;
+   const float endTime = 1.f;
+   const float outputTime = 0.01f;
 };
 
 } //SimulationControlConfiguration

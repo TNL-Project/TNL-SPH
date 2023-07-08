@@ -10,7 +10,7 @@
 ### Parameters of the case necessary for case creation:
 
 # Dimensions of the fluid wall, resp channel [m]:
-channelWidth = 0.3
+channelWidth = 0.16
 waterLevel = 0.2
 
 # Initial particle distance (dp)[m]:
@@ -19,7 +19,7 @@ dp = 0.002
 # Smoothing length coefitient:
 # - smoothing length (h)[m] = smoothing length coef (Coef_h)[-] * initial particle distance (d_p)[m]
 # ( h = Coef_h * dp )
-smoothingLentghCoef = 2**0.5
+smoothingLentghCoef = 2
 
 # Referential density of the medium (rho0)[kg/m^3]:
 rho0 = 1000.
