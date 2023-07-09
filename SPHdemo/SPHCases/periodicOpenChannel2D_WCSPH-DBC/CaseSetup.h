@@ -51,7 +51,7 @@
  * Measuretool draft.
  */
 #include "../../../SPH/shared/Measuretool.h"
-//#include "../../../SPH/shared/PeriodicBoundaryConditions.h"
+//#include "../../../SPH/shared/PeriodicBoundaryConditions_old.h"
 #include "../../../SPH/Models/WCSPH_DBC/PeriodicBoundaryConditions.h"
 
 using namespace TNL::ParticleSystem;
@@ -170,13 +170,16 @@ int main( int argc, char* argv[] )
     * Initialize periodic boundary conditions.
     */
    PeriodicBoundary periodicBoundary;
-   PeriodicBoundary::initialize( sph.fluid, particlesParams );
-   PeriodicBoundary::initialize( sph.boundary, particlesParams );
+   periodicBoundary.initializePeriodicBoundaryConditionForField( sph.fluid, sph.boundary, particlesParams );
+
+   //periodicBoundary.initialize( sph.boundary, particlesParams );
+   //PeriodicBoundary::initialize( sph.fluid, particlesParams );
+   //PeriodicBoundary::initialize( sph.boundary, particlesParams );
 
    /**
     * User defined measuretool sensors. Load and initialize configuration
     * for given type of measurement/sensors.
-    *
+   P*
     * - Load measuretool configurations:
     *   config for pressure measurement - from particles to grid interpolation.
     */
@@ -206,8 +209,9 @@ int main( int argc, char* argv[] )
       //sph.PerformNeighborSearch(
       //      0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
 
-      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
-      PeriodicBoundary::applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
+      //periodicBoundary.applyPeriodicBoundaryCondition( sph.fluid, particlesParams );
+      //periodicBoundary.applyPeriodicBoundaryCondition( sph.boundary, particlesParams );
+      periodicBoundary.applyPeriodicBoundaryConditionForFields( sph.fluid, sph.boundary, particlesParams );
 
       /**
        * Find neighbors within the SPH simulation.
@@ -234,7 +238,8 @@ int main( int argc, char* argv[] )
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
 
-      PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
+      //PeriodicBoundary::applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
+      periodicBoundary.applyPeriodicBoundaryConditionPostIntegration( sph.fluid, particlesParams );
 
       /**
        * Find neighbors within the SPH simulation.

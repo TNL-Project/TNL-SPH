@@ -7,7 +7,7 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename Model >
-class PeriodicBoundaryConditions
+class PeriodicBoundaryConditionsShared
 {
 public:
 
@@ -36,7 +36,7 @@ public:
    }
 
    template< typename Array >
-   static void
+   void
    copyPartOfPoints( Array& array,
                      GlobalIndexType fromPosition,
                      GlobalIndexType toPosition,
@@ -52,7 +52,7 @@ public:
    }
 
    template< typename Array >
-   static void
+   void
    arrangeArray( Array& arrayCopy,
                  Array& arrayPaste,
                  GlobalIndexType fromPosition,
@@ -71,31 +71,30 @@ public:
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
    void
-   applyPeriodicBoundaryCondition( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
+   initializePeriodicBoundaryTransfer( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const VectorType coordinatesDifference = particlesParams.periodicBoundaryDistance;
 
-      const PairIndexType firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
-            particlesParams.indexOfColumnWithLeftPeriodicity );
-      const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
-            particlesParams.indexOfColumnWithRightPeriodicity );
+      firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      particlesParams.indexOfColumnWithLeftPeriodicity );
+      firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      particlesParams.indexOfColumnWithRightPeriodicity );
 
-      //this->firstAndLastParticleInFirstBlock_stored = firstAndLastParticleInFirstBlock;
-      //this->firstAndLastParticleInLastBlock_stored = firstAndLastParticleInLastBlock;
+      firstActiveParticle = physicalObject->getFirstActiveParticle();
+      lastActiveParticle = physicalObject->getLastActiveParticle();
 
-      const GlobalIndexType firstActiveParticle = physicalObject->getFirstActiveParticle();
-      const GlobalIndexType lastActiveParticle = physicalObject->getLastActiveParticle();
-
-      const GlobalIndexType sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
-      const GlobalIndexType sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
+      sizeToCopyFirstBlock = firstAndLastParticleInFirstBlock[ 1 ] - firstAndLastParticleInFirstBlock[ 0 ] + 1;
+      sizeToCopyLastBlock = firstAndLastParticleInLastBlock[ 1 ] - firstAndLastParticleInLastBlock[ 0 ] + 1;
 
       if( firstAndLastParticleInFirstBlock[ 0 ] != firstActiveParticle ){
-         std::cerr << "Periodic boundary error: first particle in first cell \
-                       doesn't match the first particle of particle system." << std::endl;
+         std::cerr << "Periodic boundary error: first particle in first cell doesn't match the first particle of particle system. FirstAndLastParticleInFirstBlock[ 0 ]:"  <<
+                       firstAndLastParticleInFirstBlock[ 0 ] << " and firstActiveParticle:" << firstActiveParticle << std::endl;
       }
 
-      //check array capacitis
-      //return;
+      if(firstAndLastParticleInLastBlock[ 1 ] != lastActiveParticle ){
+         std::cerr << "Periodic boundary error: last particle in last cell doesn't match the first particle of particle system. FirstAndLastParticleInLastBlock[ 1 ]:"  <<
+                       firstAndLastParticleInLastBlock[ 1 ] << " and firstActiveParticle:" << lastActiveParticle << std::endl;
+      }
 
       //Copy data from periodic patch A to periodic patch B:
       copyPartOfPoints( physicalObject->getPoints(),
@@ -104,16 +103,6 @@ public:
                         sizeToCopyFirstBlock,
                         coordinatesDifference );
 
-      //copyPartOfArray( physicalObject->getVariables()->rho,
-      //                 firstAndLastParticleInFirstBlock[ 0 ],
-      //                 lastActiveParticle + 1,
-      //                 sizeToCopyFirstBlock );
-
-      //copyPartOfArray( physicalObject->getVariables()->v,
-      //                 firstAndLastParticleInFirstBlock[ 0 ],
-      //                 lastActiveParticle + 1,
-      //                 sizeToCopyFirstBlock );
-
       //Copy data from periodic patch B to periodic patch A:
       copyPartOfPoints( physicalObject->getPoints(),
                         firstAndLastParticleInLastBlock[ 0 ],
@@ -121,28 +110,21 @@ public:
                         sizeToCopyLastBlock,
                         ( -1.f ) * coordinatesDifference );
 
-      //copyPartOfArray( physicalObject->getVariables()->rho,
-      //                 firstAndLastParticleInLastBlock[ 0 ],
-      //                 firstActiveParticle - sizeToCopyLastBlock,
-      //                 sizeToCopyLastBlock );
-
-      //copyPartOfArray( physicalObject->getVariables()->v,
-      //                 firstAndLastParticleInLastBlock[ 0 ],
-      //                 firstActiveParticle - sizeToCopyLastBlock,
-      //                 sizeToCopyLastBlock );
-
-
       physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
       physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock );
       const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyFirstBlock ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
       physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
 
+      this->synchronizingPeriodic = true;
+
    }
 
-   template< typename PhysicalObjectPointer, typename Array, typename ParticlesConfig >
+   template< typename Array >
    void
-   periodicUpdateOfParticleField( PhysicalObjectPointer& physicalObject, Array& array, ParticlesConfig& particlesParams )
+   periodicUpdateOfParticleField( Array& array )
    {
+      if( synchronizingPeriodic == false ) return;
+
       //Copy data from periodic patch A to periodic patch B:
       copyPartOfArray( array,
                        firstAndLastParticleInFirstBlock[ 0 ],
@@ -156,8 +138,15 @@ public:
                        sizeToCopyLastBlock );
    }
 
+   void
+   finalizePeriodicBoundaryTransfer()
+   {
+      this->synchronizingPeriodic = false;
+   }
+
+   //TODO: Remove this.
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
-   static void
+   void
    initialize( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const GlobalIndexType numberOfParticles = physicalObject->getNumberOfParticles();
@@ -170,24 +159,28 @@ public:
                     shiftInMemory,
                     numberOfParticles );
 
-      arrangeArray( physicalObject->getVariables()->rho,
-                    physicalObject->getVariables()->rho_swap,
-                    0,
-                    shiftInMemory,
-                    numberOfParticles );
-
-      arrangeArray( physicalObject->getVariables()->v,
-                    physicalObject->getVariables()->v_swap,
-                    0,
-                    shiftInMemory,
-                    numberOfParticles );
-
       physicalObject->setFirstActiveParticle( shiftInMemory );
       physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 );
       physicalObject->particles->setFirstActiveParticle( shiftInMemory );
       physicalObject->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 );
    }
 
+   //TODO: Remove this.
+   template< typename PhysicalObjectPointer, typename Array >
+   void
+   initializeParticleField( PhysicalObjectPointer& physicalObject, Array& array, Array& arraySwap )
+   {
+      const GlobalIndexType numberOfParticles = physicalObject->getNumberOfParticles();
+      const GlobalIndexType numberOfAllocatedParticles = physicalObject->particles->getNumberOfAllocatedParticles();
+      const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticles ) / 2 );
+
+      arrangeArray( array,
+                    arraySwap,
+                    0,
+                    shiftInMemory,
+                    numberOfParticles );
+
+   }
 
    template< typename PhysicalObjectPointer, typename ParticlesConfig >
    void
@@ -222,14 +215,20 @@ public:
 
 protected:
 
-   PairIndexType firstAndLastParticleInLastBlock_stored;
-   PairIndexType firstAndLastParticleInFirstBlock_stored;
+   //Track the process of periodic BC synchronization.
+   bool synchronizingPeriodic = false;
 
-   PairIndexType firstAndLastParticleInLastBlock_storedBound;
-   PairIndexType firstAndLastParticleInFirstBlock_storedBound;
+   //Store first and last particle in first and last particle block.
+   PairIndexType firstAndLastParticleInFirstBlock = 0;
+   PairIndexType firstAndLastParticleInLastBlock = 0;
 
-   GlobalIndexType sizeToCopyFirstBlock;
-   GlobalIndexType sizeToCopyLastBlock;
+   //Store first and last active particle for the synchronization process.
+   GlobalIndexType firstActiveParticle = 0;
+   GlobalIndexType lastActiveParticle = 0;
+
+   //Store number of particles to send between patches during the synchronization.
+   GlobalIndexType sizeToCopyFirstBlock = 0;
+   GlobalIndexType sizeToCopyLastBlock = 0;
 
 };
 
