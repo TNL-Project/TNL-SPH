@@ -69,6 +69,26 @@ class SPHFluidVariables
       v.swap( v_swap );
    }
 
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho = rho.getView();
+      auto view_v = v.getView();
+
+      auto view_rho_swap = rho_swap.getView();
+      auto view_v_swap = v_swap.getView();
+
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
+
+      rho.swap( rho_swap );
+      v.swap( v_swap );
+   }
+
    template< typename ReaderType >
    void
    readVariables( ReaderType& reader )
@@ -79,10 +99,11 @@ class SPHFluidVariables
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
-      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 ); //TODO: Obvious.
    }
 
 };
@@ -145,6 +166,31 @@ class SPHBoundaryVariables
       n.swap( n_swap );
    }
 
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho = rho.getView();
+      auto view_v = v.getView();
+      auto view_n = n.getView();
+
+      auto view_rho_swap = rho_swap.getView();
+      auto view_v_swap = v_swap.getView();
+      auto view_n_swap = n_swap.getView();
+
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_n.getArrayData() + firstActiveParticle, view_n_swap.getArrayData() + firstActiveParticle );
+
+      rho.swap( rho_swap );
+      v.swap( v_swap );
+      n.swap( n_swap );
+   }
+
    template< typename ReaderType >
    void
    readVariables( ReaderType& reader )
@@ -160,6 +206,15 @@ class SPHBoundaryVariables
    {
       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
       writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
    }
 
 };

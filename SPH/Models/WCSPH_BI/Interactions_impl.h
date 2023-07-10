@@ -167,14 +167,13 @@ WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::Interaction( FluidPointer
    SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary );
 }
 
-
 template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
-template< typename EquationOfState, typename SPHState >
+template< typename EquationOfState, typename PhysicalObjectPointer, typename SPHState >
 void
-WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState )
+WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState )
 {
-   auto view_rho = variables->rho.getView();
-   auto view_p = variables->p.getView();
+   auto view_rho = physicalObject->getVariables()->rho.getView();
+   auto view_p = physicalObject->getVariables()->p.getView();
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -182,7 +181,7 @@ WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensit
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, init );
+   Algorithms::parallelFor< DeviceType >( physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
 }
 
 } // SPH
