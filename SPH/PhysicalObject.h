@@ -122,15 +122,20 @@ class PhysicalObject
 
    template< typename WriterType >
    void
-   writeParticlesAndVariables( const std::string& outputFileName )
+   writeParticlesAndVariables( const std::string& outputFileName, bool writeParticleCellIndex = false )
    {
       std::ofstream outputFileFluid ( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( *particles );
       variables->writeVariables( writer, particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
 
-      //temp
-      writer.template writePointData< typename ParticleSystem::CellIndexArrayType >( particles->getParticleCellIndices(), "GridIndex", particles->getNumberOfParticles(), particles->getFirstActiveParticle(), 1 );
+      if( writeParticleCellIndex == true )
+         writer.template writePointData< typename ParticleSystem::CellIndexArrayType >(
+               particles->getParticleCellIndices(),
+               "GridIndex",
+               particles->getNumberOfParticles(),
+               particles->getFirstActiveParticle(),
+               1 );
    }
 
    //Some additional informations

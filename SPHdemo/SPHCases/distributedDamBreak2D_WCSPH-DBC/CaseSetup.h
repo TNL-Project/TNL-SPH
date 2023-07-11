@@ -16,12 +16,14 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/ParticlesLinkedList.h"
+//#include "../../../Particles/ParticlesLinkedList.h"
+#include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
  * Particle system reader.
  **/
 #include "../../../Readers/VTKReader.h"
+//#include "../../../WritersNoFloating/VTKWriter.h"
 #include "../../../Writers/VTKWriter.h"
 #include "../../../Readers/readSPHSimulation.h"
 
@@ -44,8 +46,8 @@
 #include "../../../SPH/DistributedSPH.h"
 
 
-#include "ParticlesConfig_g1.h"
-#include "ParticlesConfig_g2.h"
+//#include "ParticlesConfig_g1.h"
+//#include "ParticlesConfig_g2.h"
 
 /**
  * SPH model.
@@ -419,7 +421,7 @@ int main( int argc, char* argv[] )
       // --- BOUNDARY --- //
       //Variables
       distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::ScalarArrayType,
-                                                                    typename SPHSimulation::BoundaryPointer >(
+                                                                     typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho,
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho_swap,
             distributedSPHSimulation.localSimulation.boundary,
@@ -427,7 +429,7 @@ int main( int argc, char* argv[] )
             false );
 
       distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
-                                                                    typename SPHSimulation::BoundaryPointer >(
+                                                                     typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v,
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v_swap,
             distributedSPHSimulation.localSimulation.boundary,
@@ -436,7 +438,7 @@ int main( int argc, char* argv[] )
 
       //Integrator variables
       distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::ScalarArrayType,
-                                                                    typename SPHSimulation::BoundaryPointer >(
+                                                                     typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old,
             distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old_swap,
             distributedSPHSimulation.localSimulation.boundary,
@@ -445,7 +447,7 @@ int main( int argc, char* argv[] )
 
       //Particles
       distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
-                                                                    typename SPHSimulation::BoundaryPointer >(
+                                                                     typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->particles->getPoints(),
             distributedSPHSimulation.localSimulation.boundary->particles->getPointsSwap(),
             distributedSPHSimulation.localSimulation.boundary,
@@ -467,8 +469,7 @@ int main( int argc, char* argv[] )
           */
          timer_pressure.start();
          distributedSPHSimulation.localSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
-               distributedSPHSimulation.localSimulation.fluid->variables,
-               distributedSPHSimulation.localSimulation.fluid->particles->getNumberOfParticles(), sphParams ); //TODO: FIX.
+               distributedSPHSimulation.localSimulation.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 

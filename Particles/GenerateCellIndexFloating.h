@@ -123,7 +123,13 @@ public:
       Algorithms::parallelFor< DeviceType >( begin, gridSize, f );
    }
 
-   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices, const PointsView view_points, const GlobalIndexType _numberOfParticles, const IndexVectorType gridSize, const PointType gridOrigin, const RealType searchRadius  )
+   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices,
+                                         const PointsView view_points,
+                                         const GlobalIndexType firstActiveParticle,
+                                         const GlobalIndexType lastActiveParticle,
+                                         const IndexVectorType gridSize,
+                                         const PointType gridOrigin,
+                                         const RealType searchRadius  )
    {
 
       auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
@@ -132,7 +138,7 @@ public:
                                         TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ] +
                                         TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) * gridSize[ 0 ] * gridSize[ 1 ];
       };
-      Algorithms::parallelFor< DeviceType >( 0, _numberOfParticles, f );
+      Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle, f );
    }
 
    __cuda_callable__

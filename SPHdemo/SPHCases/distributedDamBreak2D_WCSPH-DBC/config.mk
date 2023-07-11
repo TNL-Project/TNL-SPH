@@ -30,7 +30,7 @@ endif
 CUDA_CXXFLAGS := -std=c++17 --expt-relaxed-constexpr --expt-extended-lambda $(TNL_INCLUDE_DIRS)
 #CUDA_CXXFLAGS += -DHAVE_CUDA -DNDEBUG
 CUDA_CXXFLAGS += -DHAVE_CUDA -DHAVE_MPI
-CUDA_CXXFLAGS += -lineinfo -use_fast_math -O3
+CUDA_CXXFLAGS += -lineinfo -use_fast_math -O3 -diag-suppress 20012
 ifeq ($(CUDA_ARCH),auto)
     CUDA_CXXFLAGS += $(shell tnl-cuda-arch)
 else

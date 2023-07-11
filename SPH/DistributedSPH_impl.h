@@ -68,15 +68,13 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
    {
       gridColumnBegin = subdomainInfo.gridIdxEnd;
 
-      //const PairIndexType firstLastParticle = getFirstLastParticleInColumnOfCells( gridColumnBegin,
-      //                                                                             sphObject );
       const PairIndexType firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
       subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
       subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
 
       sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
-      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn + 1; //TODO: FIX!
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
    }
 
    //if( rank in between )
@@ -85,8 +83,6 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
    {
       gridColumnEnd = subdomainInfo.gridIdxBegin;
 
-      //const PairIndexType firstLastParticle = getFirstLastParticleInColumnOfCells( gridColumnEnd,
-      //                                                                             sphObject );
       const PairIndexType firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
       subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
@@ -96,7 +92,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
 
       sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
-      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn + 1; //TODO: FIX!
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
    }
 
    //For load balancing
@@ -204,12 +200,11 @@ template< typename SPHSimulation >
 template< typename Array, typename SPHObjectPointer >
 void
 DistributedSPHSimpleFluid< SPHSimulation >::arrangeRecievedAndLocalData( Array& arraySend,
-                                                                                                 Array& arrayReceive,
-                                                                                                 SPHObjectPointer& sphObject,
-                                                                                                 SimulationSubdomainInfo& subdomainInfo,
-                                                                                                 bool tempSetNumberOfPtcs )
+                                                                         Array& arrayReceive,
+                                                                         SPHObjectPointer& sphObject,
+                                                                         SimulationSubdomainInfo& subdomainInfo,
+                                                                         bool tempSetNumberOfPtcs )
 {
-   //REAL FUNCTIONS
    const int rank = communicator.rank();
    const int nproc = communicator.size();
 
@@ -231,8 +226,10 @@ DistributedSPHSimpleFluid< SPHSimulation >::arrangeRecievedAndLocalData( Array& 
       GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + subdomainInfo.receivedEnd; //EXPERIMENT
 
       //TODO: Remove this ugly aberattion.
-      if( tempSetNumberOfPtcs == true )
+      if( tempSetNumberOfPtcs == true ){
          sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
+         sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
+      }
 
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
    }
@@ -245,8 +242,10 @@ DistributedSPHSimpleFluid< SPHSimulation >::arrangeRecievedAndLocalData( Array& 
       GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
 
       //TODO: Remove this ugly aberattion.
-      if( tempSetNumberOfPtcs == true )
+      if( tempSetNumberOfPtcs == true ){
          sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
+         sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
+      }
 
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
    }
