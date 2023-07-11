@@ -223,6 +223,73 @@ ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInColumnOfCel
    return firstLastParticle;
 }
 
+//move to detail
+template< typename ParticleConfig, typename Device >
+typename ParticlesLinkedList< ParticleConfig, Device >::PairIndexType
+ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInBlockOfCells( const GlobalIndexType& gridBlock )
+{
+   PairIndexType firstLastParticle;
+
+   //for( int j = 1; j < gridDimension[ 1 ]; j++ )
+   for( int j = gridDimension[ 1 ]; j > 0; j-- )
+   {
+      const GlobalIndexType indexOfFirstColumnCell = CellIndexer::EvaluateCellIndex( gridBlock, j, 1, gridDimension );
+      const GlobalIndexType indexOfLastColumnCell = CellIndexer::EvaluateCellIndex(
+            gridBlock, j, gridDimension[ 1 ] - 1, gridDimension );
+      const auto view_firstLastCellParticle = firstLastCellParticle.getConstView( indexOfFirstColumnCell, indexOfLastColumnCell );
+
+      auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
+      auto reduction_vect = [=] __cuda_callable__ ( const PairIndexType& a, const PairIndexType& b ) -> PairIndexType
+      { return { min( a[ 0 ], b[ 0 ] ), max( a[ 1 ], ( b[ 1 ] < INT_MAX ) ? b[ 1 ] : -1 ) }; };
+
+      PairIndexType identity = { INT_MAX , INT_MIN };
+      PairIndexType firstLastParticleLocal = Algorithms::reduce< Devices::Cuda >(
+            0, view_firstLastCellParticle.getSize(), fetch_vect, reduction_vect, identity );
+
+      //if( firstLastParticleLocal[ 0 ] < INT_MAX ){
+      //   firstLastParticle[ 0 ] = firstLastParticleLocal[ 0 ];
+      //   std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for first element): " << firstLastParticle << std::endl;
+      //   break;
+      //}
+      if( firstLastParticleLocal[ 0 ] < INT_MAX ){
+         firstLastParticle[ 1 ] = firstLastParticleLocal[ 1 ];
+         std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for first element): " << firstLastParticle << std::endl;
+         break;
+      }
+   }
+
+   //for( int j = gridDimension[ 1 ]; j > 1; j-- )
+   for( int j = 1; j < gridDimension[ 1 ]; j++ )
+   {
+      const GlobalIndexType indexOfFirstColumnCell = CellIndexer::EvaluateCellIndex( gridBlock, j, 1, gridDimension );
+      const GlobalIndexType indexOfLastColumnCell = CellIndexer::EvaluateCellIndex(
+            gridBlock, j, gridDimension[ 1 ] - 1, gridDimension );
+      const auto view_firstLastCellParticle = firstLastCellParticle.getConstView( indexOfFirstColumnCell, indexOfLastColumnCell );
+
+      auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
+      auto reduction_vect = [=] __cuda_callable__ ( const PairIndexType& a, const PairIndexType& b ) -> PairIndexType
+      { return { min( a[ 0 ], b[ 0 ] ), max( a[ 1 ], ( b[ 1 ] < INT_MAX ) ? b[ 1 ] : -1 ) }; };
+
+      PairIndexType identity = { INT_MAX , INT_MIN };
+      PairIndexType firstLastParticleLocal = Algorithms::reduce< Devices::Cuda >(
+            0, view_firstLastCellParticle.getSize(), fetch_vect, reduction_vect, identity );
+
+      //if( firstLastParticleLocal[ 1 ] > -1 ){
+      //   firstLastParticle[ 1 ] = firstLastParticleLocal[ 1 ];
+      //   std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for second element): " << firstLastParticle << std::endl;
+      //   break;
+      //}
+      if( firstLastParticleLocal[ 1 ] > -1 ){
+         firstLastParticle[ 0 ] = firstLastParticleLocal[ 0 ];
+         std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for second element): " << firstLastParticle << std::endl;
+         break;
+      }
+   }
+
+   std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (to return): " << firstLastParticle << std::endl;
+   return firstLastParticle;
+}
+
 
 
 } //namespace TNL

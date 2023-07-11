@@ -97,8 +97,8 @@ public:
 
 };
 
-template< typename ParticleConfig >
-class SimpleCellIndex< 3, ParticleConfig >
+template< typename ParticleConfig, typename Permutation >
+class SimpleCellIndex< 3, ParticleConfig, Permutation >
 {
 public:
    using DeviceType = typename ParticleConfig::DeviceType;
@@ -132,21 +132,38 @@ public:
                                          const RealType searchRadius  )
    {
 
-      auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1, 2 > > )
       {
-         view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) +
-                                        TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ] +
-                                        TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) * gridSize[ 0 ] * gridSize[ 1 ];
-      };
-      Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle, f );
+         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+         {
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) +
+                                           TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ] +
+                                           TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) * gridSize[ 0 ] * gridSize[ 1 ];
+         };
+         Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
+      }
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
+      {
+         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+         {
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) +
+                                           TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 1 ] +
+                                           TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ] * gridSize[ 2 ];
+         };
+         Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
+      }
    }
 
    __cuda_callable__
    static uint32_t
    EvaluateCellIndex( const GlobalIndexType& i, const GlobalIndexType& j, const GlobalIndexType& k, const IndexVectorType& gridSize )
    {
-      //return k * _numberOfCells * _numberOfCellsY + j *_numberOfCells + i;
-      return k * gridSize[ 0 ] * gridSize[ 1 ] + j * gridSize[ 0 ] + i;
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1, 2 > > )
+         return k * gridSize[ 0 ] * gridSize[ 1 ] + j * gridSize[ 0 ] + i;
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
+         return i * gridSize[ 1 ] * gridSize[ 2 ] + j * gridSize[ 1 ] + k;
    }
 
 };

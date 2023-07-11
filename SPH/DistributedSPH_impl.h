@@ -68,7 +68,14 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
    {
       gridColumnBegin = subdomainInfo.gridIdxEnd;
 
-      const PairIndexType firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+      PairIndexType firstLastParticle;
+      if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+      else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
+
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+
       subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
       subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
@@ -83,7 +90,14 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
    {
       gridColumnEnd = subdomainInfo.gridIdxBegin;
 
-      const PairIndexType firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
+      PairIndexType firstLastParticle;
+      if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
+      else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
+
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+
       subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
       subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
@@ -124,7 +138,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
    //REAL FUNCTIONS
    const int rank = communicator.rank();
    const int nproc = communicator.size();
-   const int maxParticlesToSend = 2000; //TODO: Make this general.
+   const int maxParticlesToSend = 15000; //TODO: Make this general.
 
    // buffer for asynchronous communication requests
    RequestsVector requests;

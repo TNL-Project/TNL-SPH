@@ -187,6 +187,12 @@ public:
    PairIndexType
    getFirstLastParticleInColumnOfCells( const GlobalIndexType& gridColumn );
 
+   /**
+    * Find first and last particle in grid block of column.
+    */
+   PairIndexType
+   getFirstLastParticleInBlockOfCells( const GlobalIndexType& gridBlock );
+
 protected:
 
    //related to implicit grid
