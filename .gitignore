@@ -12,6 +12,9 @@
 # pycache files
 __*__
 
+# deprecated files
+*.old
+
 # CaseSetupFiles
 SPHdemo/SPHCases/*/MeasuretoolConfig.h
 SPHdemo/SPHCases/*/ParticlesConfig.h
