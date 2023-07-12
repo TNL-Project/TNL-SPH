@@ -31,13 +31,12 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-//#include "ParticlesConfig.h"
-#include "ParticlesConfigNew.h"
-#include "SPHCaseConfigNew.h"
-#include "MeasuretoolConfig.h"
-#include "SimulationControlConfigNew.h"
+#include "ParticlesConfig.h"
+#include "SPHCaseConfig.h"
+#include "SimulationControlConfig.h"
+//#include "MeasuretoolConfig.h"
 
-#include "DistributedSimulationConfig.h"
+//#include "DistributedSimulationConfig.h"
 
 /**
  * SPH general toolds.
