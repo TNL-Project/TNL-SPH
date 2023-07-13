@@ -155,26 +155,6 @@ fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 with open( 'SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
 
-#: with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
-#:   fileParticleConf = file.read()
-#:
-#: # Replace the target string
-#: fileParticleConf = fileParticleConf.replace( '_placeholderSubdomain', '' )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( fluid_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
-#:
-#: # Write the file out again
-#: with open( 'ParticlesConfig.h', 'w' ) as file:
-#:   file.write( fileParticleConf )
-
 # Read and write (with possible edit) simulation control file.
 with open( 'template/SimulationControlConfig_template.h', 'r' ) as file :
   fileSimulationControl = file.read()
@@ -283,28 +263,6 @@ ptypeg1 = np.array( ( ptype_box_g1 ), dtype=float ).T
 boxToWrite = saveParticlesVTK.create_pointcloud_polydata( rg1, vg1, rhog1, pg1, ptypeg1 )
 saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary_g1.vtk" )
 
-#: #----------------------------------------------------------------------------------------------------
-#:
-#: with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
-#:   fileParticleConf = file.read()
-#:
-#: # Replace the target string
-#: fileParticleConf = fileParticleConf.replace( 'placeholderSubdomain', 'g1' )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx_g1 ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( fluid_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx_g1 ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
-#:
-#: # Write the file out again
-#: with open( 'ParticlesConfig_g1.h', 'w' ) as file:
-#:   file.write( fileParticleConf )
-#:
 #=====================================================================================================
 
 fluid_rx_g2 = []

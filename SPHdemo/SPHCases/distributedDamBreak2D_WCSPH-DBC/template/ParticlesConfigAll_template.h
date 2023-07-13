@@ -120,7 +120,6 @@ class DistributedInitialParticleSetup
    ParticleInitialSetupType particlesParams[ 2 ];
    SubdomainInitialSetupType subdomainParams[ 2 ];
 
-   //Subdomain 1 - Particles Init info
    DistributedInitialParticleSetup()
    {
       #placeholderSubdomainInfo

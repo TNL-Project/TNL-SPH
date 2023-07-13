@@ -275,31 +275,30 @@ def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbe
 
 subdomainStringsArrays = []
 subdomainStringTemplate = """
-//Subdomain #placeholderSubdomainNumber
-particlesParams[ #placeholderSubdomainNumber ].numberOfParticles = #placeholderFluidParticles;
-particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedParticles = #placeholderAllocatedFluidParticles;
-particlesParams[ #placeholderSubdomainNumber ].numberOfBoundaryParticles = #placeholderBoundaryParticles;
-particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedBoundaryParticles = #placeholderAllocatedBoundaryParticles;
+      //Subdomain #placeholderSubdomainNumber
+      particlesParams[ #placeholderSubdomainNumber ].numberOfParticles = #placeholderFluidParticles;
+      particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedParticles = #placeholderAllocatedFluidParticles;
+      particlesParams[ #placeholderSubdomainNumber ].numberOfBoundaryParticles = #placeholderBoundaryParticles;
+      particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedBoundaryParticles = #placeholderAllocatedBoundaryParticles;
 
-particlesParams[ #placeholderSubdomainNumber ].searchRadius = #placeholderSearchRadiusf * 1.001f;
-particlesParams[ #placeholderSubdomainNumber ].gridXsize = #placeholderGridXSize;
-particlesParams[ #placeholderSubdomainNumber ].gridYsize = #placeholderGridYSize;
-particlesParams[ #placeholderSubdomainNumber ].gridOrigin = { #placeholderGridXBeginf, #placeholderGridYBeginf };
+      particlesParams[ #placeholderSubdomainNumber ].searchRadius = #placeholderSearchRadiusf * 1.001f;
+      particlesParams[ #placeholderSubdomainNumber ].gridXsize = #placeholderGridXSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridYsize = #placeholderGridYSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridOrigin = { #placeholderGridXBeginf, #placeholderGridYBeginf };
 
-particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ 1 ].gridXsize, particlesParams[ 1 ].gridYsize };
-particlesParams[ #placeholderSubdomainNumber ].numberOfGridCells = particlesParams[ 1 ].gridXsize * particlesParams[ 1 ].gridYsize;
+      particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ #placeholderSubdomainNumber ].gridXsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize };
+      particlesParams[ #placeholderSubdomainNumber ].numberOfGridCells = particlesParams[ #placeholderSubdomainNumber ].gridXsize * particlesParams[ #placeholderSubdomainNumber ].gridYsize;
 
-//Subdomain #placeholderSubdomainNumber - Subdomain info
-subdomainParams[ #placeholderSubdomainNumber ].particleIdxStart = #placeholderParticleIdxStart;
-subdomainParams[ #placeholderSubdomainNumber ].particleIdxRealStart = #placeholderParticleIdxRealStart;
-subdomainParams[ #placeholderSubdomainNumber ].particleIdxEnd = #placeholderParticleIdxEnd;
-subdomainParams[ #placeholderSubdomainNumber ].particleIdxRealEnd = #placeholderParticleIdxRealEnd;
+      //Subdomain #placeholderSubdomainNumber - Subdomain info
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxStart = #placeholderParticleIdxStart;
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxRealStart = #placeholderParticleIdxRealStart;
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxEnd = #placeholderParticleIdxEnd;
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxRealEnd = #placeholderParticleIdxRealEnd;
 
-subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapStar = #placeholderGridIdxOverlapStart;
-subdomainParams[ #placeholderSubdomainNumber ].gridIdxStart = #placeholderGridIdxStart;
-subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapEnd = #placeholderGridIdxOverlapEnd;
-subdomainParams[ #placeholderSubdomainNumber ].gridIdxEnd = #placeholderGridIdxEnd;
-
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapStar = #placeholderGridIdxOverlapStart;
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxStart = #placeholderGridIdxStart;
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapEnd = #placeholderGridIdxOverlapEnd;
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxEnd = #placeholderGridIdxEnd;
 """
 
 #def generateSubdomain( subdomainsString, subdomain ):
@@ -328,8 +327,10 @@ def generateSubdomain( subdomain ):
         lowerPositionLimit = gridOrigins[ subdomain ]
         upperPositionLimit = gridOrigins[ subdomain + 1 ]
     elif subdomain == numberOfSubdomains - 1:
-        lowerPositionLimit = gridOrigins[ subdomain ]
-        upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h #TODO: Rename.
+        #lowerPositionLimit = gridOrigins[ subdomain ]
+        #upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h
+        lowerPositionLimit = gridOrigins[ subdomain ] - searchRadius_h #TODO
+        upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h
     else:
         lowerPositionLimit = gridOrigins[ subdomain ]
         upperPositionLimit = gridOrigins[ subdomain + 1 ]
@@ -421,44 +422,63 @@ def generateSubdomain( subdomain ):
         gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
         gridIdxEnd = gridIndexOrigins[ subdomain + 1 ] - 1
     elif subdomain == numberOfSubdomains - 1:
-        gridIdxOverlapStart = 0
-        gridIdxStart = 0
+        gridIdxOverlapStart = gridIndexOrigins[ subdomain ] - 1
+        gridIdxStart = gridIndexOrigins[ subdomain ]
+        gridIdxOverlapEnd = gridXsize
+        gridIdxEnd = gridXsize
+    else:
+        gridIdxOverlapStart = gridIndexOrigins[ subdomain - 1 ] - 1
+        gridIdxStart = gridIndexOrigins[ subdomain - 1 ]
         gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
         gridIdxEnd = gridIndexOrigins[ subdomain + 1 ] - 1
 
-    infoString = infoString.replace( '#placeholderGridIdxOverlapStart', str( 0 ) )
-    infoString = infoString.replace( '#placeholderGridIdxStart', str( 0 ) )
-    infoString = infoString.replace( '#placeholderGridIdxOverlapEnd', str( gridIndexOrigins[ subdomain ] ) )
-    infoString = infoString.replace( '#placeholderGridIdxEnd', str(  gridIndexOrigins[ subdomain ] ) )
+    infoString = infoString.replace( '#placeholderGridIdxOverlapStart', str( gridIdxOverlapStart ) )
+    infoString = infoString.replace( '#placeholderGridIdxStart', str( gridIdxStart ) )
+    infoString = infoString.replace( '#placeholderGridIdxOverlapEnd', str( gridIdxOverlapEnd ) )
+    infoString = infoString.replace( '#placeholderGridIdxEnd', str( gridIdxEnd ) )
 
     print( f'Filled infostring: {infoString}' )
-
-    #print( f'Subdomain information string: {subdomainsString}' )
-    #subdomainsString += infoString
     subdomainStringsArrays.append( infoString )
-    #print( f'Subdomain information string after added infoString: {subdomainsString}' )
 
-    #: #Generate grid for given Subdomain
-    #: for y in range ( gridYsize ):
-    #:     for x in range ( gridSizes[ subdomain ] + 1 ):
+    #Generate grid for given Subdomain
+    #TODO: Make this nicer
+    for y in range ( gridYsize ):
+        for x in range ( gridSizes[ subdomain ] + 1 ):
 
-    #:         # : figure out : if x < gridXsplit:
-    #:         # : figure out :     subdomain_gridSector.append( 0 )
-    #:         # : figure out : elif x == gridXsplit:
-    #:         # : figure out :     subdomain_gridSector.append( 1 )
-    #:         # : figure out : elif x == gridXsplit + 1:
-    #:         # : figure out :     subdomain_gridSector.append( 2 )
-    #:         # : figure out : elif x > gridXsplit + 1:
-    #:         # : figure out :     subdomain_gridSector.append( 3 )
-    #:         # : figure out : else:
-    #:         # : figure out :     printf(" Invalid grid coordinates! ")
-    #:         subdomain_gridSector.append( 0 )
+            #First subdomain:
+            if subdomain == 0:
+                if x < gridSizes[ 0 ]:
+                    subdomain_gridSector.append( 0 )
+                else:
+                    subdomain_gridSector.append( 1 )
 
-    #: # Write local grid G1
-    #: DomainGrid( gridSizes[ subdomain ] + 1, gridYsize, 1,       # grid size
-    #:             gridOrigins[ subdomain ], gridYbegin, 0,        # coordinates of rgrid origina
-    #:             subdomain_gridSector,                           # array with index of grid sector
-    #:             "distributedGrid_g1.vtk" )                      # outputfile name
+            #Last subdomain:
+            elif subdomain == numberOfSubdomains - 1:
+                if x == 0 :
+                    subdomain_gridSector.append( subdomain - 1 )
+                else:
+                    subdomain_gridSector.append( subdomain )
+
+            #Subdomain in the middle:
+            else subdomain == numberOfSubdomains - 1:
+                if x == 0 :
+                    subdomain_gridSector.append( subdomain - 1 )
+                elif x == gridSizes[ subdomain ]:
+                    subdomain_gridSector.append( subdomain )
+                else:
+                    subdomain_gridSector.append( subdomain + 1 )
+
+    #TODO: Add local verlap to grid begin:
+    gridXOriginWithOverlap = gridOrigins[ subdomain ]
+    if subdomain > 0: gridXOriginWithOverlap -= searchRadius_h
+
+    # Write local grid G1
+    subdomain_grid_outputname = "dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
+    DomainGrid( gridSizes[ subdomain ] + 1, gridYsize, 1,       # grid size
+                #gridOrigins[ subdomain ], gridYbegin, 0,       # coordinates of grid origin
+                gridXOriginWithOverlap, gridYbegin, 0,          # coordinates of grid origin
+                subdomain_gridSector,                           # array with index of grid sector
+                subdomain_grid_outputname )                     # outputfile name
 
 #====================================================================================================
 
@@ -470,7 +490,7 @@ gridSector = []
 
 #----------------------------------------------------------------------------------------------------
 
-subdomainsString = '\n'
+subdomainsString = ''
 
 for subdomain in range( numberOfSubdomains ):
     #generateSubdomain( subdomainsString, subdomain )
