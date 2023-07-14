@@ -66,13 +66,13 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
 
    if( rank == 0 )
    {
-      gridColumnBegin = subdomainInfo.gridIdxEnd;
+      gridColumnEnd = subdomainInfo.gridIdxEnd;
 
       PairIndexType firstLastParticle;
       if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
-         firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+         firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
       else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
-         firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
+         firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
 
       std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
 
@@ -84,17 +84,57 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
    }
 
-   //if( rank in between )
-
-   if( rank == nproc - 1 )
+   if( ( rank > 0 ) && ( rank < nproc - 1) )
    {
-      gridColumnEnd = subdomainInfo.gridIdxBegin;
+      //begin
+      gridColumnBegin = subdomainInfo.gridIdxBegin;
+
+      PairIndexType firstLastParticle;
+      if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+      else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
+
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+
+      subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
+      subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
+      subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+      //is this safe? -in case that arrangeRecievedAndLocalData updates number of particles, then yes
+      //turn off: subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
+
+      sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
+      //turn off: sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
+
+      //end
+      gridColumnEnd = subdomainInfo.gridIdxEnd;
 
       PairIndexType firstLastParticle;
       if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
       else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
+
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+
+      subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
+      subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
+      subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+      //turn off: sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
+      sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
+   }
+
+   if( rank == nproc - 1 )
+   {
+      gridColumnBegin = subdomainInfo.gridIdxBegin;
+
+      PairIndexType firstLastParticle;
+      if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+      else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
+         firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
 
       std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
 
@@ -176,6 +216,69 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
                                       communicator ) );
    }
 
+   if( ( rank > 0 ) && ( rank < nproc - 1 ) )
+   {
+      //End
+      //Recieve
+      //turn off: subdomainInfo.receivedBegin = 0;
+      requests.push_back( MPI::Irecv( &subdomainInfo.receivedEnd,
+                                      1, //count
+                                      rank + 1, //destination
+                                      0,
+                                      communicator ) );
+
+
+      const GlobalIndexType receiveToPosition = subdomainInfo.lastParticleInLastGridColumn + 1;
+      requests.push_back( MPI::Irecv( arrayReceive.getData() + bytesPerValue * receiveToPosition,
+                                      bytesPerValue * maxParticlesToSend,
+                                      rank + 1,
+                                      0,
+                                      communicator ) );
+
+      //Send
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesToSendEnd,
+                                      1, //count
+                                      rank + 1, //denstination
+                                      0,
+                                      communicator ) );
+
+      const GlobalIndexType sendFromPosition =  subdomainInfo.firstParticleInLastGridColumn;
+      requests.push_back( MPI::Isend( arraySend.getData() +  bytesPerValue * sendFromPosition,
+                                      bytesPerValue * subdomainInfo.numberOfParticlesToSendEnd,
+                                      rank + 1,
+                                      0,
+                                      communicator ) );
+
+      //Begin
+      //Recieve
+      //turn off: subdomainInfo.receivedEnd = 0;
+      requests.push_back( MPI::Irecv( &subdomainInfo.receivedBegin,
+                                      1, //count
+                                      rank - 1, //destination
+                                      0,
+                                      communicator ) );
+
+      requests.push_back( MPI::Irecv( arrayReceive.getData(),
+                                      bytesPerValue * maxParticlesToSend,
+                                      rank - 1,
+                                      0,
+                                      communicator ) );
+
+      //Send
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesToSendBegin,
+                                      1, //count
+                                      rank - 1, //destination
+                                      0,
+                                      communicator ) );
+
+      const GlobalIndexType sendFromPosition = subdomainInfo.firstParticleInFirstGridColumn;
+      requests.push_back( MPI::Isend( arraySend.getData() + bytesPerValue * sendFromPosition,
+                                      bytesPerValue * subdomainInfo.numberOfParticlesToSendBegin,
+                                      rank - 1,
+                                      0,
+                                      communicator ) );
+   }
+
    if( rank == nproc - 1 )
    {
       //Recieve
@@ -201,7 +304,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
 
       const GlobalIndexType sendFromPosition = subdomainInfo.firstParticleInFirstGridColumn;
       requests.push_back( MPI::Isend( arraySend.getData() + bytesPerValue * sendFromPosition,
-                                      bytesPerValue * subdomainInfo.numberOfParticlesToSendBegin,
+                                      byt1sPerValue * subdomainInfo.numberOfParticlesToSendBegin,
                                       nproc - 2,
                                       0,
                                       communicator ) );
@@ -246,6 +349,24 @@ DistributedSPHSimpleFluid< SPHSimulation >::arrangeRecievedAndLocalData( Array& 
       }
 
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
+   }
+
+   if( ( rank > 0 ) && ( rank < nproc - 1 ) )
+   {
+      //Begin
+      GlobalIndexType offsetSend = subdomainInfo.firstParticleInFirstGridColumn;
+      GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
+      GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn;
+      GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
+
+      //TODO: Remove this ugly aberattion.
+      if( tempSetNumberOfPtcs == true ){
+         sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
+         sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
+      }
+
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
+
    }
 
    if( rank == nproc - 1 )
