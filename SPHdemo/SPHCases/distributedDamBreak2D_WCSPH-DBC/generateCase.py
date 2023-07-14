@@ -178,228 +178,66 @@ if not os.path.exists( resultsPath ):
 # split
 #tot: numberOfPtcsTotal = len( fluid_rx ) + len( box_rx )
 # split based on fluid:
+numberOfSubdomains = 2
+
 numberOfPtcsTotal = len( fluid_rx )
 
-middleParticle = ( int )( numberOfPtcsTotal / 2 )
+middleParticle = ( int )( numberOfPtcsTotal / numberOfSubdomains )
 print(" midleParticleNumber: ", middleParticle )
 
 searchRadius_h = round( smoothingLentgh * 2 , 7 )
-gridXsplit = math.ceil( fluid_rx[ middleParticle ] / searchRadius_h )
-print(" searchRadius: ", gridXsplit )
+#old: gridXsplit = math.ceil( fluid_rx[ middleParticle ] / searchRadius_h )
+#old: print(" searchRadius: ", gridXsplit )
 
-print( "Grid-global size: [ ", gridXsize , ",", gridYsize, " ]." )
-print( "Grid-global begin: [ ", gridXbegin , ",", gridYbegin, " ]." )
+gridSplits = []
+girdSplitsOrigins = []
+for subdomain in range( numberOfSubdomains - 1 ):
+    gridSplits.append( math.ceil( fluid_rx[ middleParticle * ( subdomain + 1 ) ] / searchRadius ) )
 
-gridXsplitBegin = gridXbegin + gridXsplit * searchRadius
-print( "Grid-G1 size: [ ", gridXsplit , ",", gridYsize, " ]." )
-print( "Grid-G1 begin: [ ", gridXbegin , ",", gridYbegin, " ]." )
+print ( f'Grid splits: {gridSplits}' )
 
-gridXsplitBegin = gridXbegin + gridXsplit * searchRadius
-print( "Grid-G2 size: [ ", gridXsize - gridXsplit , ",", gridYsize, " ]." )
-print( "Grid-G2 size: [ ", gridXsplitBegin , ",", gridYsize, " ]." )
+print( f'Grid global:' )
+print( f'Grid global - size: [ {gridXsize}, {gridYsize} ]' )
+print( f'Grid global - begin: [ {gridXbegin}, {gridYbegin} ]\n' )
+
+gridSizes = []
+gridOrigins = []; gridIndexOrigins = []
+for subdomain in range( numberOfSubdomains ):
+    if subdomain == 0:
+        gridSizes.append( gridSplits[ subdomain ] - 0 )
+        gridOrigins.append( gridXbegin )
+        gridIndexOrigins.append( 0 )
+    elif subdomain == numberOfSubdomains - 1:
+        gridSizes.append( gridXsize - gridSplits[ subdomain - 1 ] )
+        gridOrigins.append( gridXbegin + gridSplits[ subdomain - 1 ] * searchRadius )
+        gridIndexOrigins.append( gridSplits[ subdomain - 1 ] )
+    else:
+        gridSizes.append( gridSplits[ subdomain - 1 ] - gridIndexOrigins[ subdomain -1 ] )
+        gridOrigins.append( gridXbegin + gridSplits[ subdomain - 1 ] * searchRadius )
+        gridIndexOrigins.append( gridSplits[ subdomain - 1 ] )
+
+    print( f'Grid subdomain: {subdomain}' )
+    print( f'Grid subdomain - size: [ {gridSizes[ subdomain ]}, {gridYsize} ]' )
+    print( f'Grid subdomain - origin: [ {gridOrigins[ subdomain ]}, {gridYbegin} ]' )
+    print( f'Grid subdomain - index origin: [ {gridIndexOrigins[ subdomain ]}, {gridYbegin} ]\n' )
+
+print( f'Grid size: {gridXsize} gridSizeSplits: {np.sum( gridSizes )}\n' )
+
+#old: print( "Grid-global size: [ ", gridXsize , ",", gridYsize, " ]." )
+#old: print( "Grid-global begin: [ ", gridXbegin , ",", gridYbegin, " ]." )
+#old:
+#old: gridXsplitBegin = gridXbegin + gridXsplit * searchRadius
+#old: print( "Grid-G1 size: [ ", gridXsplit , ",", gridYsize, " ]." )
+#old: print( "Grid-G1 begin: [ ", gridXbegin , ",", gridYbegin, " ]." )
+#old:
+#old: gridXsplitBegin = gridXbegin + gridXsplit * searchRadius
+#old: print( "Grid-G2 size: [ ", gridXsize - gridXsplit , ",", gridYsize, " ]." )
+#old: print( "Grid-G2 size: [ ", gridXsplitBegin , ",", gridYsize, " ]." )
 
 #nbscell# = [int(cidx[i]) for i in (neighbors(x, y)) if cellFullList_ptcsidx_first[int(cidx[i])] != 0]
 
 #=====================================================================================================
-
-fluid_rx_g1 = []
-fluid_ry_g1 = []
-fluid_rz_g1 = []
-ptype_fluid_g1 = []
-
-box_rx_g1 = []
-box_ry_g1 = []
-box_rz_g1 = []
-ptype_box_g1 = []
-
-
-counter_g1_nptcs = 0
-counter_g1_nptcsReal = 0
-
-for i in range ( len( fluid_rx ) ):
-    if( fluid_rx[ i ] <= gridXsplitBegin ):
-        fluid_rx_g1.append( fluid_rx[ i ] )
-        fluid_ry_g1.append( fluid_ry[ i ] )
-        fluid_rz_g1.append( fluid_rz[ i ] )
-        ptype_fluid_g1.append( 0 )
-        counter_g1_nptcs += 1
-        counter_g1_nptcsReal += 1
-    if( fluid_rx[ i ] > gridXsplitBegin and fluid_rx[ i ] <= gridXsplitBegin + searchRadius_h ):
-        fluid_rx_g1.append( fluid_rx[ i ] )
-        fluid_ry_g1.append( fluid_ry[ i ] )
-        fluid_rz_g1.append( fluid_rz[ i ] )
-        ptype_fluid_g1.append( 1 )
-        counter_g1_nptcsReal += 1
-
-for i in range ( len( box_rx ) ):
-    if( box_rx[ i ] <= gridXsplitBegin ):
-        box_rx_g1.append( box_rx[ i ] )
-        box_ry_g1.append( box_ry[ i ] )
-        box_rz_g1.append( box_rz[ i ] )
-        ptype_box_g1.append( 0 )
-    if( box_rx[ i ] > gridXsplitBegin and box_rx[ i ] <= gridXsplitBegin + searchRadius_h ):
-        box_rx_g1.append( box_rx[ i ] )
-        box_ry_g1.append( box_ry[ i ] )
-        box_rz_g1.append( box_rz[ i ] )
-        ptype_box_g1.append( 1 )
-
-rg1 = np.array( ( fluid_rx_g1, fluid_rz_g1, fluid_ry_g1 ), dtype=float ).T #!!
-vg1 = np.zeros( ( len( fluid_rx_g1 ), 3 ) )
-rhog1 = rho0 * np.ones( len( fluid_rx_g1 ) )
-pg1 = np.zeros( len( fluid_rx_g1 ) )
-#ptypeg1 = np.zeros( len( fluid_rx_g1 ) )
-ptypeg1 = np.array( ( ptype_fluid_g1 ), dtype=float ).T
-
-fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( rg1, vg1, rhog1, pg1, ptypeg1 )
-saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid_g1.vtk" )
-
-rg1 = np.array( ( box_rx_g1, box_rz_g1, box_ry_g1 ), dtype=float ).T #!!
-vg1 = np.zeros( ( len( box_rx_g1 ), 3 ) )
-rhog1 = rho0 * np.ones( len( box_rx_g1 ) )
-pg1 = np.zeros( len( box_rx_g1 ) )
-#ptypeg1 = np.ones( len( box_rx_g1 ) )
-ptypeg1 = np.array( ( ptype_box_g1 ), dtype=float ).T
-
-boxToWrite = saveParticlesVTK.create_pointcloud_polydata( rg1, vg1, rhog1, pg1, ptypeg1 )
-saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary_g1.vtk" )
-
-#=====================================================================================================
-
-fluid_rx_g2 = []
-fluid_ry_g2 = []
-fluid_rz_g2 = []
-ptype_fluid_g2 = []
-counter_g2_nptcs = 0
-counter_g2_nptcsReal = 0
-
-box_rx_g2 = []
-box_ry_g2 = []
-box_rz_g2 = []
-ptype_box_g2 = []
-
-for i in range ( len( fluid_rx ) ):
-    if( fluid_rx[ i ] >= gridXsplitBegin ):
-        fluid_rx_g2.append( fluid_rx[ i ] )
-        fluid_ry_g2.append( fluid_ry[ i ] )
-        fluid_rz_g2.append( fluid_rz[ i ] )
-        ptype_fluid_g2.append( 2 )
-        counter_g2_nptcs += 1
-        counter_g2_nptcsReal += 1
-    if( fluid_rx[ i ] > gridXsplitBegin - searchRadius_h and fluid_rx[ i ] < gridXsplitBegin ):
-        fluid_rx_g2.append( fluid_rx[ i ] )
-        fluid_ry_g2.append( fluid_ry[ i ] )
-        fluid_rz_g2.append( fluid_rz[ i ] )
-        ptype_fluid_g2.append( 3 )
-        counter_g2_nptcsReal += 1
-
-for i in range ( len( box_rx ) ):
-    if( box_rx[ i ] >= gridXsplitBegin ):
-        box_rx_g2.append( box_rx[ i ] )
-        box_ry_g2.append( box_ry[ i ] )
-        box_rz_g2.append( box_rz[ i ] )
-        ptype_box_g2.append( 2 )
-    if( box_rx[ i ] > gridXsplitBegin - searchRadius_h and box_rx[ i ] < gridXsplitBegin ):
-        box_rx_g2.append( box_rx[ i ] )
-        box_ry_g2.append( box_ry[ i ] )
-        box_rz_g2.append( box_rz[ i ] )
-        ptype_box_g2.append( 3 )
-
-rg2 = np.array( ( fluid_rx_g2, fluid_rz_g2, fluid_ry_g2 ), dtype=float ).T #!!
-vg2 = np.zeros( ( len( fluid_rx_g2 ), 3 ) )
-rhog2 = rho0 * np.ones( len( fluid_rx_g2 ) )
-pg2 = np.zeros( len( fluid_rx_g2 ) )
-#ptypeg2 = np.zeros( len( fluid_rx_g2 ) )
-ptypeg2 = np.array( ( ptype_fluid_g2 ), dtype=float ).T
-
-fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( rg2, vg2, rhog2, pg2, ptypeg2 )
-saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid_g2.vtk" )
-
-rg2 = np.array( ( box_rx_g2, box_rz_g2, box_ry_g2 ), dtype=float ).T #!!
-vg2 = np.zeros( ( len( box_rx_g2 ), 3 ) )
-rhog2 = rho0 * np.ones( len( box_rx_g2 ) )
-pg2 = np.zeros( len( box_rx_g2 ) )
-#ptypeg2 = np.ones( len( box_rx_g2 ) )
-ptypeg2 = np.array( ( ptype_box_g2 ), dtype=float ).T
-
-boxToWrite = saveParticlesVTK.create_pointcloud_polydata( rg2, vg2, rhog2, pg2, ptypeg2 )
-saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary_g2.vtk" )
-
-#: #---------------------------------------------------------------------------------------------------
-#:
-#: with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
-#:   fileParticleConf = file.read()
-#:
-#: # Replace the target string
-#: fileParticleConf = fileParticleConf.replace( 'placeholderSubdomain', 'g2' )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx_g2 ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( fluid_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx_g2 ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
-#: fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
-#:
-#: # Write the file out again
-#: with open( 'ParticlesConfig_g2.h', 'w' ) as file:
-#:   file.write( fileParticleConf )
-#:
-#: #: #====================================================================================================
-#:
-#:
-#: with open( 'template/DistributedSimulationConfig_template.h', 'r' ) as file :
-#:   fileSubdomains = file.read()
-#:
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxStartG1', str( 0 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxRealStartG1', str( 0 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxEndG1', str( counter_g1_nptcs - 1  ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxRealEndG1', str( counter_g1_nptcsReal - 1) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxOverlapStartG1', str( 0 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxStartG1', str( 0 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxOverlapEndG1', str( gridXsplit ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxEndG1', str( gridXsplit - 1 ) )
-#:
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxStartG2', str( 0 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxRealStartG2', str( 0 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxEndG2', str( counter_g1_nptcs - 1  ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderParticleIdxRealEndG2', str( counter_g1_nptcsReal - 1) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxOverlapStartG2', str( gridXsplit - 1 ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxStartG2', str( gridXsplit ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxOverlapEndG2', str( gridXsize ) )
-#: fileSubdomains = fileSubdomains.replace( 'placeholderGridIdxEndG2', str( gridXsize ) )
-#:
-#: # Write the file out again
-#: with open( 'DistributedSimulationConfig.h', 'w' ) as file:
-#:   file.write( fileSubdomains )
-#:
-#====================================================================================================
-
-gridCoordinates_x = []
-gridCoordinates_y = []
-gridCoordinates_z = []
-
-gridSector = []
-
-for y in range ( gridYsize ):
-    for x in range ( gridXsize ):
-        gridCoordinates_x.append( x * searchRadius_h )
-        gridCoordinates_y.append( y * searchRadius_h )
-        gridCoordinates_z.append( 0. )
-
-        if x < gridXsplit:
-            gridSector.append( 0 )
-        elif x == gridXsplit:
-            gridSector.append( 1 )
-        elif x == gridXsplit + 1:
-            gridSector.append( 2 )
-        elif x > gridXsplit + 1:
-            gridSector.append( 3 )
-        else:
-            printf(" Invalid grid coordinates! ")
-
-
+# Save subdomain grid function.
 
 from contextlib import redirect_stdout
 
@@ -433,106 +271,240 @@ def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbe
             #    print( gridSector[ i ], " ", gridSector[ i ], " ", gridSector[ i ] )
     print("Done.")
 
-# Write global grid as example
-DomainGrid( gridXsize, gridYsize, 1,    # grid size
-            gridXbegin, gridYbegin, 0,  # coordinates of rgrid origina
-            gridSector,                 # array with index of grid sector
-            "distributedGrid.vtk" )     # outputfile name
+#=====================================================================================================
 
-gridSector_g1 = []
+subdomainStringsArrays = []
+subdomainStringTemplate = """
+      //Subdomain #placeholderSubdomainNumber
+      particlesParams[ #placeholderSubdomainNumber ].numberOfParticles = #placeholderFluidParticles;
+      particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedParticles = #placeholderAllocatedFluidParticles;
+      particlesParams[ #placeholderSubdomainNumber ].numberOfBoundaryParticles = #placeholderBoundaryParticles;
+      particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedBoundaryParticles = #placeholderAllocatedBoundaryParticles;
 
-for y in range ( gridYsize ):
-    for x in range ( gridXsplit + 1 ):
+      particlesParams[ #placeholderSubdomainNumber ].searchRadius = #placeholderSearchRadiusf * 1.001f;
+      particlesParams[ #placeholderSubdomainNumber ].gridXsize = #placeholderGridXSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridYsize = #placeholderGridYSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridOrigin = { #placeholderGridXBeginf, #placeholderGridYBeginf };
 
-        if x < gridXsplit:
-            gridSector_g1.append( 0 )
-        elif x == gridXsplit:
-            gridSector_g1.append( 1 )
-        elif x == gridXsplit + 1:
-            gridSector_g1.append( 2 )
-        elif x > gridXsplit + 1:
-            gridSector_g1.append( 3 )
-        else:
-            printf(" Invalid grid coordinates! ")
+      particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ #placeholderSubdomainNumber ].gridXsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize };
+      particlesParams[ #placeholderSubdomainNumber ].numberOfGridCells = particlesParams[ #placeholderSubdomainNumber ].gridXsize * particlesParams[ #placeholderSubdomainNumber ].gridYsize;
 
-# Write local grid G1
-DomainGrid( gridXsplit + 1, gridYsize, 1,   # grid size
-            gridXbegin, gridYbegin, 0,      # coordinates of rgrid origina
-            gridSector_g1,                  # array with index of grid sector
-            "distributedGrid_g1.vtk" )      # outputfile name
+      //Subdomain #placeholderSubdomainNumber - Subdomain info
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxStart = #placeholderParticleIdxStart;
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxRealStart = #placeholderParticleIdxRealStart;
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxEnd = #placeholderParticleIdxEnd;
+      subdomainParams[ #placeholderSubdomainNumber ].particleIdxRealEnd = #placeholderParticleIdxRealEnd;
 
-gridSector_g2 = []
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapStar = #placeholderGridIdxOverlapStart;
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxStart = #placeholderGridIdxStart;
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapEnd = #placeholderGridIdxOverlapEnd;
+      subdomainParams[ #placeholderSubdomainNumber ].gridIdxEnd = #placeholderGridIdxEnd;
+"""
 
-grid2Size = ( gridXsize - gridXsplit + 1 ) * gridYsize * 1
+#def generateSubdomain( subdomainsString, subdomain ):
+def generateSubdomain( subdomain ):
+    #Fields and variables to set
+    subdomain_fluid_rx = []
+    subdomain_fluid_ry = []
+    subdomain_fluid_rz = []
+    subdomain_fluid_ptype = []
 
-for y in range ( gridYsize ):
-    for x in range ( gridXsplit - 1 , gridXsize ):
+    subdomain_box_rx = []
+    subdomain_box_ry = []
+    subdomain_box_rz = []
+    subdomain_box_ptype = []
 
-        if x < gridXsplit:
-            gridSector_g2.append( 0 )
-        elif x >= gridXsplit:
-            gridSector_g2.append( 1 )
-        else:
-            printf(" Invalid grid coordinates! ")
+    subdomain_counter_nptcs = 0
+    subdomain_counter_nptcsReal = 0
 
-print( grid2Size  )
-print( len( gridSector_g2 ) )
+    subdomain_gridCoordinates_x = []
+    subdomain_gridCoordinates_y = []
+    subdomain_gridCoordinates_z = []
+    subdomain_gridSector = []
 
-# Write local grid G2
-DomainGrid( gridXsize - gridXsplit + 1, gridYsize, 1,
-            gridXbegin + ( gridXsplit - 1 ) * searchRadius_h, gridYbegin, 0,
-            gridSector_g2,
-            "distributedGrid_g2.vtk" )
+    #Load the limits of current subdomain
+    if subdomain == 0:
+        lowerPositionLimit = gridOrigins[ subdomain ]
+        upperPositionLimit = gridOrigins[ subdomain + 1 ]
+    elif subdomain == numberOfSubdomains - 1:
+        #lowerPositionLimit = gridOrigins[ subdomain ]
+        #upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h
+        lowerPositionLimit = gridOrigins[ subdomain ] - searchRadius_h #TODO
+        upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h
+    else:
+        lowerPositionLimit = gridOrigins[ subdomain ]
+        upperPositionLimit = gridOrigins[ subdomain + 1 ]
 
+    #Prepare particle fields for given subdomain - fluid
+    for i in range ( len( fluid_rx ) ):
+        if( fluid_rx[ i ] > lowerPositionLimit ) and ( fluid_rx[ i ] <= upperPositionLimit ):
+            subdomain_fluid_rx.append( fluid_rx[ i ] )
+            subdomain_fluid_ry.append( fluid_ry[ i ] )
+            subdomain_fluid_rz.append( fluid_rz[ i ] )
+            subdomain_fluid_ptype.append( 0 )
+            subdomain_counter_nptcs += 1
+            subdomain_counter_nptcsReal += 1
+
+        if( fluid_rx[ i ] > upperPositionLimit and fluid_rx[ i ] <= upperPositionLimit + searchRadius_h ):
+            subdomain_fluid_rx.append( fluid_rx[ i ] )
+            subdomain_fluid_ry.append( fluid_ry[ i ] )
+            subdomain_fluid_rz.append( fluid_rz[ i ] )
+            subdomain_fluid_ptype.append( 1 )
+            subdomain_counter_nptcsReal += 1
+
+    #Prepare particle fields for given subdomain - boundary
+    for i in range ( len( box_rx ) ):
+        if( box_rx[ i ] > lowerPositionLimit ) and ( box_rx[ i ] <= upperPositionLimit ):
+            subdomain_box_rx.append( box_rx[ i ] )
+            subdomain_box_ry.append( box_ry[ i ] )
+            subdomain_box_rz.append( box_rz[ i ] )
+            subdomain_box_ptype.append( 0 )
+
+        if( box_rx[ i ] > upperPositionLimit and box_rx[ i ] <= upperPositionLimit + searchRadius_h ):
+            subdomain_box_rx.append( box_rx[ i ] )
+            subdomain_box_ry.append( box_ry[ i ] )
+            subdomain_box_rz.append( box_rz[ i ] )
+            subdomain_box_ptype.append( 1 )
+
+    #Write particle for given subdomain - fluid
+    r = np.array( ( subdomain_fluid_rx, subdomain_fluid_rz, subdomain_fluid_ry ), dtype=float ).T #!!
+    v = np.zeros( ( len( subdomain_fluid_rx ), 3 ) )
+    rho = rho0 * np.ones( len( subdomain_fluid_rx ) )
+    p = np.zeros( len( subdomain_fluid_rx ) )
+    ptype = np.array( ( subdomain_fluid_ptype ), dtype=float ).T
+
+    print( f'Subdomain: {subdomain} \nr: \n{r} \nv: \n{v}, \nrho: \n{rho}, \np: \n{p},\nptype: \n{ptype}' )
+
+    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    subdomain_fluid_outputname = "dambreak_fluid_subdomain" + str( subdomain ) + '.vtk'
+    print( f'Subdomain fluid ouputfilename: {subdomain_fluid_outputname}' )
+    saveParticlesVTK.save_polydata( fluidToWrite, subdomain_fluid_outputname )
+
+    #Write particle for given subdomain - boundary
+    r = np.array( ( subdomain_box_rx, subdomain_box_rz, subdomain_box_ry ), dtype=float ).T #!!
+    v = np.zeros( ( len( subdomain_box_rx ), 3 ) )
+    rho = rho0 * np.ones( len( subdomain_box_rx ) )
+    p = np.zeros( len( subdomain_box_rx ) )
+    ptype = np.array( ( subdomain_fluid_ptype ), dtype=float ).T
+
+    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    subdomain_boundary_outputname = "dambreak_boundary_subdomain" + str( subdomain ) + '.vtk'
+    print( f'Subdomain boundary ouputfilename: {subdomain_boundary_outputname}' )
+    saveParticlesVTK.save_polydata( boxToWrite, subdomain_boundary_outputname )
+
+    #Prepare informations about iven subdomain
+    from copy import copy
+    infoString = copy( subdomainStringTemplate )
+
+    print( f'Not filled infostring: {infoString}' )
+
+    infoString = infoString.replace( '#placeholderSubdomainNumber', str( subdomain ) )
+
+    infoString = infoString.replace( '#placeholderSearchRadius', str( searchRadius ) )
+    infoString = infoString.replace( '#placeholderGridXSize', str( gridXsize ) )
+    infoString = infoString.replace( '#placeholderGridYSize', str( gridYsize ) )
+    infoString = infoString.replace( '#placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
+    infoString = infoString.replace( '#placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
+
+    infoString = infoString.replace( '#placeholderFluidParticles', str( len( subdomain_fluid_rx ) ) )
+    infoString = infoString.replace( '#placeholderAllocatedFluidParticles', str( len( fluid_rx ) ) )
+    infoString = infoString.replace( '#placeholderBoundaryParticles', str( len( subdomain_box_rx ) ) )
+    infoString = infoString.replace( '#placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
+
+    infoString = infoString.replace( '#placeholderParticleIdxStart', str( 0 ) )
+    infoString = infoString.replace( '#placeholderParticleIdxRealStart', str( 0 ) )
+    infoString = infoString.replace( '#placeholderParticleIdxEnd', str( subdomain_counter_nptcs - 1  ) )
+    infoString = infoString.replace( '#placeholderParticleIdxRealEnd', str( subdomain_counter_nptcsReal - 1) )
+
+    if subdomain == 0:
+        gridIdxOverlapStart = 0
+        gridIdxStart = 0
+        gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
+        gridIdxEnd = gridIndexOrigins[ subdomain + 1 ] - 1
+    elif subdomain == numberOfSubdomains - 1:
+        gridIdxOverlapStart = gridIndexOrigins[ subdomain ] - 1
+        gridIdxStart = gridIndexOrigins[ subdomain ]
+        gridIdxOverlapEnd = gridXsize
+        gridIdxEnd = gridXsize
+    else:
+        gridIdxOverlapStart = gridIndexOrigins[ subdomain - 1 ] - 1
+        gridIdxStart = gridIndexOrigins[ subdomain - 1 ]
+        gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
+        gridIdxEnd = gridIndexOrigins[ subdomain + 1 ] - 1
+
+    infoString = infoString.replace( '#placeholderGridIdxOverlapStart', str( gridIdxOverlapStart ) )
+    infoString = infoString.replace( '#placeholderGridIdxStart', str( gridIdxStart ) )
+    infoString = infoString.replace( '#placeholderGridIdxOverlapEnd', str( gridIdxOverlapEnd ) )
+    infoString = infoString.replace( '#placeholderGridIdxEnd', str( gridIdxEnd ) )
+
+    print( f'Filled infostring: {infoString}' )
+    subdomainStringsArrays.append( infoString )
+
+    #Generate grid for given Subdomain
+    #TODO: Make this nicer
+    for y in range ( gridYsize ):
+        for x in range ( gridSizes[ subdomain ] + 1 ):
+
+            #First subdomain:
+            if subdomain == 0:
+                if x < gridSizes[ 0 ]:
+                    subdomain_gridSector.append( 0 )
+                else:
+                    subdomain_gridSector.append( 1 )
+
+            #Last subdomain:
+            elif subdomain == numberOfSubdomains - 1:
+                if x == 0 :
+                    subdomain_gridSector.append( subdomain - 1 )
+                else:
+                    subdomain_gridSector.append( subdomain )
+
+            #Subdomain in the middle:
+            else:
+                if x == 0 :
+                    subdomain_gridSector.append( subdomain - 1 )
+                elif x == gridSizes[ subdomain ]:
+                    subdomain_gridSector.append( subdomain )
+                else:
+                    subdomain_gridSector.append( subdomain + 1 )
+
+    #TODO: Add local verlap to grid begin:
+    gridXOriginWithOverlap = gridOrigins[ subdomain ]
+    if subdomain > 0: gridXOriginWithOverlap -= searchRadius_h
+
+    # Write local grid G1
+    subdomain_grid_outputname = "dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
+    DomainGrid( gridSizes[ subdomain ] + 1, gridYsize, 1,       # grid size
+                #gridOrigins[ subdomain ], gridYbegin, 0,       # coordinates of grid origin
+                gridXOriginWithOverlap, gridYbegin, 0,          # coordinates of grid origin
+                subdomain_gridSector,                           # array with index of grid sector
+                subdomain_grid_outputname )                     # outputfile name
 
 #====================================================================================================
 
+gridCoordinates_x = []
+gridCoordinates_y = []
+gridCoordinates_z = []
+
+gridSector = []
+
+#----------------------------------------------------------------------------------------------------
+
+subdomainsString = ''
+
+for subdomain in range( numberOfSubdomains ):
+    #generateSubdomain( subdomainsString, subdomain )
+    generateSubdomain( subdomain )
+    subdomainsString += subdomainStringsArrays[ subdomain ]
+
+#----------------------------------------------------------------------------------------------------
+print( f'Subdomain string:\n{subdomainsString}' )
+
 with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
   fileParticleConf = file.read()
-
-# Replace the target string
-#fileParticleConf = fileParticleConf.replace( 'placeholderSubdomain', 'G0' )
-fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
-
-fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
-
-# Distributed subdomain info G0
-print( f'mylen {len(fluid_rx_g1)}' )
-fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticlesG0', str( len( fluid_rx_g1 ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticlesG0', str( len( fluid_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticlesG0', str( len( box_rx_g1 ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticlesG0', str( len( box_rx ) ) )
-
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxStartG0', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxRealStartG0', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxEndG0', str( counter_g1_nptcs - 1  ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxRealEndG0', str( counter_g1_nptcsReal - 1) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxOverlapStartG0', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxStartG0', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxOverlapEndG0', str( gridXsplit ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxEndG0', str( gridXsplit - 1 ) )
-
-# Distributed subdomain info G1
-fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticlesG1', str( len( fluid_rx_g2 ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticlesG1', str( len( fluid_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticlesG1', str( len( box_rx_g2 ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticlesG1', str( len( box_rx ) ) )
-
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxStartG1', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxRealStartG1', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxEndG1', str( counter_g1_nptcs - 1  ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderParticleIdxRealEndG1', str( counter_g1_nptcsReal - 1) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxOverlapStartG1', str( gridXsplit - 1 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxStartG1', str( gridXsplit ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxOverlapEndG1', str( gridXsize ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderGridIdxEndG1', str( gridXsize ) )
+  fileParticleConf = fileParticleConf.replace( '#placeholderSubdomainInfo', subdomainsString )
 
 # Write the file out again
 with open( 'ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
-
 #----------------------------------------------------------------------------------------------------
