@@ -74,7 +74,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
 
-      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " in column-end: " << gridColumnEnd << " is: " <<  firstLastParticle << std::endl;
 
       subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
@@ -95,7 +95,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
 
-      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank <<  " in column-begin: " << gridColumnBegin << " is: " <<  firstLastParticle << std::endl;
 
       subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
@@ -110,13 +110,13 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       //end
       gridColumnEnd = subdomainInfo.gridIdxEnd;
 
-      PairIndexType firstLastParticle;
+      //turn off: PairIndexType firstLastParticle;
       if constexpr( SPHSimulation::SPHConfig::spaceDimension == 2 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
       else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
 
-      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " in column-end: " << gridColumnEnd <<  " is: " <<  firstLastParticle << std::endl;
 
       subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
@@ -136,7 +136,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSimulationInfo( Simulatio
       else if constexpr( SPHSimulation::SPHConfig::spaceDimension == 3 )
          firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
 
-      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " is: " <<  firstLastParticle << std::endl;
+      std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank <<  " in column-begin: " << gridColumnBegin <<   " is: " <<  firstLastParticle << std::endl;
 
       subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
       subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
@@ -228,26 +228,16 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
                                       communicator ) );
 
 
+      //FIXME: ugly ugly workaround
+      //const GlobalIndexType receiveToPositionWorkaround = subdomainInfo.lastParticleInLastGridColumn + 1;
       const GlobalIndexType receiveToPosition = subdomainInfo.lastParticleInLastGridColumn + 1;
-      requests.push_back( MPI::Irecv( arrayReceive.getData() + bytesPerValue * receiveToPosition,
+      //requests.push_back( MPI::Irecv( arrayReceive.getData() + bytesPerValue * receiveToPosition, //FIXME: Workaround arrayReceiveReplaced
+      requests.push_back( MPI::Irecv( arraySend.getData() + bytesPerValue * receiveToPosition, //FIXME: Workaround arrayReceiveReplaced
                                       bytesPerValue * maxParticlesToSend,
                                       rank + 1,
                                       0,
                                       communicator ) );
 
-      //Send
-      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesToSendEnd,
-                                      1, //count
-                                      rank + 1, //denstination
-                                      0,
-                                      communicator ) );
-
-      const GlobalIndexType sendFromPosition =  subdomainInfo.firstParticleInLastGridColumn;
-      requests.push_back( MPI::Isend( arraySend.getData() +  bytesPerValue * sendFromPosition,
-                                      bytesPerValue * subdomainInfo.numberOfParticlesToSendEnd,
-                                      rank + 1,
-                                      0,
-                                      communicator ) );
 
       //Begin
       //Recieve
@@ -264,6 +254,22 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
                                       0,
                                       communicator ) );
 
+      //End
+      //Send
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesToSendEnd,
+                                      1, //count
+                                      rank + 1, //denstination
+                                      0,
+                                      communicator ) );
+
+      const GlobalIndexType sendFromPositionEnd =  subdomainInfo.firstParticleInLastGridColumn;
+      requests.push_back( MPI::Isend( arraySend.getData() +  bytesPerValue * sendFromPositionEnd,
+                                      bytesPerValue * subdomainInfo.numberOfParticlesToSendEnd,
+                                      rank + 1,
+                                      0,
+                                      communicator ) );
+
+      //Begin
       //Send
       requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesToSendBegin,
                                       1, //count
@@ -271,8 +277,8 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
                                       0,
                                       communicator ) );
 
-      const GlobalIndexType sendFromPosition = subdomainInfo.firstParticleInFirstGridColumn;
-      requests.push_back( MPI::Isend( arraySend.getData() + bytesPerValue * sendFromPosition,
+      const GlobalIndexType sendFromPositionBegin = subdomainInfo.firstParticleInFirstGridColumn;
+      requests.push_back( MPI::Isend( arraySend.getData() + bytesPerValue * sendFromPositionBegin,
                                       bytesPerValue * subdomainInfo.numberOfParticlesToSendBegin,
                                       rank - 1,
                                       0,
@@ -304,7 +310,7 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeByteArrayAsyncWorker( Byt
 
       const GlobalIndexType sendFromPosition = subdomainInfo.firstParticleInFirstGridColumn;
       requests.push_back( MPI::Isend( arraySend.getData() + bytesPerValue * sendFromPosition,
-                                      byt1sPerValue * subdomainInfo.numberOfParticlesToSendBegin,
+                                      bytesPerValue * subdomainInfo.numberOfParticlesToSendBegin,
                                       nproc - 2,
                                       0,
                                       communicator ) );
@@ -335,6 +341,15 @@ DistributedSPHSimpleFluid< SPHSimulation >::arrangeRecievedAndLocalData( Array& 
       arrayReceiveView[ offsetReceive + i ] = arraySendView[ offsetSend + i ];
    };
 
+   //FIXME: ugly ugly temp workaround
+   //: const int maxParticlesToSend = 15000;
+   //: auto copyReceivedInSwapArray = [ = ] __cuda_callable__( GlobalIndexType i,
+   //:                                                         GlobalIndexType offsetSend,
+   //:                                                         GlobalIndexType offsetReceive ) mutable
+   //: {
+   //:    arrayReceiveView[ offsetReceive + i ] = arrayReceiveView[ offsetSend + i ];
+   //: };
+
    if( rank == 0 )
    {
       GlobalIndexType offsetSend = 0;
@@ -353,11 +368,17 @@ DistributedSPHSimpleFluid< SPHSimulation >::arrangeRecievedAndLocalData( Array& 
 
    if( ( rank > 0 ) && ( rank < nproc - 1 ) )
    {
+
+      //FIXME: ugly ugly temp workaround
+
       //Begin
       GlobalIndexType offsetSend = subdomainInfo.firstParticleInFirstGridColumn;
       GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
-      GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn;
+      //GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn;
+      //GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn + subdomainInfo.receivedEnd;
+      GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn - subdomainInfo.firstParticleInFirstGridColumn + 1 + subdomainInfo.receivedEnd;
       GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
+      //GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive + subdomainInfo.receivedEnd;
 
       //TODO: Remove this ugly aberattion.
       if( tempSetNumberOfPtcs == true ){
@@ -418,6 +439,42 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeSubdomainMetaDataArrayAsy
                                       communicator ) );
    }
 
+   if( ( rank > 0 ) && ( rank < nproc - 1 ) )
+   {
+      //End
+      //Recieve
+      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain,
+                                      1, //count
+                                      rank + 1, //destination
+                                      0,
+                                      communicator ) );
+
+
+      //Send
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain,
+                                      1, //count
+                                      rank + 1, //denstination
+                                      0,
+                                      communicator ) );
+
+      //Begin
+      //Recieve
+      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain,
+                                      1, //count
+                                      rank - 1, //destination
+                                      0,
+                                      communicator ) );
+
+      //Send
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain,
+                                      1, //count
+                                      rank - 1, //destination
+                                      0,
+                                      communicator ) );
+
+
+   }
+
    if( rank == nproc - 1 )
    {
       //Recieve
@@ -464,6 +521,30 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdo
    }
 
    if( rank == 1 )
+   {
+      //handle the begin
+      if( ( subdomainInfo.numberOfParticlesInThisSubdomain - subdomainInfo.numberOfParticlesInPreviousSubdomain ) > 500 )
+      {
+         subdomainInfo.gridIdxOverlapBegin++;
+         subdomainInfo.gridIdxBegin++;
+
+         subdomainInfo_boundary.gridIdxOverlapBegin++;
+         subdomainInfo_boundary.gridIdxBegin++;
+      }
+      //oposite if statement
+
+      //handle the end
+      if( ( subdomainInfo.numberOfParticlesInNextSubdomain - subdomainInfo.numberOfParticlesInThisSubdomain ) > 500 )
+      {
+         subdomainInfo.gridIdxOverlapEnd++;
+         subdomainInfo.gridIdxEnd++;
+
+         subdomainInfo_boundary.gridIdxOverlapEnd++;
+         subdomainInfo_boundary.gridIdxEnd++;
+      }
+   }
+
+   if( rank == 2 )
    {
       if( ( subdomainInfo.numberOfParticlesInThisSubdomain - subdomainInfo.numberOfParticlesInPreviousSubdomain ) > 500 )
       {

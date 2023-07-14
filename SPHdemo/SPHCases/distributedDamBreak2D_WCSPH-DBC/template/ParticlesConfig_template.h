@@ -116,9 +116,9 @@ class DistributedInitialParticleSetup
    using ParticleInitialSetupType = ParticleInitialSetup< ParticleSystemConfig >;
    using SubdomainInitialSetupType = SubdomainInitialSetup< ParticleSystemConfig >;
 
-   static const int numberOfSubdomains = 2;
-   ParticleInitialSetupType particlesParams[ 2 ];
-   SubdomainInitialSetupType subdomainParams[ 2 ];
+   static const int numberOfSubdomains = #placeholderNumberOfSubdomains;
+   ParticleInitialSetupType particlesParams[ #placeholderNumberOfSubdomains ];
+   SubdomainInitialSetupType subdomainParams[ #placeholderNumberOfSubdomains ];
 
    DistributedInitialParticleSetup()
    {

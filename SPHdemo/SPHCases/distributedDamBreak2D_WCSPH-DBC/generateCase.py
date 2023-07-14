@@ -178,7 +178,7 @@ if not os.path.exists( resultsPath ):
 # split
 #tot: numberOfPtcsTotal = len( fluid_rx ) + len( box_rx )
 # split based on fluid:
-numberOfSubdomains = 2
+numberOfSubdomains = 3
 
 numberOfPtcsTotal = len( fluid_rx )
 
@@ -427,8 +427,10 @@ def generateSubdomain( subdomain ):
         gridIdxOverlapEnd = gridXsize
         gridIdxEnd = gridXsize
     else:
-        gridIdxOverlapStart = gridIndexOrigins[ subdomain - 1 ] - 1
-        gridIdxStart = gridIndexOrigins[ subdomain - 1 ]
+        #gridIdxOverlapStart = gridIndexOrigins[ subdomain - 1 ] - 1
+        #gridIdxStart = gridIndexOrigins[ subdomain - 1 ]
+        gridIdxOverlapStart = gridIndexOrigins[ subdomain ] - 1
+        gridIdxStart = gridIndexOrigins[ subdomain ]
         gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
         gridIdxEnd = gridIndexOrigins[ subdomain + 1 ] - 1
 
@@ -503,6 +505,7 @@ print( f'Subdomain string:\n{subdomainsString}' )
 with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
   fileParticleConf = file.read()
   fileParticleConf = fileParticleConf.replace( '#placeholderSubdomainInfo', subdomainsString )
+  fileParticleConf = fileParticleConf.replace( '#placeholderNumberOfSubdomains', str( numberOfSubdomains ) )
 
 # Write the file out again
 with open( 'ParticlesConfig.h', 'w' ) as file:
