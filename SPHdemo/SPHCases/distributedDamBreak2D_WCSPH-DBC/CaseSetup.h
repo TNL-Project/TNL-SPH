@@ -230,16 +230,16 @@ int main( int argc, char* argv[] )
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
       //Load balancing
-      //: if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
-      //: {
-      //:    distributedSPHSimulation.localSimulationInfo.numberOfParticlesInThisSubdomain = distributedSPHSimulation.localSimulation.fluid->particles->getNumberOfParticles();
+      if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
+      {
+         distributedSPHSimulation.localSimulationInfo.numberOfParticlesInThisSubdomain = distributedSPHSimulation.localSimulation.fluid->particles->getNumberOfParticles();
 
-      //:    distributedSPHSimulation.synchronizeSubdomainMetaData( distributedSPHSimulation.localSimulationInfo );
+         distributedSPHSimulation.synchronizeSubdomainMetaData( distributedSPHSimulation.localSimulationInfo );
 
-      //:    TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+         TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
-      //:    distributedSPHSimulation.updateSubdomainSize( distributedSPHSimulation.localSimulationInfo, distributedSPHSimulation.localSimulationInfo_boundary );
-      //: }
+         distributedSPHSimulation.updateSubdomainSize( distributedSPHSimulation.localSimulationInfo, distributedSPHSimulation.localSimulationInfo_boundary );
+      }
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
