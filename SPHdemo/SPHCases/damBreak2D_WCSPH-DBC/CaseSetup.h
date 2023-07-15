@@ -23,10 +23,10 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-#include "ParticlesConfig.h"
-#include "SPHCaseConfig.h"
-#include "MeasuretoolConfig.h"
-#include "SimulationControlConfig.h"
+#include "sources/ParticlesConfig.h"
+#include "sources/SPHCaseConfig.h"
+#include "sources/MeasuretoolConfig.h"
+#include "sources/SimulationControlConfig.h"
 
 //#include "SPHCaseConfigTesting.h"
 
@@ -349,7 +349,7 @@ int main( int argc, char* argv[] )
    timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
    timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
 
-   TNL::Benchmarks::writeMapAsJson( timeResults, "time_measurements", ".json" );
+   TNL::Benchmarks::writeMapAsJson( timeResults, "results/time_measurements", ".json" );
    std::cout << "\nDone ... " << std::endl;
 
 }

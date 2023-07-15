@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Models/VisousTerms.h"
+#include "../../../../SPH/Models/EquationOfState.h"
+#include "../../../../SPH/Models/DiffusiveTerms.h"
+#include "../../../../SPH/Models/VisousTerms.h"
 
-#include "../../../SPH/SPHTraits.h"
+#include "../../../../SPH/SPHTraits.h"
 #include <limits>
 
 namespace TNL {
