@@ -32,9 +32,6 @@ public:
    using VectorType = typename SPHFluidTraitsType::VectorType;
    using IndexVectorType = typename SPHFluidTraitsType::IndexVectorType;
 
-   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-
    /* VARIABLES FIELDS */
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 
@@ -42,7 +39,6 @@ public:
    using Model = WCSPH_BI< Particles, SPHFluidConfig >;
    using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
    using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
-
 
    /*Swap variables*/
    using FluidVariables = Variables;
@@ -54,7 +50,7 @@ public:
    /**
     * Constructor.
     */
-   WCSPH_BI( ) = default; //THIS WORKS
+   WCSPH_BI( ) = default;
 
    /**
     * Compute pressure from density.

@@ -7,45 +7,32 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-//TODO: How should I use this?
-template< typename SPHFluidConfig >
-class SPHFluidConstants
-{
-   public:
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-
-   using RealType = typename SPHFluidTraitsType::RealType;
-   using VectorType = typename SPHFluidTraitsType::VectorType;
-
-};
-
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class SPHFluidVariables
 {
    public:
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
-   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-   using RealType = typename SPHFluidTraitsType::RealType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
 
-   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
 
-   using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    SPHFluidVariables( GlobalIndexType size )
-   : rho( size ), drho ( size ), p( size ), v( size ), a( size ),
-     rho_swap( size ), v_swap( size ) {}
+   : rho( size ), drho ( size ), p( size ), v( size ), a( size ), rho_swap( size ), v_swap( size ) {}
 
-   /* Variables - Fields */
+   //Variables - Fields
    ScalarArrayType rho;
    ScalarArrayType drho;
    ScalarArrayType p;
    VectorArrayType v;
    VectorArrayType a;
 
-   /* Additional variable fields to avoid inmpace sort. */
+   //Additional variable fields to avoid inmpace sort
    ScalarArrayType rho_swap;
    VectorArrayType v_swap;
 
@@ -109,26 +96,26 @@ class SPHFluidVariables
 };
 
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class SPHBoundaryVariables
 {
    public:
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
-   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-   using RealType = typename SPHFluidTraitsType::RealType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
 
-   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
 
-   using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    SPHBoundaryVariables( GlobalIndexType size )
    : rho( size ), drho ( size ), p( size ), v( size ), a( size ), n( size ),
      rho_swap( size ), v_swap( size ), n_swap( size ) {}
 
-   /* Variables - Fields */
+   //Variables - Fields
    ScalarArrayType rho;
    ScalarArrayType drho;
    ScalarArrayType p;
@@ -136,7 +123,7 @@ class SPHBoundaryVariables
    VectorArrayType a;
    VectorArrayType n;
 
-   /* Additional variable fields to avoid inmpace sort. */
+   //Additional variable fields to avoid inmpace sort
    ScalarArrayType rho_swap;
    VectorArrayType v_swap;
    VectorArrayType n_swap;

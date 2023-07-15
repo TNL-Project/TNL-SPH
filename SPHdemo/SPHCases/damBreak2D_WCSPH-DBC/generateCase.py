@@ -97,7 +97,7 @@ sys.path.append('../../tools/')
 import saveParticlesVTK
 import numpy as np
 
-fluid_r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
+fluid_r = np.array( ( fluid_rx, fluid_ry, fluid_rz ), dtype=float ).T #!!
 fluid_v = np.zeros( ( len( fluid_rx ), 3 ) )
 fluid_rho = rho0 * np.ones( len( fluid_rx ) )
 fluid_p = np.zeros( len( fluid_rx ) )
@@ -106,7 +106,7 @@ fluid_ptype = np.zeros( len( fluid_rx ) )
 fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
 saveParticlesVTK.save_polydata( fluidToWrite, "sources/dambreak_fluid.vtk" )
 
-boundary_r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
+boundary_r = np.array( ( box_rx, box_ry, box_rz ), dtype=float ).T #!!
 boundary_v = np.zeros( ( len( box_rx ), 3 ) )
 boundary_rho = rho0 * np.ones( len( box_rx ) )
 boundary_p = np.zeros( len( box_rx ) )
@@ -116,7 +116,7 @@ boxToWrite = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v
 saveParticlesVTK.save_polydata( boxToWrite, "sources/dambreak_boundary.vtk" )
 
 ### Compute remaining parameters
-spaceDimension = 2
+spaceDimension = 2 #TODO: Move into templates.
 particleMass = rho0 * ( dp * dp )
 smoothingLentgh =  round( smoothingLentghCoef * dp, 7 )
 searchRadius = round( smoothingLentgh * 2 , 7 )
@@ -127,9 +127,9 @@ coefB = round( speedOfSound * speedOfSound * rho0 / 7 , 1 )
 
 ### Compute remaining domain parameters
 gridBegin_x = 1.005 * ( min( min( fluid_rx ), min( box_rx ) ) - searchRadius )
-gridBegin_y = 1.005 * ( min( min( fluid_rz ), min( box_rz ) ) - searchRadius )
+gridBegin_y = 1.005 * ( min( min( fluid_ry ), min( box_rz ) ) - searchRadius )
 gridEnd_x = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) + searchRadius )
-gridEnd_y = 1.005 * ( max( max( fluid_rz ), max( box_rz ) ) + searchRadius )
+gridEnd_y = 1.005 * ( max( max( fluid_ry ), max( box_rz ) ) + searchRadius )
 
 gridSize_x = np.ceil( ( gridEnd_x - gridBegin_x ) / searchRadius )
 gridSize_y = np.ceil( ( gridEnd_y - gridBegin_y ) / searchRadius )

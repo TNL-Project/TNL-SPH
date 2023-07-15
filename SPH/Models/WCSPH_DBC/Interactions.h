@@ -32,9 +32,6 @@ public:
    using VectorType = typename SPHFluidTraitsType::VectorType;
    using IndexVectorType = typename SPHFluidTraitsType::IndexVectorType;
 
-   using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-
    /* VARIABLES FIELDS */
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
 

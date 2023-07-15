@@ -1,15 +1,15 @@
 #include <iostream>
 #include <fstream> //temp, to write output
 
-#include <TNL/Devices/Cuda.h>
-#include <string>
-#include <sys/types.h>
+/**
+ *  Benchamrk stuff.
+ */
+#include <TNL/Benchmarks/Benchmarks.h>
 
 /**
  * Particle system.
  */
-#include "../../../Particles/Particles.h"
-#include "../../../Particles/neighbourSearch.h"
+#include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
  * Particle system reader.
@@ -22,16 +22,10 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-#include "ParticlesConfig.h"
-#include "SPHCaseConfig.h"
-const std::string inputParticleFile = "damBreak2D_RSPH/dambreak_fluid.vtk";
-const std::string inputParticleFile_bound = "damBreak2D_RSPH/dambreak_boundary.vtk";
-
-const float endTime = 0.05;
-const int outputStep = 9999;
-
-std::string outputFileName = "results/particles";
-std::string outputFileNameBoundary = "results/particles";
+#include "sources/ParticlesConfig.h"
+#include "sources/SPHCaseConfig.h"
+#include "sources/MeasuretoolConfig.h"
+#include "sources/SimulationControlConfig.h"
 
 /**
  * SPH general toolds.
@@ -43,93 +37,158 @@ std::string outputFileNameBoundary = "results/particles";
  */
 #include "../../../SPH/Models/RSPH/Variables.h"
 #include "../../../SPH/Models/RSPH/Interactions.h"
-#include "../../../SPH/Models/EquationOfState.h"
 
-#include "../../../SPH/Models/RiemannSolvers.h"
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Kernels.h"
+#include "../../../SPH/Kernels.h" //TODO: Move to another.
 
-using namespace TNL;
+/**
+ * Time step control.
+ */
+#include "../../../SPH/TimeStep.h"
+
+/**
+ * Measuretool draft.
+ */
+//#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
+#include "../../../SPH/shared/Measuretool.h"
+
+using namespace TNL::ParticleSystem;
 
 int main( int argc, char* argv[] )
 {
    /**
-    * Number of particles
+    * Load simulation configs.
+    * - Particle system config:
+    *   config for definition of particle system (datatypes, dimension,...)
+    *   config with parameters of particle system (domain size, search radius,...)
+    *
+    * - Configuration of particle system.
+    *   config with initial parameters of the particle system
+    *
+    * - SPH method config:
+    *   config with parameteres and constants of the SPH method
+    *
+    * - Simulation control:
+    *   config with path to initial condition, path to store results, end time etc.
     */
-   using Device = Devices::Cuda;
-   using ParticlesConfig = ParticleSystemConfig< Device >;
-   using ParticlesConfig_bound = ParticleSystemConfig_boundary< Device >;
-   using SPHConfig = SPH::SPHCaseConfig< Device >;
+   using SimulationControl = SPH::SimulationControlConfiguration::SPHSimulationControl;
+
+   using SPHConfig = SPH::SPHConfig::SPHConfig< SimulationControl::DeviceType >;
+   using SPHParams = SPH::SPHConfig::SPHParamsConfig< SPHConfig >;
+
+   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SimulationControl::DeviceType >;
+   using ParticlesParams = ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
 
    /**
     * Particle and neighbor search model.
     */
-   using ParticleSystem = typename ParticleSystem::Particles< ParticlesConfig, Device >;
-   using NeighborSearch = typename TNL::ParticleSystem::NeighborSearch< ParticlesConfig, ParticleSystem >;
+   using ParticleSystem = ParticlesLinkedList< ParticlesConfig, SimulationControl::DeviceType >;
 
    /**
-    * SPH model.
+    * Define simulation SPH model and SPH formulation.
+    *
+    * - SPHModel: is the model of used SPH method (WCSPH_DBC, WCSPH_BI, RSPH, etc.)
+    *   IMPORTANT: Constants and parameters of used model have to be defined in the SPHConfig.
+    *
+    * - SPHSimulation: defines the type of problem (simple fluid, problem with open or
+    *   moving boundaries or multiphase flows). For the chosen type of simulation,
+    *   appropriate SPH scheme is required!
     */
-   using SPHModel = typename TNL::ParticleSystem::SPH::RSPHSimple< ParticleSystem, SPHConfig >;
-   using SPHSimulation = typename TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel, ParticleSystem, NeighborSearch >;
+   using SPHModel = SPH::RSPH< ParticleSystem, SPHConfig >;
+   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**
-    * SPH schemes.
+    * Define time step control.
+    * There is const time step option and variable time step option.
     */
-   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
-   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
-
-   using RiemannSolver = TNL::ParticleSystem::SPH::RiemanSolverLinearized< SPHConfig >; //fix
+   using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
 
    /**
-    * Particle reader and writer.
+    * Define readers and writers to read and write initial geometry and results.
     */
-   using Reader = TNL::ParticleSystem::Readers::VTKReader;
-   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticleSystem >;
+   using Reader = Readers::VTKReader;
+   using Writer = Writers::VTKWriter< ParticleSystem >;
+   using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
 
    /**
-    * Create the simulation.
+    * Create instance of SPHParams class, which is object holding all the
+    * necessary SPH constants, informations about terms in particular scheme etc.
     */
-   SPHSimulation mySPHSimulation(
-         ParticlesConfig::numberOfParticles, ParticlesConfig_bound::numberOfParticles,
-         ParticlesConfig::searchRadius, ParticlesConfig::gridXsize * ParticlesConfig::gridYsize );
+   SPHParams sphParams;
 
    /**
-     * TEMP.
-     */
-   mySPHSimulation.model->h = SPHConfig::h;
-   mySPHSimulation.model->m = SPHConfig::mass;
-   mySPHSimulation.model->speedOfSound = SPHConfig::speedOfSound;
-   mySPHSimulation.model->coefB = SPHConfig::coefB;
-   mySPHSimulation.model->rho0 = SPHConfig::rho0;
+    * Create instance of Simulation control class, which is object holding all the
+    * information about end time, results saving times, paths to the input files
+    * and paths to store results.
+    */
+   SimulationControl simulationControl;
+
+   /**
+    * Create instance of class with neccessary initial information to create particle system
+    * and thus to initialize SPH simulation.
+    */
+   ParticlesParams particlesParams;
+
+   /**
+    * Create the main object - SPH simulation itself. The constructor requires
+    * struct containing information to create and allocate particle system and neighbor search,
+    * which includes number of particles for fluid and boundary, background grid size and its
+    * origin and search radius.
+    */
+   SPHSimulation sph( particlesParams );
+   std::cout << sph << std::endl;
+
+   /**
+    * Create instance of timeStepper, which is a class controling the time step,
+    * duration of the simulation etc.
+    *
+    * Add output timer to control saving to files.
+    */
+   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
     * Read the particle file.
+    *
+    * Read particle file with fluid and read/set initial particle variables.
+    * Read particle file with boundary and read/set initial particle variables.
     */
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig, Reader > myFluidReader( inputParticleFile );
-   myFluidReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles->getPoints() ) ;
+   sph.fluid->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile );
+   sph.boundary->template readParticlesAndVariables< SimulationReaderType >(
+         simulationControl.inputParticleFile_bound );
 
-   myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getFluidVariables().rho, "Density" );
-   myFluidReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getFluidVariables().p, "Pressure" );
-   myFluidReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.model->getFluidVariables().v, "Velocity" );
+   /**
+    * User defined measuretool sensors. Load and initialize configuration
+    * for given type of measurement/sensors.
+    *
+    * - Load measuretool configurations:
+    *   config for pressure measurement
+    *    - from particles to grid interpolation.
+    *
+    *   config for water level measurement
+    *    - sensors to measure water levels in given points
+    *
+    *   config for grid interpolation
+    *    - sensors to measure pressure in given points
+    */
+   using GridInterpolation = SPH::InterpolateToGrid< SPHConfig, SPHSimulation >;
+   using MeasuretoolInitGridInterpolation = SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
+   MeasuretoolInitGridInterpolation interpolateGridParams;
+   GridInterpolation interpolator( interpolateGridParams );
 
-   TNL::ParticleSystem::ReadParticles< ParticlesConfig_bound, Reader > myBoundaryReader( inputParticleFile_bound );
-   myBoundaryReader.template readParticles< ParticleSystem::PointArrayType >( mySPHSimulation.particles_bound->getPoints() ) ;
+   using SensorInterpolation = SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
+   using MeasuretoolInitParametersPressure = SPH::MeasuretoolConfiguration::MeasuretoolConfigForPressure< SPHConfig >;
+   MeasuretoolInitParametersPressure measuretoolPressure;
+   timeStepping.addOutputTimer( "sensor_pressure", measuretoolPressure.outputTime );
+   SensorInterpolation sensorInterpolation( TNL::ceil( simulationControl.endTime / measuretoolPressure.outputTime ),
+         measuretoolPressure.points );
 
-   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().rho, "Density" );
-   myBoundaryReader.template readParticleVariable< SPHModel::ScalarArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().p, "Pressure" );
-   myBoundaryReader.template readParticleVariable< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().v, "Velocity" );
-   myBoundaryReader.template readParticleVariable2D< SPHModel::VectorArrayType, float >(
-         mySPHSimulation.model->getBoundaryVariables().n, "Normals" );
-
+   using MeasuretoolInitParametersWaterLevel = SPH::MeasuretoolConfiguration::MeasuretoolConfigForWaterLevel< SPHConfig >;
+   using SensorWaterLevel = SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
+   MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
+   timeStepping.addOutputTimer( "sensor_waterLevel", measuretoolWaterLevel.outputTime );
+   SensorWaterLevel sensorWaterLevel( TNL::ceil( simulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points,
+         sphParams.h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
 
    /**
     * Define timers to measure computation time.
@@ -137,110 +196,158 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
-   /**
-    * TEMP: Determine number of interation for constant timestep.
-    * Perform simulation main loop.
-    */
-   int steps = endTime / SPHConfig::dtInit;
-   std::cout << "Number of steps: " << 0 << std::endl;
-
-   for( unsigned int iteration = 0; iteration < steps; iteration ++ )
+   while( timeStepping.runTheSimulation() )
    {
-      std::cout << "STEP: " << iteration << std::endl;
+      std::cout << "Time: " << timeStepping.getTime() << std::endl;
 
       /**
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
-      mySPHSimulation.PerformNeighborSearch(
-            iteration, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+      sph.PerformNeighborSearch(
+            timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
-
-      //std::cout << "Normals: " << mySPHSimulation.model->getBoundaryVariables().n << std::endl;
 
       /**
        * Perform interaction with given model.
        */
       timer_interact.start();
-      mySPHSimulation.template InteractModel< SPH::WendlandKernel, DiffusiveTerm, ViscousTerm, EOS, RiemannSolver >();
+      sph.template Interact< SPH::WendlandKernel2D, SPHParams::RiemannSolver, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
-
-      //#include "outputForDebug.h"
 
       /**
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
-      if( iteration % 20 == 0 ) {
-         mySPHSimulation.integrator->IntegrateEuler( SPHConfig::dtInit );
-         //mySPHSimulation.integrator->IntegrateEulerBoundary( SPHConfig::dtInit );
-      }
-      else {
-         mySPHSimulation.integrator->IntegrateVerlet( SPHConfig::dtInit );
-         //mySPHSimulation.integrator->IntegrateVerletBoundary( SPHConfig::dtInit );
-      }
+      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, timeStepping );
       timer_integrate.stop();
+      std::cout << "Integrate... done. " << std::endl;
 
       /**
        * Output particle data
        */
-      if( ( iteration % outputStep ==  0) && (iteration > 0) )
+      if( timeStepping.checkOutputTimer( "save_results" ) )
       {
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
-          * Its useful for output anywal.
+          * Its useful for output anyway
           */
          timer_pressure.start();
-         mySPHSimulation.model->template ComputePressureFromDensity< EOS >();
+         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileName_step = outputFileName + std::to_string( iteration ) + ".vtk";
-         std::ofstream outputFile (outputFileName_step, std::ofstream::out);
-         Writer myWriter( outputFile, VTK::FileFormat::binary );
-         myWriter.writeParticles( *mySPHSimulation.particles );
-         myWriter.template writePointData< SPHModel::ScalarArrayType >(
-               mySPHSimulation.model->getFluidVariables().p, "Pressure" );
-         myWriter.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               mySPHSimulation.model->getFluidVariables().v, "Velocity", 3 );
+         timer_pressure.start();
+         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
+         timer_pressure.stop();
+         std::cout << "Compute pressure... done. " << std::endl;
 
-         std::string outputFileNameBoundary_step = outputFileName + std::to_string( iteration ) + "_boundary.vtk";
-         std::ofstream outputFileBoundary (outputFileNameBoundary_step, std::ofstream::out);
-         Writer myWriterBoundary( outputFileBoundary, VTK::FileFormat::binary );
-         myWriterBoundary.writeParticles( *mySPHSimulation.particles_bound );
-         myWriterBoundary.template writeVector< SPHModel::VectorArrayType, SPHConfig::RealType >(
-               mySPHSimulation.model->getBoundaryVariables().n, "Normals", 3 );
+         sph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
+
+         /**
+          * Interpolate on the grid.
+          */
+         std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
+         interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
+         interpolator.save( outputFileNameInterpolation );
+
       }
+
+      if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
+      {
+         sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+               sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
+      }
+
+      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
+      {
+         sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+               sph.fluid, sph.boundary, sphParams );
+      }
+
+      timeStepping.updateTimeStep();
    }
+
+   std::string outputFileNameInterpolation = simulationControl.outputFileName + "_sensors.dat";
+   sensorInterpolation.save( outputFileNameInterpolation );
+
+   std::string outputFileNameWaterLevel = simulationControl.outputFileName + "_sensorsWaterLevel.dat";
+   sensorWaterLevel.save( outputFileNameWaterLevel );
 
    /**
     * Output simulation stats.
     */
+   float totalTime = ( timer_search.getRealTime() + \
+   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+
+   int steps = timeStepping.getStep();
+   float totalTimePerStep = totalTime / steps;
+
    std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
    std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
    std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Search (percentage)........................... " << timer_search.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
    std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Reset (percentage)......................... " << timer_search_reset.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
    std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Index by cell (percentage)................. " << timer_search_cellIndices.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
    std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Sort (percentage).......................... " << timer_search_sort.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
    std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Particle to cell (percentage).............. " << timer_search_toCells.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
    std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
    std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
    std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
    std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
 
+   //JsonMap
+   std::map< std::string, std::string > timeResults;
+
+   timeResults.insert({ "search",                              std::to_string( timer_search.getRealTime()                                ) } );
+   timeResults.insert({ "search-average",                      std::to_string( timer_search.getRealTime() / steps                        ) } );
+   timeResults.insert({ "search-percentage",                   std::to_string( timer_search.getRealTime() / totalTime * 100              ) } );
+   timeResults.insert({ "search-reset",                        std::to_string( timer_search_reset.getRealTime()                          ) } );
+   timeResults.insert({ "search-reset-average",                std::to_string( timer_search_reset.getRealTime() / steps                  ) } );
+   timeResults.insert({ "search-reset-percentage",             std::to_string( timer_search_reset.getRealTime() / totalTime * 100        ) } );
+   timeResults.insert({ "search-index-by-cell ",               std::to_string( timer_search_cellIndices.getRealTime()                    ) } );
+   timeResults.insert({ "search-index-by-cell-average",        std::to_string( timer_search_cellIndices.getRealTime() / steps            ) } );
+   timeResults.insert({ "search-index-by-cell-percentage",     std::to_string( timer_search_cellIndices.getRealTime() / totalTime * 100  ) } );
+   timeResults.insert({ "search-sort",                         std::to_string( timer_search_sort.getRealTime()                           ) } );
+   timeResults.insert({ "search-sort-average",                 std::to_string( timer_search_sort.getRealTime() / steps                   ) } );
+   timeResults.insert({ "search-sort-percentage",              std::to_string( timer_search_sort.getRealTime() / totalTime * 100         ) } );
+   timeResults.insert({ "search-particles-to-cell ",           std::to_string( timer_search_toCells.getRealTime()                        ) } );
+   timeResults.insert({ "search-particles-to-cell-average",    std::to_string( timer_search_toCells.getRealTime() / steps                ) } );
+   timeResults.insert({ "search-particles-to-cell-percentage", std::to_string( timer_search_toCells.getRealTime() / totalTime * 100      ) } );
+   timeResults.insert({ "interaction",                         std::to_string( timer_interact.getRealTime()                              ) } );
+   timeResults.insert({ "interaction-average",                 std::to_string( timer_interact.getRealTime() / steps                      ) } );
+   timeResults.insert({ "interaction-percentage",              std::to_string( timer_interact.getRealTime() / totalTime * 100            ) } );
+   timeResults.insert({ "integrate",                           std::to_string( timer_integrate.getRealTime()                             ) } );
+   timeResults.insert({ "integrate-average",                   std::to_string( timer_integrate.getRealTime() / steps                     ) } );
+   timeResults.insert({ "integrate-percentage",                std::to_string( timer_integrate.getRealTime() / totalTime * 100           ) } );
+   timeResults.insert({ "pressure-update",                     std::to_string( timer_pressure.getRealTime()                              ) } );
+   timeResults.insert({ "pressure-update-average",             std::to_string( timer_pressure.getRealTime() / steps                      ) } );
+   timeResults.insert({ "pressure-update-percentage",          std::to_string( timer_pressure.getRealTime() / totalTime * 100            ) } );
+   timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
+   timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
+
+   TNL::Benchmarks::writeMapAsJson( timeResults, "results/time_measurements", ".json" );
    std::cout << "\nDone ... " << std::endl;
+
 }
 

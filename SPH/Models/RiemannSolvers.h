@@ -9,26 +9,46 @@ namespace SPH {
 template< typename SPHCaseConfig >
 class RiemanSolverLinearized
 {
-public:
-   using RealType = typename SPHCaseConfig::RealType; //fix this
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
 
    static constexpr RealType eta = SPHCaseConfig::etaLimiter;
    static constexpr RealType speedOfSound = SPHCaseConfig::speedOfSound;
 
+   struct ParamsType
+   {
+     template< typename SPHState >
+     ParamsType( SPHState sphState )
+     : eta( sphState.limiterEta ), speedOfSound( sphState.speedOfSound ) {}
+
+     const RealType eta;
+     const RealType speedOfSound;
+   };
+
    __cuda_callable__
    static RealType
-   statePressure( const RealType& vL, const RealType& vR, const RealType& pL, const RealType& pR, const RealType& rhoAverage )
+   statePressure( const RealType& vL,
+                  const RealType& vR,
+                  const RealType& pL,
+                  const RealType& pR,
+                  const RealType& rhoAverage,
+                  const ParamsType& params )
    {
-      //const RealType beta = TNL::min( eta * max( vL - vR, 0 ), speedOfSound ); // limiter
-      const RealType beta = MIN( eta * max( vL - vR, 0.f ), speedOfSound ); //limiter
+      //const RealType beta = TNL::min( eta * max( vL - vR, 0 ), speedOfSound );
+      const RealType beta = MIN( params.eta * max( vL - vR, 0.f ), params.speedOfSound );
       return 0.5f * ( pL + pR ) + 0.5f * ( vL - vR ) * rhoAverage * beta;
    }
 
    __cuda_callable__
    static RealType
-   stateVelocity( const RealType& vL, const RealType& vR, const RealType& pL, const RealType& pR, const RealType& rhoAverage )
+   stateVelocity( const RealType& vL,
+                  const RealType& vR,
+                  const RealType& pL,
+                  const RealType& pR,
+                  const RealType& rhoAverage,
+                  const ParamsType& params )
    {
-      return 0.5f * ( vR + vL ) + 0.5f * ( pL - pR ) / ( rhoAverage * speedOfSound );
+      return 0.5f * ( vR + vL ) + 0.5f * ( pL - pR ) / ( rhoAverage * params.speedOfSound );
    }
 };
 

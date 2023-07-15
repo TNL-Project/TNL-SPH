@@ -7,12 +7,11 @@ namespace SPH {
 /**
  * \brief Template for disabled diffusive term.
  */
-
 template< typename SPHCaseConfig >
 class NoneDiffusiveTerm
 {
    public:
-   using RealType = typename SPHCaseConfig::RealType; //fix this
+   using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {
@@ -36,7 +35,7 @@ template< typename SPHCaseConfig >
 class MolteniDiffusiveTerm
 {
    public:
-   using RealType = typename SPHCaseConfig::RealType; //fix this
+   using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {

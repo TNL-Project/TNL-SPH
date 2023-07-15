@@ -1,115 +1,149 @@
 #pragma once
 
 #include "../../SPHTraits.h"
+#include <thrust/gather.h>
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class SPHFluidVariables
 {
-  public:
-  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
-  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
-  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+   SPHFluidVariables( GlobalIndexType size )
+   : rho( size ), drho ( size ), p( size ), v( size ), a( size ), rho_swap( size ), v_swap( size ) {}
 
-  SPHFluidVariables( GlobalIndexType size )
-  : rho( size ), drho ( size ), p( size ), v( size ), a( size ) {}
+   //Variables - Fields
+   ScalarArrayType rho;
+   ScalarArrayType drho;
+   ScalarArrayType p;
+   VectorArrayType v;
+   VectorArrayType a;
 
-  /* Variables - Fields */
-  ScalarArrayType rho;
-  ScalarArrayType drho;
-  ScalarArrayType p;
-  VectorArrayType v;
-  VectorArrayType a;
+   //Additional variable fields to avoid inmpace sort
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
 
-  /* Variables - constans */
-  //RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho = rho.getView();
+      auto view_v = v.getView();
+
+      auto view_rho_swap = rho_swap.getView();
+      auto view_v_swap = v_swap.getView();
+
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
+
+      rho.swap( rho_swap );
+      v.swap( v_swap );
+   }
+
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
+   }
 
 };
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class SPHBoundaryVariables
 {
-  public:
-  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
-  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
-  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+   SPHBoundaryVariables( GlobalIndexType size )
+   : rho( size ), drho ( size ), p( size ), v( size ), a( size ), n( size ), rho_swap( size ), v_swap( size ), n_swap( size ) {}
 
-  SPHBoundaryVariables( GlobalIndexType size )
-  : rho( size ), drho ( size ), p( size ), v( size ), a( size ), n( size ) {}
+   //Variables - Fields
+   ScalarArrayType rho;
+   ScalarArrayType drho;
+   ScalarArrayType p;
+   VectorArrayType v;
+   VectorArrayType a;
+   VectorArrayType n;
 
-  /* Variables - Fields */
-  ScalarArrayType rho;
-  ScalarArrayType drho;
-  ScalarArrayType p;
-  VectorArrayType v;
-  VectorArrayType a;
-  VectorArrayType n;
+   //Additional variable fields to avoid inmpace sort
+   ScalarArrayType rho_swap;
+   VectorArrayType v_swap;
+   VectorArrayType n_swap;
 
-  /* Variables - constans */
-  //RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   {
+      auto view_map = map->getView();
 
-};
+      auto view_rho = rho.getView();
+      auto view_v = v.getView();
+      auto view_n = n.getView();
 
-//temp
-template< typename SPHFluidConfig, typename PointArrayType >
-class SWAPFluidVariables
-{
-  public:
-  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+      auto view_rho_swap = rho_swap.getView();
+      auto view_v_swap = v_swap.getView();
+      auto view_n_swap = n_swap.getView();
 
-  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_n.getArrayData() + firstActiveParticle, view_n_swap.getArrayData() + firstActiveParticle );
 
-  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+      rho.swap( rho_swap );
+      v.swap( v_swap );
+      n.swap( n_swap );
+   }
 
-  using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType; //REDO
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+      reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( n, "Normals" );
+   }
 
-  SWAPFluidVariables( GlobalIndexType size )
-  : indicesMap( size ), rho_swap( size ), v_swap( size ), points_swap( size ) {}
-
-  /* Variables - Fields */
-  //TEMP
-  IndexArrayType indicesMap;
-
-  /* Copy of arrays needed for resort */
-  ScalarArrayType rho_swap;
-  VectorArrayType v_swap;
-  PointArrayType points_swap;
-
-};
-
-template< typename SPHFluidConfig, typename PointArrayType >
-class SWAPBoundaryVariables
-{
-  public:
-  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-
-  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
-
-  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-
-  using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType; //REDO
-
-  SWAPBoundaryVariables( GlobalIndexType size )
-  : indicesMap( size ) {}
-
-  /* Variables - Fields */
-  IndexArrayType indicesMap;
-
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
+   {
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
+   }
 
 };
 

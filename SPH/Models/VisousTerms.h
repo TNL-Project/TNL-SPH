@@ -8,7 +8,7 @@ template< typename SPHCaseConfig >
 class ArtificialViscosity
 {
    public:
-   using RealType = typename SPHCaseConfig::RealType; //fix this
+   using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {
