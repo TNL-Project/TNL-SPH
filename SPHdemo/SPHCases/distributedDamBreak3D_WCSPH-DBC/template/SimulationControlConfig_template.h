@@ -24,8 +24,8 @@ class SPHSimulationControl
    public:
    using DeviceType = TNL::Devices::Cuda;
 
-   const std::string inputParticleFile[ 2 ]  {"dambreak_fluid_g1.vtk", "dambreak_fluid_g2.vtk" };
-   const std::string inputParticleFile_bound[ 2 ] = { "dambreak_boundary_g1.vtk", "dambreak_boundary_g2.vtk" };
+   const std::string inputParticleFile[ #placeholderNumberOfSubdomains ]  { #placeholderInputFluidFiles };
+   const std::string inputParticleFile_bound[ #placeholderNumberOfSubdomains ] = { #placeholderInputBoundaryFiles };
 
    std::string outputFileName = "results/particles";
 

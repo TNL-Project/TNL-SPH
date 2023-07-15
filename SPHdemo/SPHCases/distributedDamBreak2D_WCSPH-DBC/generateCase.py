@@ -1,41 +1,58 @@
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 #
-# damBreak2D_WCSPH-DBC_benchmark
+# case: distributedDamBreak2D_WCSPH-DBC
+# case destription: 2D dam break problem, using 1d partitioning and MPI to
+#                   utilize multiple GPUs
 #
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
+### Parameters of the case necessary for case creation:
 
+# Dimensions of the box (wall), and the block of fluid [m]:
 boxL = 1.61
 boxH = 0.8
 
 fluidL = 0.6
 fluidH = 0.3
 
+# Initial particle distance (dp)[m]:
 dp = 0.002
+
+# Smoothing length coefitient:
+# - smoothing length (h)[m] = smoothing length coef (Coef_h)[-] * initial particle distance (d_p)[m]
+# ( h = Coef_h * dp )
 smoothingLentghCoef = 2**0.5
 
+# Referential density of the medium (rho0)[kg/m^3]:
 rho0 = 1000.
-p0 = 0.
 
-numberOfBoundaryLayers = 3
+# Number of boundary layers (n_layer)[-]:
+numberOfBoundaryLayers = 3 #TODO: Compute this automatically
 
+# Numerical speed of sound (c0)[m/s]:
 speedOfSound = 34.3
-CFLnumber = 0.2
+
+# Initial time step (dtInit)[s].
+# - in case, that initial time step is not defined, is computed automatically.
 timeStep = 0.00002 #otherwise is obtained automatically
 
-numberOfProcessors = 2
+# CFL number (CFL)[-]:
+CFLnumber = 0.2
 
+# Setup number of subdomains (devices), to split the problem [-]:
+numberOfSubdomains = 3
 
-write = '.vtk' #.ptcs or .vtk
+# Print information during case generation
+printInfoString = False
+#---------------------------------------------------------------------------#
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-
+### Generate geometry
 boxL_n = round( boxL / dp )
 boxH_n = round( boxH / dp )
 
 fluidL_n = round( fluidL / dp )
 fluidH_n = round( fluidH / dp )
 
-### Generate fluid particles
+# Generate fluid particles
 fluid_rx = []; fluid_ry = []; fluid_rz = []
 
 for x in range( fluidL_n ):
@@ -44,7 +61,7 @@ for x in range( fluidL_n ):
         fluid_ry.append( 0. ) #we use only 2D case
         fluid_rz.append( dp * ( z + 1 ) )
 
-### Generate boundary particles
+# Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
 
 # left wall
@@ -61,7 +78,7 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( 0. - layer * dp )
 
-x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
+x_last = box_rx[ -1 - ( numberOfBoundaryLayers - 1 ) ] #due to discretisation, we need to save last value of bottom wall
 
 # right wall
 for layer in range( numberOfBoundaryLayers ):
@@ -70,53 +87,30 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( ( z + 1 ) * dp )
 
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-
 ### Write fluid particles
-if write == '.ptcs':
-    with open( "dambreak_fluid.ptcs", "w" ) as f:
-        f.write( str( len( fluid_rx ) ) + "\n" )
-        for i in range( len( fluid_rx ) ):
-            f.write( str( round( fluid_rx[ i ], 5 ) ) + " " + str( round( fluid_rz[i], 5 ) ) + " " + \
-                     str( round( fluid_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
-                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 0 ) + "\n" )
+import sys
+sys.path.append('../../tools/')
+import saveParticlesVTK
+import numpy as np
 
-    ### Write fluid particles
-    with open("dambreak_boundary.ptcs", "w") as f:
-        f.write( str( len( box_rx ) ) + "\n" )
-        for i in range( len( box_rx ) ):
-            f.write( str( round( box_rx[ i ], 5 ) ) + " " + str( round( box_rz[ i ], 5 ) ) + " " + \
-                     str( round( box_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
-                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 1 ) + "\n" )
-elif write == '.vtk':
-    import sys
-    sys.path.append('../../tools/')
-    import saveParticlesVTK
-    import numpy as np
+r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
+v = np.zeros( ( len( fluid_rx ), 3 ) )
+rho = rho0 * np.ones( len( fluid_rx ) )
+p = np.zeros( len( fluid_rx ) )
+ptype = np.zeros( len( fluid_rx ) )
 
-    r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
-    v = np.zeros( ( len( fluid_rx ), 3 ) )
-    rho = rho0 * np.ones( len( fluid_rx ) )
-    p = np.zeros( len( fluid_rx ) )
-    ptype = np.zeros( len( fluid_rx ) )
+fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
 
-    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
+v = np.zeros( ( len( box_rx ), 3 ) )
+rho = rho0 * np.ones( len( box_rx ) )
+p = np.zeros( len( box_rx ) )
+ptype = np.ones( len( box_rx ) )
 
-    r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
-    v = np.zeros( ( len( box_rx ), 3 ) )
-    rho = rho0 * np.ones( len( box_rx ) )
-    p = np.zeros( len( box_rx ) )
-    ptype = np.ones( len( box_rx ) )
+boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
 
-    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
-else:
-    print( "Invalid particle output type." )
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 ### Compute remaining parameters
 particleMass = rho0 * ( dp * dp )
 smoothingLentgh =  round( smoothingLentghCoef * dp, 7 )
@@ -128,11 +122,11 @@ spaceDimension = 2
 
 #Determine grid size
 import math
-gridXbegin = 1.005 * ( min( min( fluid_rx ), min( box_rx ) ) ) - searchRadius
-gridYbegin = 1.005 * ( min( min( fluid_rz ), min( box_rz ) ) ) - searchRadius
+gridXbegin = 1.005 * ( min( min( fluid_rx ), min( box_rx ) )  - searchRadius )
+gridYbegin = 1.005 * ( min( min( fluid_rz ), min( box_rz ) )  - searchRadius )
 
-gridXend = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) ) + searchRadius
-gridYend = 1.005 * ( max( max( fluid_rz ), max( box_rz ) ) ) + searchRadius
+gridXend = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) + searchRadius )
+gridYend = 1.005 * ( max( max( fluid_rz ), max( box_rz ) ) + searchRadius )
 
 gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
 gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
@@ -155,12 +149,6 @@ fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 with open( 'SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
 
-# Read and write (with possible edit) simulation control file.
-with open( 'template/SimulationControlConfig_template.h', 'r' ) as file :
-  fileSimulationControl = file.read()
-
-with open( 'SimulationControlConfig.h', 'w' ) as file:
-  file.write( fileSimulationControl )
 
 # Read and write (with possible edit) measuretool config file.
 with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
@@ -174,25 +162,17 @@ resultsPath = r'./results'
 if not os.path.exists( resultsPath ):
     os.makedirs( resultsPath )
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-# split
-#tot: numberOfPtcsTotal = len( fluid_rx ) + len( box_rx )
-# split based on fluid:
-numberOfSubdomains = 3
-
+### Divide the domain into subdomains
 numberOfPtcsTotal = len( fluid_rx )
-
-middleParticle = ( int )( numberOfPtcsTotal / numberOfSubdomains )
-print(" midleParticleNumber: ", middleParticle )
-
 searchRadius_h = round( smoothingLentgh * 2 , 7 )
-#old: gridXsplit = math.ceil( fluid_rx[ middleParticle ] / searchRadius_h )
-#old: print(" searchRadius: ", gridXsplit )
+
+numerOfFluidParticlesPerSubdomain = ( int )( numberOfPtcsTotal / numberOfSubdomains )
+print(" midleParticleNumber: ", numerOfFluidParticlesPerSubdomain )
 
 gridSplits = []
 girdSplitsOrigins = []
 for subdomain in range( numberOfSubdomains - 1 ):
-    gridSplits.append( math.ceil( fluid_rx[ middleParticle * ( subdomain + 1 ) ] / searchRadius ) )
+    gridSplits.append( math.ceil( fluid_rx[ numerOfFluidParticlesPerSubdomain * ( subdomain + 1 ) ] / searchRadius ) )
 
 print ( f'Grid splits: {gridSplits}' )
 
@@ -223,26 +203,12 @@ for subdomain in range( numberOfSubdomains ):
 
 print( f'Grid size: {gridXsize} gridSizeSplits: {np.sum( gridSizes )}\n' )
 
-#old: print( "Grid-global size: [ ", gridXsize , ",", gridYsize, " ]." )
-#old: print( "Grid-global begin: [ ", gridXbegin , ",", gridYbegin, " ]." )
-#old:
-#old: gridXsplitBegin = gridXbegin + gridXsplit * searchRadius
-#old: print( "Grid-G1 size: [ ", gridXsplit , ",", gridYsize, " ]." )
-#old: print( "Grid-G1 begin: [ ", gridXbegin , ",", gridYbegin, " ]." )
-#old:
-#old: gridXsplitBegin = gridXbegin + gridXsplit * searchRadius
-#old: print( "Grid-G2 size: [ ", gridXsize - gridXsplit , ",", gridYsize, " ]." )
-#old: print( "Grid-G2 size: [ ", gridXsplitBegin , ",", gridYsize, " ]." )
-
-#nbscell# = [int(cidx[i]) for i in (neighbors(x, y)) if cellFullList_ptcsidx_first[int(cidx[i])] != 0]
-
 #=====================================================================================================
 # Save subdomain grid function.
 
 from contextlib import redirect_stdout
 
 def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbegin, gridSector, name ):
-    #with open( "distributedGrid.vtk", 'w' ) as f:
     with open( name, 'w' ) as f:
         with redirect_stdout(f):
             print( "# vtk DataFile Version 3.0" )
@@ -251,25 +217,13 @@ def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbe
             #print( "DATASET STRUCTURED_GRID" )
             print( "DATASET STRUCTURED_POINTS" )
             print( "DIMENSIONS ", gridXsize + 1 , " ", gridYsize + 1, " ", 1 )
-            #print( "POINTS ", gridXsize * gridYsize * 1, " float" )
-            #for i in range( gridXsize * gridYsize * 1 ):
-            #    print( "", gridCoordinates_x[ i ], " ", gridCoordinates_y[ i ], " ", gridCoordinates_z[ i ] )
-            #print( "ASPECT_RATIO 1 1 1" )
             print( "ASPECT_RATIO ", searchRadius_h , " ", searchRadius_h , " ",  searchRadius_h )
             print( "ORIGIN ", gridXbegin , " ", gridYbegin , " ",  0  )
-            ##print( "POINT_DATA ",  gridXsize * gridYsize * 1  )
             print( "CELL_DATA ",  gridXsize * gridYsize * 1  )
-            #print( "FIELD FieldData 1" )
-            #print( "GridSector 1",  gridXsize * gridYsize * 1 , " int" )
             print( "SCALARS GridSector int 1 ")
             print( "LOOKUP_TABLE default" )
             for i in range( gridXsize * gridYsize * 1 ):
                 print( gridSector[ i ] )
-            #print( "VECTORS GridIndex int 3 ")
-            #print( "LOOKUP_TABLE default" )
-            #for i in range( gridXsize * gridYsize * 1 ):
-            #    print( gridSector[ i ], " ", gridSector[ i ], " ", gridSector[ i ] )
-    print("Done.")
 
 #=====================================================================================================
 
@@ -301,7 +255,6 @@ subdomainStringTemplate = """
       subdomainParams[ #placeholderSubdomainNumber ].gridIdxEnd = #placeholderGridIdxEnd;
 """
 
-#def generateSubdomain( subdomainsString, subdomain ):
 def generateSubdomain( subdomain ):
     #Fields and variables to set
     subdomain_fluid_rx = []
@@ -373,8 +326,6 @@ def generateSubdomain( subdomain ):
     p = np.zeros( len( subdomain_fluid_rx ) )
     ptype = np.array( ( subdomain_fluid_ptype ), dtype=float ).T
 
-    print( f'Subdomain: {subdomain} \nr: \n{r} \nv: \n{v}, \nrho: \n{rho}, \np: \n{p},\nptype: \n{ptype}' )
-
     fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
     subdomain_fluid_outputname = "dambreak_fluid_subdomain" + str( subdomain ) + '.vtk'
     print( f'Subdomain fluid ouputfilename: {subdomain_fluid_outputname}' )
@@ -385,7 +336,7 @@ def generateSubdomain( subdomain ):
     v = np.zeros( ( len( subdomain_box_rx ), 3 ) )
     rho = rho0 * np.ones( len( subdomain_box_rx ) )
     p = np.zeros( len( subdomain_box_rx ) )
-    ptype = np.array( ( subdomain_fluid_ptype ), dtype=float ).T
+    ptype = np.array( ( subdomain_box_ptype ), dtype=float ).T
 
     boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
     subdomain_boundary_outputname = "dambreak_boundary_subdomain" + str( subdomain ) + '.vtk'
@@ -395,8 +346,6 @@ def generateSubdomain( subdomain ):
     #Prepare informations about iven subdomain
     from copy import copy
     infoString = copy( subdomainStringTemplate )
-
-    print( f'Not filled infostring: {infoString}' )
 
     infoString = infoString.replace( '#placeholderSubdomainNumber', str( subdomain ) )
 
@@ -427,8 +376,6 @@ def generateSubdomain( subdomain ):
         gridIdxOverlapEnd = gridXsize
         gridIdxEnd = gridXsize
     else:
-        #gridIdxOverlapStart = gridIndexOrigins[ subdomain - 1 ] - 1
-        #gridIdxStart = gridIndexOrigins[ subdomain - 1 ]
         gridIdxOverlapStart = gridIndexOrigins[ subdomain ] - 1
         gridIdxStart = gridIndexOrigins[ subdomain ]
         gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
@@ -439,7 +386,7 @@ def generateSubdomain( subdomain ):
     infoString = infoString.replace( '#placeholderGridIdxOverlapEnd', str( gridIdxOverlapEnd ) )
     infoString = infoString.replace( '#placeholderGridIdxEnd', str( gridIdxEnd ) )
 
-    print( f'Filled infostring: {infoString}' )
+    if( printInfoString ): print( f'Subdomain: {subdomain} info string:\n{subdomainsString}' )
     subdomainStringsArrays.append( infoString )
 
     #Generate grid for given Subdomain
@@ -490,17 +437,38 @@ gridCoordinates_z = []
 
 gridSector = []
 
-#----------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------#
 
 subdomainsString = ''
+inputFluidFilesString = ''
+inputBoundaryFilesString = ''
 
 for subdomain in range( numberOfSubdomains ):
-    #generateSubdomain( subdomainsString, subdomain )
     generateSubdomain( subdomain )
     subdomainsString += subdomainStringsArrays[ subdomain ]
 
-#----------------------------------------------------------------------------------------------------
-print( f'Subdomain string:\n{subdomainsString}' )
+    inputFluidFilesString += "\"dambreak_fluid_subdomain" + str( subdomain ) + '.vtk\"'
+    inputBoundaryFilesString += "\"dambreak_boundary_subdomain" + str( subdomain ) + '.vtk\"'
+
+    if subdomain < numberOfSubdomains - 1:
+        inputFluidFilesString += ', '
+        inputBoundaryFilesString += ', '
+
+#---------------------------------------------------------------------------#
+
+# Read and write (with possible edit) simulation control file.
+with open( 'template/SimulationControlConfig_template.h', 'r' ) as file :
+  fileSimulationControl = file.read()
+  fileSimulationControl = fileSimulationControl.replace( '#placeholderNumberOfSubdomains', str( numberOfSubdomains ) )
+  fileSimulationControl = fileSimulationControl.replace( '#placeholderInputFluidFiles', inputFluidFilesString )
+  fileSimulationControl = fileSimulationControl.replace( '#placeholderInputBoundaryFiles', inputBoundaryFilesString )
+
+with open( 'SimulationControlConfig.h', 'w' ) as file:
+  file.write( fileSimulationControl )
+
+#---------------------------------------------------------------------------#
+
+if( printInfoString ): print( f'Subdomain string:\n{subdomainsString}' )
 
 with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
   fileParticleConf = file.read()
@@ -510,4 +478,5 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
 # Write the file out again
 with open( 'ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
-#----------------------------------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------#

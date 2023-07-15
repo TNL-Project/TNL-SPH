@@ -85,6 +85,7 @@ class ParticleInitialSetup
    float searchRadius;
    int gridXsize;
    int gridYsize;
+   int gridZsize;
    PointType gridOrigin;
 
    IndexVectorType gridSize;
@@ -116,63 +117,13 @@ class DistributedInitialParticleSetup
    using ParticleInitialSetupType = ParticleInitialSetup< ParticleSystemConfig >;
    using SubdomainInitialSetupType = SubdomainInitialSetup< ParticleSystemConfig >;
 
-   static const int numberOfSubdomains = 2;
-   ParticleInitialSetupType particlesParams[ 2 ];
-   SubdomainInitialSetupType subdomainParams[ 2 ];
+   static const int numberOfSubdomains = #placeholderNumberOfSubdomains;
+   ParticleInitialSetupType particlesParams[ #placeholderNumberOfSubdomains ];
+   SubdomainInitialSetupType subdomainParams[ #placeholderNumberOfSubdomains ];
 
-   //Subdomain 1 - Particles Init info
    DistributedInitialParticleSetup()
    {
-      particlesParams[ 0 ].numberOfParticles = placeholderFluidParticlesG0;
-      particlesParams[ 0 ].numberOfAllocatedParticles = placeholderAllocatedFluidParticlesG0;
-      particlesParams[ 0 ].numberOfBoundaryParticles = placeholderBoundaryParticlesG0;
-      particlesParams[ 0 ].numberOfAllocatedBoundaryParticles = placeholderAllocatedBoundaryParticlesG0;
-
-      particlesParams[ 0 ].searchRadius = placeholderSearchRadius * 1.001;
-      particlesParams[ 0 ].gridXsize = placeholderGridXSize;
-      particlesParams[ 0 ].gridYsize = placeholderGridYSize;
-      particlesParams[ 0 ].gridZsize = placeholderGridZSize;
-      particlesParams[ 0 ].gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf, placeholderGridZBeginf };
-
-      particlesParams[ 0 ].gridSize = { particlesParams[ 0 ].gridXsize, particlesParams[ 0 ].gridYsize, particlesParams[ 0 ].gridZsize };
-      particlesParams[ 0 ].numberOfGridCells = particlesParams[ 0 ].gridXsize * particlesParams[ 0 ].gridYsize * particlesParams[ 0 ].gridZsize;
-
-      //Subdomain 1 - Subdomain info
-      subdomainParams[ 0 ].particleIdxStart = placeholderParticleIdxStartG0;
-      subdomainParams[ 0 ].particleIdxRealStart = placeholderParticleIdxRealStartG0;
-      subdomainParams[ 0 ].particleIdxEnd = placeholderParticleIdxEndG0;
-      subdomainParams[ 0 ].particleIdxRealEnd = placeholderParticleIdxRealEndG0;
-
-      subdomainParams[ 0 ].gridIdxOverlapStar = placeholderGridIdxOverlapStartG0;
-      subdomainParams[ 0 ].gridIdxStart = placeholderGridIdxStartG0;
-      subdomainParams[ 0 ].gridIdxOverlapEnd = placeholderGridIdxOverlapEndG0;
-      subdomainParams[ 0 ].gridIdxEnd = placeholderGridIdxEndG0;
-
-      //Subdomain 2
-      particlesParams[ 1 ].numberOfParticles = placeholderFluidParticlesG1;
-      particlesParams[ 1 ].numberOfAllocatedParticles = placeholderAllocatedFluidParticlesG1;
-      particlesParams[ 1 ].numberOfBoundaryParticles = placeholderBoundaryParticlesG1;
-      particlesParams[ 1 ].numberOfAllocatedBoundaryParticles = placeholderAllocatedBoundaryParticlesG1;
-
-      particlesParams[ 1 ].searchRadius = placeholderSearchRadius * 1.001;
-      particlesParams[ 1 ].gridXsize = placeholderGridXSize;
-      particlesParams[ 1 ].gridYsize = placeholderGridYSize;
-      particlesParams[ 1 ].gridZsize = placeholderGridZSize;
-      particlesParams[ 1 ].gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf, placeholderGridZBeginf };
-
-      particlesParams[ 1 ].gridSize = { particlesParams[ 1 ].gridXsize, particlesParams[ 1 ].gridYsize, particlesParams[ 1 ].gridZsize };
-      particlesParams[ 1 ].numberOfGridCells = particlesParams[ 1 ].gridXsize * particlesParams[ 1 ].gridYsize * particlesParams[ 1 ].gridZsize;
-
-      //Subdomain 2 - Subdomain info
-      subdomainParams[ 1 ].particleIdxStart = placeholderParticleIdxStartG1;
-      subdomainParams[ 1 ].particleIdxRealStart = placeholderParticleIdxRealStartG1;
-      subdomainParams[ 1 ].particleIdxEnd = placeholderParticleIdxEndG1;
-      subdomainParams[ 1 ].particleIdxRealEnd = placeholderParticleIdxRealEndG1;
-
-      subdomainParams[ 1 ].gridIdxOverlapStar = placeholderGridIdxOverlapStartG1;
-      subdomainParams[ 1 ].gridIdxStart = placeholderGridIdxStartG1;
-      subdomainParams[ 1 ].gridIdxOverlapEnd = placeholderGridIdxOverlapEndG1;
-      subdomainParams[ 1 ].gridIdxEnd = placeholderGridIdxEndG1;
+      #placeholderSubdomainInfo
    }
 
 };
