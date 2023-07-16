@@ -35,7 +35,7 @@ class IntegratorVariables
    }
 
    void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {
       auto view_map = map->getView();
 
@@ -46,9 +46,9 @@ class IntegratorVariables
       auto view_v_old_swap = v_old_swap.getView();
 
       thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
+            view_rho_old.getArrayData() + firstActiveParticle, view_rho_old_swap.getArrayData() + firstActiveParticle );
       thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
+            view_v_old.getArrayData() + firstActiveParticle, view_v_old_swap.getArrayData() + firstActiveParticle );
 
       rho_old.swap( rho_old_swap );
       v_old.swap( v_old_swap );
@@ -101,8 +101,7 @@ public:
          v_old_view[ i ] += a_view[ i ] * dt2;
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      //Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
-      Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
 
       fluid->variables->v.swap( fluid->integratorVariables->v_old );
       fluid->variables->rho.swap( fluid->integratorVariables->rho_old );
@@ -124,8 +123,7 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      //Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
-      Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
 
       boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
    }
@@ -154,8 +152,7 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      //Algorithms::ParallelFor< DeviceType >::exec( 0, fluid->particles->getNumberOfParticles(), init );
-      Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
    }
 
    template< typename BoundaryPointer >
@@ -174,8 +171,21 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      //Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
-      Algorithms::parallelFor< DeviceType >( 0, boundary->particles->getNumberOfParticles(), init );
+      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+   }
+
+   template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
+   void
+   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
+   {
+      if( timeStepping.getStep() % 20 == 0 ) {
+         IntegrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+         IntegrateEulerBoundary( timeStepping.getTimeStep(), boundary );
+      }
+      else {
+         IntegrateVerlet( timeStepping.getTimeStep(), fluid );
+         IntegrateVerletBoundary( timeStepping.getTimeStep(), boundary );
+      }
    }
 };
 

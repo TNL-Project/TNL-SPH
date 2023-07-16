@@ -4,8 +4,8 @@
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include "../../../Particles/GenerateCellIndex.h"
-#include "../../../Particles/ParticlesTraits.h"
+#include "../../../../Particles/GenerateCellIndexFloating.h"
+#include "../../../../Particles/ParticlesTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -33,20 +33,26 @@ namespace ParticleSystemConfig {
  * - gridXorigin - define the origin of grid in dim X
  * - gridYorigin - define the origin of grid in dim Y
  */
+template< typename ParticleSystemConfig >
 class ParticleInitialSetup
 {
    public:
+   using ParticlesTraitsType = ParticlesTraits< ParticleSystemConfig, typename ParticleSystemConfig::DeviceType >;
+   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using PointType = typename ParticlesTraitsType::PointType;
 
-   static constexpr int numberOfParticles = placeholderFluidParticles;
-   static constexpr int numberOfAllocatedParticles = placeholderFluidParticles;
-   static constexpr int numberOfBoundaryParticles = placeholderBoundaryParticles;
-   static constexpr int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
+   const int numberOfParticles = placeholderFluidParticles;
+   const int numberOfAllocatedParticles = placeholderFluidParticles;
+   const int numberOfBoundaryParticles = placeholderBoundaryParticles;
+   const int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
 
-   static constexpr float searchRadius = placeholderSearchRadius * 1.001;
-   static constexpr int gridXsize = placeholderGridXSize;
-   static constexpr int gridYsize = placeholderGridYSize;
-   static constexpr float gridXorigin = placeholderGridXBeginf;
-   static constexpr float gridYorigin = placeholderGridYBeginf;
+   const float searchRadius = placeholderSearchRadius * 1.001;
+   const int gridXsize = placeholderGridXSize;
+   const int gridYsize = placeholderGridYSize;
+   const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf };
+
+   const IndexVectorType gridSize = { gridXsize, gridYsize };
+   const int numberOfGridCells = gridXsize * gridYsize;
 };
 
 /**

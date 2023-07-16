@@ -103,8 +103,6 @@ class PhysicalObject
    void sortParticles()
    {
       particles->sortParticles();
-      //variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
-      //integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
       variables->sortVariables(
             particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
       integratorVariables->sortVariables(
