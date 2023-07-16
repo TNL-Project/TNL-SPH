@@ -4,8 +4,8 @@
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include "../../../Particles/GenerateCellIndex.h"
-#include "../../../Particles/ParticlesTraits.h"
+#include "../../../../Particles/GenerateCellIndexFloating.h"
+#include "../../../../Particles/ParticlesTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {

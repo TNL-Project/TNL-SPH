@@ -25,8 +25,8 @@ class SPHSimulationControl
    public:
    using DeviceType = TNL::Devices::Cuda;
 
-   const std::string inputParticleFile = "dambreak_fluid.vtk";
-   const std::string inputParticleFile_bound = "dambreak_boundary.vtk";
+   const std::string inputParticleFile = "sources/dambreak_fluid.vtk";
+   const std::string inputParticleFile_bound = "sources/dambreak_boundary.vtk";
    std::string outputFileName = "results/particles";
 
    const float endTime = 0.75;

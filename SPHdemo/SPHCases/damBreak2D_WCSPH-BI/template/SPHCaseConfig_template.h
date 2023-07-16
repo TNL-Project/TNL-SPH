@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Models/VisousTerms.h"
+#include "../../../../SPH/Models/EquationOfState.h"
+#include "../../../../SPH/Models/DiffusiveTerms.h"
+#include "../../../../SPH/Models/VisousTerms.h"
 
-#include "../../../SPH/SPHTraits.h"
+#include "../../../../SPH/SPHTraits.h"
 #include <limits>
 
 namespace TNL {
@@ -111,7 +111,7 @@ class SPHParamsConfig
     * boundary, used together with the BI formulation.
     * - mu - kinetic energy conservation during the elastic bounce [-]
     */
-   bool boundaryElasticBounce = true;
+   bool boundaryElasticBounce = false;
 
    float elasticFactor = 1.f;
    float r_box = dp * 1.5f;

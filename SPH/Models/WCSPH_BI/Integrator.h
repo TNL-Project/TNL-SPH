@@ -30,28 +30,8 @@ class IntegratorVariables
    IntegratorVariables( GlobalIndexType size )
    : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size )
    {
-      rho_old = 1000.; //TODO: Fix this.
+      rho_old = 1000.;
       v_old = 0.;
-   }
-
-   void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
-   {
-      auto view_map = map->getView();
-
-      auto view_rho_old = rho_old.getView();
-      auto view_v_old = v_old.getView();
-
-      auto view_rho_old_swap = rho_old_swap.getView();
-      auto view_v_old_swap = v_old_swap.getView();
-
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
-
-      rho_old.swap( rho_old_swap );
-      v_old.swap( v_old_swap );
    }
 
    void
@@ -172,7 +152,6 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      //Algorithms::parallelFor< DeviceType >( 0, fluid->particles->getNumberOfParticles(), init );
       Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
    }
 
@@ -192,7 +171,6 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      //Algorithms::ParallelFor< DeviceType >::exec( 0, boundary->particles->getNumberOfParticles(), init );
       Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
    }
 

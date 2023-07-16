@@ -63,7 +63,7 @@ for x in range( fluidL_n ):
 
 ### Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
-normal_rx = []; normal_ry = []; normal_rz = []
+normal_x = []; normal_y = []; normal_z = []
 
 boxL_n = round( boxL / dp )
 boxH_n = round( boxH / dp )
@@ -75,9 +75,9 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( ( y+1 ) * dp )
         box_rz.append( 0. )
 
-        normal_rx.append( 1. )
-        normal_ry.append( 0. )
-        normal_rz.append( 0. )
+        normal_x.append( 1. )
+        normal_y.append( 0. )
+        normal_z.append( 0. )
 
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
@@ -86,9 +86,9 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( 0. - layer * dp )
         box_rz.append( 0. )
 
-        normal_rx.append( 0. )
-        normal_ry.append( 1. )
-        normal_rz.append( 0. )
+        normal_x.append( 0. )
+        normal_y.append( 1. )
+        normal_z.append( 0. )
 
 #x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
 x_last = box_rx[ -1 ] + dp #due to discretisation, we need to save last value of bottom wall
@@ -100,9 +100,9 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( ( y + 1 ) * dp )
         box_rz.append( 0. ) #we use only 2D case
 
-        normal_rx.append( -1. )
-        normal_ry.append( 0. )
-        normal_rz.append( 0. )
+        normal_x.append( -1. )
+        normal_y.append( 0. )
+        normal_z.append( 0. )
 
 # generate the corners
 def generate90degCorner( x, y, dirx, diry ):
@@ -118,9 +118,9 @@ def generate90degCorner( x, y, dirx, diry ):
       ny = ( y + ( -1 ) * diry * dp ) - ( y + l * dp * diry )
 
       n_norm = ( nx**2 + ny**2 )**0.5
-      normal_rx.append( nx / n_norm )
-      normal_ry.append( ny / n_norm )
-      normal_rz.append( 0. )
+      normal_x.append( nx / n_norm )
+      normal_y.append( ny / n_norm )
+      normal_z.append( 0. )
 
 generate90degCorner( 0, 0., -1, -1 )
 generate90degCorner( x_last, 0., +1, -1 )
@@ -145,7 +145,7 @@ boundary_v = np.zeros( ( len( box_rx ), 3 ) )
 boundary_rho = rho0 * np.ones( len( box_rx ) )
 boundary_p = np.zeros( len( box_rx ) )
 boundary_ptype = np.ones( len( box_rx ) )
-boundary_n = np.array( ( normal_rx, normal_ry, normal_rz ), dtype=float ).T #!!
+boundary_n = np.array( ( normal_x, normal_y, normal_z ), dtype=float ).T #!!
 
 boxToWrite = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
                                                           boundary_n )

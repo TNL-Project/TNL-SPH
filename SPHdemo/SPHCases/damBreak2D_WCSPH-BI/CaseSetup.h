@@ -13,7 +13,7 @@
 /**
  * Particle system.
  */
-#include "../../../Particles/ParticlesLinkedList.h"
+#include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
  * Particle system reader.
@@ -26,10 +26,10 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-#include "ParticlesConfig.h"
-#include "SPHCaseConfig.h"
-#include "MeasuretoolConfig.h"
-#include "SimulationControlConfig.h"
+#include "sources/ParticlesConfig.h"
+#include "sources/SPHCaseConfig.h"
+#include "sources/MeasuretoolConfig.h"
+#include "sources/SimulationControlConfig.h"
 
 /**
  * SPH general toolds.
@@ -145,8 +145,8 @@ int main( int argc, char* argv[] )
     * which includes number of particles for fluid and boundary, background grid size and its
     * origin and search radius.
     */
-   SPHSimulation sphSimulation( particlesParams );
-   std::cout << sphSimulation << std::endl;
+   SPHSimulation sph( particlesParams );
+   std::cout << sph << std::endl;
 
    /**
     * Create instance of timeStepper, which is a class controling the time step,
@@ -163,9 +163,9 @@ int main( int argc, char* argv[] )
     * Read particle file with fluid and read/set initial particle variables.
     * Read particle file with boundary and read/set initial particle variables.
     */
-   sphSimulation.fluid->template readParticlesAndVariables< SimulationReaderType >(
+   sph.fluid->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile );
-   sphSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
+   sph.boundary->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_bound );
 
    /**
@@ -216,7 +216,7 @@ int main( int argc, char* argv[] )
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
-      sphSimulation.PerformNeighborSearch(
+      sph.PerformNeighborSearch(
             timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
@@ -225,7 +225,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sphSimulation.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
+      sph.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -234,14 +234,14 @@ int main( int argc, char* argv[] )
        */
       timer_boundaryCorrection.start();
       if( sphParams.boundaryElasticBounce )
-         BoundaryCorrection::boundaryCorrection( sphSimulation.fluid, sphSimulation.boundary, sphParams );
+         BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sphParams );
       timer_boundaryCorrection.stop();
 
       /**
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
-      sphSimulation.integrator->integratStepVerlet( sphSimulation.fluid, sphSimulation.boundary, timeStepping );
+      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, timeStepping );
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
 
@@ -256,24 +256,22 @@ int main( int argc, char* argv[] )
           * Its useful for output anyway
           */
          timer_pressure.start();
-         sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
-               sphSimulation.fluid->variables, sphSimulation.fluid->getNumberOfParticles(), sphParams ); //TODO: FIX.
+         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         //sphSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
-         //      sphSimulation.boundary->variables, sphSimulation.boundary->getNumberOfParticles(), sphParams ); //TODO: FIX.
+         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         sphSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
+         sph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
 
          /**
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template interpolate< SPH::WendlandKernel2D >( sphSimulation.fluid, sphSimulation.boundary, sphParams );
+         interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
          interpolator.save( outputFileNameInterpolation );
 
       }
@@ -281,13 +279,13 @@ int main( int argc, char* argv[] )
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
          sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
-               sphSimulation.fluid, sphSimulation.boundary, sphParams, measuretoolPressure.includeBoundary );
+               sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
       }
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
       {
          sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
-               sphSimulation.fluid, sphSimulation.boundary, sphParams );
+               sph.fluid, sph.boundary, sphParams );
       }
 
       timeStepping.updateTimeStep();
