@@ -42,6 +42,16 @@ if dp == 0.005:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
+### Create related directories
+import os
+resultsPath = r'./results'
+if not os.path.exists( resultsPath ):
+    os.makedirs( resultsPath )
+
+sourcesPath = r'./sources'
+if not os.path.exists( sourcesPath ):
+    os.makedirs( sourcesPath )
+
 import sys
 #sys.path.append('../../../tools')
 sys.path.append('../../tools')
@@ -129,13 +139,13 @@ spaceDimension = 3
 
 #Determine grid size
 import math
-gridXbegin = 1.005 * ( min( min( np_points_fluid[ : , 0 ] ), min( np_points_box[ :, 0 ] ) ) ) - searchRadius
-gridYbegin = 1.005 * ( min( min( np_points_fluid[ : , 1 ] ), min( np_points_box[ :, 1 ] ) ) ) - searchRadius
-gridZbegin = 1.005 * ( min( min( np_points_fluid[ : , 2 ] ), min( np_points_box[ : ,2 ] ) ) ) - searchRadius
+gridXbegin = 1.005 * ( min( min( np_points_fluid[ : , 0 ] ), min( np_points_box[ :, 0 ] ) ) - searchRadius )
+gridYbegin = 1.005 * ( min( min( np_points_fluid[ : , 1 ] ), min( np_points_box[ :, 1 ] ) ) - searchRadius )
+gridZbegin = 1.005 * ( min( min( np_points_fluid[ : , 2 ] ), min( np_points_box[ : ,2 ] ) ) - searchRadius )
 
-gridXend = 1.005 * ( max( max( np_points_fluid[ :, 0 ] ), max( np_points_box[ :, 0 ] ) ) ) + searchRadius
-gridYend = 1.005 * ( max( max( np_points_fluid[ :, 1 ] ), max( np_points_box[ :, 1 ] ) ) ) + searchRadius
-gridZend = 1.005 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :, 2 ] ) ) ) + searchRadius
+gridXend = 1.005 * ( max( max( np_points_fluid[ :, 0 ] ), max( np_points_box[ :, 0 ] ) ) + searchRadius )
+gridYend = 1.005 * ( max( max( np_points_fluid[ :, 1 ] ), max( np_points_box[ :, 1 ] ) ) + searchRadius )
+gridZend = 1.005 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :, 2 ] ) ) + searchRadius )
 
 gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
 gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
@@ -188,8 +198,3 @@ with open( 'template/SimulationControlConfig.h', 'r' ) as file :
 
 with open( 'SimulationControlConfig.h', 'w' ) as file:
   file.write( fileSimulationControl )
-
-import os
-resultsPath = r'./results'
-if not os.path.exists( resultsPath ):
-    os.makedirs( resultsPath )
