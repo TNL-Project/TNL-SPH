@@ -28,6 +28,9 @@ SPHdemo/SPHCases/*/sources/*
 SPHdemo/SPHCases/damBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
 SPHdemo/SPHCases/damBreak2D_WCSPH-BI/damBreak2D_WCSPH-BI
 SPHdemo/SPHCases/damBreak2D_WCSPH-MDBC/damBreak2D_WCSPH-MDBC
+SPHdemo/SPHCases/damBreak2D_RSPH/damBreak2D_RSPH
+SPHdemo/SPHCases/distributedDamBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
+
 SPHdemo/SPHCases/openChannel2D_WCSPH-DBC/openChannel2D_WCSPH-DBC
 
 # periodicOpenChannel2D executable
