@@ -565,7 +565,7 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 DistributedSPHSimpleFluid< SPHSimulation >::interact( SPHState& sphState )
 {
-   localSimulation.template Interact< SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( sphState );
+   localSimulation.template interact< SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >( sphState );
 }
 
 template< typename SPHSimulation >

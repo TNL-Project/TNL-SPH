@@ -54,18 +54,18 @@ SPHSimpleFluid< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer
 template< typename Model >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Model >::Interact( SPHState& sphState )
+SPHSimpleFluid< Model >::interact( SPHState& sphState )
 {
-   model->template Interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+   model->template interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
          fluid, boundary, sphState );
 }
 
 template< typename Model >
 template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
 void
-SPHSimpleFluid< Model >::Interact( SPHState& sphState )
+SPHSimpleFluid< Model >::interact( SPHState& sphState )
 {
-   model->template Interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, RiemannSolver, EOS >(
+   model->template interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, RiemannSolver, EOS >(
          fluid, boundary, sphState );
 }
 

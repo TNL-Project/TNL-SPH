@@ -13,7 +13,7 @@ template< typename FluidPointer,
           typename EOS,
           typename SPHState >
 void
-RSPH< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid,
+RSPH< Particles, SPHFluidConfig, Variables >::interaction( FluidPointer& fluid,
                                                            BoudaryPointer& boundary,
                                                            SPHState& sphState )
 {
@@ -135,7 +135,7 @@ RSPH< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid,
 template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
 template< typename EquationOfState, typename PhysicalObjectPointer, typename SPHState >
 void
-RSPH< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState )
+RSPH< ParticleSystem, SPHFluidConfig, Variables >::computePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState )
 {
    auto view_rho = physicalObject->getVariables()->rho.getView();
    auto view_p = physicalObject->getVariables()->p.getView();
@@ -152,4 +152,3 @@ RSPH< ParticleSystem, SPHFluidConfig, Variables >::ComputePressureFromDensity( P
 } // SPH
 } // ParticleSystem
 } // TNL
-

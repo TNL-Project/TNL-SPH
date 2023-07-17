@@ -80,7 +80,7 @@ public:
 
    template< typename FluidPointer >
    void
-   IntegrateVerlet( RealType dt, FluidPointer& fluid )
+   integrateVerlet( RealType dt, FluidPointer& fluid )
    {
       auto rho_view = fluid->variables->rho.getView();
       auto v_view = fluid->variables->v.getView();
@@ -109,7 +109,7 @@ public:
 
    template< typename BoundaryPointer >
    void
-   IntegrateVerletBoundary( RealType dt, BoundaryPointer& boundary )
+   integrateVerletBoundary( RealType dt, BoundaryPointer& boundary )
    {
       auto rho_view = boundary->variables->rho.getView();
       auto rho_old_view = boundary->integratorVariables->rho_old.getView();
@@ -130,7 +130,7 @@ public:
 
    template< typename FluidPointer >
    void
-   IntegrateEuler( RealType dt, FluidPointer& fluid )
+   integrateEuler( RealType dt, FluidPointer& fluid )
    {
       auto rho_view = fluid->variables->rho.getView();
       auto v_view = fluid->variables->v.getView();
@@ -157,7 +157,7 @@ public:
 
    template< typename BoundaryPointer >
    void
-   IntegrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
+   integrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
    {
       auto rho_view = boundary->variables->rho.getView();
       auto rho_old_view = boundary->integratorVariables->rho_old.getView();
@@ -179,10 +179,10 @@ public:
    integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
    {
       if( timeStepping.getStep() % 20 == 0 ) {
-         IntegrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+         integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
       }
       else {
-         IntegrateVerlet( timeStepping.getTimeStep(), fluid );
+         integrateVerlet( timeStepping.getTimeStep(), fluid );
       }
    }
 };

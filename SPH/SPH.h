@@ -65,11 +65,11 @@ public:
     */
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
    void
-   Interact( SPHState& sphState );
+   interact( SPHState& sphState );
 
    template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
    void
-   Interact( SPHState& sphState );
+   interact( SPHState& sphState );
 
    template< typename Writer >
    void

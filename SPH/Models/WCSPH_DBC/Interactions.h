@@ -60,7 +60,7 @@ public:
              typename PhysicalObjectPointer,
              typename SPHState >
    void
-   ComputePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState );
+   computePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState );
 
    template< typename FluidPointer,
              typename BoudaryPointer,
@@ -70,7 +70,7 @@ public:
              typename EOS,
              typename SPHState  >
    void
-   Interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+   interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
 };
 
@@ -78,5 +78,5 @@ public:
 } // ParticleSystem
 } // TNL
 
-#include "Interactions_impl.h"
+#include "Interactions.hpp"
 
