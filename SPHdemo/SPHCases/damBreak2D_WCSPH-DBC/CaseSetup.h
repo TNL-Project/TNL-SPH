@@ -100,8 +100,8 @@ int main( int argc, char* argv[] )
     * Define time step control.
     * There is const time step option and variable time step option.
     */
-   using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
-   //using TimeStepping = SPH::VariableTimeStep< SPHConfig >;
+   //using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
+   using TimeStepping = SPH::VariableTimeStep< SPHConfig >;
 
    /**
     * Define readers and writers to read and write initial geometry and results.
@@ -222,7 +222,7 @@ int main( int argc, char* argv[] )
        * Compute new time step.
        */
       timer_computeTimeStep.start();
-      //timeStepping.computeTimeStep( sph.fluid, sphParams );
+      timeStepping.computeTimeStep( sph.fluid, sphParams );
       timer_computeTimeStep.stop();
       std::cout << "New time step is: " << timeStepping.getTimeStep() << " s." << std::endl;
       std::cout << "Time step... done." << std::endl;
