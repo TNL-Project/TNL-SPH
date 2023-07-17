@@ -16,7 +16,6 @@
 /**
  * Particle system.
  */
-//#include "../../../Particles/ParticlesLinkedList.h"
 #include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
@@ -31,10 +30,10 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-#include "ParticlesConfig.h"
-#include "SPHCaseConfig.h"
-#include "SimulationControlConfig.h"
-//#include "MeasuretoolConfig.h"
+#include "sources/ParticlesConfig.h"
+#include "sources/SPHCaseConfig.h"
+#include "sources/SimulationControlConfig.h"
+//#include "sources/MeasuretoolConfig.h"
 
 //#include "DistributedSimulationConfig.h"
 
@@ -306,13 +305,13 @@ int main( int argc, char* argv[] )
       timer_synchronize_transfer.start();
       // --- FLUID --- //
       //Variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::ScalarArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho,
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho_swap,
             distributedSPHSimulation.localSimulationInfo,
             1 );
 
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::VectorArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v,
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v_swap,
             distributedSPHSimulation.localSimulationInfo,
@@ -320,20 +319,20 @@ int main( int argc, char* argv[] )
             //2 );
 
       //Integrator variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::ScalarArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old,
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old_swap,
             distributedSPHSimulation.localSimulationInfo,
             1 );
 
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::VectorArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old,
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old_swap,
             distributedSPHSimulation.localSimulationInfo,
             1 );
 
       //Points
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::VectorArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
             distributedSPHSimulation.localSimulation.fluid->particles->getPoints(),
             distributedSPHSimulation.localSimulation.fluid->particles->getPointsSwap(),
             distributedSPHSimulation.localSimulationInfo,
@@ -342,13 +341,13 @@ int main( int argc, char* argv[] )
 
       // --- BOUNDARY --- //
       //Variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::ScalarArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho,
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho_swap,
             distributedSPHSimulation.localSimulationInfo_boundary,
             1 );
 
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::VectorArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v,
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v_swap,
             distributedSPHSimulation.localSimulationInfo_boundary,
@@ -356,14 +355,14 @@ int main( int argc, char* argv[] )
             //2 );
 
       //Integrator variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::ScalarArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
             distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old,
             distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old_swap,
             distributedSPHSimulation.localSimulationInfo_boundary,
             1 );
 
       //Points
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::VectorArrayType >(
+      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
             distributedSPHSimulation.localSimulation.boundary->particles->getPoints(),
             distributedSPHSimulation.localSimulation.boundary->particles->getPointsSwap(),
             distributedSPHSimulation.localSimulationInfo_boundary,
@@ -375,7 +374,7 @@ int main( int argc, char* argv[] )
       ////REARANGED
       // --- FLUID --- //
       //Variables
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::ScalarArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
                                                                     typename SPHSimulation::FluidPointer >(
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho,
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho_swap,
@@ -383,7 +382,7 @@ int main( int argc, char* argv[] )
             distributedSPHSimulation.localSimulationInfo,
             false );
 
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
                                                                     typename SPHSimulation::FluidPointer >(
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v,
             distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v_swap,
@@ -392,7 +391,7 @@ int main( int argc, char* argv[] )
             false );
 
       //Integrator variable
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::ScalarArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
                                                                     typename SPHSimulation::FluidPointer >(
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old,
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old_swap,
@@ -400,7 +399,7 @@ int main( int argc, char* argv[] )
             distributedSPHSimulation.localSimulationInfo,
             false );
 
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
                                                                     typename SPHSimulation::FluidPointer >(
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old,
             distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old_swap,
@@ -409,7 +408,7 @@ int main( int argc, char* argv[] )
             false );
 
       //Particles
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
                                                                     typename SPHSimulation::FluidPointer >(
             distributedSPHSimulation.localSimulation.fluid->particles->getPoints(),
             distributedSPHSimulation.localSimulation.fluid->particles->getPointsSwap(),
@@ -419,7 +418,7 @@ int main( int argc, char* argv[] )
 
       // --- BOUNDARY --- //
       //Variables
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::ScalarArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
                                                                      typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho,
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho_swap,
@@ -427,7 +426,7 @@ int main( int argc, char* argv[] )
             distributedSPHSimulation.localSimulationInfo_boundary,
             false );
 
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
                                                                      typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v,
             distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v_swap,
@@ -436,7 +435,7 @@ int main( int argc, char* argv[] )
             false );
 
       //Integrator variables
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::ScalarArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
                                                                      typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old,
             distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old_swap,
@@ -445,7 +444,7 @@ int main( int argc, char* argv[] )
             false );
 
       //Particles
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::VectorArrayType,
+      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
                                                                      typename SPHSimulation::BoundaryPointer >(
             distributedSPHSimulation.localSimulation.boundary->particles->getPoints(),
             distributedSPHSimulation.localSimulation.boundary->particles->getPointsSwap(),

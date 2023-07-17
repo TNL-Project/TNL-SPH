@@ -9,7 +9,6 @@
 /**
  * Particle system.
  */
-//#include "../../../Particles/ParticlesLinkedList.h"
 #include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
@@ -28,7 +27,6 @@
 #include "sources/MeasuretoolConfig.h"
 #include "sources/SimulationControlConfig.h"
 
-//#include "SPHCaseConfigTesting.h"
 
 /**
  * SPH general toolds.
@@ -51,7 +49,6 @@
 /**
  * Measuretool draft.
  */
-//#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
 #include "../../../SPH/shared/Measuretool.h"
 
 using namespace TNL::ParticleSystem;
@@ -103,7 +100,8 @@ int main( int argc, char* argv[] )
     * Define time step control.
     * There is const time step option and variable time step option.
     */
-   using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
+   //using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
+   using TimeStepping = SPH::VariableTimeStep< SPHConfig >;
 
    /**
     * Define readers and writers to read and write initial geometry and results.
@@ -196,7 +194,7 @@ int main( int argc, char* argv[] )
    /**
     * Define timers to measure computation time.
     */
-   TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
+   TNL::Timer timer_search, timer_interact, timer_computeTimeStep, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
    while( timeStepping.runTheSimulation() )
@@ -219,6 +217,15 @@ int main( int argc, char* argv[] )
       sph.template Interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
+
+      /**
+       * Compute new time step.
+       */
+      timer_computeTimeStep.start();
+      timeStepping.computeTimeStep( sph.fluid, sphParams );
+      timer_computeTimeStep.stop();
+      std::cout << "New time step is: " << timeStepping.getTimeStep() << " s." << std::endl;
+      std::cout << "Time step... done." << std::endl;
 
       /**
        * Perform time integration, i.e. update particle positions.

@@ -22,15 +22,15 @@ class WCSPH_DBC
 public:
 
    using SPHConfig = SPHFluidConfig;
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHTraitsType = SPHFluidTraits< SPHFluidConfig >;
    using DeviceType = typename SPHConfig::DeviceType; //TODO:Resolve
 
-   using LocalIndexType = typename SPHFluidTraitsType::LocalIndexType;
-   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-   using RealType = typename SPHFluidTraitsType::RealType;
-   using ScalarType = typename SPHFluidTraitsType::ScalarType;
-   using VectorType = typename SPHFluidTraitsType::VectorType;
-   using IndexVectorType = typename SPHFluidTraitsType::IndexVectorType;
+   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using ScalarType = typename SPHTraitsType::ScalarType;
+   using VectorType = typename SPHTraitsType::VectorType;
+   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
 
    /* VARIABLES FIELDS */
    using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;

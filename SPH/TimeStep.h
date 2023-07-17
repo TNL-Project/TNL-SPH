@@ -98,14 +98,42 @@ protected:
 };
 
 template< typename SPHConfig >
-class VariableTimeStep
+class VariableTimeStep : public ConstantTimeStep< SPHConfig >
 {
-   public:
+public:
+
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using DeviceType = typename SPHConfig::DeviceType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
-};
 
+   VariableTimeStep( RealType initialTimeStep, RealType endTime )
+   : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime ) {};
+
+   template< typename FluidPointer, typename SPHState >
+   void computeTimeStep( FluidPointer& fluid, SPHState& params )
+   {
+      const RealType delta_r_max = 0.1f * params.h;
+      const RealType CFL = params.CFL;
+
+      const auto view_v = fluid->getFluidVariables()->v.getConstView();
+      const auto view_a = fluid->getFluidVariables()->a.getConstView();
+
+      auto fetch = [=] __cuda_callable__ ( int i )
+      {
+         const RealType dt_vel = delta_r_max / l2Norm( view_v[ i ] );
+         const RealType dt_acc = sqrt( delta_r_max / ( 0.5f * l2Norm( view_a[ i ] ) ) );
+
+         return CFL * min( dt_vel, dt_acc );
+      };
+      RealType newTimeStep = Algorithms::reduce< DeviceType >( fluid->getFirstActiveParticle(),
+                                                               fluid->getLastActiveParticle() + 1,
+                                                               fetch,
+                                                               TNL::Max() );
+
+      this->timeStep = std::max( std::min( newTimeStep, this->timeStep ), params.dtMin );
+   }
+};
 
 } // SPH
 } // ParticleSystem

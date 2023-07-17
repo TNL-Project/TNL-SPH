@@ -126,13 +126,14 @@ if not timeStep:
 coefB = round( speedOfSound * speedOfSound * rho0 / 7 , 1 )
 
 ### Compute remaining domain parameters
+from math import ceil
 gridBegin_x = 1.005 * ( min( min( fluid_rx ), min( box_rx ) ) - searchRadius )
-gridBegin_y = 1.005 * ( min( min( fluid_ry ), min( box_rz ) ) - searchRadius )
+gridBegin_y = 1.005 * ( min( min( fluid_rz ), min( box_ry ) ) - searchRadius )
 gridEnd_x = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) + searchRadius )
-gridEnd_y = 1.005 * ( max( max( fluid_ry ), max( box_rz ) ) + searchRadius )
+gridEnd_y = 1.005 * ( max( max( fluid_rz ), max( box_ry ) ) + searchRadius )
 
-gridSize_x = np.ceil( ( gridEnd_x - gridBegin_x ) / searchRadius )
-gridSize_y = np.ceil( ( gridEnd_y - gridBegin_y ) / searchRadius )
+gridSize_x = ceil( ( gridEnd_x - gridBegin_x ) / searchRadius )
+gridSize_y = ceil( ( gridEnd_y - gridBegin_y ) / searchRadius )
 
 ### Generate configuration files
 # SPH parameters

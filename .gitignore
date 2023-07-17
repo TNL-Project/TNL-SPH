@@ -24,11 +24,15 @@ SPHdemo/SPHCases/*/OpenBoundaryConfig.h
 SPHdemo/SPHCases/*/results/*
 SPHdemo/SPHCases/*/sources/*
 
-# damBreak2D_WCSPH-DBC executable
+# damBreak2D executable
 SPHdemo/SPHCases/damBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
 SPHdemo/SPHCases/damBreak2D_WCSPH-BI/damBreak2D_WCSPH-BI
 SPHdemo/SPHCases/damBreak2D_WCSPH-MDBC/damBreak2D_WCSPH-MDBC
 SPHdemo/SPHCases/openChannel2D_WCSPH-DBC/openChannel2D_WCSPH-DBC
+
+# periodicOpenChannel2D executable
+SPHdemo/SPHCases/periodicOpenChannel2D_WCSPH-BI/periodicOpenChannel2D_WCSPH-BI
+SPHdemo/SPHCases/periodicOpenChannel2D_WCSPH-DBC/periodicOpenChannel2D_WCSPH-DBC
 
 #Documentation files
 Documentation/html

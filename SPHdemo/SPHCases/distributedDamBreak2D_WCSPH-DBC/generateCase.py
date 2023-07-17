@@ -45,6 +45,15 @@ numberOfSubdomains = 3
 printInfoString = False
 #---------------------------------------------------------------------------#
 
+import os
+resultsPath = r'./results'
+if not os.path.exists( resultsPath ):
+    os.makedirs( resultsPath )
+
+sourcesPath = r'./sources'
+if not os.path.exists( sourcesPath ):
+    os.makedirs( sourcesPath )
+
 ### Generate geometry
 boxL_n = round( boxL / dp )
 boxH_n = round( boxH / dp )
@@ -100,7 +109,7 @@ p = np.zeros( len( fluid_rx ) )
 ptype = np.zeros( len( fluid_rx ) )
 
 fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+saveParticlesVTK.save_polydata( fluidToWrite, "sources/dambreak_fluid.vtk" )
 
 r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
 v = np.zeros( ( len( box_rx ), 3 ) )
@@ -109,7 +118,7 @@ p = np.zeros( len( box_rx ) )
 ptype = np.ones( len( box_rx ) )
 
 boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-saveParticlesVTK.save_polydata( boxToWrite, "dambreak_boundary.vtk" )
+saveParticlesVTK.save_polydata( boxToWrite, "sources/dambreak_boundary.vtk" )
 
 ### Compute remaining parameters
 particleMass = rho0 * ( dp * dp )
@@ -146,7 +155,7 @@ fileSPHConf = fileSPHConf.replace( 'placeholderSmoothingLength', str( smoothingL
 fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 
 # Write the file out again
-with open( 'SPHCaseConfig.h', 'w' ) as file:
+with open( 'sources/SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
 
 
@@ -154,13 +163,8 @@ with open( 'SPHCaseConfig.h', 'w' ) as file:
 with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
   fileMeasuretoolConf = file.read()
 
-with open( 'MeasuretoolConfig.h', 'w' ) as file:
+with open( 'sources/MeasuretoolConfig.h', 'w' ) as file:
   file.write( fileMeasuretoolConf )
-
-import os
-resultsPath = r'./results'
-if not os.path.exists( resultsPath ):
-    os.makedirs( resultsPath )
 
 ### Divide the domain into subdomains
 numberOfPtcsTotal = len( fluid_rx )
@@ -327,7 +331,7 @@ def generateSubdomain( subdomain ):
     ptype = np.array( ( subdomain_fluid_ptype ), dtype=float ).T
 
     fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    subdomain_fluid_outputname = "dambreak_fluid_subdomain" + str( subdomain ) + '.vtk'
+    subdomain_fluid_outputname = "sources/dambreak_fluid_subdomain" + str( subdomain ) + '.vtk'
     print( f'Subdomain fluid ouputfilename: {subdomain_fluid_outputname}' )
     saveParticlesVTK.save_polydata( fluidToWrite, subdomain_fluid_outputname )
 
@@ -339,7 +343,7 @@ def generateSubdomain( subdomain ):
     ptype = np.array( ( subdomain_box_ptype ), dtype=float ).T
 
     boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    subdomain_boundary_outputname = "dambreak_boundary_subdomain" + str( subdomain ) + '.vtk'
+    subdomain_boundary_outputname = "sources/dambreak_boundary_subdomain" + str( subdomain ) + '.vtk'
     print( f'Subdomain boundary ouputfilename: {subdomain_boundary_outputname}' )
     saveParticlesVTK.save_polydata( boxToWrite, subdomain_boundary_outputname )
 
@@ -422,7 +426,7 @@ def generateSubdomain( subdomain ):
     if subdomain > 0: gridXOriginWithOverlap -= searchRadius_h
 
     # Write local grid G1
-    subdomain_grid_outputname = "dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
+    subdomain_grid_outputname = "sources/dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
     DomainGrid( gridSizes[ subdomain ] + 1, gridYsize, 1,       # grid size
                 #gridOrigins[ subdomain ], gridYbegin, 0,       # coordinates of grid origin
                 gridXOriginWithOverlap, gridYbegin, 0,          # coordinates of grid origin
@@ -447,8 +451,8 @@ for subdomain in range( numberOfSubdomains ):
     generateSubdomain( subdomain )
     subdomainsString += subdomainStringsArrays[ subdomain ]
 
-    inputFluidFilesString += "\"dambreak_fluid_subdomain" + str( subdomain ) + '.vtk\"'
-    inputBoundaryFilesString += "\"dambreak_boundary_subdomain" + str( subdomain ) + '.vtk\"'
+    inputFluidFilesString += "\"sources/dambreak_fluid_subdomain" + str( subdomain ) + '.vtk\"'
+    inputBoundaryFilesString += "\"sources/dambreak_boundary_subdomain" + str( subdomain ) + '.vtk\"'
 
     if subdomain < numberOfSubdomains - 1:
         inputFluidFilesString += ', '
@@ -463,7 +467,7 @@ with open( 'template/SimulationControlConfig_template.h', 'r' ) as file :
   fileSimulationControl = fileSimulationControl.replace( '#placeholderInputFluidFiles', inputFluidFilesString )
   fileSimulationControl = fileSimulationControl.replace( '#placeholderInputBoundaryFiles', inputBoundaryFilesString )
 
-with open( 'SimulationControlConfig.h', 'w' ) as file:
+with open( 'sources/SimulationControlConfig.h', 'w' ) as file:
   file.write( fileSimulationControl )
 
 #---------------------------------------------------------------------------#
@@ -476,7 +480,7 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
   fileParticleConf = fileParticleConf.replace( '#placeholderNumberOfSubdomains', str( numberOfSubdomains ) )
 
 # Write the file out again
-with open( 'ParticlesConfig.h', 'w' ) as file:
+with open( 'sources/ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
 
 #---------------------------------------------------------------------------#

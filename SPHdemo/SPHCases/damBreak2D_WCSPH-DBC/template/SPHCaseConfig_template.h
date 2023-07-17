@@ -91,8 +91,11 @@ class SPHParamsConfig
 
    /**
     * Define initial timestep [s].
+    * In case of variable time step define CFL number [-] and minimum timestep [s].
     */
    float dtInit = placeholderTimeStepf;
+   float CFL = 0.3f;
+   float dtMin = 0.05f * h / speedOfSound;
 
    /**
     * Define external forces [m^2 / s].
