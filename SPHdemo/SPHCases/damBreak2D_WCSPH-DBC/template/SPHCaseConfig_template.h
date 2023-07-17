@@ -73,10 +73,15 @@ class SPHParamsConfig
    float delta = 0.1f;
 
    /**
-    * Define coefficient of artificial viscosity.
+    * Define viscous term and its coefficients.
+    * - Use "ArtificialViscosity" and its parameter alpha.
+    * - Use "PhysicalViscosity" defined by dynamic viscosity coeffition.
     */
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
-   float alpha = 0.02f;
+   //using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
+   //float alpha = 0.02f;
+
+   using ViscousTerm = TNL::ParticleSystem::SPH::PhysicalViscosity< SPHConfig >;
+   float dynamicViscosity = 1e-3f;
 
    /**
     * Define equation of state and its constants.
@@ -94,8 +99,10 @@ class SPHParamsConfig
     * In case of variable time step define CFL number [-] and minimum timestep [s].
     */
    float dtInit = placeholderTimeStepf;
-   float CFL = 0.3f;
-   float dtMin = 0.05f * h / speedOfSound;
+
+   //float CFL = 0.3f;
+   //float dtInit = h / speedOfSound;
+   //float dtMin = 0.05f * h / speedOfSound;
 
    /**
     * Define external forces [m^2 / s].

@@ -32,6 +32,35 @@ class ArtificialViscosity
    }
 };
 
+template< typename SPHCaseConfig >
+class PhysicalViscosity
+{
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     ParamsType( SPHState sphState )
+     : h( sphState.h ),
+       viscoValue( sphState.dynamicViscosity ),
+       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+
+     const RealType h;
+     const RealType viscoValue;
+     const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
+     const RealType preventZero;
+   };
+
+   __cuda_callable__
+   static RealType
+   Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv, const ParamsType& params )
+   {
+      const RealType viscoCoef = params.dimensionCoef * params.viscoValue / ( rhoI * rhoJ );
+      return viscoCoef * drdv / ( drs * drs + params.preventZero );
+   }
+};
+
 } // SPH
 } // ParticleSystem
 } // TNL
