@@ -5,6 +5,7 @@
 #include "../../../../SPH/Models/VisousTerms.h"
 
 #include "../../../../SPH/SPHTraits.h"
+#include "../../../../SPH/TimeStep.h"
 #include <limits>
 
 namespace TNL {
@@ -96,10 +97,15 @@ class SPHParamsConfig
 
    /**
     * Define initial timestep [s].
-    * In case of variable time step define CFL number [-] and minimum timestep [s].
+    * - Use "ConstantTimeStep" with dtInit representing the step [s].
+    * - Use "VariableTimeStep" with CFL number [-], initial tiem steop [s] and minimum timestep [s].
+    * - Use "VariableTimeStepWithReduction" with CFL number [-], initial tiem steop [s] and minimum timestep [s].
     */
+   //using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
    //float dtInit = placeholderTimeStepf;
 
+   using TimeStepping = TNL::ParticleSystem::SPH::VariableTimeStep< SPHConfig >;
+   //using TimeStepping = TNL::ParticleSystem::SPH::VariableTimeStepWithReduction< SPHConfig >;
    float CFL = 0.3f;
    float dtInit = 0.25f * h / speedOfSound;
    float dtMin = 0.05f * h / speedOfSound;

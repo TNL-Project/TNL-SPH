@@ -63,10 +63,16 @@ public:
    /**
     * Perform interaction for all particles, i.e. for all types.
     */
+   //delta-WCSPH models
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
    void
    interact( SPHState& sphState );
 
+   template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState, typename TimeStepping >
+   void
+   interact( SPHState& sphState, TimeStepping& timeStepping );
+
+   //RSPH models
    template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
    void
    interact( SPHState& sphState );

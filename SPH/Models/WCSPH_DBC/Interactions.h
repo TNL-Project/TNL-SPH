@@ -72,6 +72,16 @@ public:
    void
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
+   template< typename FluidPointer,
+             typename BoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename SPHState  >
+   RealType
+   interactionWithReduction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+
 };
 
 } // SPH

@@ -51,6 +51,7 @@ SPHSimpleFluid< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer
    std::cout << " - neighborSearch->particlesToCells();... done " << std::endl;
 }
 
+//delta-WCSPH models
 template< typename Model >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
@@ -60,6 +61,19 @@ SPHSimpleFluid< Model >::interact( SPHState& sphState )
          fluid, boundary, sphState );
 }
 
+template< typename Model >
+template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState, typename TimeStepping >
+void
+SPHSimpleFluid< Model >::interact( SPHState& sphState, TimeStepping& timeStepping )
+{
+   typename Model::RealType viscosEffects = model->template interactionWithReduction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, sphState );
+
+   timeStepping.setMaxViscosityEffect( viscosEffects );
+   timeStepping.computeTimeStep( fluid, sphState );
+}
+
+//RSPH models
 template< typename Model >
 template< typename SPHKernelFunction, typename RiemannSolver, typename EOS, typename SPHState >
 void

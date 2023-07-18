@@ -14,7 +14,7 @@ for resolution in ${resolutions}
 do
    for sample in $(seq 1 ${samples})
    do
-      setup and run dualSPHysics code
+      #setup and run dualSPHysics code
       cd dualSPHysics_resources
       cp damBreak2D_WCSPH-DBC_Def_template.xml damBreak2D_WCSPH-DBC_Def.xml
       sed -i "s/resolutionPlaceholder/${resolution}/" damBreak2D_WCSPH-DBC_Def.xml

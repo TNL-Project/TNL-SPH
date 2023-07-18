@@ -51,6 +51,7 @@ if not os.path.exists( sourcesPath ):
 
 ### Generate fluid particles
 fluid_rx = []; fluid_ry = []; fluid_rz = []
+fluid_density = []
 
 fluidL_n = round( fluidL / dp )
 fluidH_n = round( fluidH / dp )
@@ -60,6 +61,10 @@ for x in range( fluidL_n ):
         fluid_rx.append( dp * ( x + 1 ) )
         fluid_ry.append( dp * ( y + 1 ) )
         fluid_rz.append( 0. )
+
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - y * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        fluid_density.append( hydrostaticDensity )
 
 ### Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
@@ -99,7 +104,7 @@ import numpy as np
 
 fluid_r = np.array( ( fluid_rx, fluid_ry, fluid_rz ), dtype=float ).T #!!
 fluid_v = np.zeros( ( len( fluid_rx ), 3 ) )
-fluid_rho = rho0 * np.ones( len( fluid_rx ) )
+fluid_rho = np.array( fluid_density, dtype=float )
 fluid_p = np.zeros( len( fluid_rx ) )
 fluid_ptype = np.zeros( len( fluid_rx ) )
 

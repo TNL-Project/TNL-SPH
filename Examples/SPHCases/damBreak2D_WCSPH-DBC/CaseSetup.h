@@ -97,13 +97,6 @@ int main( int argc, char* argv[] )
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**
-    * Define time step control.
-    * There is const time step option and variable time step option.
-    */
-   //using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
-   using TimeStepping = SPH::VariableTimeStep< SPHConfig >;
-
-   /**
     * Define readers and writers to read and write initial geometry and results.
     */
    using Reader = Readers::VTKReader;
@@ -144,7 +137,7 @@ int main( int argc, char* argv[] )
     *
     * Add output timer to control saving to files.
     */
-   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   SPHParams::TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
    timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
@@ -214,7 +207,10 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
+      //sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
+      //      sphParams, timeStepping );
+      sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
+            sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -246,12 +242,12 @@ int main( int argc, char* argv[] )
           * Its useful for output anyway
           */
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -290,8 +286,8 @@ int main( int argc, char* argv[] )
    /**
     * Output simulation stats.
     */
-   float totalTime = ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+   float totalTime = timer_search.getRealTime() + timer_interact.getRealTime() + timer_integrate.getRealTime() + \
+                     timer_computeTimeStep.getRealTime() + timer_pressure.getRealTime() ;
 
    int steps = timeStepping.getStep();
    float totalTimePerStep = totalTime / steps;
@@ -315,6 +311,9 @@ int main( int argc, char* argv[] )
    std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
    std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
    std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
+   std::cout << "Compute time step............................. " << timer_computeTimeStep.getRealTime() << " sec." << std::endl;
+   std::cout << "Compute time step (average time per step)..... " << timer_computeTimeStep.getRealTime() / steps << " sec." << std::endl;
+   std::cout << "Compute time step (percentage)................ " << timer_computeTimeStep.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
    std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
    std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;

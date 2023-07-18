@@ -1,3 +1,5 @@
+#pragma once
+
 #include <map>
 
 namespace TNL {
@@ -135,7 +137,7 @@ public:
       RealType newTimeStep = Algorithms::reduce< DeviceType >( fluid->getFirstActiveParticle(),
                                                                fluid->getLastActiveParticle() + 1,
                                                                fetch,
-                                                               TNL::Max() );
+                                                               TNL::Min() );
 
       std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtMin: " << params.dtMin << std::endl;
       std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtInit: " << params.dtInit << std::endl;
@@ -144,6 +146,61 @@ public:
       this->timeStep = std::max( std::min( newTimeStep, params.dtInit ), params.dtMin );
    }
 };
+
+template< typename SPHConfig >
+class VariableTimeStepWithReduction : public ConstantTimeStep< SPHConfig >
+{
+public:
+
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using DeviceType = typename SPHConfig::DeviceType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+
+   VariableTimeStepWithReduction( RealType initialTimeStep, RealType endTime )
+   : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime ) {};
+
+   const RealType
+   getMaxViscosEffect() const
+   {
+      return maxViscosityEffect;
+   }
+
+   void setMaxViscosityEffect( RealType maxViscosity )
+   {
+      maxViscosityEffect = maxViscosity;
+   }
+
+   template< typename FluidPointer, typename SPHState >
+   void computeTimeStep( FluidPointer& fluid, SPHState& params )
+   {
+      const RealType delta_r_max = 0.1f * params.h;
+      const RealType CFL = params.CFL;
+      const RealType h = params.h;
+
+      const auto view_v = fluid->getFluidVariables()->v.getConstView();
+      const auto view_a = fluid->getFluidVariables()->a.getConstView();
+
+      auto fetch = [=] __cuda_callable__ ( int i )
+      {
+         return sqrt( h / ( l2Norm( view_a[ i ] ) ) );
+      };
+      RealType dt_acc = Algorithms::reduce< DeviceType >( fluid->getFirstActiveParticle(),
+                                                          fluid->getLastActiveParticle() + 1,
+                                                          fetch,
+                                                          TNL::Max() );
+
+      RealType dt_visco = params.h / ( params.speedOfSound + params.h * maxViscosityEffect );
+
+      this->timeStep = std::max( std::min( dt_acc, dt_visco ), params.dtMin );
+   }
+
+protected:
+
+   RealType maxViscosityEffect;
+
+};
+
 
 } // SPH
 } // ParticleSystem
