@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Models/VisousTerms.h"
+#include "../../../../SPH/Models/EquationOfState.h"
+#include "../../../../SPH/Models/DiffusiveTerms.h"
+#include "../../../../SPH/Models/VisousTerms.h"
 
-#include "../../../SPH/SPHTraits.h"
+#include "../../../../SPH/SPHTraits.h"
 #include <limits>
 
 namespace TNL {
@@ -97,7 +97,7 @@ class SPHParamsConfig
    /**
     * Define external forces [m^2 / s].
     */
-   float gravity[ 2 ] { 0.f, -9.81f };
+   float gravity[ 3 ] { 0.f, 0.f, -9.81f };
 
    /**
     * Define constant to prevent zero in denominator [-].

@@ -4,8 +4,8 @@
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include "../../../Particles/GenerateCellIndexFGenerateCellIndexFloating.h"
-#include "../../../Particles/ParticlesTraits.h"
+#include "../../../../Particles/GenerateCellIndexFloating.h"
+#include "../../../../Particles/ParticlesTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -87,7 +87,7 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = placeholderDimension;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
 

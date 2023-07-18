@@ -24,9 +24,9 @@
  * Case configuration
  * One configuration for particle system, one for SPH.
  */
-#include "ParticlesConfig.h"
-#include "SPHCaseConfig.h"
-#include "SimulationControlConfig.h"
+#include "sources/ParticlesConfig.h"
+#include "sources/SPHCaseConfig.h"
+#include "sources/SimulationControlConfig.h"
 
 //#include "SPHCaseConfigTesting.h"
 
@@ -206,12 +206,12 @@ int main( int argc, char* argv[] )
           * Its useful for output anyway
           */
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
