@@ -47,6 +47,12 @@ public:
       return timeStep;
    }
 
+   const RealType
+   getEndTime() const
+   {
+      return endTime;
+   }
+
    void
    setTimeStep( RealType timeStep )
    {

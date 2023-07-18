@@ -11,12 +11,11 @@ from json2html import *
 
 #cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.00025_1" ]
 #folder = "results_A40galdor/"
-cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.0003_1" ]
-folder = "results_A40galdor_v3swap/"
-#folder = "results_T4adan/"
+#cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.0003_1" ]
+#folder = "results_A40galdor_v3swap/"
 
-#cases = [ "0.002_1" ]
-#folder = "/"
+cases = [ "0.002_1" ]
+folder = "./results_local-test/"
 
 def getCaseDetails( case, TNLSPHTimers, dualSPHTimers ):
     #tnl-sph details
@@ -26,11 +25,11 @@ def getCaseDetails( case, TNLSPHTimers, dualSPHTimers ):
         caseMetadata_json_str = json.dumps( caseMetadata_lines )
         caseMetadata_json = json.loads( caseMetadata_json_str )
 
-        detail_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
+        detail_string = '<left>' +'<h1> SPH damBreak2D benchmark </h1>'
         detail_string += json2html.convert( json = caseMetadata_json ) + "<br><hr>"
         detail_string += json2html.convert( json = TNLSPHTimers ) + "<br><hr>"
         detail_string += json2html.convert( json = dualSPHTimers ) + "<br><hr>"
-        detail_string +='</center>'
+        detail_string +='</left>'
 
         caseMetadataResultName = "case_" + case + "_detail.html"
         caseMetadataResultFileName = folder + caseMetadataResultName
@@ -97,7 +96,7 @@ def parseTNLSPHOutput( case ):
 
         return timersDictionary
 
-results_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
+results_string = '<left>' +'<h1> SPH damBreak2D benchmark </h1>'
 
 #device metadata
 deviceMetadataFileName = folder + "tnl-sph_" + cases[ 0 ] + ".device_metadata.json"
@@ -154,9 +153,9 @@ for case in cases:
     result = pd.concat( frames )
     caseDetail = getCaseDetails( case, TNLSPHTimers, dualSPHTimers )
     detail_string = ' <a href=\"'+ caseDetail + '\"> Details </a>'
-    results_string += '<h2> ' + 'Case ' + case + ' </h2>' + detail_string + result.to_html(index=True,border=2,justify="center") + '<be><hr>'
+    results_string += '<h2> ' + 'Case ' + case + ' </h2>' + detail_string + result.to_html(index=True,border=2,justify="left") + '<be><hr>'
 
-results_string +='</center>'
+results_string +='</left>'
 
 outputFileName = folder + "result.html"
 with open( outputFileName, 'w') as _file:

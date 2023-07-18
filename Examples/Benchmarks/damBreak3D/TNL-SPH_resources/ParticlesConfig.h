@@ -4,7 +4,7 @@
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include "../../../../Particles/GenerateCellIndex.h"
+#include "../../../Particles/GenerateCellIndex.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -26,14 +26,14 @@ class ParticleSystemConfig
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = 0.08*1.001;
-   static constexpr int gridXsize = 45 + 4;
-   static constexpr int gridYsize = 15 + 4;
-   static constexpr int gridZsize = 20 + 4;
+   static constexpr int gridXsize = 44;
+   static constexpr int gridYsize = 16;
+   static constexpr int gridZsize = 21;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = -0.15;
-   static constexpr RealType gridYbegin = -0.15;
-   static constexpr RealType gridZbegin = -0.15;
+   static constexpr RealType gridXbegin = -0.1202f;
+   static constexpr RealType gridYbegin = -0.1202f;
+   static constexpr RealType gridZbegin = -0.1202f;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >; //?
@@ -57,17 +57,17 @@ class ParticleSystemConfig_boundary
    static constexpr int maxOfNeigborsPerParticle = 70;
 
    static constexpr RealType searchRadius = 0.08*1.001;
-   static constexpr int gridXsize = 45 + 4;
-   static constexpr int gridYsize = 15 + 4;
-   static constexpr int gridZsize = 20 + 4;
+   static constexpr int gridXsize = 44;
+   static constexpr int gridYsize = 16;
+   static constexpr int gridZsize = 21;
 
    //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-   static constexpr RealType gridXbegin = -0.15;
-   static constexpr RealType gridYbegin = -0.15;
-   static constexpr RealType gridZbegin = -0.15;
+   static constexpr RealType gridXbegin = -0.1202f;
+   static constexpr RealType gridYbegin = -0.1202f;
+   static constexpr RealType gridZbegin = -0.1202f;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_boundary >; //?
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_boundary >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
