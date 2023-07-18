@@ -46,7 +46,7 @@ class ParticleInitialSetup
    const int numberOfBoundaryParticles = placeholderBoundaryParticles;
    const int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
 
-   const float searchRadius = placeholderSearchRadius * 1.001;
+   const float searchRadius = placeholderSearchRadiusf;
    const int gridXsize = placeholderGridXSize;
    const int gridYsize = placeholderGridYSize;
    const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf };

@@ -10,7 +10,7 @@ export dirout=${name}_out
 export diroutdata=${dirout}/data
 
 #nacteni prislusnych souboru
-export dirbin=/home/tomas/mount/home/tomas/Documents/DualSPHysics_v5.0.5/DualSPHysics_v5.0/bin/linux
+export dirbin=$1
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${dirbin}
 export gencase="${dirbin}/GenCase_linux64"
 export dualsphysicscpu="${dirbin}/DualSPHysics5.0CPU_linux64"

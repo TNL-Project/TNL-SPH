@@ -9,7 +9,7 @@
             <speedsystem value="0" auto="true" comment="Maximum system speed (by default the dam-break propagation is used)" />
             <coefsound value="20" comment="Coefficient to multiply speedsystem" />
             <speedsound value="0" auto="true" comment="Speed of sound to use in the simulation (by default speedofsound=coefsound*speedsystem)" />
-            <_coefh value="0.975807" comment="Coefficient to calculate the smoothing length (h=coefh*sqrt(3*dp^2) in 3D)" />
+            <!-- _coefh value="0.975807" comment="Coefficient to calculate the smoothing length (h=coefh*sqrt(3*dp^2) in 3D)" /-->
             <hdp value="2" comment="Alternative option to calculate the smoothing length (h=hdp*dp)" />
             <cflnumber value="0.2" comment="Coefficient to multiply dt" />
         </constantsdef>
@@ -141,15 +141,15 @@
     <execution>
         <parameters>
             <parameter key="SavePosDouble" value="0" comment="Saves particle position using double precision (default=0)" />
-            <parameter key="Boundary" value="2" comment="Boundary method 1:DBC, 2:mDBC (default=1)" />
-            <parameter key="StepAlgorithm" value="2" comment="Step Algorithm 1:Verlet, 2:Symplectic (default=1)" />
+            <parameter key="Boundary" value="1" comment="Boundary method 1:DBC, 2:mDBC (default=1)" />
+            <parameter key="StepAlgorithm" value="1" comment="Step Algorithm 1:Verlet, 2:Symplectic (default=1)" />
             <parameter key="VerletSteps" value="40" comment="Verlet only: Number of steps to apply Euler timestepping (default=40)" />
             <parameter key="Kernel" value="2" comment="Interaction Kernel 1:Cubic Spline, 2:Wendland, 3:Gaussian (default=2)" />
             <parameter key="ViscoTreatment" value="1" comment="Viscosity formulation 1:Artificial, 2:Laminar+SPS (default=1)" />
-            <parameter key="Visco" value="0.01" comment="Viscosity value" />
+            <parameter key="Visco" value="0.02" comment="Viscosity value" />
             <parameter key="ViscoBoundFactor" value="0" comment="Multiply viscosity value with boundary (default=1)" />
-			<parameter key="DensityDT" value="3" comment="Density Diffusion Term 0:None, 1:Molteni, 2:Fourtakas, 3:Fourtakas(full) (default=0)" />
-			<parameter key="DensityDTvalue" value="0.1" comment="DDT value (default=0.1)" />
+			   <parameter key="DensityDT" value="1" comment="Density Diffusion Term 0:None, 1:Molteni, 2:Fourtakas, 3:Fourtakas(full) (default=0)" />
+			   <parameter key="DensityDTvalue" value="0.1" comment="DDT value (default=0.1)" />
             <parameter key="Shifting" value="0" comment="Shifting mode 0:None, 1:Ignore bound, 2:Ignore fixed, 3:Full (default=0)" />
             <parameter key="ShiftCoef" value="-2" comment="Coefficient for shifting computation (default=-2)" />
             <parameter key="ShiftTFS" value="0" comment="Threshold to detect free surface. Typically 1.5 for 2D and 2.75 for 3D (default=0)" />
@@ -161,8 +161,8 @@
             <parameter key="DtFixed" value="0" comment="Fixed Dt value. Use 0 to disable (default=disabled)" units_comment="seconds" />
             <parameter key="DtFixedFile" value="NONE" comment="Dt values are loaded from file. Use NONE to disable (default=disabled)" units_comment="milliseconds (ms)" />
             <parameter key="DtAllParticles" value="0" comment="Velocity of particles used to calculate DT. 1:All, 0:Only fluid/floating (default=0)" />
-            <parameter key="TimeMax" value="1" comment="Time of simulation" units_comment="seconds" />
-            <parameter key="TimeOut" value="5.01" comment="Time out data" units_comment="seconds" />
+            <parameter key="TimeMax" value="0.75" comment="Time of simulation" units_comment="seconds" />
+            <parameter key="TimeOut" value="1.0" comment="Time out data" units_comment="seconds" />
             <parameter key="RhopOutMin" value="700" comment="Minimum rhop valid (default=700)" units_comment="kg/m^3" />
             <parameter key="RhopOutMax" value="1300" comment="Maximum rhop valid (default=1300)" units_comment="kg/m^3" />
             <parameter key="PartsOutMax" value="1" comment="%%/100 of fluid particles allowed to be excluded from domain (default=1)" units_comment="decimal" />
