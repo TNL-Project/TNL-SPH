@@ -290,7 +290,7 @@ int main( int argc, char* argv[] )
    timeResults.insert({ "total ",                              std::to_string( totalTime                                                 ) } );
    timeResults.insert({ "total-average",                       std::to_string( totalTime / steps                                         ) } );
 
-   TNL::Benchmarks::writeMapAsJson( timeResults, "time_measurements", ".json" );
+   TNL::Benchmarks::writeMapAsJson( timeResults, "results/time_measurements", ".json" );
    std::cout << "\nDone ... " << std::endl;
 
 }
