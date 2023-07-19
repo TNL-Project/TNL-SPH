@@ -120,12 +120,6 @@ int main( int argc, char* argv[] )
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**
-    * Define time step control.
-    * There is const time step option and variable time step option.
-    */
-   using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
-
-   /**
     * Define readers and writers to read and write initial geometry and results.
     */
    using Reader = Readers::VTKReader;
@@ -167,7 +161,7 @@ int main( int argc, char* argv[] )
     * TEMP: Determine number of interation for constant timestep.
     * Perform simulation main loop.
     */
-   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   SPHParams::TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
    timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
@@ -466,7 +460,7 @@ int main( int argc, char* argv[] )
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         distributedSPHSimulation.localSimulation.model->template ComputePressureFromDensity< SPHParams::EOS >(
+         distributedSPHSimulation.localSimulation.model->template computePressureFromDensity< SPHParams::EOS >(
                distributedSPHSimulation.localSimulation.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
