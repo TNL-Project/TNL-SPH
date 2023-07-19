@@ -14,7 +14,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument( "-resolution", default=0.02, type=float )
-parser.add_argument( '--generateNewGeometry', default=False, action=argparse.BooleanOptionalAction )
+#python3.9 and above: parser.add_argument( '--generateNewGeometry', default=False, action=argparse.BooleanOptionalAction )
+parser.add_argument( '--generateNewGeometry', default=False, action='store_true' )
 args = parser.parse_args()
 
 dp =  args.resolution
@@ -113,7 +114,7 @@ gridEnd_z = 1.005 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :
 
 gridSize_x = math.ceil( ( gridEnd_x - gridBegin_x ) / searchRadius )
 gridSize_y = math.ceil( ( gridEnd_y - gridBegin_y ) / searchRadius )
-gridSize_z = math.ceil( 1.2 * ( gridEnd_z - gridBegin_z ) / searchRadius )
+gridSize_z = math.ceil( 1.3 * ( gridEnd_z - gridBegin_z ) / searchRadius )
 
 ### Generate configuration files
 # Read in the file

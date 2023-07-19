@@ -5,7 +5,7 @@ benchmarkName="local-test"
 samples=1
 resolutions="0.02"
 #resolutions="0.02 0.01 0.005"
-dualSPHysicsPath=/home/tomas/mount/home/tomas/Documents/DualSPHysics_v5.0.5/DualSPHysics_v5.0/bin/linux
+#dualSPHysicsPath=/home/tomas/mount/home/tomas/Documents/DualSPHysics_v5.0.5/DualSPHysics_v5.0/bin/linux
 
 ## results folder
 resultsFolder="results_"$benchmarkName
