@@ -138,7 +138,7 @@ gridEnd_x = 1.005 * ( max( max( fluid_rx ), max( box_rx ) ) + searchRadius )
 gridEnd_y = 1.005 * ( max( max( fluid_rz ), max( box_ry ) ) + searchRadius )
 
 gridSize_x = ceil( ( gridEnd_x - gridBegin_x ) / searchRadius )
-gridSize_y = ceil( ( gridEnd_y - gridBegin_y ) / searchRadius )
+gridSize_y = ceil( 1.3 * ( gridEnd_y - gridBegin_y ) / searchRadius )
 
 ### Generate configuration files
 # SPH parameters
