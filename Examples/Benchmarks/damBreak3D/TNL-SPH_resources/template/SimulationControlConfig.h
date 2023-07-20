@@ -29,8 +29,8 @@ class SPHSimulationControl
    const std::string inputParticleFile_bound = "sources/dambreak_boundary.vtk";
    std::string outputFileName = "results/particles";
 
-   const float endTime = 0.75;
-   const float outputTime = 0.04f;
+   const float endTime = 1.0;
+   const float outputTime = 1.0f;
 };
 
 } //SimulationControlConfiguration
