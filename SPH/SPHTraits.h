@@ -22,15 +22,11 @@ class SPHFluidTraits
    /* particle related */
    using ParticleType = unsigned short int;
    using ParticleTypeArrayType = Containers::Array< ParticleType, DeviceType, GlobalIndexType >;
-
    using ScalarType = RealType;
    using ScalarArrayType = Containers::Array< ScalarType, DeviceType, GlobalIndexType >;
-
    using VectorType = Containers::StaticVector< spaceDimension, RealType >;
    using VectorArrayType = Containers::Array< VectorType, DeviceType, GlobalIndexType >;
-
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
-
    using IndexVectorType = Containers::StaticVector< spaceDimension, GlobalIndexType >;
 };
 

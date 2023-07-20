@@ -518,6 +518,14 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdo
          subdomainInfo_boundary.gridIdxEnd++;
       }
       //oposite if statement
+      else if( ( subdomainInfo.numberOfParticlesInThisSubdomain - subdomainInfo.numberOfParticlesInNextSubdomain ) > 500 )
+      {
+         subdomainInfo.gridIdxOverlapEnd--;
+         subdomainInfo.gridIdxEnd--;
+
+         subdomainInfo_boundary.gridIdxOverlapEnd--;
+         subdomainInfo_boundary.gridIdxEnd--;
+      }
    }
 
    if( rank == 1 )
@@ -532,6 +540,14 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdo
          subdomainInfo_boundary.gridIdxBegin++;
       }
       //oposite if statement
+      else if( ( subdomainInfo.numberOfParticlesInPreviousSubdomain - subdomainInfo.numberOfParticlesInThisSubdomain ) > 500 )
+      {
+         subdomainInfo.gridIdxOverlapBegin--;
+         subdomainInfo.gridIdxBegin--;
+
+         subdomainInfo_boundary.gridIdxOverlapBegin--;
+         subdomainInfo_boundary.gridIdxBegin--;
+      }
 
       //handle the end
       if( ( subdomainInfo.numberOfParticlesInNextSubdomain - subdomainInfo.numberOfParticlesInThisSubdomain ) > 500 )
@@ -541,6 +557,15 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdo
 
          subdomainInfo_boundary.gridIdxOverlapEnd++;
          subdomainInfo_boundary.gridIdxEnd++;
+      }
+      //oposite if statement
+      else if( (  subdomainInfo.numberOfParticlesInThisSubdomain - subdomainInfo.numberOfParticlesInNextSubdomain  ) > 500 )
+      {
+         subdomainInfo.gridIdxOverlapEnd--;
+         subdomainInfo.gridIdxEnd--;
+
+         subdomainInfo_boundary.gridIdxOverlapEnd--;
+         subdomainInfo_boundary.gridIdxEnd--;
       }
    }
 
@@ -555,6 +580,14 @@ DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdo
          subdomainInfo_boundary.gridIdxBegin++;
       }
       //oposite if statement
+      else if( (  subdomainInfo.numberOfParticlesInPreviousSubdomain - subdomainInfo.numberOfParticlesInThisSubdomain ) > 500 )
+      {
+         subdomainInfo.gridIdxOverlapBegin--;
+         subdomainInfo.gridIdxBegin--;
+
+         subdomainInfo_boundary.gridIdxOverlapBegin--;
+         subdomainInfo_boundary.gridIdxBegin--;
+      }
    }
 
 }
