@@ -98,7 +98,108 @@ public:
    using ByteArrayView = Containers::ArrayView< std::uint8_t, DeviceType, GlobalIndexType >;
    using RequestsVector = std::vector< MPI_Request >;
 
+   using ParticleTraitsType = ParticlesTraits< ParticleConfig, DeviceType >;
+   using PairIndexType = typename ParticleTraitsType::PairIndexType;
    using SimulationSubdomainInfo = DistributedPhysicalObjectInfo< ParticleConfig >; //RESOLVE
+
+   template< typename SPHObjectPointer >
+   void
+   updateLocalSimulationInfo( SPHObjectPointer& sphObject )
+   {
+      const int rank = communicator.rank();
+      const int nproc = communicator.size();
+
+      GlobalIndexType gridColumnBegin = 0;
+      GlobalIndexType gridColumnEnd = 0;
+
+      if( rank == 0 )
+      {
+         gridColumnEnd = sphObject->subdomainInfo.gridIdxEnd;
+
+         PairIndexType firstLastParticle;
+         if constexpr( SPHConfig::spaceDimension == 2 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
+         else if constexpr( SPHConfig::spaceDimension == 3 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
+
+         std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " in column-end: " << gridColumnEnd << " is: " <<  firstLastParticle << std::endl;
+
+         sphObject->subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
+         sphObject->subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
+         sphObject->subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+         sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
+         sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
+      }
+
+      if( ( rank > 0 ) && ( rank < nproc - 1) )
+      {
+         //begin
+         gridColumnBegin = sphObject->subdomainInfo.gridIdxBegin;
+
+         PairIndexType firstLastParticle;
+         if constexpr( SPHConfig::spaceDimension == 2 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+         else if constexpr( SPHConfig::spaceDimension == 3 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
+
+         std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank <<  " in column-begin: " << gridColumnBegin << " is: " <<  firstLastParticle << std::endl;
+
+         sphObject->subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
+         sphObject->subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
+         sphObject->subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+         //is this safe? -in case that arrangeRecievedAndLocalData updates number of particles, then yes
+         //turn off: subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
+
+         sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
+         //turn off: sphObject->lastActiveParticle = subdomainInfo.lastParticleInLastGridColumn;
+
+         //end
+         gridColumnEnd = sphObject->subdomainInfo.gridIdxEnd;
+
+         //turn off: PairIndexType firstLastParticle;
+         if constexpr( SPHConfig::spaceDimension == 2 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
+         else if constexpr( SPHConfig::spaceDimension == 3 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
+
+         std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank << " in column-end: " << gridColumnEnd <<  " is: " <<  firstLastParticle << std::endl;
+
+         sphObject->subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
+         sphObject->subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
+         sphObject->subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+         //turn off: sphObject->firstActiveParticle = subdomainInfo.firstParticleInFirstGridColumn;
+         sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
+      }
+
+      if( rank == nproc - 1 )
+      {
+         gridColumnBegin = sphObject->subdomainInfo.gridIdxBegin;
+
+         PairIndexType firstLastParticle;
+         if constexpr( SPHConfig::spaceDimension == 2 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
+         else if constexpr( SPHConfig::spaceDimension == 3 )
+            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
+
+         std::cout << "[ updateLocalSimulationInfo ] first and last particle for rank: " << rank <<  " in column-begin: " << gridColumnBegin <<   " is: " <<  firstLastParticle << std::endl;
+
+         sphObject->subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
+         sphObject->subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
+         sphObject->subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
+
+         //is this safe? -in case that arrangeRecievedAndLocalData updates number of particles, then yes
+         sphObject->subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
+
+         sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
+         sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
+      }
+
+      //For load balancing
+      //subdomainInfo.numberOfParticlesInThisSubdomain = sphObject->particles->getNumberOfParticles();
+   }
 
    template< typename Array >
    void
@@ -275,13 +376,11 @@ public:
       return requests;
    }
 
-   template< typename Array, typename SPHObjectPointer >
+   template< typename Array >
    void
    arrangeRecievedAndLocalData( Array& arraySend,
                                 Array& arrayReceive,
-                                SPHObjectPointer& sphObject,
-                                SimulationSubdomainInfo& subdomainInfo,
-                                bool tempSetNumberOfPtcs )
+                                SimulationSubdomainInfo& subdomainInfo )
    {
       const int rank = communicator.rank();
       const int nproc = communicator.size();
@@ -303,11 +402,11 @@ public:
          GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn + 1;
          GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + subdomainInfo.receivedEnd;
 
-         //TODO: Remove this ugly aberattion.
-         if( tempSetNumberOfPtcs == true ){
-            sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
-            sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
-         }
+         //: //TODO: Remove this ugly aberattion.
+         //: if( tempSetNumberOfPtcs == true ){
+         //:    sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
+         //:    sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
+         //: }
 
          Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
       }
@@ -322,11 +421,11 @@ public:
          GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn - subdomainInfo.firstParticleInFirstGridColumn + 1 + subdomainInfo.receivedEnd;
          GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
 
-         //TODO: Remove this ugly aberattion.
-         if( tempSetNumberOfPtcs == true ){
-            sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
-            sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
-         }
+         //: //TODO: Remove this ugly aberattion.
+         //: if( tempSetNumberOfPtcs == true ){
+         //:    sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
+         //:    sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
+         //: }
 
          Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
 
@@ -336,14 +435,15 @@ public:
       {
          GlobalIndexType offsetSend = subdomainInfo.firstParticleInFirstGridColumn;
          GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
-         GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn;
+         //GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn;
+         GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn + 1 - subdomainInfo.firstParticleInFirstGridColumn;
          GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
 
-         //TODO: Remove this ugly aberattion.
-         if( tempSetNumberOfPtcs == true ){
-            sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
-            sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
-         }
+         //: //TODO: Remove this ugly aberattion.
+         //: if( tempSetNumberOfPtcs == true ){
+         //:    sphObject->particles->setNumberOfParticles( numberOfParticlesToSet );
+         //:    sphObject->particles->setLastActiveParticle( numberOfParticlesToSet - 1 );
+         //: }
 
          Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
       }
@@ -358,13 +458,16 @@ public:
       const int rank = communicator.rank();
       const int nproc = communicator.size();
 
+      GlobalIndexType numberOfParticlesToSet;
+
       if( rank == 0 )
       {
          GlobalIndexType offsetSend = 0;
          GlobalIndexType offsetReceive = 0;
          GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn + 1;
-         GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + subdomainInfo.receivedEnd;
-         return numberOfParticlesToSet;
+         numberOfParticlesToSet = numberOfParticlesToCopy + subdomainInfo.receivedEnd;
+         //GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + subdomainInfo.receivedEnd;
+         //return numberOfParticlesToSet;
       }
 
       if( ( rank > 0 ) && ( rank < nproc - 1 ) )
@@ -372,8 +475,9 @@ public:
          GlobalIndexType offsetSend = subdomainInfo.firstParticleInFirstGridColumn;
          GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
          GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn - subdomainInfo.firstParticleInFirstGridColumn + 1 + subdomainInfo.receivedEnd;
-         GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
-         return numberOfParticlesToSet;
+         numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
+         //GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
+         //return numberOfParticlesToSet;
       }
 
       if( rank == nproc - 1 )
@@ -382,9 +486,12 @@ public:
          GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
          //GlobalIndexType numberOfParticlesToCopy = sphObject->particles->getNumberOfParticles() - subdomainInfo.firstParticleInFirstGridColumn;
          GlobalIndexType numberOfParticlesToCopy = currentNumberOfParticles - subdomainInfo.firstParticleInFirstGridColumn;
-         GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
-         return numberOfParticlesToSet;
+         numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
+         //GlobalIndexType numberOfParticlesToSet = numberOfParticlesToCopy + offsetReceive;
+         //return numberOfParticlesToSet;
       }
+
+      return numberOfParticlesToSet;
    }
 
       //DistributedPhysicalObjectInfo subdomainInfo;

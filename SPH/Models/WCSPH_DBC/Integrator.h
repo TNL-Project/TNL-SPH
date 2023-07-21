@@ -58,7 +58,7 @@ class IntegratorVariables
 #ifdef HAVE_MPI
    template< typename Synchronizer, typename SimulationSubdomainInfo >
    void
-   synchronizeObject( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   synchronizeVariables( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
    {
       synchronizer.template synchronizeArray< ScalarArrayType >( rho_old, rho_old_swap, subdomainInfo, 1 );
       synchronizer.template synchronizeArray< VectorArrayType >( v_old, v_old_swap, subdomainInfo, 1 );

@@ -97,7 +97,7 @@ class SPHFluidVariables
 #ifdef HAVE_MPI
    template< typename Synchronizer, typename SimulationSubdomainInfo >
    void
-   synchronizeObject( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   synchronizeVariables( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
    {
       synchronizer.template synchronizeArray< ScalarArrayType >( rho, rho_swap, subdomainInfo, 1 );
       synchronizer.template synchronizeArray< VectorArrayType >( v, v_swap, subdomainInfo, 1 );

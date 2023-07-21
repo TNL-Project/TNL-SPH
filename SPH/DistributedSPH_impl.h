@@ -497,7 +497,8 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeSubdomainMetaDataArrayAsy
 
 template< typename SPHSimulation >
 void
-DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdomainInfo& subdomainInfo, SimulationSubdomainInfo& subdomainInfo_boundary )
+DistributedSPHSimpleFluid< SPHSimulation >::updateSubdomainSize( SimulationSubdomainInfo& subdomainInfo,
+                                                                 SimulationSubdomainInfo& subdomainInfo_boundary )
 {
 
    //REAL FUNCTIONS
@@ -609,6 +610,26 @@ DistributedSPHSimpleFluid< SPHSimulation >::save( const std::string& outputFileN
    const int rank = communicator.rank();
    std::string outputFileNameWithRank = outputFileName + "_rank" + std::to_string( rank ) + "_";
    localSimulation.template save< Writer >( outputFileNameWithRank, step );
+}
+
+template< typename SPHSimulation >
+void
+DistributedSPHSimpleFluid< SPHSimulation >::performLoadBalancing()
+{
+   //Perform load balancing - the old version
+   localSimulation.fluid->subdomainInfo.numberOfParticlesInThisSubdomain = localSimulation.fluid->particles->getNumberOfParticles();
+   synchronizeSubdomainMetaData( localSimulation.fluid->subdomainInfo );
+   TNL::MPI::Barrier( communicator );
+   updateSubdomainSize( localSimulation.fluid->subdomainInfo, localSimulation.boundary->subdomainInfo );
+}
+
+template< typename SPHSimulation >
+void
+DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSubdomain()
+{
+   //Update information about subdomain
+   synchronizer.updateLocalSimulationInfo( localSimulation.fluid );
+   synchronizer.updateLocalSimulationInfo( localSimulation.boundary );
 }
 
 template< typename SPHSimulation >

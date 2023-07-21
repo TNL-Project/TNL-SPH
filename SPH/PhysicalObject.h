@@ -146,10 +146,10 @@ class PhysicalObject
    synchronizeObject( Synchronzier& synchronizer )
    {
       //Synchronize:
-      variables->synchronizeVariables( synchronizer, localSimulationInfo );
-      integratorVariables->synchronizeVariables( synchronizer, localSimulationInfo );
+      variables->synchronizeVariables( synchronizer, subdomainInfo );
+      integratorVariables->synchronizeVariables( synchronizer, subdomainInfo );
       synchronizer.template synchronizeArray< typename ParticleSystem::PointArrayType >(
-            particles->getPoints(), particles->getPointsSwap(), localSimulationInfo, 1 );
+            particles->getPoints(), particles->getPointsSwap(), subdomainInfo, 1 );
 
    }
 
@@ -158,14 +158,14 @@ class PhysicalObject
    completeSynchronization( Synchronzier& synchronizer )
    {
       //Arrange transfered arrays: TODO: This should be removed.
-      variables->arrangeSynchronizedArrays( synchronizer, localSimulationInfo );
-      integratorVariables->arrangeSynchronizedArrays( synchronizer, localSimulationInfo );
+      variables->arrangeSynchronizedArrays( synchronizer, subdomainInfo );
+      integratorVariables->arrangeSynchronizedArrays( synchronizer, subdomainInfo );
       synchronizer.template arrangeRecievedAndLocalData< typename ParticleSystem::PointArrayType >(
-            particles->getPoints(), particles->getPointsSwap(), localSimulationInfo );
+            particles->getPoints(), particles->getPointsSwap(), subdomainInfo );
 
       //Update the particle ranges
       GlobalIndexType updatedNumberOfParticles = synchronizer.getNumberOfParticlesAfterSynchronization(
-            localSimulationInfo, particles->getNumberOfParticles() );
+            subdomainInfo, particles->getNumberOfParticles() );
       particles->setNumberOfParticles( updatedNumberOfParticles );
       particles->setLastActiveParticle( updatedNumberOfParticles - 1 );
    }
@@ -182,7 +182,7 @@ class PhysicalObject
 
 #ifdef HAVE_MPI
    using SimulationSubdomainInfo = DistributedPhysicalObjectInfo< typename ParticleSystem::Config >;
-   SimulationSubdomainInfo localSimulationInfo;
+   SimulationSubdomainInfo subdomainInfo;
 #endif
 
 };

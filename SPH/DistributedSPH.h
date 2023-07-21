@@ -119,7 +119,8 @@ public:
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
 
-   using SimulationSubdomainInfo = SimulationSubdomainInfo< ParticleConfig >;
+   //using SimulationSubdomainInfo = SimulationSubdomainInfo< ParticleConfig >;
+   using SimulationSubdomainInfo = DistributedPhysicalObjectInfo< ParticleConfig >;
    using Synchronizer = DistributedSPHSimulationSynchronizer< ParticleConfig, SPHConfig >;
 
    //Synchronizer types
@@ -154,6 +155,12 @@ public:
     * Obtains particle indices, ranges and limits necessary for
     * simulation synchronization.
     */
+   void
+   performLoadBalancing();
+
+   void
+   updateLocalSubdomain();
+
    void
    synchronize();
 

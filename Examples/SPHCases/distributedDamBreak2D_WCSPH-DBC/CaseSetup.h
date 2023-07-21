@@ -22,7 +22,6 @@
  * Particle system reader.
  **/
 #include "../../../Readers/VTKReader.h"
-//#include "../../../WritersNoFloating/VTKWriter.h"
 #include "../../../Writers/VTKWriter.h"
 #include "../../../Readers/readSPHSimulation.h"
 
@@ -33,19 +32,11 @@
 #include "sources/ParticlesConfig.h"
 #include "sources/SPHCaseConfig.h"
 #include "sources/SimulationControlConfig.h"
-//#include "sources/MeasuretoolConfig.h"
-
-//#include "DistributedSimulationConfig.h"
 
 /**
  * SPH general toolds.
  */
-//#include "../../../SPH/SPH.h"
 #include "../../../SPH/DistributedSPH.h"
-
-
-//#include "ParticlesConfig_g1.h"
-//#include "ParticlesConfig_g2.h"
 
 /**
  * SPH model.
@@ -63,10 +54,6 @@
  */
 #include "../../../SPH/TimeStep.h"
 
-/**
- * Measuretool draft.
- */
-#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
 
 using namespace TNL::ParticleSystem;
 
@@ -74,9 +61,9 @@ int main( int argc, char* argv[] )
 {
 
    TNL::MPI::ScopedInitializer mpi(argc, argv);
-   #ifdef HAVE_MPI
+#ifdef HAVE_MPI
       std::cout << "Running with MPI." << std::endl;
-   #endif
+#endif
 
    /**
     * Load simulation configs.
@@ -130,7 +117,6 @@ int main( int argc, char* argv[] )
     * Distributed simulation
     */
    using DistributedSPHSimulation = SPH::DistributedSPHSimpleFluid< SPHSimulation >;
-   using SimulationSubdomainInfo = typename DistributedSPHSimulation::SimulationSubdomainInfo;
 
    /**
     * Create instance of SPHParams class, which is object holding all the
@@ -180,8 +166,8 @@ int main( int argc, char* argv[] )
      */
    DistributedSPHSimulation distributedSPHSimulation( std::move( localSPHSimulation ) );
 
-   distributedSPHSimulation.localSimulationInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
-   distributedSPHSimulation.localSimulationInfo_boundary.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
+   distributedSPHSimulation.localSimulation.fluid->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
+   distributedSPHSimulation.localSimulation.boundary->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
    std::cout << distributedSPHSimulation << std::endl;
 
    /**
@@ -222,28 +208,23 @@ int main( int argc, char* argv[] )
       std::cout << "Search... done. " << std::endl;
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-      //Load balancing
+
+      /**
+       * Resize the domains based on the computation time
+       * and numbers of particles.
+       */
       if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
-      {
-         distributedSPHSimulation.localSimulationInfo.numberOfParticlesInThisSubdomain = distributedSPHSimulation.localSimulation.fluid->particles->getNumberOfParticles();
-
-         distributedSPHSimulation.synchronizeSubdomainMetaData( distributedSPHSimulation.localSimulationInfo );
-
-         TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-         distributedSPHSimulation.updateSubdomainSize( distributedSPHSimulation.localSimulationInfo, distributedSPHSimulation.localSimulationInfo_boundary );
-      }
+         distributedSPHSimulation.performLoadBalancing();
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
+      /**
+       * Update informations about subdomaints.
+       */
       timer_synchronize_updateInfo.start();
-      distributedSPHSimulation.updateLocalSimulationInfo( distributedSPHSimulation.localSimulationInfo,
-                                                          distributedSPHSimulation.localSimulation.fluid );
-      distributedSPHSimulation.updateLocalSimulationInfo( distributedSPHSimulation.localSimulationInfo_boundary,
-                                                          distributedSPHSimulation.localSimulation.boundary );
+      distributedSPHSimulation.updateLocalSubdomain();
       timer_synchronize_updateInfo.stop();
       std::cout << "Update local simulation info... done. " << std::endl;
-
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
@@ -271,181 +252,13 @@ int main( int argc, char* argv[] )
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
-      //DEBUG - temp
-      //distributedSPHSimulation.localSimulation.PerformNeighborSearch(
-      //      1, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
-      //TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-      //DEBUG_END - temp
-
-      ////IT TRANSFER TIME
-      //distributedSPHSimulation.updateLocalSimulationInfo( distributedSPHSimulation.localSimulationInfo,
-      //                                                   distributedSPHSimulation.localSimulation.fluid );
-      //distributedSPHSimulation.updateLocalSimulationInfo( distributedSPHSimulation.localSimulationInfo_boundary,
-      //                                                   distributedSPHSimulation.localSimulation.boundary );
-
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-      if( TNL::MPI::GetRank() == 0 )
-         std::cout << distributedSPHSimulation << std::endl;
-
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-      if( TNL::MPI::GetRank() == 1 )
-         std::cout << distributedSPHSimulation << std::endl;
-
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-      //TRANSFER
+      /**
+       * Transfer the data between domaints.
+       */
       timer_synchronize_transfer.start();
-      // --- FLUID --- //
-      //Variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho,
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho_swap,
-            distributedSPHSimulation.localSimulationInfo,
-            1 );
-
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v,
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v_swap,
-            distributedSPHSimulation.localSimulationInfo,
-            1 );
-            //2 );
-
-      //Integrator variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old,
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old_swap,
-            distributedSPHSimulation.localSimulationInfo,
-            1 );
-
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old,
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old_swap,
-            distributedSPHSimulation.localSimulationInfo,
-            1 );
-
-      //Points
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
-            distributedSPHSimulation.localSimulation.fluid->particles->getPoints(),
-            distributedSPHSimulation.localSimulation.fluid->particles->getPointsSwap(),
-            distributedSPHSimulation.localSimulationInfo,
-            1 );
-            //2 );
-
-      // --- BOUNDARY --- //
-      //Variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho,
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho_swap,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            1 );
-
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v,
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v_swap,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            1 );
-            //2 );
-
-      //Integrator variables
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::ScalarArrayType >(
-            distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old,
-            distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old_swap,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            1 );
-
-      //Points
-      distributedSPHSimulation.template synchronizeArray< typename SPHModel::SPHTraitsType::VectorArrayType >(
-            distributedSPHSimulation.localSimulation.boundary->particles->getPoints(),
-            distributedSPHSimulation.localSimulation.boundary->particles->getPointsSwap(),
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            1 );
-            //2 );
+      distributedSPHSimulation.synchronize();
       timer_synchronize_transfer.stop();
-
-      timer_synchronize_arrange.start();
-      ////REARANGED
-      // --- FLUID --- //
-      //Variables
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
-                                                                    typename SPHSimulation::FluidPointer >(
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho,
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->rho_swap,
-            distributedSPHSimulation.localSimulation.fluid,
-            distributedSPHSimulation.localSimulationInfo,
-            false );
-
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
-                                                                    typename SPHSimulation::FluidPointer >(
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v,
-            distributedSPHSimulation.localSimulation.fluid->getFluidVariables()->v_swap,
-            distributedSPHSimulation.localSimulation.fluid,
-            distributedSPHSimulation.localSimulationInfo,
-            false );
-
-      //Integrator variable
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
-                                                                    typename SPHSimulation::FluidPointer >(
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old,
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->rho_old_swap,
-            distributedSPHSimulation.localSimulation.fluid,
-            distributedSPHSimulation.localSimulationInfo,
-            false );
-
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
-                                                                    typename SPHSimulation::FluidPointer >(
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old,
-            distributedSPHSimulation.localSimulation.fluid->integratorVariables->v_old_swap,
-            distributedSPHSimulation.localSimulation.fluid,
-            distributedSPHSimulation.localSimulationInfo,
-            false );
-
-      //Particles
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
-                                                                    typename SPHSimulation::FluidPointer >(
-            distributedSPHSimulation.localSimulation.fluid->particles->getPoints(),
-            distributedSPHSimulation.localSimulation.fluid->particles->getPointsSwap(),
-            distributedSPHSimulation.localSimulation.fluid,
-            distributedSPHSimulation.localSimulationInfo,
-            true );
-
-      // --- BOUNDARY --- //
-      //Variables
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
-                                                                     typename SPHSimulation::BoundaryPointer >(
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho,
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->rho_swap,
-            distributedSPHSimulation.localSimulation.boundary,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            false );
-
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
-                                                                     typename SPHSimulation::BoundaryPointer >(
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v,
-            distributedSPHSimulation.localSimulation.boundary->getBoundaryVariables()->v_swap,
-            distributedSPHSimulation.localSimulation.boundary,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            false );
-
-      //Integrator variables
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::ScalarArrayType,
-                                                                     typename SPHSimulation::BoundaryPointer >(
-            distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old,
-            distributedSPHSimulation.localSimulation.boundary->integratorVariables->rho_old_swap,
-            distributedSPHSimulation.localSimulation.boundary,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            false );
-
-      //Particles
-      distributedSPHSimulation.template arrangeRecievedAndLocalData< typename SPHModel::SPHTraitsType::VectorArrayType,
-                                                                     typename SPHSimulation::BoundaryPointer >(
-            distributedSPHSimulation.localSimulation.boundary->particles->getPoints(),
-            distributedSPHSimulation.localSimulation.boundary->particles->getPointsSwap(),
-            distributedSPHSimulation.localSimulation.boundary,
-            distributedSPHSimulation.localSimulationInfo_boundary,
-            true );
-      timer_synchronize_arrange.stop();
+      std::cout << "Synchronization... done. " << std::endl;
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
@@ -467,28 +280,7 @@ int main( int argc, char* argv[] )
 
          distributedSPHSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
 
-         ///**
-         // * Interpolate on the grid.
-         // */
-         //std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         //myInterpolation.template InterpolateGrid< SPH::WendlandKernel2D >( localSPHSimulation.fluid, localSPHSimulation.boundary );
-         //myInterpolation.saveInterpolation( outputFileNameInterpolation );
-
       }
-
-      //: if( timeStepping.getTime() > measuretoolPressureTimer )
-      //: {
-      //:    measuretoolPressureTimer += measuretoolPressure.outputTime;
-      //:    mySensorInterpolation.template interpolateSensors< SPH::WendlandKernel2D,
-      //:                                                       EOS >( localSPHSimulation.fluid, localSPHSimulation.boundary );
-      //: }
-
-      //: if( timeStepping.getTime() > measuretoolWaterLevelTimer )
-      //: {
-      //:    measuretoolWaterLevelTimer += measuretoolWaterLevel.outputTime;
-      //:    mySensorWaterLevel.template interpolateSensors< SPH::WendlandKernel2D,
-      //:                                                    EOS >( localSPHSimulation.fluid, localSPHSimulation.boundary );
-      //: }
 
       timeStepping.updateTimeStep();
    }
