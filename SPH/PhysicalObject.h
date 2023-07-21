@@ -150,7 +150,6 @@ class PhysicalObject
       integratorVariables->synchronizeVariables( synchronizer, subdomainInfo );
       synchronizer.template synchronizeArray< typename ParticleSystem::PointArrayType >(
             particles->getPoints(), particles->getPointsSwap(), subdomainInfo, 1 );
-
    }
 
    template< typename Synchronzier >
@@ -164,7 +163,7 @@ class PhysicalObject
             particles->getPoints(), particles->getPointsSwap(), subdomainInfo );
 
       //Update the particle ranges
-      GlobalIndexType updatedNumberOfParticles = synchronizer.getNumberOfParticlesAfterSynchronization(
+      GlobalIndexType updatedNumberOfParticles = synchronizer.getNewParticleCount(
             subdomainInfo, particles->getNumberOfParticles() );
       particles->setNumberOfParticles( updatedNumberOfParticles );
       particles->setLastActiveParticle( updatedNumberOfParticles - 1 );

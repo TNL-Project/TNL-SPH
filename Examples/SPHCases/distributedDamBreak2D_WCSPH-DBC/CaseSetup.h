@@ -161,9 +161,9 @@ int main( int argc, char* argv[] )
    localSPHSimulation.boundary->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_bound[ TNL::MPI::GetRank() ] );
 
-    /**
-     *
-     */
+   /**
+    *
+    */
    DistributedSPHSimulation distributedSPHSimulation( std::move( localSPHSimulation ) );
 
    distributedSPHSimulation.localSimulation.fluid->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
