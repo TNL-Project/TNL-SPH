@@ -54,6 +54,26 @@ class IntegratorVariables
       v_old.swap( v_old_swap );
    }
 
+
+#ifdef HAVE_MPI
+   template< typename Synchronizer, typename SimulationSubdomainInfo >
+   void
+   synchronizeObject( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   {
+      synchronizer.template synchronizeArray< ScalarArrayType >( rho_old, rho_old_swap, subdomainInfo, 1 );
+      synchronizer.template synchronizeArray< VectorArrayType >( v_old, v_old_swap, subdomainInfo, 1 );
+   }
+
+   //TODO: This is wierd and ugly. Remove this.
+   template< typename Synchronizer, typename SimulationSubdomainInfo >
+   void
+   arrangeSynchronizedArrays( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   {
+      synchronizer.template arrangeRecievedAndLocalData< ScalarArrayType >( rho_old, rho_old_swap, subdomainInfo );
+      synchronizer.template arrangeRecievedAndLocalData< VectorArrayType >( v_old, v_old_swap, subdomainInfo );
+   }
+#endif
+
    ScalarArrayType rho_old;
    VectorArrayType v_old;
 

@@ -12,8 +12,9 @@
 #include "../Particles/ParticlesTraits.h"
 
 #include "SPH.h"
-//#include "DistributedSPHSynchronizer.h"
 #include "SPHTraits.h"
+
+#include "DistributedSPHSynchronizer.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -119,6 +120,7 @@ public:
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
 
    using SimulationSubdomainInfo = SimulationSubdomainInfo< ParticleConfig >;
+   using Synchronizer = DistributedSPHSimulationSynchronizer< ParticleConfig, SPHConfig >;
 
    //Synchronizer types
    using SPHTriatsType = SPHFluidTraits< SPHConfig >;
@@ -152,6 +154,9 @@ public:
     * Obtains particle indices, ranges and limits necessary for
     * simulation synchronization.
     */
+   void
+   synchronize();
+
    template< typename SPHObjectPointer >
    void
    updateLocalSimulationInfo( SimulationSubdomainInfo& subdomainInfo, SPHObjectPointer& sphObject );
@@ -218,6 +223,8 @@ public:
    SimulationSubdomainInfo localSimulationInfo_boundary;
 
    MPI::Comm communicator = MPI_COMM_WORLD;
+   Synchronizer synchronizer;
+
 
    //Control
    IndexVectorType domainDecomposition = 0;

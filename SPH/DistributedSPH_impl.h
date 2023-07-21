@@ -611,6 +611,18 @@ DistributedSPHSimpleFluid< SPHSimulation >::save( const std::string& outputFileN
    localSimulation.template save< Writer >( outputFileNameWithRank, step );
 }
 
+template< typename SPHSimulation >
+void
+DistributedSPHSimpleFluid< SPHSimulation >::synchronize()
+{
+   localSimulation.fluid->synchronizeObject( synchronizer );
+   localSimulation.boundary->synchronizeObject( synchronizer );
+
+   //TODO: Remove this.
+   localSimulation.fluid->completeSynchronization( synchronizer );
+   localSimulation.boundary->completeSynchronization( synchronizer );
+}
+
 
 template< typename SPHSimulation >
 void

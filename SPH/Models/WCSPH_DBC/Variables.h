@@ -93,6 +93,26 @@ class SPHFluidVariables
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
       writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
    }
+
+#ifdef HAVE_MPI
+   template< typename Synchronizer, typename SimulationSubdomainInfo >
+   void
+   synchronizeObject( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   {
+      synchronizer.template synchronizeArray< ScalarArrayType >( rho, rho_swap, subdomainInfo, 1 );
+      synchronizer.template synchronizeArray< VectorArrayType >( v, v_swap, subdomainInfo, 1 );
+   }
+
+   //TODO: This is wierd and ugly. Remove this.
+   template< typename Synchronizer, typename SimulationSubdomainInfo >
+   void
+   arrangeSynchronizedArrays( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   {
+      synchronizer.template arrangeRecievedAndLocalData< ScalarArrayType >( rho, rho_swap, subdomainInfo );
+      synchronizer.template arrangeRecievedAndLocalData< VectorArrayType >( v, v_swap, subdomainInfo );
+   }
+#endif
+
 };
 
 template< typename SPHFluidConfig >

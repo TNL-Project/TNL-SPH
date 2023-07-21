@@ -5,6 +5,10 @@
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
 
+#if HAVE_MPI
+#include "DistributedSPHSynchronizer.h"
+#endif
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -136,6 +140,37 @@ class PhysicalObject
                1 );
    }
 
+#ifdef HAVE_MPI
+   template< typename Synchronzier >
+   void
+   synchronizeObject( Synchronzier& synchronizer )
+   {
+      //Synchronize:
+      variables->synchronizeVariables( synchronizer, localSimulationInfo );
+      integratorVariables->synchronizeVariables( synchronizer, localSimulationInfo );
+      synchronizer.template synchronizeArray< typename ParticleSystem::PointArrayType >(
+            particles->getPoints(), particles->getPointsSwap(), localSimulationInfo, 1 );
+
+   }
+
+   template< typename Synchronzier >
+   void
+   completeSynchronization( Synchronzier& synchronizer )
+   {
+      //Arrange transfered arrays: TODO: This should be removed.
+      variables->arrangeSynchronizedArrays( synchronizer, localSimulationInfo );
+      integratorVariables->arrangeSynchronizedArrays( synchronizer, localSimulationInfo );
+      synchronizer.template arrangeRecievedAndLocalData< typename ParticleSystem::PointArrayType >(
+            particles->getPoints(), particles->getPointsSwap(), localSimulationInfo );
+
+      //Update the particle ranges
+      GlobalIndexType updatedNumberOfParticles = synchronizer.getNumberOfParticlesAfterSynchronization(
+            localSimulationInfo, particles->getNumberOfParticles() );
+      particles->setNumberOfParticles( updatedNumberOfParticles );
+      particles->setLastActiveParticle( updatedNumberOfParticles - 1 );
+   }
+#endif
+
    //Some additional informations
    GlobalIndexType firstActiveParticle = 0;
    GlobalIndexType lastActiveParticle = 0;
@@ -144,6 +179,12 @@ class PhysicalObject
    ParticlePointerType particles;
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;
+
+#ifdef HAVE_MPI
+   using SimulationSubdomainInfo = DistributedPhysicalObjectInfo< typename ParticleSystem::Config >;
+   SimulationSubdomainInfo localSimulationInfo;
+#endif
+
 };
 
 }
