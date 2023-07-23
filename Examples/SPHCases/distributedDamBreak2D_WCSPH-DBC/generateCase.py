@@ -39,7 +39,7 @@ timeStep = 0.00002 #otherwise is obtained automatically
 CFLnumber = 0.2
 
 # Setup number of subdomains (devices), to split the problem [-]:
-numberOfSubdomains = 2
+numberOfSubdomains = 3
 
 # Print information during case generation
 printInfoString = False
