@@ -239,13 +239,16 @@ DistributedSPHSimpleFluid< SPHSimulation >::performLoadBalancing()
    synchronizeSubdomainMetaData( localSimulation.fluid->subdomainInfo );
    TNL::MPI::Barrier( communicator );
    updateSubdomainSize( localSimulation.fluid->subdomainInfo, localSimulation.boundary->subdomainInfo );
+
+   localSimulation.fluid->centerObjectArraysInMemory();
+   localSimulation.boundary->centerObjectArraysInMemory();
 }
 
 template< typename SPHSimulation >
 void
 DistributedSPHSimpleFluid< SPHSimulation >::updateLocalSubdomain()
 {
-   //Update information about subdomain
+   //Update information about subdomain - TODO: Not should be part of synchronizer
    synchronizer.updateLocalSimulationInfo( localSimulation.fluid );
    synchronizer.updateLocalSimulationInfo( localSimulation.boundary );
 }
@@ -257,9 +260,8 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronize()
    localSimulation.fluid->synchronizeObject( synchronizer );
    localSimulation.boundary->synchronizeObject( synchronizer );
 
-   //TODO: Remove this.
-   localSimulation.fluid->completeSynchronization( synchronizer );
-   localSimulation.boundary->completeSynchronization( synchronizer );
+   localSimulation.fluid->completeSynchronization();
+   localSimulation.boundary->completeSynchronization();
 }
 
 
@@ -276,43 +278,44 @@ DistributedSPHSimpleFluid< SPHSimulation >::writeProlog( TNL::Logger& logger ) c
    logger.writeParameter( "Number of alloc. boundary particles:",
                            this->localSimulation.boundary->particles->getNumberOfAllocatedParticles() );
 
+   //MOVE THIS INTO SYNCHRONIZER
    logger.writeParameter( "Grid start cell index: ",
-                           this->localSimulationInfo.gridIdxBegin );
+                           this->localSimulation.fluid->subdomainInfo.gridIdxBegin );
    logger.writeParameter( "Grid end cell index: ",
-                           this->localSimulationInfo.gridIdxEnd );
+                           this->localSimulation.fluid->subdomainInfo.gridIdxEnd );
    logger.writeParameter( "Grid real start cell index (start-overlap): ",
-                           this->localSimulationInfo.gridIdxOverlapBegin );
+                           this->localSimulation.fluid->subdomainInfo.gridIdxOverlapBegin );
    logger.writeParameter( "Grid real end cell index (end-overlap): ",
-                           this->localSimulationInfo.gridIdxOverlapEnd );
+                           this->localSimulation.fluid->subdomainInfo.gridIdxOverlapEnd );
 
    logger.writeParameter( "var: {firstParticleInFirstGridColumn} ",
-                           this->localSimulationInfo.firstParticleInFirstGridColumn );
+                           this->localSimulation.fluid->subdomainInfo.firstParticleInFirstGridColumn );
    logger.writeParameter( "var: {lastParticleInFirstGridColumn} ",
-                           this->localSimulationInfo.lastParticleInFirstGridColumn );
+                           this->localSimulation.fluid->subdomainInfo.lastParticleInFirstGridColumn );
    logger.writeParameter( "var: {firstParticleInLastGridColumn} ",
-                           this->localSimulationInfo.firstParticleInLastGridColumn );
+                           this->localSimulation.fluid->subdomainInfo.firstParticleInLastGridColumn );
    logger.writeParameter( "var: {lastParticleInLastGridColumn} ",
-                           this->localSimulationInfo.lastParticleInLastGridColumn );
+                           this->localSimulation.fluid->subdomainInfo.lastParticleInLastGridColumn );
 
    logger.writeParameter( "var: {recievedStart} ",
-                           this->localSimulationInfo.receivedBegin );
+                           this->localSimulation.fluid->subdomainInfo.receivedBegin );
    logger.writeParameter( "var: {recievedEnd} ",
-                           this->localSimulationInfo.receivedEnd );
+                           this->localSimulation.fluid->subdomainInfo.receivedEnd );
 
    //Boundary
    logger.writeParameter( "var: {firstParticleInFirstGridColumn-boundary} ",
-                           this->localSimulationInfo_boundary.firstParticleInFirstGridColumn );
+                           this->localSimulation.boundary->subdomainInfo.firstParticleInFirstGridColumn );
    logger.writeParameter( "var: {lastParticleInFirstGridColumn-boundary} ",
-                           this->localSimulationInfo_boundary.lastParticleInFirstGridColumn );
+                           this->localSimulation.boundary->subdomainInfo.lastParticleInFirstGridColumn );
    logger.writeParameter( "var: {firstParticleInLastGridColumn-boundary} ",
-                           this->localSimulationInfo_boundary.firstParticleInLastGridColumn );
+                           this->localSimulation.boundary->subdomainInfo.firstParticleInLastGridColumn );
    logger.writeParameter( "var: {lastParticleInLastGridColumn-boundary} ",
-                           this->localSimulationInfo_boundary.lastParticleInLastGridColumn );
+                           this->localSimulation.boundary->subdomainInfo.lastParticleInLastGridColumn );
 
    logger.writeParameter( "var: {recievedStart-boundary} ",
-                           this->localSimulationInfo_boundary.receivedBegin );
+                           this->localSimulation.boundary->subdomainInfo.receivedBegin );
    logger.writeParameter( "var: {recievedEnd-boundary} ",
-                           this->localSimulationInfo_boundary.receivedEnd );
+                           this->localSimulation.boundary->subdomainInfo.receivedEnd );
 }
 
 //DEBUG

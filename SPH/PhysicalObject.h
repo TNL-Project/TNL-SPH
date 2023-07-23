@@ -7,6 +7,7 @@
 
 #if HAVE_MPI
 #include "DistributedSPHSynchronizer.h"
+#include "shared/utils.h"
 #endif
 
 namespace TNL {
@@ -63,9 +64,21 @@ class PhysicalObject
    }
 
    const GlobalIndexType
+   getNumberOfActiveParticles() const
+   {
+      return ( this->lastActiveParticle - this->firstActiveParticle + 1 );
+   }
+
+   const GlobalIndexType
    getNumberOfParticles() const
    {
       return this->particles->getNumberOfParticles();
+   }
+
+   const GlobalIndexType
+   getNumberOfAllocatedParticles() const
+   {
+      return this->particles->getNumberOfAllocatedParticles();
    }
 
    ParticlePointerType&
@@ -145,28 +158,100 @@ class PhysicalObject
    void
    synchronizeObject( Synchronzier& synchronizer )
    {
-      //Synchronize:
       variables->synchronizeVariables( synchronizer, subdomainInfo );
       integratorVariables->synchronizeVariables( synchronizer, subdomainInfo );
       synchronizer.template synchronizeArray< typename ParticleSystem::PointArrayType >(
             particles->getPoints(), particles->getPointsSwap(), subdomainInfo, 1 );
    }
 
-   template< typename Synchronzier >
    void
-   completeSynchronization( Synchronzier& synchronizer )
+   centerObjectArraysInMemory()
    {
-      //Arrange transfered arrays: TODO: This should be removed.
-      variables->arrangeSynchronizedArrays( synchronizer, subdomainInfo );
-      integratorVariables->arrangeSynchronizedArrays( synchronizer, subdomainInfo );
-      synchronizer.template arrangeRecievedAndLocalData< typename ParticleSystem::PointArrayType >(
-            particles->getPoints(), particles->getPointsSwap(), subdomainInfo );
+      //: const GlobalIndexType numberOfParticles = this->getNumberOfActiveParticles();
+      //: const GlobalIndexType numberOfAllocatedParticles = this->getNumberOfAllocatedParticles();
+      //: const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticles ) / 2 );
 
+      //: variables->centerVariablesInMemory( this->firstActiveParticle, shiftInMemory, numberOfParticles );
+      //: integratorVariables->centerVariablesInMemory( this->firstActiveParticle, shiftInMemory, numberOfParticles );
+
+      //: utils::shiftArray(
+      //:       particles->getPoints(), particles->getPointsSwap(), this->firstActiveParticle, shiftInMemory, numberOfParticles );
+
+      //: this->firstActiveParticle = shiftInMemory;
+      //: this->lastActiveParticle = shiftInMemory + numberOfParticles - 1 ;
+      //: this->particles->setFirstActiveParticle( shiftInMemory ); //FIXME: is this OK?
+      //: this->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 ); //FIXME: is this OK?
+
+      //edit
+      const GlobalIndexType particlesStart = this->particles->getFirstActiveParticle();
+      const GlobalIndexType numberOfParticlesToCopy = this->particles->getLastActiveParticle() -
+                                                      this->particles->getFirstActiveParticle() + 1;
+
+      const GlobalIndexType numberOfAllocatedParticles = this->getNumberOfAllocatedParticles();
+      const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticlesToCopy ) / 2 );
+
+      variables->centerVariablesInMemory( particlesStart, shiftInMemory, numberOfParticlesToCopy );
+      integratorVariables->centerVariablesInMemory( particlesStart, shiftInMemory, numberOfParticlesToCopy );
+
+      utils::shiftArray(
+            particles->getPoints(), particles->getPointsSwap(), particlesStart, shiftInMemory, numberOfParticlesToCopy );
+
+      //experiment
+      //this->firstActiveParticle = firstActiveParticle + shiftInMemory;
+      //this->lastActiveParticle = lastActiveParticle + shiftInMemory;
+      this->firstActiveParticle =  shiftInMemory + subdomainInfo.receivedBegin;
+      this->lastActiveParticle = shiftInMemory + numberOfParticlesToCopy + subdomainInfo.receivedEnd - 1;
+
+      this->particles->setFirstActiveParticle( shiftInMemory ); //FIXME: is this OK?
+      this->particles->setLastActiveParticle( shiftInMemory + numberOfParticlesToCopy - 1 ); //FIXME: is this OK?
+
+      //----- debug ------------------------------------------------------
+      //TNL::MPI::Barrier();
+      if( TNL::MPI::GetRank() == 0 ){
+         std::cout << "rank 0:" << std::endl;
+         std::cout << "| shift in memory: " << shiftInMemory << std::endl;
+         std::cout << "| first active particle: " << firstActiveParticle << std::endl;
+         std::cout << "| last active particle: " << lastActiveParticle << std::endl;
+         std::cout << "| particles - first active particle: " << particles->getFirstActiveParticle() << std::endl;
+         std::cout << "| particles - last active particle: " << particles->getLastActiveParticle() << std::endl;
+      }
+      //TNL::MPI::Barrier();
+      if( TNL::MPI::GetRank() == 1 ){
+         std::cout << "rank 1:" << std::endl;
+         std::cout << "| shift in memory: " << shiftInMemory << std::endl;
+         std::cout << "| first active particle: " << firstActiveParticle << std::endl;
+         std::cout << "| last active particle: " << lastActiveParticle << std::endl;
+         std::cout << "| particles - first active particle: " << particles->getFirstActiveParticle() << std::endl;
+         std::cout << "| particles - last active particle: " << particles->getLastActiveParticle() << std::endl;
+      }
+      //TNL::MPI::Barrier();
+      if( TNL::MPI::GetRank() == 2 ){
+         std::cout << "rank 2:" << std::endl;
+         std::cout << "| shift in memory: " << shiftInMemory << std::endl;
+         std::cout << "| first active particle: " << firstActiveParticle << std::endl;
+         std::cout << "| last active particle: " << lastActiveParticle << std::endl;
+         std::cout << "| particles - first active particle: " << particles->getFirstActiveParticle() << std::endl;
+         std::cout << "| particles - last active particle: " << particles->getLastActiveParticle() << std::endl;
+      }
+      //TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      //----- end-debug --------------------------------------------------
+   }
+
+   void
+   completeSynchronization()
+   {
       //Update the particle ranges
-      GlobalIndexType updatedNumberOfParticles = synchronizer.getNewParticleCount(
-            subdomainInfo, particles->getNumberOfParticles() );
-      particles->setNumberOfParticles( updatedNumberOfParticles );
-      particles->setLastActiveParticle( updatedNumberOfParticles - 1 );
+      //GlobalIndexType updatedNumberOfParticles = synchronizer.getNewParticleCount(
+      //      subdomainInfo, particles->getNumberOfParticles() );
+
+      const GlobalIndexType numberOfParticlesToSet = subdomainInfo.lastParticleInLastGridColumn -
+                                                     subdomainInfo.firstParticleInFirstGridColumn +
+                                                     subdomainInfo.receivedEnd +
+                                                     subdomainInfo.receivedBegin + 1;
+
+      particles->setNumberOfParticles( numberOfParticlesToSet );
+      particles->setFirstActiveParticle( subdomainInfo.firstParticleInFirstGridColumn - subdomainInfo.receivedBegin );
+      particles->setLastActiveParticle( subdomainInfo.lastParticleInLastGridColumn + subdomainInfo.receivedEnd );
    }
 #endif
 

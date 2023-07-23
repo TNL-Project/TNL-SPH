@@ -3,6 +3,10 @@
 #include "../../SPHTraits.h"
 #include <thrust/gather.h>
 
+#ifdef HAVE_MPI
+#include "../../shared/utils.h"
+#endif
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -103,13 +107,13 @@ class SPHFluidVariables
       synchronizer.template synchronizeArray< VectorArrayType >( v, v_swap, subdomainInfo, 1 );
    }
 
-   //TODO: This is wierd and ugly. Remove this.
-   template< typename Synchronizer, typename SimulationSubdomainInfo >
    void
-   arrangeSynchronizedArrays( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   centerVariablesInMemory( const GlobalIndexType firstActiveParticle,
+                            const GlobalIndexType shiftInMemory,
+                            const GlobalIndexType numberOfParticles )
    {
-      synchronizer.template arrangeRecievedAndLocalData< ScalarArrayType >( rho, rho_swap, subdomainInfo );
-      synchronizer.template arrangeRecievedAndLocalData< VectorArrayType >( v, v_swap, subdomainInfo );
+      utils::shiftArray( rho, rho_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
+      utils::shiftArray( v, v_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
    }
 #endif
 

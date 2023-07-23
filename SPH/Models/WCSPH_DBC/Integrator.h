@@ -8,6 +8,10 @@
 #include "Variables.h"
 #include "../../SPHTraits.h"
 
+#ifdef HAVE_MPI
+#include "../../shared/utils.h"
+#endif
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -64,13 +68,13 @@ class IntegratorVariables
       synchronizer.template synchronizeArray< VectorArrayType >( v_old, v_old_swap, subdomainInfo, 1 );
    }
 
-   //TODO: This is wierd and ugly. Remove this.
-   template< typename Synchronizer, typename SimulationSubdomainInfo >
    void
-   arrangeSynchronizedArrays( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   centerVariablesInMemory( const GlobalIndexType firstActiveParticle,
+                            const GlobalIndexType shiftInMemory,
+                            const GlobalIndexType numberOfParticles )
    {
-      synchronizer.template arrangeRecievedAndLocalData< ScalarArrayType >( rho_old, rho_old_swap, subdomainInfo );
-      synchronizer.template arrangeRecievedAndLocalData< VectorArrayType >( v_old, v_old_swap, subdomainInfo );
+      utils::shiftArray( rho_old, rho_old_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
+      utils::shiftArray( v_old, v_old_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
    }
 #endif
 

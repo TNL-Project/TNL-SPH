@@ -168,7 +168,7 @@ int main( int argc, char* argv[] )
 
    distributedSPHSimulation.localSimulation.fluid->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
    distributedSPHSimulation.localSimulation.boundary->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
-   std::cout << distributedSPHSimulation << std::endl;
+   //std::cout << distributedSPHSimulation << std::endl;
 
    /**
     * Define timers to measure computation time.
@@ -176,6 +176,10 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
    TNL::Timer timer_synchronize, timer_synchronize_updateInfo, timer_synchronize_transfer, timer_synchronize_arrange;
+
+   distributedSPHSimulation.localSimulation.fluid->centerObjectArraysInMemory();
+   distributedSPHSimulation.localSimulation.boundary->centerObjectArraysInMemory();
+
 
    TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
@@ -191,9 +195,12 @@ int main( int argc, char* argv[] )
              << distributedSPHSimulation.localSimulation.boundary->particles->getCellFirstLastParticleList().getSize() \
              << std::endl;
 
+   TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+
+   //while( timeStepping.getStep() < 1 )
    while( timeStepping.runTheSimulation() )
    {
-      std::cout << "Time: " << timeStepping.getTime() << std::endl;
+      std::cout << "Time: " << timeStepping.getTime() << " step: " << timeStepping.getStep() << std::endl;
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
@@ -213,8 +220,8 @@ int main( int argc, char* argv[] )
        * Resize the domains based on the computation time
        * and numbers of particles.
        */
-      if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
-         distributedSPHSimulation.performLoadBalancing();
+      //if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
+      //   distributedSPHSimulation.performLoadBalancing();
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
@@ -227,6 +234,31 @@ int main( int argc, char* argv[] )
       std::cout << "Update local simulation info... done. " << std::endl;
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+
+      //----- debug ------------------------------------------------------
+      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      if( TNL::MPI::GetRank() == 0 ){
+         std::cout << "rank 0:" << std::endl;
+         std::cout << distributedSPHSimulation << std::endl;
+         std::cout << "subdomain info:" << std::endl;
+         std::cout << distributedSPHSimulation.localSimulation.fluid->subdomainInfo << std::endl;
+      }
+      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      if( TNL::MPI::GetRank() == 1 ){
+         std::cout << "rank 1:" << std::endl;
+         std::cout << distributedSPHSimulation << std::endl;
+         std::cout << "subdomain info:" << std::endl;
+         std::cout << distributedSPHSimulation.localSimulation.fluid->subdomainInfo << std::endl;
+      }
+      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      if( TNL::MPI::GetRank() == 2 ){
+         std::cout << "rank 2:" << std::endl;
+         std::cout << distributedSPHSimulation << std::endl;
+         std::cout << "subdomain info:" << std::endl;
+         std::cout << distributedSPHSimulation.localSimulation.fluid->subdomainInfo << std::endl;
+      }
+      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      //----- end-debug --------------------------------------------------
 
       /**
        * Perform interaction with given model.

@@ -74,10 +74,42 @@ class DistributedPhysicalObjectInfo
 
       this->gridIdxOverlapEnd = params.gridIdxOverlapEnd;
       this->gridIdxEnd = params.gridIdxEnd;
+
+      //----- debug ------------------------------------------------------
+      std::cout << "[ DistributedPhysicalObjectInfo, rank: " << TNL::MPI::GetRank() << " ] Variables loaded." << std::endl;
+      //----- end-debug --------------------------------------------------
    }
 
    void
-   writeProlog( TNL::Logger& logger ) const noexcept;
+   debugWriteProlog( TNL::Logger& logger ) const noexcept
+   {
+      logger.writeParameter( "Grid start cell index: ",
+                              this->gridIdxBegin );
+      logger.writeParameter( "Grid end cell index: ",
+                              this->gridIdxEnd );
+      logger.writeParameter( "Grid real start cell index (start-overlap): ",
+                              this->gridIdxOverlapBegin );
+      logger.writeParameter( "Grid real end cell index (end-overlap): ",
+                              this->gridIdxOverlapEnd );
+
+      logger.writeParameter( "var: {firstParticleInFirstGridColumn} ",
+                              this->firstParticleInFirstGridColumn );
+      logger.writeParameter( "var: {lastParticleInFirstGridColumn} ",
+                              this->lastParticleInFirstGridColumn );
+      logger.writeParameter( "var: {firstParticleInLastGridColumn} ",
+                              this->firstParticleInLastGridColumn );
+      logger.writeParameter( "var: {lastParticleInLastGridColumn} ",
+                              this->lastParticleInLastGridColumn );
+
+      logger.writeParameter( "var: {numberOfParticlesToSendBegin} ",
+                              this->numberOfParticlesToSendBegin );
+      logger.writeParameter( "var: {numberOfParticlesToSendEnd} ",
+                              this->numberOfParticlesToSendEnd );
+      logger.writeParameter( "var: {recievedStart} ",
+                              this->receivedBegin );
+      logger.writeParameter( "var: {recievedEnd} ",
+                              this->receivedEnd );
+   }
 };
 
 template< typename ParticleConfig, typename SPHConfig >
@@ -115,6 +147,10 @@ public:
             firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
          else if constexpr( SPHConfig::spaceDimension == 3 )
             firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
+
+         //added
+         sphObject->subdomainInfo.firstParticleInFirstGridColumn = sphObject->getFirstActiveParticle();
+         //sphObject->subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
 
          sphObject->subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
          sphObject->subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
@@ -172,7 +208,8 @@ public:
          sphObject->subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
 
          //is this safe? -in case that arrangeRecievedAndLocalData updates number of particles, then yes
-         sphObject->subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
+         //TURN OFF: sphObject->subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
+         sphObject->subdomainInfo.lastParticleInLastGridColumn = sphObject->getLastActiveParticle();
 
          sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
          sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
@@ -248,7 +285,7 @@ public:
 
          //Begin - Recieve
          const GlobalIndexType receiveToPositionBegin = subdomainInfo.firstParticleInFirstGridColumn - subdomainInfo.receivedBegin;
-         requests.push_back( MPI::Irecv( arrayReceive.getData() + bytesPerValue * receiveToPositionBegin,
+         requests.push_back( MPI::Irecv( array.getData() + bytesPerValue * receiveToPositionBegin,
                                          //bytesPerValue * maxParticlesToSend,
                                          bytesPerValue * subdomainInfo.receivedBegin,
                                          rank - 1,
@@ -257,7 +294,7 @@ public:
 
          //End - Send
          const GlobalIndexType sendFromPositionEnd =  subdomainInfo.firstParticleInLastGridColumn;
-         requests.push_back( MPI::Isend( arraySend.getData() +  bytesPerValue * sendFromPositionEnd,
+         requests.push_back( MPI::Isend( array.getData() +  bytesPerValue * sendFromPositionEnd,
                                          bytesPerValue * subdomainInfo.numberOfParticlesToSendEnd,
                                          rank + 1,
                                          0,
@@ -265,7 +302,7 @@ public:
 
          //Begin -Send
          const GlobalIndexType sendFromPositionBegin = subdomainInfo.firstParticleInFirstGridColumn;
-         requests.push_back( MPI::Isend( arraySend.getData() + bytesPerValue * sendFromPositionBegin,
+         requests.push_back( MPI::Isend( array.getData() + bytesPerValue * sendFromPositionBegin,
                                          bytesPerValue * subdomainInfo.numberOfParticlesToSendBegin,
                                          rank - 1,
                                          0,
@@ -276,7 +313,7 @@ public:
       {
          //Recieve
          const GlobalIndexType receiveToPosition = subdomainInfo.firstParticleInFirstGridColumn - subdomainInfo.receivedBegin;
-         requests.push_back( MPI::Irecv( arrayReceive.getData() + bytesPerValue * receiveToPosition,
+         requests.push_back( MPI::Irecv( array.getData() + bytesPerValue * receiveToPosition,
                                          //bytesPerValue * maxParticlesToSend,
                                          bytesPerValue * subdomainInfo.receivedBegin,
                                          nproc - 2,
@@ -429,6 +466,8 @@ public:
    //const int maxParticlesToSend = 15000;
 
 };
+
+
 
 
 } // SPH

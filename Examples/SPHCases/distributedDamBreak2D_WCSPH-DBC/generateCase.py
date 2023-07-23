@@ -39,7 +39,7 @@ timeStep = 0.00002 #otherwise is obtained automatically
 CFLnumber = 0.2
 
 # Setup number of subdomains (devices), to split the problem [-]:
-numberOfSubdomains = 3
+numberOfSubdomains = 2
 
 # Print information during case generation
 printInfoString = False
@@ -66,13 +66,13 @@ fluid_rx = []; fluid_ry = []; fluid_rz = []
 
 for x in range( fluidL_n ):
     for z in range( fluidH_n ):
-        #fluid_rx.append( dp * ( x + 1 ) )
-        #fluid_ry.append( 0. ) #we use only 2D case
-        #fluid_rz.append( dp * ( z + 1 ) )
-
-        fluid_rx.append( boxL - fluidL + dp * x  )
+        fluid_rx.append( dp * ( x + 1 ) )
         fluid_ry.append( 0. ) #we use only 2D case
         fluid_rz.append( dp * ( z + 1 ) )
+
+        #fluid_rx.append( boxL - fluidL + dp * x  )
+        #fluid_ry.append( 0. ) #we use only 2D case
+        #fluid_rz.append( dp * ( z + 1 ) )
 
 # Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []

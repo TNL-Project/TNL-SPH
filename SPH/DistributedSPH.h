@@ -267,6 +267,18 @@ operator<<( std::ostream& str, const SPH::SimulationSubdomainInfo< ParticleConfi
    return str;
 }
 
+//DEBUG
+template< typename ParticleConfig >
+std::ostream&
+operator<<( std::ostream& str, const SPH::DistributedPhysicalObjectInfo< ParticleConfig >& subdomainInfo )
+{
+   TNL::Logger logger( 100, str );
+
+   subdomainInfo.debugWriteProlog( logger );
+
+   return str;
+}
+
 
 #include "DistributedSPH_impl.h"
 
