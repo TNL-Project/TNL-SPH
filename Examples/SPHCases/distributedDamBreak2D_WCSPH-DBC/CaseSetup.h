@@ -164,11 +164,10 @@ int main( int argc, char* argv[] )
    /**
     *
     */
-   DistributedSPHSimulation distributedSPHSimulation( std::move( localSPHSimulation ) );
+   DistributedSPHSimulation distributedSph( std::move( localSPHSimulation ) );
 
-   distributedSPHSimulation.localSimulation.fluid->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
-   distributedSPHSimulation.localSimulation.boundary->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
-   //std::cout << distributedSPHSimulation << std::endl;
+   distributedSph.localSimulation.fluid->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
+   distributedSph.localSimulation.boundary->subdomainInfo.loadParameters( allParticleParams.subdomainParams[ TNL::MPI::GetRank() ] );
 
    /**
     * Define timers to measure computation time.
@@ -177,106 +176,56 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
    TNL::Timer timer_synchronize, timer_synchronize_updateInfo, timer_synchronize_transfer, timer_synchronize_arrange;
 
-   distributedSPHSimulation.localSimulation.fluid->centerObjectArraysInMemory();
-   distributedSPHSimulation.localSimulation.boundary->centerObjectArraysInMemory();
+   distributedSph.localSimulation.fluid->centerObjectArraysInMemory();
+   distributedSph.localSimulation.boundary->centerObjectArraysInMemory();
 
 
-   TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+   TNL::MPI::Barrier( distributedSph.communicator );
 
-   std::cout << " ~ RANK: " << TNL::MPI::GetRank() << " obj: FLUID - numberOfParticles: " \
-             << distributedSPHSimulation.localSimulation.fluid->getNumberOfParticles() << std::endl;
-   std::cout << " ~ RANK: " << TNL::MPI::GetRank() << " obj: BOUNDARY - numberOfParticles: " \
-             << distributedSPHSimulation.localSimulation.boundary->getNumberOfParticles() << std::endl;
-
-   std::cout << " ~ RANK: " << TNL::MPI::GetRank() << " obj: FLUID - flpl.size() : " \
-             << distributedSPHSimulation.localSimulation.fluid->particles->getCellFirstLastParticleList().getSize() \
-             << std::endl;
-   std::cout << " ~ RANK: " << TNL::MPI::GetRank() << " obj: BOUNDARY - flpl.size(): " \
-             << distributedSPHSimulation.localSimulation.boundary->particles->getCellFirstLastParticleList().getSize() \
-             << std::endl;
-
-   TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-   //while( timeStepping.getStep() < 502 )
    while( timeStepping.runTheSimulation() )
    {
       std::cout << "Time: " << timeStepping.getTime() << " step: " << timeStepping.getStep() << std::endl;
 
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      TNL::MPI::Barrier( distributedSph.communicator );
 
       /**
        * Resize the domains based on the computation time
        * and numbers of particles.
        */
       if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
-         distributedSPHSimulation.performLoadBalancing();
+         distributedSph.performLoadBalancing();
 
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      TNL::MPI::Barrier( distributedSph.communicator );
 
       /**
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
-      distributedSPHSimulation.localSimulation.PerformNeighborSearch(
-            //timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
+      distributedSph.localSimulation.PerformNeighborSearch(
             0, timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-      /**
-       * Resize the domains based on the computation time
-       * and numbers of particles.
-       */
-      //if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
-      //   distributedSPHSimulation.performLoadBalancing();
-
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      TNL::MPI::Barrier( distributedSph.communicator );
 
       /**
        * Update informations about subdomaints.
        */
       timer_synchronize_updateInfo.start();
-      distributedSPHSimulation.updateLocalSubdomain();
+      distributedSph.updateLocalSubdomain();
       timer_synchronize_updateInfo.stop();
       std::cout << "Update local simulation info... done. " << std::endl;
 
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-
-      //----- debug ------------------------------------------------------
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-      if( TNL::MPI::GetRank() == 0 ){
-         std::cout << "rank 0:" << std::endl;
-         std::cout << distributedSPHSimulation << std::endl;
-         std::cout << "subdomain info:" << std::endl;
-         std::cout << distributedSPHSimulation.localSimulation.fluid->subdomainInfo << std::endl;
-      }
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-      if( TNL::MPI::GetRank() == 1 ){
-         std::cout << "rank 1:" << std::endl;
-         std::cout << distributedSPHSimulation << std::endl;
-         std::cout << "subdomain info:" << std::endl;
-         std::cout << distributedSPHSimulation.localSimulation.fluid->subdomainInfo << std::endl;
-      }
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-      if( TNL::MPI::GetRank() == 2 ){
-         std::cout << "rank 2:" << std::endl;
-         std::cout << distributedSPHSimulation << std::endl;
-         std::cout << "subdomain info:" << std::endl;
-         std::cout << distributedSPHSimulation.localSimulation.fluid->subdomainInfo << std::endl;
-      }
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
-      //----- end-debug --------------------------------------------------
+      TNL::MPI::Barrier( distributedSph.communicator );
 
       /**
        * Perform interaction with given model.
        */
       timer_interact.start();
-      distributedSPHSimulation.template interact< SPH::WendlandKernel2D,
-                                                  SPHParams::DiffusiveTerm,
-                                                  SPHParams::ViscousTerm,
-                                                  SPHParams::EOS >( sphParams );
+      distributedSph.template interact< SPH::WendlandKernel2D,
+                                        SPHParams::DiffusiveTerm,
+                                        SPHParams::ViscousTerm,
+                                        SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -284,24 +233,24 @@ int main( int argc, char* argv[] )
        * Perform time integration, i.e. update particle positions.
        */
       timer_integrate.start();
-      distributedSPHSimulation.localSimulation.integrator->integratStepVerlet(
-            distributedSPHSimulation.localSimulation.fluid,
-            distributedSPHSimulation.localSimulation.boundary,
+      distributedSph.localSimulation.integrator->integratStepVerlet(
+            distributedSph.localSimulation.fluid,
+            distributedSph.localSimulation.boundary,
             timeStepping );
       timer_integrate.stop();
       std::cout << "Integrate... done. " << std::endl;
 
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      TNL::MPI::Barrier( distributedSph.communicator );
 
       /**
        * Transfer the data between domaints.
        */
       timer_synchronize_transfer.start();
-      distributedSPHSimulation.synchronize();
+      distributedSph.synchronize();
       timer_synchronize_transfer.stop();
       std::cout << "Synchronization... done. " << std::endl;
 
-      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+      TNL::MPI::Barrier( distributedSph.communicator );
 
       /**
        * Output particle data
@@ -314,23 +263,17 @@ int main( int argc, char* argv[] )
           * Its useful for output anywal.
           */
          timer_pressure.start();
-         distributedSPHSimulation.localSimulation.model->template computePressureFromDensity< SPHParams::EOS >(
-               distributedSPHSimulation.localSimulation.fluid, sphParams );
+         distributedSph.localSimulation.model->template computePressureFromDensity< SPHParams::EOS >(
+               distributedSph.localSimulation.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
-         distributedSPHSimulation.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
+         distributedSph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
 
       }
 
       timeStepping.updateTimeStep();
    }
-//
-//   std::string outputFileNameInterpolation = simulationControl.outputFileName + "_sensors.dat";
-//   mySensorInterpolation.saveSensors( outputFileNameInterpolation );
-//
-//   std::string outputFileNameWaterLevel = simulationControl.outputFileName + "_sensorsWaterLevel.dat";
-//   mySensorWaterLevel.saveSensors( outputFileNameWaterLevel );
 
    /**
     * Output simulation stats.
@@ -349,7 +292,7 @@ int main( int argc, char* argv[] )
    float totalTimePerStep = totalTime / steps;
 
 
-   TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+   TNL::MPI::Barrier( distributedSph.communicator );
 
    if( TNL::MPI::GetRank() == 0 )
    {
@@ -396,7 +339,7 @@ int main( int argc, char* argv[] )
       std::cout << "Total (average time per step)................. " << totalTime / steps << " sec." << std::endl;
    }
 
-   TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+   TNL::MPI::Barrier( distributedSph.communicator );
 
    if( TNL::MPI::GetRank() == 1 )
    {
@@ -443,7 +386,7 @@ int main( int argc, char* argv[] )
       std::cout << "Total (average time per step)................. " << totalTime / steps << " sec." << std::endl;
    }
 
-   TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+   TNL::MPI::Barrier( distributedSph.communicator );
 
    std::cout << "\nDone ... " << std::endl;
 }

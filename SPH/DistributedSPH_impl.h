@@ -26,7 +26,6 @@ DistributedSPHSimpleFluid< SPHSimulation >::getParticleDimension() const
    return this->domainDecomposition;
 }
 
-
 //Load balancing
 template< typename SPHSimulation >
 DistributedSPHSimpleFluid< SPHSimulation >::RequestsVector
@@ -42,72 +41,30 @@ DistributedSPHSimpleFluid< SPHSimulation >::synchronizeSubdomainMetaDataArrayAsy
    if( rank == 0 )
    {
       //Recieve
-      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain,
-                                      1, //count
-                                      1, //destination
-                                      0,
-                                      communicator ) );
-
-
+      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain, 1, 1, 0, communicator ) );
       //Send
-      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain,
-                                      1, //count
-                                      1, //denstination
-                                      0,
-                                      communicator ) );
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, 1, 0, communicator ) );
    }
 
    if( ( rank > 0 ) && ( rank < nproc - 1 ) )
    {
-      //End
-      //Recieve
-      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain,
-                                      1, //count
-                                      rank + 1, //destination
-                                      0,
-                                      communicator ) );
-
-
+      //End - Recieve
+      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain, 1, rank + 1, 0, communicator ) );
       //Send
-      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain,
-                                      1, //count
-                                      rank + 1, //denstination
-                                      0,
-                                      communicator ) );
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, rank + 1, 0, communicator ) );
 
-      //Begin
-      //Recieve
-      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain,
-                                      1, //count
-                                      rank - 1, //destination
-                                      0,
-                                      communicator ) );
-
+      //Begin - Recieve
+      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain, 1, rank - 1, 0, communicator ) );
       //Send
-      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain,
-                                      1, //count
-                                      rank - 1, //destination
-                                      0,
-                                      communicator ) );
-
-
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, rank - 1, 0, communicator ) );
    }
 
    if( rank == nproc - 1 )
    {
       //Recieve
-      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain,
-                                      1, //count
-                                      nproc - 2, //destination
-                                      0,
-                                      communicator ) );
-
+      requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain, 1, nproc - 2, 0, communicator ) );
       //Send
-      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain,
-                                      1, //count
-                                      nproc - 2, //destination
-                                      0,
-                                      communicator ) );
+      requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, nproc - 2, 0, communicator ) );
    }
 
    return requests;
@@ -239,10 +196,6 @@ DistributedSPHSimpleFluid< SPHSimulation >::performLoadBalancing()
    synchronizeSubdomainMetaData( localSimulation.fluid->subdomainInfo );
    TNL::MPI::Barrier( communicator );
    updateSubdomainSize( localSimulation.fluid->subdomainInfo, localSimulation.boundary->subdomainInfo );
-
-   //i dont need this
-   //synchronizer.updateLocalSimulationInfo( localSimulation.fluid );
-   //synchronizer.updateLocalSimulationInfo( localSimulation.boundary );
 
    localSimulation.fluid->centerObjectArraysInMemory();
    localSimulation.boundary->centerObjectArraysInMemory();
