@@ -128,98 +128,6 @@ public:
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
    using SimulationSubdomainInfo = DistributedPhysicalObjectInfo< ParticleConfig >; //RESOLVE
 
-   template< typename SPHObjectPointer >
-   void
-   updateLocalSimulationInfo( SPHObjectPointer& sphObject )
-   {
-      const int rank = communicator.rank();
-      const int nproc = communicator.size();
-
-      GlobalIndexType gridColumnBegin = 0;
-      GlobalIndexType gridColumnEnd = 0;
-
-      if( rank == 0 )
-      {
-         gridColumnEnd = sphObject->subdomainInfo.gridIdxEnd;
-
-         PairIndexType firstLastParticle;
-         if constexpr( SPHConfig::spaceDimension == 2 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
-         else if constexpr( SPHConfig::spaceDimension == 3 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
-
-         //added
-         sphObject->subdomainInfo.firstParticleInFirstGridColumn = sphObject->getFirstActiveParticle();
-         //sphObject->subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
-
-         sphObject->subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
-         sphObject->subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
-         sphObject->subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
-
-         sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
-         sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
-      }
-
-      if( ( rank > 0 ) && ( rank < nproc - 1) )
-      {
-         //begin
-         gridColumnBegin = sphObject->subdomainInfo.gridIdxBegin;
-
-         PairIndexType firstLastParticle;
-         if constexpr( SPHConfig::spaceDimension == 2 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
-         else if constexpr( SPHConfig::spaceDimension == 3 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
-
-         sphObject->subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
-         sphObject->subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
-         sphObject->subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
-
-         sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
-
-         //end
-         gridColumnEnd = sphObject->subdomainInfo.gridIdxEnd;
-
-         //turn off: PairIndexType firstLastParticle;
-         if constexpr( SPHConfig::spaceDimension == 2 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnEnd );
-         else if constexpr( SPHConfig::spaceDimension == 3 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnEnd );
-
-         sphObject->subdomainInfo.firstParticleInLastGridColumn = firstLastParticle[ 0 ];
-         sphObject->subdomainInfo.lastParticleInLastGridColumn = firstLastParticle[ 1 ];
-         sphObject->subdomainInfo.numberOfParticlesToSendEnd = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
-
-         sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
-      }
-
-      if( rank == nproc - 1 )
-      {
-         gridColumnBegin = sphObject->subdomainInfo.gridIdxBegin;
-
-         PairIndexType firstLastParticle;
-         if constexpr( SPHConfig::spaceDimension == 2 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInColumnOfCells( gridColumnBegin );
-         else if constexpr( SPHConfig::spaceDimension == 3 )
-            firstLastParticle = sphObject->particles->getFirstLastParticleInBlockOfCells( gridColumnBegin );
-
-         sphObject->subdomainInfo.firstParticleInFirstGridColumn = firstLastParticle[ 0 ];
-         sphObject->subdomainInfo.lastParticleInFirstGridColumn = firstLastParticle[ 1 ];
-         sphObject->subdomainInfo.numberOfParticlesToSendBegin = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
-
-         //is this safe? -in case that arrangeRecievedAndLocalData updates number of particles, then yes
-         //TURN OFF: sphObject->subdomainInfo.lastParticleInLastGridColumn = sphObject->particles->getNumberOfParticles() - 1;
-         sphObject->subdomainInfo.lastParticleInLastGridColumn = sphObject->getLastActiveParticle();
-
-         sphObject->firstActiveParticle = sphObject->subdomainInfo.firstParticleInFirstGridColumn;
-         sphObject->lastActiveParticle = sphObject->subdomainInfo.lastParticleInLastGridColumn;
-      }
-
-      //For load balancing
-      //subdomainInfo.numberOfParticlesInThisSubdomain = sphObject->particles->getNumberOfParticles();
-      synchronizeSubdomainInfo( sphObject->subdomainInfo );
-   }
-
    template< typename Array >
    void
    synchronizeArray( Array& arraySend, Array& arrayReceive, SimulationSubdomainInfo& subdomainInfo, int valuesPerElement = 1 )
@@ -233,24 +141,19 @@ public:
    }
 
    void
-   synchronizeByteArray( ByteArrayView array,
-                         SimulationSubdomainInfo& subdomainInfo,
-                         int bytesPerValue )
+   synchronizeByteArray( ByteArrayView array, SimulationSubdomainInfo& subdomainInfo, int bytesPerValue )
    {
       auto requests = synchronizeByteArrayAsyncWorker( array, subdomainInfo, bytesPerValue );
       MPI::Waitall( requests.data(), requests.size() );
    }
 
    RequestsVector
-   synchronizeByteArrayAsyncWorker( ByteArrayView array,
-                                    SimulationSubdomainInfo& subdomainInfo,
-                                    int bytesPerValue )
+   synchronizeByteArrayAsyncWorker( ByteArrayView array, SimulationSubdomainInfo& subdomainInfo, int bytesPerValue )
    {
       const int rank = communicator.rank();
       const int nproc = communicator.size();
-      const int maxParticlesToSend = 15000; //TODO: Make this general.
 
-      // buffer for asynchronous communication requests
+      //buffer for asynchronous communication requests
       RequestsVector requests;
 
       if( rank == 0 )
@@ -258,7 +161,8 @@ public:
          //Recieve
          const GlobalIndexType receiveToPosition = subdomainInfo.lastParticleInLastGridColumn + 1;
          requests.push_back( MPI::Irecv( array.getData() + bytesPerValue * receiveToPosition,
-                                         bytesPerValue * maxParticlesToSend,
+                                         //bytesPerValue * maxParticlesToSend,
+                                         bytesPerValue * subdomainInfo.receivedEnd,
                                          1,
                                          0,
                                          communicator ) );
@@ -344,7 +248,7 @@ public:
       const int rank = communicator.rank();
       const int nproc = communicator.size();
 
-      // buffer for asynchronous communication requests
+      //buffer for asynchronous communication requests
       RequestsVector requests;
 
       if( rank == 0 )
@@ -382,93 +286,59 @@ public:
       return requests;
    }
 
-   template< typename Array >
+   //Load balancing
    void
-   arrangeRecievedAndLocalData( Array& arraySend,
-                                Array& arrayReceive,
-                                SimulationSubdomainInfo& subdomainInfo )
+   synchronizeSubdomainMetaData( SimulationSubdomainInfo& subdomainInfo )
+   {
+      auto requests = synchronizeSubdomainMetaDataArrayAsyncWorker( subdomainInfo );
+      MPI::Waitall( requests.data(), requests.size() );
+   }
+
+   RequestsVector
+   synchronizeSubdomainMetaDataArrayAsyncWorker( SimulationSubdomainInfo& subdomainInfo )
    {
       const int rank = communicator.rank();
       const int nproc = communicator.size();
 
-      auto arraySendView = arraySend.getView();
-      auto arrayReceiveView = arrayReceive.getView();
-
-      auto copyToSwap = [ = ] __cuda_callable__( GlobalIndexType i,
-                                                 GlobalIndexType offsetSend,
-                                                 GlobalIndexType offsetReceive ) mutable
-      {
-         arrayReceiveView[ offsetReceive + i ] = arraySendView[ offsetSend + i ];
-      };
+      // buffer for asynchronous communication requests
+      RequestsVector requests;
 
       if( rank == 0 )
       {
-         const GlobalIndexType offsetSend = 0;
-         const GlobalIndexType offsetReceive = 0;
-         const GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn + 1;
-
-         Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
+         //Recieve
+         requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain, 1, 1, 0, communicator ) );
+         //Send
+         requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, 1, 0, communicator ) );
       }
 
       if( ( rank > 0 ) && ( rank < nproc - 1 ) )
       {
-         const GlobalIndexType offsetSend = subdomainInfo.firstParticleInFirstGridColumn;
-         const GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
-         const GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn - \
-            subdomainInfo.firstParticleInFirstGridColumn + 1 + subdomainInfo.receivedEnd;
-
-         Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
+         //End - Recieve
+         requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInNextSubdomain, 1, rank + 1, 0, communicator ) );
+         //Send
+         requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, rank + 1, 0, communicator ) );
+         //Begin - Recieve
+         requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain, 1, rank - 1, 0, communicator ) );
+         //Send
+         requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, rank - 1, 0, communicator ) );
       }
 
       if( rank == nproc - 1 )
       {
-         const GlobalIndexType offsetSend = subdomainInfo.firstParticleInFirstGridColumn;
-         const GlobalIndexType offsetReceive = subdomainInfo.receivedBegin;
-         const GlobalIndexType numberOfParticlesToCopy = subdomainInfo.lastParticleInLastGridColumn + \
-            1 - subdomainInfo.firstParticleInFirstGridColumn;
-
-         Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToCopy, copyToSwap, offsetSend, offsetReceive );
+         //Recieve
+         requests.push_back( MPI::Irecv( &subdomainInfo.numberOfParticlesInPreviousSubdomain, 1, nproc - 2, 0, communicator ) );
+         //Send
+         requests.push_back( MPI::Isend( &subdomainInfo.numberOfParticlesInThisSubdomain, 1, nproc - 2, 0, communicator ) );
       }
 
-      arraySend.swap( arrayReceive );
+      return requests;
    }
 
-   template< typename SimulationSubdomainInfo >
-   GlobalIndexType
-   getNewParticleCount( SimulationSubdomainInfo& subdomainInfo, const GlobalIndexType currentNumberOfParticles )
-   {
-      const int rank = communicator.rank();
-      const int nproc = communicator.size();
-
-      GlobalIndexType numberOfParticlesToSet;
-
-      if( rank == 0 )
-      {
-         numberOfParticlesToSet = subdomainInfo.lastParticleInLastGridColumn + subdomainInfo.receivedEnd + 1;
-      }
-
-      if( ( rank > 0 ) && ( rank < nproc - 1 ) )
-      {
-         numberOfParticlesToSet = subdomainInfo.lastParticleInLastGridColumn - subdomainInfo.firstParticleInFirstGridColumn +
-                                  subdomainInfo.receivedEnd + subdomainInfo.receivedBegin + 1;
-      }
-
-      if( rank == nproc - 1 )
-      {
-         numberOfParticlesToSet = subdomainInfo.lastParticleInLastGridColumn - subdomainInfo.firstParticleInFirstGridColumn +
-                                  subdomainInfo.receivedBegin + 1;
-      }
-
-      return numberOfParticlesToSet;
-   }
+//protected:
 
    MPI::Comm communicator = MPI_COMM_WORLD;
-   //const int maxParticlesToSend = 15000;
 
 };
-
-
-
 
 } // SPH
 } // ParticleSystem
