@@ -186,6 +186,11 @@ class PhysicalObject
       const GlobalIndexType particlesStart = this->particles->getFirstActiveParticle();
       const GlobalIndexType numberOfParticlesToCopy = this->particles->getLastActiveParticle() -
                                                       this->particles->getFirstActiveParticle() + 1;
+      //----- debug ------------------------------------------------------
+      std::cout << "| particles->getNumberOfParticles(): " << particles->getNumberOfParticles() << " numberOfParticlesToCopy: " << numberOfParticlesToCopy << std::endl;
+      if( particles->getNumberOfParticles() != numberOfParticlesToCopy )
+         exit(1);
+      //----- end-debug --------------------------------------------------
 
       const GlobalIndexType numberOfAllocatedParticles = this->getNumberOfAllocatedParticles();
       const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticlesToCopy ) / 2 );

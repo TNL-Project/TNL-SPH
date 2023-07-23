@@ -197,10 +197,19 @@ int main( int argc, char* argv[] )
 
    TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 
-   //while( timeStepping.getStep() < 1 )
+   //while( timeStepping.getStep() < 502 )
    while( timeStepping.runTheSimulation() )
    {
       std::cout << "Time: " << timeStepping.getTime() << " step: " << timeStepping.getStep() << std::endl;
+
+      TNL::MPI::Barrier( distributedSPHSimulation.communicator );
+
+      /**
+       * Resize the domains based on the computation time
+       * and numbers of particles.
+       */
+      if( ( timeStepping.getStep() > 0 ) && (  timeStepping.getStep() % 500 == 0 ) )
+         distributedSPHSimulation.performLoadBalancing();
 
       TNL::MPI::Barrier( distributedSPHSimulation.communicator );
 

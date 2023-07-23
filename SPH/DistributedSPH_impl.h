@@ -240,6 +240,10 @@ DistributedSPHSimpleFluid< SPHSimulation >::performLoadBalancing()
    TNL::MPI::Barrier( communicator );
    updateSubdomainSize( localSimulation.fluid->subdomainInfo, localSimulation.boundary->subdomainInfo );
 
+   //i dont need this
+   //synchronizer.updateLocalSimulationInfo( localSimulation.fluid );
+   //synchronizer.updateLocalSimulationInfo( localSimulation.boundary );
+
    localSimulation.fluid->centerObjectArraysInMemory();
    localSimulation.boundary->centerObjectArraysInMemory();
 }
