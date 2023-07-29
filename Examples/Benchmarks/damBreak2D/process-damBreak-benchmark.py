@@ -17,7 +17,7 @@ from json2html import *
 cases = [ "0.002_1" ]
 folder = "./results_local-test/"
 
-def getCaseDetails( case, TNLSPHTimers, dualSPHTimers ):
+def getCaseDetails( case, TNLSPHTimers, dualSPHTimers, numberOfParticles_all ):
     #tnl-sph details
     caseMetadataFileName = folder + "tnl-sph_" + case + ".case_metadata.json"
     with open( caseMetadataFileName ) as file_metadata:
@@ -25,11 +25,14 @@ def getCaseDetails( case, TNLSPHTimers, dualSPHTimers ):
         caseMetadata_json_str = json.dumps( caseMetadata_lines )
         caseMetadata_json = json.loads( caseMetadata_json_str )
 
-        detail_string = '<left>' +'<h1> SPH damBreak2D benchmark </h1>'
+        detail_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
         detail_string += json2html.convert( json = caseMetadata_json ) + "<br><hr>"
         detail_string += json2html.convert( json = TNLSPHTimers ) + "<br><hr>"
         detail_string += json2html.convert( json = dualSPHTimers ) + "<br><hr>"
-        detail_string +='</left>'
+        detail_string +='</center>'
+
+        totalNumberOfParticles = float( caseMetadata_json['number-of-boundary-particles'] ) + float( caseMetadata_json['number-of-fluid-particles'] )
+        numberOfParticles_all.append( totalNumberOfParticles )
 
         caseMetadataResultName = "case_" + case + "_detail.html"
         caseMetadataResultFileName = folder + caseMetadataResultName
@@ -96,7 +99,12 @@ def parseTNLSPHOutput( case ):
 
         return timersDictionary
 
-results_string = '<left>' +'<h1> SPH damBreak2D benchmark </h1>'
+def writeArrayToFile( fileName, array ):
+    with open( fileName,'w' ) as file:
+        for element in array:
+            file.write(f"{element}\n")
+
+results_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
 
 #device metadata
 deviceMetadataFileName = folder + "tnl-sph_" + cases[ 0 ] + ".device_metadata.json"
@@ -109,6 +117,11 @@ with open( deviceMetadataFileName ) as f:
     results_string += deviceString
 
 results_string += "<br><hr>"
+
+#data for plot
+numberOfParticles_all = []
+tnlSph_totalTime_average_all = []
+dualSPHysics_totalTime_average_all = []
 
 for case in cases:
 
@@ -151,12 +164,47 @@ for case in cases:
     frames.append( new_df )
 
     result = pd.concat( frames )
-    caseDetail = getCaseDetails( case, TNLSPHTimers, dualSPHTimers )
+    caseDetail = getCaseDetails( case, TNLSPHTimers, dualSPHTimers, numberOfParticles_all )
     detail_string = ' <a href=\"'+ caseDetail + '\"> Details </a>'
-    results_string += '<h2> ' + 'Case ' + case + ' </h2>' + detail_string + result.to_html(index=True,border=2,justify="left") + '<be><hr>'
+    results_string += '<h2> ' + 'Case ' + case + ' </h2>' + detail_string + result.to_html(index=True,border=2,justify="center") + '<be><hr>'
 
-results_string +='</left>'
+    #append data for plot:
+    tnlSph_totalTime_average_all.append( tnlSph_totalTime_average );
+    dualSPHysics_totalTime_average_all.append( dualSph_totalTime_average );
+
+print( numberOfParticles_all )
+print( tnlSph_totalTime_average_all )
+print( dualSPHysics_totalTime_average_all )
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(1,1, figsize=(10, 10))
+plt.plot( numberOfParticles_all, tnlSph_totalTime_average_all, linestyle='--', marker='o', color='b', label='TNL-SPH' )
+plt.plot( numberOfParticles_all, dualSPHysics_totalTime_average_all, '--sr', label='DualSPHysics' )
+
+ax.set_xlabel(r'number of particles', fontsize=24)
+ax.set_ylabel(r'$t_{GPU}$/step', fontsize=24)
+plt.xticks(fontsize=22)
+plt.yticks(fontsize=22)
+ax.grid()
+leg = plt.legend()
+leg.get_frame().set_edgecolor('k')
+ax.legend(fontsize=24, edgecolor='k')
+
+outputFigureName = folder + "results.png"
+plt.savefig( outputFigureName , bbox_inches='tight')
+
+results_string += """
+<figure>
+  <img src="results.png" alt="Trulli" style="width:30%">
+</figure>
+"""
+
+results_string +='</center>'
 
 outputFileName = folder + "result.html"
 with open( outputFileName, 'w') as _file:
     _file.write( results_string )
+
+writeArrayToFile( folder + "parsedData_numberOfParticles.dat", numberOfParticles_all )
+writeArrayToFile( folder + "parsedData_tnlSph_totalTime_average.dat", tnlSph_totalTime_average_all )
+writeArrayToFile( folder + "parsedData_dualSPHysics_totalTime_average.dat", dualSPHysics_totalTime_average_all )
