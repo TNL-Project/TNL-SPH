@@ -1,6 +1,5 @@
 #include <string>
-
-#include "../../../SPH/SPHTraits.h"
+#include "../../../../SPH/SPHTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {

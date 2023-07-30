@@ -1,7 +1,7 @@
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
-namespace SimulationConstrolConfiguration {
+namespace SimulationControlConfiguration {
 
 /**
  * PARAMETERS FOR SIMULATION CONTROL (necessary)

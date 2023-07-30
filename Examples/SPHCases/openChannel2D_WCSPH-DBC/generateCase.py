@@ -225,7 +225,7 @@ fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 
 
 # Write the file out again
-with open( 'SPHCaseConfig.h', 'w' ) as file:
+with open( 'sources/SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
 
 with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
