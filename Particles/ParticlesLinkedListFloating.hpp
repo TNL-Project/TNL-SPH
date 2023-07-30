@@ -253,7 +253,7 @@ ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInBlockOfCell
       //}
       if( firstLastParticleLocal[ 0 ] < INT_MAX ){
          firstLastParticle[ 1 ] = firstLastParticleLocal[ 1 ];
-         std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for first element): " << firstLastParticle << std::endl;
+         //std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for first element): " << firstLastParticle << std::endl;
          break;
       }
    }
@@ -281,12 +281,12 @@ ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInBlockOfCell
       //}
       if( firstLastParticleLocal[ 1 ] > -1 ){
          firstLastParticle[ 0 ] = firstLastParticleLocal[ 0 ];
-         std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for second element): " << firstLastParticle << std::endl;
+         //std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for second element): " << firstLastParticle << std::endl;
          break;
       }
    }
 
-   std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (to return): " << firstLastParticle << std::endl;
+   //std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (to return): " << firstLastParticle << std::endl;
    return firstLastParticle;
 }
 

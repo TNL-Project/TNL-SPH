@@ -4,8 +4,8 @@
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include "../../../Particles/GenerateCellIndex.h"
-#include "../../../Particles/ParticlesTraits.h"
+#include "../../../../Particles/GenerateCellIndex.h"
+#include "../../../../Particles/ParticlesTraits.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -33,25 +33,29 @@ namespace ParticleSystemConfig {
  * - gridXorigin - define the origin of grid in dim X
  * - gridYorigin - define the origin of grid in dim Y
  */
+template< typename ParticleSystemConfig >
 class ParticleInitialSetup
 {
    public:
+   using ParticlesTraitsType = ParticlesTraits< ParticleSystemConfig, typename ParticleSystemConfig::DeviceType >;
+   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using PointType = typename ParticlesTraitsType::PointType;
 
-   static constexpr int numberOfParticles = placeholderFluidParticles;
-   static constexpr int numberOfAllocatedParticles = placeholderAllocatedFluidParticles;
-   static constexpr int numberOfBoundaryParticles = placeholderBoundaryParticles;
-   static constexpr int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
+   const int numberOfParticles = placeholderFluidParticles;
+   const int numberOfAllocatedParticles = placeholderAllocatedFluidParticles;
+   const int numberOfBoundaryParticles = placeholderBoundaryParticles;
+   const int numberOfAllocatedBoundaryParticles = placeholderAllocatedBoundaryParticles;
 
-   static constexpr int numberOfInletParticles = placeholderInletParticles;
-   static constexpr int numberOfAllocatedInletParticles = placeholderAllocatedInletParticles;
-   static constexpr int numberOfOutletParticles = placeholderOutletParticles;
-   static constexpr int numberOfAllocatedOutletParticles = placeholderAllocatedOutletParticles;
+   int numberOfOpenBoundaryParticles[ 2 ] = { placeholderInletParticles,  placeholderOutletParticles };
+   int numberOfAllocatedOpenBoundaryParticles[ 2 ] = { placeholderAllocatedInletParticles, placeholderAllocatedOutletParticles };
 
-   static constexpr float searchRadius = placeholderSearchRadius * 1.001;
-   static constexpr int gridXsize = placeholderGridXSize;
-   static constexpr int gridYsize = placeholderGridYSize;
-   static constexpr float gridXorigin = placeholderGridXBeginf;
-   static constexpr float gridYorigin = placeholderGridYBeginf;
+   const float searchRadius = placeholderSearchRadius * 1.001;
+   const int gridXsize = placeholderGridXSize;
+   const int gridYsize = placeholderGridYSize;
+   const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf };
+
+   const IndexVectorType gridSize = { gridXsize, gridYsize };
+   const int numberOfGridCells = gridXsize * gridYsize;
 };
 
 /**
@@ -82,130 +86,12 @@ class ParticleSystemConfig
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr int spaceDimension = placeholderDimension;
+   static constexpr int spaceDimension = 2;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
-
-
-//template< typename Device >
-//class ParticleSystemConfig
-//{
-//   public:
-//   using DeviceType = Device;
-//
-//   using GlobalIndexType = int;
-//   using LocalIndexType = int;
-//   using CellIndexType = int;
-//   using RealType = float;
-//
-//   static constexpr int spaceDimension = placeholderDimension;
-//   static constexpr int numberOfParticles = placeholderFluidParticles;
-//   static constexpr int numberOfAllocatedParticles = placeholderAllocatedFluidParticles;
-//   static constexpr float reallocationCoef = 1.5f;
-//   static constexpr int maxOfNeigborsPerParticle = 70;
-//
-//   static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
-//   static constexpr int gridXsize = placeholderGridXSize;
-//   static constexpr int gridYsize = placeholderGridYSize;
-//
-//   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-//   static constexpr RealType gridXbegin = placeholderGridXBegin;
-//   static constexpr RealType gridYbegin = placeholderGridYBegin;
-//
-//   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-//   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >; //?
-//   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
-//};
-//
-//template< typename Device >
-//class ParticleSystemConfig_boundary
-//{
-//   public:
-//   using DeviceType = Device;
-//
-//   using GlobalIndexType = int;
-//   using LocalIndexType = int;
-//   using CellIndexType = int;
-//   using RealType = float;
-//
-//   static constexpr int spaceDimension = placeholderDimension;
-//   static constexpr int numberOfParticles = placeholderBoundaryParticles;
-//   static constexpr int numberOfAllocatedParticles = placeholderBoundaryParticles;
-//   static constexpr int maxOfNeigborsPerParticle = 70;
-//
-//   static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
-//   static constexpr int gridXsize = placeholderGridXSize;
-//   static constexpr int gridYsize = placeholderGridYSize;
-//
-//   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-//   static constexpr RealType gridXbegin = placeholderGridXBegin;
-//   static constexpr RealType gridYbegin = placeholderGridYBegin;
-//
-//   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-//   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_boundary >; //?
-//   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
-//};
-//
-//template< typename Device >
-//class ParticleSystemConfig_inletBuffer
-//{
-//   public:
-//   using DeviceType = Device;
-//
-//   using GlobalIndexType = int;
-//   using LocalIndexType = int;
-//   using CellIndexType = int;
-//   using RealType = float;
-//
-//   static constexpr int spaceDimension = placeholderDimension;
-//   static constexpr int numberOfParticles = placeholderBufferParticles;
-//   static constexpr int numberOfAllocatedParticles = placeholderAllocatedBufferParticles;
-//   static constexpr int maxOfNeigborsPerParticle = 70;
-//
-//   static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
-//   static constexpr int gridXsize = placeholderGridXSize;
-//   static constexpr int gridYsize = placeholderGridYSize;
-//
-//   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-//   static constexpr RealType gridXbegin = placeholderGridXBegin;
-//   static constexpr RealType gridYbegin = placeholderGridYBegin;
-//
-//   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-//   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_inletBuffer >;
-//   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
-//};
-//
-//template< typename Device >
-//class ParticleSystemConfig_inlet2Buffer
-//{
-//   public:
-//   using DeviceType = Device;
-//
-//   using GlobalIndexType = int;
-//   using LocalIndexType = int;
-//   using CellIndexType = int;
-//   using RealType = float;
-//
-//   static constexpr int spaceDimension = placeholderDimension;
-//   static constexpr int numberOfParticles = placeholderBuffer2Particles;
-//   static constexpr int numberOfAllocatedParticles = placeholderAllocatedBuffer2Particles;
-//   static constexpr int maxOfNeigborsPerParticle = 70;
-//
-//   static constexpr RealType searchRadius = placeholderSearchRadius*1.001;
-//   static constexpr int gridXsize = placeholderGridXSize;
-//   static constexpr int gridYsize = placeholderGridYSize;
-//
-//   //static constexpr CoordinatesType origin = {0, 0}; //.. I would like something like this
-//   static constexpr RealType gridXbegin = placeholderGridXBegin;
-//   static constexpr RealType gridYbegin = placeholderGridYBegin;
-//
-//   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-//   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig_inlet2Buffer >;
-//   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
-//};
 
 } //namespace ParticleSystemConfig
 } //namespace ParticleSystem

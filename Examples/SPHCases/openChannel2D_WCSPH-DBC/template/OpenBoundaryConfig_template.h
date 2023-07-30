@@ -1,3 +1,7 @@
+#include <string>
+
+#include "../../../SPH/SPHTraits.h"
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -18,54 +22,50 @@ namespace SPH {
  * - inlet_density - referential position of open boundary buffer TODO: Move to centre.
  * - bufferWidth_x - width of buffer - dependent on number of layers
  * - bufferWidth_y - width of buffer - dependent on number of layers
- * - bufferEdge - DEPRECATED
  *
  */
-struct InletBuffer
+template< typename SPHConfig >
+class InletBuffer
 {
-   static constexpr float orientation_x = placeholderOBP1Orientation_xf;
-   static constexpr float orientation_y = placeholderOBP1Orientation_yf;
-   static constexpr float velocity_x = placeholderOBP1Velocity_xf;
-   static constexpr float velocity_y = placeholderOBP1Velocity_yf;
-   static constexpr float position_x = placeholderOBP1Position_xf;
-   static constexpr float position_y = placeholderOBP1Position_yf;
-   static constexpr float inlet_density = placeholderOBP1Densityf;
-   static constexpr float bufferWidth_x = placeholderOBP1Width_xf; //ie 4 layers
-   static constexpr float bufferWidth_y = placeholderOBP1Width_yf; //ie 4 layers
-   static constexpr float bufferEdge = placeholderOBP1BufferEdgef; //ie 4 layers
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   std::string identifier = "inlet";
+   VectorType orientation = { placeholderInletOrientation_xf, placeholderInletOrientation_yf };
+   VectorType position = { placeholderInletPosition_xf, placeholderInletPosition_yf };
+   VectorType bufferWidth = { placeholderInletWidth_xf, placeholderInletWidth_yf };
+   RealType bufferEdge = placeholderInletBufferEdgef; //TODO: Remove, deprecated
+
+   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf };
+   RealType density = placeholderInletDensityf;
+
+   std::string waterLevelHandling = "defined";
+   RealType waterLevel = 0.15;
 };
 
-/**
- * PARAMETERS OF OPEN BOUNDARY PATCH
- *
- * This class is used to store core parameters for inlet boundary patch
- * i.e. inlet or outlet. The values are used only for initialization.
- *
- * It is necessary to enter:
- *
- * - orientation_x - x component of normal buffer vector
- * - orientation_y - y component of normal buffer vector
- * - velocity_x - initial x component of open boundary patch velocity
- * - velocity_y - initial x component of open boundary patch velocity
- * - position_x - referential position of open boundary buffer TODO: Move to centre.
- * - inlet_density - referential position of open boundary buffer TODO: Move to centre.
- * - bufferWidth_x - width of buffer - dependent on number of layers
- * - bufferWidth_y - width of buffer - dependent on number of layers
- * - bufferEdge - DEPRECATED
- *
- */
-struct OutletBuffer
+template< typename SPHConfig >
+class OutletBuffer
 {
-   static constexpr float orientation_x = placeholderOBP2Orientation_xf;
-   static constexpr float orientation_y = placeholderOBP2Orientation_yf;
-   static constexpr float velocity_x = placeholderOBP2Velocity_xf;
-   static constexpr float velocity_y = placeholderOBP2Velocity_yf;
-   static constexpr float position_x = placeholderOBP2Position_xf;
-   static constexpr float position_y = placeholderOBP2Position_yf;
-   static constexpr float inlet_density = placeholderOBP2Densityf;
-   static constexpr float bufferWidth_x = placeholderOBP2Width_xf; //ie 4 layers
-   static constexpr float bufferWidth_y = placeholderOBP2Width_yf; //ie 4 layers
-   static constexpr float bufferEdge = placeholderOBP2BufferEdgef; //ie 4 layers
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   std::string identifier = "outlet";
+   VectorType orientation = { placeholderOutletOrientation_xf, placeholderOutletOrientation_yf };
+   VectorType position = { placeholderOutletPosition_xf, placeholderOutletPosition_yf };
+   VectorType bufferWidth = { placeholderOutletWidth_xf, placeholderOutletWidth_yf };
+   RealType bufferEdge = placeholderOutletBufferEdgef; //TODO: Remove, deprecated
+
+   VectorType velocity = { placeholderOutletVelocity_xf, placeholderOutletVelocity_yf };
+   RealType density = placeholderOutletDensityf;
+
+   std::string waterLevelHandling = "defined";
+   RealType waterLevel = 0.15;
 };
 
 } //SPH

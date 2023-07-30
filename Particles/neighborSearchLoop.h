@@ -261,8 +261,8 @@ struct NeighborsLoop
          NeighborsLoop2D::exec( i, r_i, params, f, args... );
       }
       else if constexpr( NeighborsLoopParams::PointType::getSize() == 3 ) {
-         //NeighborsLoop3D::exec( i, r_i, params, f, args... );
-         NeighborsBlockLoop3D::exec( i, r_i, params, f, args... );
+         NeighborsLoop3D::exec( i, r_i, params, f, args... );
+         //NeighborsBlockLoop3D::exec( i, r_i, params, f, args... );
       }
       else {
          static_assert( NeighborsLoopParams::PointType::getSize() <= 3, "loop over neighbors is not implemented yet for 4 or more dimensions" );
@@ -287,8 +287,8 @@ struct NeighborsLoopAnotherSet
          NeighborsLoop2DAnotherSet::exec( i, r_i, params, f, args... );
       }
       else if constexpr( NeighborsLoopParams::PointType::getSize() == 3 ) {
-         //NeighborsLoop3DAnotherSet::exec( i, r_i, params, f, args... );
-         NeighborsBlockLoop3DAnotherSet::exec( i, r_i, params, f, args... );
+         NeighborsLoop3DAnotherSet::exec( i, r_i, params, f, args... );
+         //NeighborsBlockLoop3DAnotherSet::exec( i, r_i, params, f, args... );
       }
       else {
          static_assert( NeighborsLoopParams::PointType::getSize() <= 3, "loop over neighbors is not implemented yet for 4 or more dimensions" );

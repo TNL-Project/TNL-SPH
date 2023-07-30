@@ -1,8 +1,9 @@
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 #
-# simpleInlet2D_WCSPH-DBC_test
+# case: openChannelWithObstacle (without obstacle atm)
 #
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
+### Parameters of the case necessary for case creation:
 
 ## Parameters
 dp = 0.002
@@ -24,6 +25,7 @@ boxH = 0.8
 
 fluidL = 0.5
 fluidH = 0.2
+numberOfAllocatedParticles = 50000
 
 ## First inlet buffer. ##
 inletBufferOrientation_x = 1.
@@ -55,7 +57,17 @@ inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2 #remove, deprecated
 inlet2BufferReferencePoint_x = inlet2BufferPosition_x - inlet2BufferOrientation_x * ( inlet2BufferLayers - 1 ) * dp
 inlet2BufferReferencePoint_z = inlet2BufferPosition_z - inlet2BufferOrientation_z * ( inlet2BufferLayers - 1 ) * dp
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
+
+### Create related directories
+import os
+resultsPath = r'./results'
+if not os.path.exists( resultsPath ):
+    os.makedirs( resultsPath )
+
+sourcesPath = r'./sources'
+if not os.path.exists( sourcesPath ):
+    os.makedirs( sourcesPath )
 
 boxL_n = round( boxL / dp )
 boxH_n = round( boxH / dp )
@@ -133,79 +145,46 @@ for layer in range( numberOfBoundaryLayers ):
         box_rz.append( ( z + 1 ) * dp )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+import sys
+sys.path.append('../../tools/')
+import saveParticlesVTK
+import numpy as np
 
-### Write fluid particles
-if write == '.ptcs':
-    with open( "openchannel_fluid.ptcs", "w" ) as f:
-        f.write( str( len( fluid_rx ) ) + "\n" )
-        for i in range( len( fluid_rx ) ):
-            f.write( str( round( fluid_rx[ i ], 5 ) ) + " " + str( round( fluid_rz[i], 5 ) ) + " " + \
-                     str( round( fluid_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
-                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 0 ) + "\n" )
-    ### Write boundary particles
-    with open("openchannel_boundary.ptcs", "w") as f:
-        f.write( str( len( box_rx ) ) + "\n" )
-        for i in range( len( box_rx ) ):
-            f.write( str( round( box_rx[ i ], 5 ) ) + " " + str( round( box_rz[ i ], 5 ) ) + " " + \
-                     str( round( box_ry[ i ], 5 ) ) + " " + str( 0. ) + " " + str( 0. ) + " " + str( 0. ) + " " + \
-                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 1 ) + "\n" )
-    ### Write fluid particles
-    with open("openchannel_inlet.ptcs", "w") as f:
-        f.write( str( len( inlet_rx ) ) + "\n" )
-        for i in range( len( inlet_rx ) ):
-            f.write( str( round( inlet_rx[ i ], 5 ) ) + " " + str( round( inlet_rz[ i ], 5 ) ) + " " + \
-                     str( round( inlet_ry[ i ], 5 ) ) + " " + str( round( inlet_vx[ i ] ) ) + " " + str( round( inlet_vy[ i ] ) ) + " " + str( round( inlet_vz[ i ] ) ) + " " + \
-                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 10 ) + "\n" )
-    ### Write fluid particles
-    with open("openchannel_inlet2.ptcs", "w") as f:
-        f.write( str( len( inlet2_rx ) ) + "\n" )
-        for i in range( len( inlet2_rx ) ):
-            f.write( str( round( inlet2_rx[ i ], 5 ) ) + " " + str( round( inlet2_rz[ i ], 5 ) ) + " " + \
-                     str( round( inlet2_ry[ i ], 5 ) ) + " " + str( round( inlet2_vx[ i ] ) ) + " " + str( round( inlet2_vy[ i ] ) ) + " " + str( round( inlet2_vz[ i ] ) ) + " " + \
-                     str( round( rho0, 5 ) ) + " " + str( round( p0, 5 ) ) + " " + str( 10 ) + "\n" )
-elif write == '.vtk':
-    import sys
-    sys.path.append('../../tools/')
-    import saveParticlesVTK
-    import numpy as np
+#r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
+#v = np.zeros( ( len( fluid_rx ), 3 ) )
+#rho = rho0 * np.ones( len( fluid_rx ) )
+#p = np.zeros( len( fluid_rx ) )
+#ptype = np.zeros( len( fluid_rx ) )
 
-    #r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
-    #v = np.zeros( ( len( fluid_rx ), 3 ) )
-    #rho = rho0 * np.ones( len( fluid_rx ) )
-    #p = np.zeros( len( fluid_rx ) )
-    #ptype = np.zeros( len( fluid_rx ) )
+#fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+#saveParticlesVTK.save_polydata( fluidToWrite, "openchannel_fluid.vtk" )
 
-    #fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    #saveParticlesVTK.save_polydata( fluidToWrite, "openchannel_fluid.vtk" )
+r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
+v = np.zeros( ( len( box_rx ), 3 ) )
+rho = rho0 * np.ones( len( box_rx ) )
+p = np.zeros( len( box_rx ) )
+ptype = np.ones( len( box_rx ) )
 
-    r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
-    v = np.zeros( ( len( box_rx ), 3 ) )
-    rho = rho0 * np.ones( len( box_rx ) )
-    p = np.zeros( len( box_rx ) )
-    ptype = np.ones( len( box_rx ) )
+boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+saveParticlesVTK.save_polydata( boxToWrite, "sources/openchannel_boundary.vtk" )
 
-    boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( boxToWrite, "openchannel_boundary.vtk" )
+r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
+v = np.array( ( inlet_vx, inlet_vz, inlet_vy ), dtype=float ).T #!!
+rho = rho0 * np.ones( len( inlet_rx ) )
+p = np.zeros( len( inlet_rx ) )
+ptype = np.ones( len( inlet_rx ) )
 
-    r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
-    v = np.array( ( inlet_vx, inlet_vz, inlet_vy ), dtype=float ).T #!!
-    rho = rho0 * np.ones( len( inlet_rx ) )
-    p = np.zeros( len( inlet_rx ) )
-    ptype = np.ones( len( inlet_rx ) )
+inletToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+saveParticlesVTK.save_polydata( inletToWrite, "sources/openchannel_inlet.vtk" )
 
-    inletToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( inletToWrite, "openchannel_inlet.vtk" )
+r = np.array( ( inlet2_rx, inlet2_rz, inlet2_ry ), dtype=float ).T #!!
+v = np.array( ( inlet2_vx, inlet2_vz, inlet2_vy ), dtype=float ).T #!!
+rho = rho0 * np.ones( len( inlet2_rx ) )
+p = np.zeros( len( inlet2_rx ) )
+ptype = np.ones( len( inlet2_rx ) )
 
-    r = np.array( ( inlet2_rx, inlet2_rz, inlet2_ry ), dtype=float ).T #!!
-    v = np.array( ( inlet2_vx, inlet2_vz, inlet2_vy ), dtype=float ).T #!!
-    rho = rho0 * np.ones( len( inlet2_rx ) )
-    p = np.zeros( len( inlet2_rx ) )
-    ptype = np.ones( len( inlet2_rx ) )
-
-    inlet2ToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    saveParticlesVTK.save_polydata( inlet2ToWrite, "openchannel_outlet.vtk" )
-else:
-    print( "Invalid particle output type." )
+inlet2ToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+saveParticlesVTK.save_polydata( inlet2ToWrite, "sources/openchannel_outlet.vtk" )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 ### Compute remaining parameters
@@ -255,13 +234,13 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
 # Replace the target string
 fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( 0 ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( fluid_rx ) * 2 ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( numberOfAllocatedParticles ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderInletParticles', str( len( inlet_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedInletParticles', str( len( inlet_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderOutletParticles', str( len( inlet2_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedOutletParticles', str( len( inlet2_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedOutletParticles', str( len( inlet2_rx ) * 3 ) )
 
 fileParticleConf = fileParticleConf.replace( 'placeholderSearchRadius', str( searchRadius ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
@@ -270,55 +249,50 @@ fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round
 fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
 
 # Write the file out again
-with open( 'ParticlesConfig.h', 'w' ) as file:
+with open( 'sources/ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
 
 with open( 'template/OpenBoundaryConfig_template.h', 'r' ) as file :
   fileOBConf = file.read()
 
 #inlet1
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Orientation_x', str( inletBufferOrientation_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Orientation_y', str( inletBufferOrientation_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Velocity_x', str( inletVelocity_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Velocity_y', str( inletVelocity_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Position_x', str( inletBufferPosition_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Position_y', str( inletBufferPosition_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Density', str( rho0 ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Width_x', str( round( inletBufferWidth, 7 ) ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1Width_y', str( 0. ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP1BufferEdge', str( round(  inletBufferEdge, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_x', str( inletBufferOrientation_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_y', str( inletBufferOrientation_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_x', str( inletVelocity_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_y', str( inletVelocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletPosition_x', str( inletBufferPosition_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletPosition_y', str( inletBufferPosition_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletDensity', str( rho0 ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletWidth_x', str( round( inletBufferWidth, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletWidth_y', str( 0. ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletBufferEdge', str( round(  inletBufferEdge, 7 ) ) )
 
 #outlet
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Orientation_x', str( inlet2BufferOrientation_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Orientation_y', str( inlet2BufferOrientation_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Velocity_x', str( inlet2Velocity_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Velocity_y', str( inlet2Velocity_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Position_x', str( inlet2BufferPosition_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Position_y', str( inlet2BufferPosition_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Density', str( rho0 ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Width_x', str( round( inlet2BufferWidth, 7 ) ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2Width_y', str( 0. ) )
-fileOBConf = fileOBConf.replace( 'placeholderOBP2BufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_x', str( inlet2BufferOrientation_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_y', str( inlet2BufferOrientation_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_x', str( inlet2Velocity_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_y', str( inlet2Velocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_x', str( inlet2BufferPosition_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_y', str( inlet2BufferPosition_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletDensity', str( rho0 ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_x', str( round( inlet2BufferWidth, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_y', str( 0. ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletBufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
 
 # Write the file out again
-with open( 'OpenBoundaryConfig.h', 'w' ) as file:
+with open( 'sources/OpenBoundaryConfig.h', 'w' ) as file:
   file.write( fileOBConf )
 
 # Read and write (with possible edit) simulation control file.
 with open( 'template/SimulationControlConfig.h', 'r' ) as file :
   fileSimulationControl = file.read()
 
-with open( 'SimulationControlConfig.h', 'w' ) as file:
+with open( 'sources/SimulationControlConfig.h', 'w' ) as file:
   file.write( fileSimulationControl )
 
 # Read and write (with possible edit) measuretool config file.
 with open( 'template/MeasuretoolConfig.h', 'r' ) as file :
   fileMeasuretoolConf = file.read()
 
-with open( 'MeasuretoolConfig.h', 'w' ) as file:
+with open( 'sources/MeasuretoolConfig.h', 'w' ) as file:
   file.write( fileMeasuretoolConf )
-
-import os
-resultsPath = r'./results'
-if not os.path.exists( resultsPath ):
-    os.makedirs( resultsPath )
