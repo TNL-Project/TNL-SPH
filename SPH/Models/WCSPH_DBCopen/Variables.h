@@ -54,7 +54,7 @@ class SPHFluidVariables
    VectorArrayType v_swap;
 
    void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {
       auto view_map = map->getView();
 
@@ -65,9 +65,9 @@ class SPHFluidVariables
       auto view_v_swap = v_swap.getView();
 
       thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_rho.getArrayData(), view_rho_swap.getArrayData() );
+            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
       thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_v.getArrayData(), view_v_swap.getArrayData() );
+            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
 
       rho.swap( rho_swap );
       v.swap( v_swap );
@@ -83,10 +83,11 @@ class SPHFluidVariables
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType firstActiveParticle = 0 )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
-      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", 3, numberOfParticles ); //TODO: Obvious.
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
    }
 
 };

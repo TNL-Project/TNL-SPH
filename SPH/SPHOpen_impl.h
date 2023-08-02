@@ -71,11 +71,24 @@ SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer&
 template< typename Model >
 template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
 void
-SPHOpenSystem< Model >::Interact( SPHState& sphState )
+SPHOpenSystem< Model >::interact( SPHState& sphState )
 {
-   model->template Interaction<
-      FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
-            fluid, boundary, openBoundaryPatches[ 0 ], sphState );
+   //model->template interaction<
+   //   FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+   //         fluid, boundary, openBoundaryPatches[ 0 ], sphState );
+
+   model->template interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, sphState );
+   //model->template interactionWithOpenBoundary< FluidPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+   //      fluid, openBoundaryPatches[ 0 ], sphState );
+
+   model->template interactionWithOpenBoundary< FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, openBoundaryPatches[ 0 ], sphState );
+   model->template interactionWithOpenBoundary< FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, openBoundaryPatches[ 1 ], sphState );
+
+
+   //Interact buffers
 }
 
 template< typename Model >
@@ -88,8 +101,11 @@ SPHOpenSystem< Model >::addOpenBoundaryPatch( SPHOpenSystemInit sphConfig )
                                         sphConfig.numberOfAllocatedOpenBoundaryParticles[ i ],
                                         sphConfig.searchRadius,
                                         sphConfig.numberOfGridCells );
-      openBoundaryPatches[ 0 ]->particles->setGridSize( sphConfig.gridSize );
-      openBoundaryPatches[ 0 ]->particles->setGridOrigin( sphConfig.gridOrigin );
+      //openBoundaryPatches[ 0 ]->particles->setGridSize( sphConfig.gridSize );
+      //openBoundaryPatches[ 0 ]->particles->setGridOrigin( sphConfig.gridOrigin );
+
+      openBoundaryPatches[ i ]->particles->setGridSize( sphConfig.gridSize );
+      openBoundaryPatches[ i ]->particles->setGridOrigin( sphConfig.gridOrigin );
    }
 
 }

@@ -15,7 +15,7 @@ template< typename FluidPointer,
           typename EOS,
           typename SPHState >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fluid,
+WCSPH_DBC< Particles, SPHFluidConfig, Variables >::interaction( FluidPointer& fluid,
                                                                 BoudaryPointer& boundary,
                                                                 OpenBoundaryPointer& openBoundary,
                                                                 SPHState& sphState )
@@ -209,7 +209,7 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   SPHParallelFor::exec( 0, numberOfParticles, particleLoop );
+   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -225,25 +225,24 @@ WCSPH_DBC< Particles, SPHFluidConfig, Variables >::Interaction( FluidPointer& fl
 
       view_Drho_bound[ i ] = drho_i;
    };
-   SPHParallelFor::exec( 0, numberOfParticles_bound, particleLoopBoundary );
+   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
-
-template< typename Particles, typename SPHFluidConfig, typename Variables >
-template< typename EquationOfState, typename SPHState >
+template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
+template< typename EquationOfState, typename PhysicalObjectPointer, typename SPHState >
 void
-WCSPH_DBC< Particles, SPHFluidConfig, Variables >::ComputePressureFromDensity( VariablesPointer& variables, GlobalIndexType numberOfParticles, SPHState& sphState )
+WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::computePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState )
 {
-   typename EOS::ParamsType eosParams( sphState );
+   auto view_rho = physicalObject->getVariables()->rho.getView();
+   auto view_p = physicalObject->getVariables()->p.getView();
 
-   auto view_rho = variables->rho.getView();
-   auto view_p = variables->p.getView();
+   typename EOS::ParamsType eosParams( sphState );
 
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, init );
+   Algorithms::parallelFor< DeviceType >( physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
 }
 
 } // SPH

@@ -239,7 +239,7 @@ int main( int argc, char* argv[] )
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
-          * Its useful for output anyway
+          * It's useful for output anyway
           */
          timer_pressure.start();
          sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
@@ -247,7 +247,7 @@ int main( int argc, char* argv[] )
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 

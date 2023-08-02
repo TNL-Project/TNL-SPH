@@ -120,30 +120,31 @@ class SPHFluidVariables
 };
 
 template< typename SPHFluidConfig >
-class SPHBoundaryVariables
+class SPHOpenBoundaryVariables : public SPHFluidVariables< SPHFluidConfig >
+{
+   public:
+   using BaseType = SPHFluidVariables< SPHFluidConfig >;
+   using SPHTraitsType = typename BaseType::SPHFluidTraitsType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+
+   SPHOpenBoundaryVariables( GlobalIndexType size )
+   : SPHFluidVariables< SPHFluidConfig >( size ), particleMark( size ), receivingParticleMark( size ) {};
+
+   IndexArrayType particleMark;
+   IndexArrayType receivingParticleMark;
+};
+
+template< typename SPHFluidConfig >
+class SPHBoundaryVariables : public SPHFluidVariables< SPHFluidConfig >
 {
   public:
-  using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   public:
+   using BaseType = SPHFluidVariables< SPHFluidConfig >;
+   using GlobalIndexType = typename BaseType::GlobalIndexType;
 
-  using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
-  using RealType = typename SPHFluidTraitsType::RealType;
-
-  using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
-  using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-
-  SPHBoundaryVariables( GlobalIndexType size )
-  : rho( size ), drho ( size ), p( size ), v( size ), a( size ) {}
-
-  /* Variables - Fields */
-  ScalarArrayType rho;
-  ScalarArrayType drho;
-  ScalarArrayType p;
-  VectorArrayType v;
-  VectorArrayType a;
-
-  /* Variables - constans */
-  //RealType h, m, speedOfSound, coefB, rho0, delta, alpha;
-
+   SPHBoundaryVariables( GlobalIndexType size )
+   : SPHFluidVariables< SPHFluidConfig >( size ) {};
 };
 
 } // SPH

@@ -75,7 +75,7 @@ public:
     * Perform interaction for all particles, i.e. for all types.
     */
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
-   void Interact( SPHState& sphState );
+   void interact( SPHState& sphState );
 
    template< typename Writer >
    void

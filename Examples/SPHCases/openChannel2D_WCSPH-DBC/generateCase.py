@@ -8,6 +8,7 @@
 ## Parameters
 dp = 0.002
 smoothingLentghCoef = 2**0.5
+#smoothingLentghCoef = 2
 
 rho0 = 1000.
 p0 = 0.
@@ -21,10 +22,10 @@ timeStep = 0.00002*0.5 #otherwise is obtained automatically
 write = '.vtk' #.ptcs or .vtk
 
 boxL = 1.
-boxH = 0.8
+boxH = 0.3
 
-fluidL = 0.5
-fluidH = 0.2
+fluidL = 0.3
+fluidH = 0.1
 numberOfAllocatedParticles = 50000
 
 ## First inlet buffer. ##
@@ -37,7 +38,7 @@ inletBufferLayers = numberOfBoundaryLayers + 1
 inletVelocity_x = 1.
 inletVelocity_z = 0.
 
-inletBufferWidth = inletBufferLayers * dp - dp / 2
+inletBufferWidth = inletBufferLayers * dp # - dp / 2
 inletBufferEdge = inletBufferPosition_x + 4 * dp  + dp / 2 #remove, deprecated
 inletBufferReferencePoint_x = inletBufferPosition_x - inletBufferOrientation_x * ( inletBufferLayers - 1 ) * dp
 inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z * ( inletBufferLayers - 1 ) * dp
@@ -45,9 +46,9 @@ inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z *
 ## Second inlet buffer. ##
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
-inlet2BufferPosition_x = 0.8
+inlet2BufferPosition_x = 0.5 + dp
 inlet2BufferPosition_z = 0. + dp*1
-inlet2BufferHeight = 0.15
+inlet2BufferHeight = 0.1
 inlet2BufferLayers = numberOfBoundaryLayers + 1
 inlet2Velocity_x = 1.5
 inlet2Velocity_z = 0.
@@ -83,16 +84,22 @@ inlet2H_n = round( inlet2BufferHeight / dp  )
 
 ### Generate fluid particles
 fluid_rx = []; fluid_ry = []; fluid_rz = []
+fluid_density = []
 
 for x in range( fluidL_n ):
     for z in range( fluidH_n ):
-        fluid_rx.append( dp * ( x + 1 ) )
+        fluid_rx.append( inletBufferPosition_x + dp * ( x + 1 ) )
         fluid_ry.append( 0. ) #we use only 2D case
         fluid_rz.append( dp * ( z + 1 ) )
+
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        fluid_density.append( hydrostaticDensity )
 
 ### Generate buffer particles
 inlet_rx = []; inlet_ry = []; inlet_rz = []
 inlet_vx = []; inlet_vy = []; inlet_vz = []
+inlet_density = []
 
 for x in range( inletL_n ):
     for z in range( inletH_n ):
@@ -104,9 +111,14 @@ for x in range( inletL_n ):
         inlet_vy.append( 0. ) #we use only 2D case
         inlet_vz.append( inletVelocity_z )
 
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        inlet_density.append( hydrostaticDensity )
+
 ### Generate buffer particles
 inlet2_rx = []; inlet2_ry = []; inlet2_rz = []
 inlet2_vx = []; inlet2_vy = []; inlet2_vz = []
+inlet2_density = []
 
 for x in range( inlet2L_n ):
     for z in range( inlet2H_n ):
@@ -118,8 +130,13 @@ for x in range( inlet2L_n ):
         inlet2_vy.append( 0. ) #we use only 2D case
         inlet2_vz.append( inlet2Velocity_z )
 
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        inlet2_density.append( hydrostaticDensity )
+
 ### Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
+box_density = [];
 
 # left wall
 for layer in range( numberOfBoundaryLayers ):
@@ -127,6 +144,7 @@ for layer in range( numberOfBoundaryLayers ):
         box_rx.append( 0. - layer * dp )
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( ( z+1 ) * dp )
+        box_density.append( rho0 );
 
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
@@ -134,6 +152,11 @@ for layer in range( numberOfBoundaryLayers ):
         box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( 0. - layer * dp )
+
+        #hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH + layer * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        box_density.append( hydrostaticDensity )
 
 x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
 
@@ -143,6 +166,7 @@ for layer in range( numberOfBoundaryLayers ):
         box_rx.append( x_last + dp * layer )
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( ( z + 1 ) * dp )
+        box_density.append( rho0 );
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 import sys
@@ -150,18 +174,20 @@ sys.path.append('../../tools/')
 import saveParticlesVTK
 import numpy as np
 
-#r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
-#v = np.zeros( ( len( fluid_rx ), 3 ) )
+r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
+v = np.zeros( ( len( fluid_rx ), 3 ) )
 #rho = rho0 * np.ones( len( fluid_rx ) )
-#p = np.zeros( len( fluid_rx ) )
-#ptype = np.zeros( len( fluid_rx ) )
+rho = np.array( fluid_density, dtype=float )
+p = np.zeros( len( fluid_rx ) )
+ptype = np.zeros( len( fluid_rx ) )
 
-#fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-#saveParticlesVTK.save_polydata( fluidToWrite, "openchannel_fluid.vtk" )
+fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+saveParticlesVTK.save_polydata( fluidToWrite, "sources/openchannel_fluid.vtk" )
 
 r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
 v = np.zeros( ( len( box_rx ), 3 ) )
-rho = rho0 * np.ones( len( box_rx ) )
+#rho = rho0 * np.ones( len( box_rx ) )
+rho = np.array( box_density, dtype=float )
 p = np.zeros( len( box_rx ) )
 ptype = np.ones( len( box_rx ) )
 
@@ -170,7 +196,8 @@ saveParticlesVTK.save_polydata( boxToWrite, "sources/openchannel_boundary.vtk" )
 
 r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
 v = np.array( ( inlet_vx, inlet_vz, inlet_vy ), dtype=float ).T #!!
-rho = rho0 * np.ones( len( inlet_rx ) )
+#rho = rho0 * np.ones( len( inlet_rx ) )
+rho = np.array( inlet_density, dtype=float )
 p = np.zeros( len( inlet_rx ) )
 ptype = np.ones( len( inlet_rx ) )
 
@@ -179,7 +206,8 @@ saveParticlesVTK.save_polydata( inletToWrite, "sources/openchannel_inlet.vtk" )
 
 r = np.array( ( inlet2_rx, inlet2_rz, inlet2_ry ), dtype=float ).T #!!
 v = np.array( ( inlet2_vx, inlet2_vz, inlet2_vy ), dtype=float ).T #!!
-rho = rho0 * np.ones( len( inlet2_rx ) )
+#rho = rho0 * np.ones( len( inlet2_rx ) )
+rho = np.array( inlet2_density, dtype=float )
 p = np.zeros( len( inlet2_rx ) )
 ptype = np.ones( len( inlet2_rx ) )
 
@@ -233,7 +261,8 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
 
 # Replace the target string
 fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( 0 ) )
+#fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( 0 ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( numberOfAllocatedParticles ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
@@ -260,7 +289,7 @@ fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_x', str( inletBuff
 fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_y', str( inletBufferOrientation_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_x', str( inletVelocity_x ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_y', str( inletVelocity_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderInletPosition_x', str( inletBufferPosition_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletPosition_x', str( inletBufferPosition_x  + dp/2) ) #FIXME
 fileOBConf = fileOBConf.replace( 'placeholderInletPosition_y', str( inletBufferPosition_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_x', str( round( inletBufferWidth, 7 ) ) )

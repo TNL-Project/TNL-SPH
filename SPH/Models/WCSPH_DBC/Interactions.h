@@ -43,7 +43,7 @@ public:
    /*Swap variables*/
 	using FluidVariables = Variables;
 	using BoundaryVariables = Variables;
-   using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
+   using OpenBoundaryVariables = SPHOpenBoundaryVariables< SPHFluidConfig >;
 
    using ParticlesType = Particles;
 
@@ -72,6 +72,7 @@ public:
    void
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
+   //TODO: Remove, testing.
    template< typename FluidPointer,
              typename BoudaryPointer,
              typename SPHKernelFunction,
@@ -82,6 +83,32 @@ public:
    RealType
    interactionWithReduction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
+   //TODO: Where should be this placed
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename SPHState  >
+   void
+   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, SPHState& sphState );
+
+   //TODO: Experiment:
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename SPHState  >
+   void
+   interactionWithOpenBoundary( FluidPointer& fluid,
+                                BoundaryPointer& boundary,
+                                OpenBoudaryPointer& openBoundary,
+                                SPHState& sphState );
+
 };
 
 } // SPH
@@ -89,4 +116,5 @@ public:
 } // TNL
 
 #include "Interactions.hpp"
+#include "OpenBoundaryContirionsInteractions.h"
 

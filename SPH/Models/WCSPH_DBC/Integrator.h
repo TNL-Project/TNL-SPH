@@ -179,6 +179,15 @@ public:
       Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
    }
 
+   using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary );
+
    template< typename BoundaryPointer >
    void
    integrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
@@ -198,6 +207,20 @@ public:
       Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
    }
 
+   template< typename BoundaryPointer >
+   void
+   correctBoundaryDensity( BoundaryPointer& boundary )
+   {
+      auto rho_view = boundary->variables->rho.getView();
+
+      auto init = [=] __cuda_callable__ ( int i ) mutable
+      {
+         if( rho_view[ i ] < 1000.f )
+            rho_view[ i ] = 1000.f;
+      };
+      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+   }
+
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
    void
    integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
@@ -210,10 +233,15 @@ public:
          integrateVerlet( timeStepping.getTimeStep(), fluid );
          integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
       }
+
+      correctBoundaryDensity( boundary );
    }
 };
 
 } // SPH
 } // ParticleSystem
 } // TNL
+
+
+#include "OpenBoundaryConditions.h"
 
