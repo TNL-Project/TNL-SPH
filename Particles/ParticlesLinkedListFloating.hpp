@@ -178,8 +178,6 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells()
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( firstActiveParticle ),
          { firstActiveParticle, ( view_particleCellIndex.getElement( firstActiveParticle ) != view_particleCellIndex.getElement( firstActiveParticle + 1 ) ) ? firstActiveParticle : INT_MAX } ) ; //careful with the firstActiveParticle instead of 0
 
-   std::cout << "S1" << std::endl;
-
    auto init = [=] __cuda_callable__ ( int i ) mutable
    {
       if( view_particleCellIndex[ i ] != view_particleCellIndex[ i-1 ] )
@@ -189,8 +187,6 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells()
    };
    Algorithms::parallelFor< DeviceType >( firstActiveParticle + 1, lastActiveParticle, init ); // [1, N-1)
 
-   std::cout << "S2: fp: "<<  firstActiveParticle << " lp: " << lastActiveParticle << std::endl;
-
    //resolve last partile
    //I think there is bug in the initial version. In case there are two particles in the last cell, the first particle in last cell is overwritten.
    /*
@@ -198,13 +194,9 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells()
          { ( view_particleCellIndex.getElement( numberOfParticles -1 ) != view_particleCellIndex.getElement( numberOfParticles-2 ) ) ? numberOfParticles-1 : INT_MAX, numberOfParticles - 1 } );
    */
    //Workaround
-   std::cout << "S3: view_particleCellIndex.getElement( lastActiveParticle ): " << view_particleCellIndex.getElement( lastActiveParticle ) << std::endl;
    PairIndexType lastActiveCellContains = view_firstLastCellParticle.getElement( view_particleCellIndex.getElement( lastActiveParticle ) ); // N - 1
-   std::cout << "S3: lastActiveCellContains: "<<  lastActiveCellContains << std::endl;
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( lastActiveParticle ),
          { ( view_particleCellIndex.getElement( lastActiveParticle ) != view_particleCellIndex.getElement( lastActiveParticle - 1 ) ) ? lastActiveParticle : lastActiveCellContains[ 0 ], lastActiveParticle } );
-
-   std::cout << "S3" << std::endl;
 
 }
 

@@ -51,7 +51,7 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
    //auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
    //auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
    //const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
-   std::cout << "... InletBuffer: ... Number of retyped particles: " << numberOfRetyped << std::endl;
+   //std::cout << "... InletBuffer: ... Number of retyped particles: " << numberOfRetyped << std::endl;
 
    if( numberOfRetyped == 0 )
       return;
@@ -59,11 +59,11 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
    //Sort particles by mark //TODO: can be this avoided?
    thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(), view_inletMark.getArrayData() + numberOfBufferParticles,
          thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(), view_v_buffer.getArrayData(), view_rho_buffer.getArrayData() ) ) );
-   std::cout << "... InletBuffer: ... Particles sorted." << std::endl;
+   //std::cout << "... InletBuffer: ... Particles sorted." << std::endl;
 
-   std::cout << ".................... numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-   std::cout << ".................... numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
-   std::cout << ".................... numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   //std::cout << ".................... numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   //std::cout << ".................... numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
+   //std::cout << ".................... numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
 
    auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -99,34 +99,34 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
    //------EXERIMENT-//update//profile-------------------------------------------
    view_v_buffer = inletConstVelocity;
 
-   auto bufferVelocityProfile = [=] __cuda_callable__ ( int i ) mutable
-   {
-      const VectorType r = view_r_buffer[ i ];
+   //auto bufferVelocityProfile = [=] __cuda_callable__ ( int i ) mutable
+   //{
+   //   const VectorType r = view_r_buffer[ i ];
 
-      const RealType eps = 0.0001;
-      if( ( r[ 1 ] > ( 0.002  - eps ) ) && ( r[ 1 ] < ( 0.002  + eps ) ) ){
-         view_v_buffer[ i ][ 0 ] = 0.3523f;
-         //view_rho_buffer[ i ] = 1001.2;
-      }
-      else if( ( r[ 1 ] > ( 0.004  - eps ) ) && ( r[ 1 ] < ( 0.004  + eps ) ) ){
-         view_v_buffer[ i ][ 0 ] = 0.6325f;
-         //view_rho_buffer[ i ] = 1001.0;
-      }
-      else if( ( r[ 1 ] > ( 0.006  - eps ) ) && ( r[ 1 ] < ( 0.006  + eps ) ) ){
-         view_v_buffer[ i ][ 0 ] = 0.8f;
-         //view_rho_buffer[ i ] = 1000.68;
-      }
-      else if( ( r[ 1 ] > ( 0.008  - eps ) ) && ( r[ 1 ] < ( 0.008  + eps ) ) )
-         view_v_buffer[ i ][ 0 ] = 0.9f;
-         //view_rho_buffer[ i ] = 1000.68;
+   //   const RealType eps = 0.0001;
+   //   if( ( r[ 1 ] > ( 0.002  - eps ) ) && ( r[ 1 ] < ( 0.002  + eps ) ) ){
+   //      view_v_buffer[ i ][ 0 ] = 0.3523f;
+   //      //view_rho_buffer[ i ] = 1001.2;
+   //   }
+   //   else if( ( r[ 1 ] > ( 0.004  - eps ) ) && ( r[ 1 ] < ( 0.004  + eps ) ) ){
+   //      view_v_buffer[ i ][ 0 ] = 0.6325f;
+   //      //view_rho_buffer[ i ] = 1001.0;
+   //   }
+   //   else if( ( r[ 1 ] > ( 0.006  - eps ) ) && ( r[ 1 ] < ( 0.006  + eps ) ) ){
+   //      view_v_buffer[ i ][ 0 ] = 0.8f;
+   //      //view_rho_buffer[ i ] = 1000.68;
+   //   }
+   //   else if( ( r[ 1 ] > ( 0.008  - eps ) ) && ( r[ 1 ] < ( 0.008  + eps ) ) )
+   //      view_v_buffer[ i ][ 0 ] = 0.9f;
+   //      //view_rho_buffer[ i ] = 1000.68;
 
-   };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, bufferVelocityProfile );
+   //};
+   //Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, bufferVelocityProfile );
 
 
 
    //added
-   std::cout << "... InletBuffer - system updated." << std::endl;
+   //std::cout << "... InletBuffer - system updated." << std::endl;
 }
 
 template< typename ModelPointer, typename SPHFluidConfig, typename Variables >
@@ -185,12 +185,12 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
   // Algorithms::parallelFor< DeviceType >(
   //       numberOfBufferParticles - removeFromBufferCount , numberOfBufferParticles, discardBufferParticles );
 
-   std::cout << "... OutletBuffer: ... Moved. Sorted." << std::endl;
-   std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
-   std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
-   std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
-   std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
-   std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
+   //std::cout << "... OutletBuffer: ... Moved. Sorted." << std::endl;
+   //std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
+   //std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
+   //std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+   //std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
+   //std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
 
 
    numberOfBufferParticles = numberOfBufferParticles - removeFromBufferCount;
@@ -198,15 +198,15 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
    openBoundary->particles->setLastActiveParticle( openBoundary->getLastActiveParticle() - removeFromBufferCount );
    openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() - removeFromBufferCount );
 
-   std::cout << "... OutletBuffer: ... Outlet buffer particles updated." << std::endl;
-   std::cout << "..................... fluid: particles.numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-   std::cout << "..................... fluid: particles.firstActiveParticle: " << fluid->particles->getFirstActiveParticle() << std::endl;
-   std::cout << "..................... fluid: particles.lastActiveParticle: " << fluid->particles->getLastActiveParticle() << std::endl;
-   std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
-   std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
-   std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
-   std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
-   std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
+   //:std::cout << "... OutletBuffer: ... Outlet buffer particles updated." << std::endl;
+   //:std::cout << "..................... fluid: particles.numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   //:std::cout << "..................... fluid: particles.firstActiveParticle: " << fluid->particles->getFirstActiveParticle() << std::endl;
+   //:std::cout << "..................... fluid: particles.lastActiveParticle: " << fluid->particles->getLastActiveParticle() << std::endl;
+   //:std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
+   //:std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
+   //:std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+   //:std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
+   //:std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
 
    //----- FLUID TO BUFFER -------------------------------------------------
    //Load all fluid fields
@@ -242,9 +242,9 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
    const GlobalIndexType fluidToBufferCount = Algorithms::reduce< DeviceType >(
          particleRangeToCheck[ 0 ], particleRangeToCheck[ 1 ] + 1, checkFluidParticles, TNL::Plus() );
 
-   std::cout << "... OutletBuffer: ... Retyping fluid. " << std::endl;
-   std::cout << "..................... openBoundary: particleRangeToCheck: " << particleRangeToCheck << std::endl;
-   std::cout << "..................... openBoundary: gridColumnAuxTrick: " << gridColumnAuxTrick << std::endl;
+   //std::cout << "... OutletBuffer: ... Retyping fluid. " << std::endl;
+   //std::cout << "..................... openBoundary: particleRangeToCheck: " << particleRangeToCheck << std::endl;
+   //std::cout << "..................... openBoundary: gridColumnAuxTrick: " << gridColumnAuxTrick << std::endl;
 
    //if( fluidToBufferCount == 0 )
    //   return;
@@ -253,9 +253,9 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
                  receivingParticleMark_view.getArrayData(),
                  receivingParticleMark_view.getArrayData() + numberOfBufferParticles );
 
-   std::cout << "... OutletBuffer: ... Retyping fluid. Sorted." << std::endl;
-   std::cout << "..................... openBoundary: fluidToBufferCount: " << fluidToBufferCount << std::endl;
-   //std::cout << "..................... particles to retype: " << receivingParticleMark_view << std::endl;
+   //:std::cout << "... OutletBuffer: ... Retyping fluid. Sorted." << std::endl;
+   //:std::cout << "..................... openBoundary: fluidToBufferCount: " << fluidToBufferCount << std::endl;
+   //://std::cout << "..................... particles to retype: " << receivingParticleMark_view << std::endl;
 
    //retype fluid particles to buffer particles
    auto retypeFluidToOutlet = [=] __cuda_callable__ ( int i ) mutable
@@ -267,7 +267,7 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
       view_v_buffer[ numberOfBufferParticles + i ] = view_v_fluid[ p ];
 
       //shift the particles to keep compact set TODO: This can be avoided by just particle sort if FLT_MAX.
-      printf( "[p: %d swap: %d ]", p,  numberOfParticle - i - 1);
+      //printf( "[p: %d swap: %d ]", p,  numberOfParticle - i - 1);
       view_r_fluid[ p ] = FLT_MAX;
       //swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticle - i - 1 ] );
       //swap( view_rho_fluid[ p ], view_rho_fluid[ numberOfParticle - i -1 ] );
@@ -288,15 +288,15 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
    //fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() - fluidToBufferCount );
    //fluid->setLastActiveParticle( fluid->getLastActiveParticle() - fluidToBufferCount );
 
-   std::cout << "... OutletBuffer: ... All done." << std::endl;
-   std::cout << "..................... fluid: particles.numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-   std::cout << "..................... fluid: particles.firstActiveParticle: " << fluid->particles->getFirstActiveParticle() << std::endl;
-   std::cout << "..................... fluid: particles.lastActiveParticle: " << fluid->particles->getLastActiveParticle() << std::endl;
-   std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
-   std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
-   std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
-   std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
-   std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
+   //std::cout << "... OutletBuffer: ... All done." << std::endl;
+   //std::cout << "..................... fluid: particles.numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   //std::cout << "..................... fluid: particles.firstActiveParticle: " << fluid->particles->getFirstActiveParticle() << std::endl;
+   //std::cout << "..................... fluid: particles.lastActiveParticle: " << fluid->particles->getLastActiveParticle() << std::endl;
+   //std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
+   //std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
+   //std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+   //std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
+   //std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
 }
 
 

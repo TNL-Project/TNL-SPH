@@ -203,14 +203,13 @@ int main( int argc, char* argv[] )
    /**
     * Define timers to measure computation time.
     */
-   TNL::Timer timer_search, timer_interact, timer_integrate, timer_inlet, timer_pressure;
+   TNL::Timer timer_search, timer_interact, timer_integrate, timer_inlet, timer_outlet, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
-   //while( timeStepping.runTheSimulation() )
-   while( timeStepping.getStep() < 5000 )
+   while( timeStepping.runTheSimulation() )
    {
       std::cout << "Time: " << timeStepping.getTime() << " step: " <<  timeStepping.getStep() << std::endl;
-      std::cout << sph.fluid->particles->getNumberOfParticles() << std::endl;
+      std::cout << "Number of fluid particles: " << sph.fluid->particles->getNumberOfParticles() << std::endl;
 
       /**
        * Find neighbors within the SPH simulation.
@@ -236,10 +235,16 @@ int main( int argc, char* argv[] )
        */
       timer_integrate.start();
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, timeStepping );
-      sph.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ] );
-      sph.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
       timer_integrate.stop();
       std::cout << "Integration... done. " << std::endl;
+
+      timer_inlet.start();
+      sph.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ] );
+      timer_inlet.stop();
+      timer_outlet.start();
+      sph.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
+      timer_outlet.stop();
+      std::cout << "Open boundary... done. " << std::endl;
 
       /**
        * Output particle data
@@ -270,6 +275,8 @@ int main( int argc, char* argv[] )
    /**
     * Output simulation stats.
     */
+   float openBoundaryTime = timer_inlet.getRealTime() + timer_outlet.getRealTime();
+
    float totalTime = ( timer_search.getRealTime() + \
    + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
 
@@ -298,9 +305,15 @@ int main( int argc, char* argv[] )
    std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
    std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
    std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
+   std::cout << "Open boundary................................. " << openBoundaryTime << " sec." << std::endl;
+   std::cout << "Open boundary (average time per step)......... " << openBoundaryTime / steps << " sec." << std::endl;
+   std::cout << "Open boundary (percentage).................... " << openBoundaryTime / totalTime * 100 << " %." << std::endl;
    std::cout << " - Update inlet............................... " << timer_inlet.getRealTime() << " sec." << std::endl;
    std::cout << " - Update inlet (average time per step)....... " << timer_inlet.getRealTime() / steps << " sec." << std::endl;
    std::cout << " - Update inlet (percentage).................. " << timer_inlet.getRealTime() / totalTime * 100 << " %." << std::endl;
+   std::cout << " - Update outlet.............................. " << timer_outlet.getRealTime() << " sec." << std::endl;
+   std::cout << " - Update outlet (average time per step)...... " << timer_outlet.getRealTime() / steps << " sec." << std::endl;
+   std::cout << " - Update outlet (percentage)................. " << timer_outlet.getRealTime() / totalTime * 100 << " %." << std::endl;
    std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
    std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
    std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;

@@ -66,12 +66,10 @@ SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer&
     */
    timer_toCells.start();
    fluid->particles->particlesToCells();
-   std::cout << " - fluid-neighborSearch->particlesToCells();... done " << std::endl;
    //openBoundaryPatches[ 0 ]->neighborSearch->particlesToCells();
    for( auto& openBoundaryPatch : openBoundaryPatches )
       openBoundaryPatch->particles->particlesToCells();
    timer_toCells.stop();
-   std::cout << " - openBoundaryPatch-neighborSearch->particlesToCells();... done " << std::endl;
 
    if( step == 0 )
       boundary->particles->particlesToCells();
