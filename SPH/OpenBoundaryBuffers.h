@@ -64,6 +64,8 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
    };
    OpenBoundaryParameters parameters;
 
+   GlobalIndexType numberOfFluidParticlesToRemove = 0;
+
    //zone grid
 };
 

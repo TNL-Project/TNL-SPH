@@ -186,6 +186,8 @@ int main( int argc, char* argv[] )
    sph.openBoundaryPatches[ 1 ]->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_outlet );
    sph.openBoundaryPatches[ 1 ]->readOpenBoundaryParameters( outletBufferParams );
+   sph.openBoundaryPatches[ 1 ]->variables->v = inletBufferParams.velocity;
+   sph.openBoundaryPatches[ 1 ]->variables->v_swap = inletBufferParams.velocity;
 
 
    std::cout << "Inlet parameters: " << std::endl;
@@ -205,9 +207,9 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
    //while( timeStepping.runTheSimulation() )
-   while( timeStepping.getStep() < 10000 )
+   while( timeStepping.getStep() < 5000 )
    {
-      std::cout << "Time: " << timeStepping.getTime() << std::endl;
+      std::cout << "Time: " << timeStepping.getTime() << " step: " <<  timeStepping.getStep() << std::endl;
       std::cout << sph.fluid->particles->getNumberOfParticles() << std::endl;
 
       /**
@@ -235,7 +237,7 @@ int main( int argc, char* argv[] )
       timer_integrate.start();
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, timeStepping );
       sph.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ] );
-      //sph.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
+      sph.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
       timer_integrate.stop();
       std::cout << "Integration... done. " << std::endl;
 

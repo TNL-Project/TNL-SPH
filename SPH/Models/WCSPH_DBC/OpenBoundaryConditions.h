@@ -51,7 +51,7 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
    //auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_inletMark[ i ]; };
    //auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
    //const GlobalIndexType numberOfRetyped = numberOfBufferParticles - Algorithms::reduce< DeviceType >( 0, view_inletMark.getSize(), fetch, reduction, 0.0 ); //I like zeros baceause sort.
-   std::cout << "... InletBuffer - number of retyped particles: " << numberOfRetyped << std::endl;
+   std::cout << "... InletBuffer: ... Number of retyped particles: " << numberOfRetyped << std::endl;
 
    if( numberOfRetyped == 0 )
       return;
@@ -59,11 +59,11 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
    //Sort particles by mark //TODO: can be this avoided?
    thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(), view_inletMark.getArrayData() + numberOfBufferParticles,
          thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(), view_v_buffer.getArrayData(), view_rho_buffer.getArrayData() ) ) );
-   std::cout << "... InletBuffer - particles sorted." << std::endl;
+   std::cout << "... InletBuffer: ... Particles sorted." << std::endl;
 
-   std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
-   std::cout << ".................. numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
-   std::cout << ".................. numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   std::cout << ".................... numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   std::cout << ".................... numberOfAllocatedParticles: " << fluid->particles->getNumberOfAllocatedParticles() << std::endl;
+   std::cout << ".................... numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
 
    auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -185,10 +185,28 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
   // Algorithms::parallelFor< DeviceType >(
   //       numberOfBufferParticles - removeFromBufferCount , numberOfBufferParticles, discardBufferParticles );
 
+   std::cout << "... OutletBuffer: ... Moved. Sorted." << std::endl;
+   std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
+   std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
+   std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+   std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
+   std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
+
+
    numberOfBufferParticles = numberOfBufferParticles - removeFromBufferCount;
    openBoundary->particles->setNumberOfParticles( numberOfBufferParticles - removeFromBufferCount );
-   openBoundary->particles->setNumberOfParticles( openBoundary->particles->getLastActiveParticle() - removeFromBufferCount );
+   openBoundary->particles->setLastActiveParticle( openBoundary->getLastActiveParticle() - removeFromBufferCount );
    openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() - removeFromBufferCount );
+
+   std::cout << "... OutletBuffer: ... Outlet buffer particles updated." << std::endl;
+   std::cout << "..................... fluid: particles.numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   std::cout << "..................... fluid: particles.firstActiveParticle: " << fluid->particles->getFirstActiveParticle() << std::endl;
+   std::cout << "..................... fluid: particles.lastActiveParticle: " << fluid->particles->getLastActiveParticle() << std::endl;
+   std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
+   std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
+   std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+   std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
+   std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
 
    //----- FLUID TO BUFFER -------------------------------------------------
    //Load all fluid fields
@@ -205,6 +223,8 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
    const PairIndexType particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
    auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
 
+   receivingParticleMark_view = INT_MAX;
+
    //obtain fluid particles that should be retyped to buffer particles
    auto checkFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -213,17 +233,29 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
 
       //fluid particle should be retyped to the buffer particle
       if( ( r_relative, inletOrientation ) > 0 ){
+         printf(" place to: %d, place i: %d",  i - particleRangeToCheck[ 0 ], i );
          receivingParticleMark_view[ i - particleRangeToCheck[ 0 ] ] = i;
          return 1;
       }
       return 0;
    };
    const GlobalIndexType fluidToBufferCount = Algorithms::reduce< DeviceType >(
-         0, numberOfParticle, checkFluidParticles, TNL::Plus() );
+         particleRangeToCheck[ 0 ], particleRangeToCheck[ 1 ] + 1, checkFluidParticles, TNL::Plus() );
+
+   std::cout << "... OutletBuffer: ... Retyping fluid. " << std::endl;
+   std::cout << "..................... openBoundary: particleRangeToCheck: " << particleRangeToCheck << std::endl;
+   std::cout << "..................... openBoundary: gridColumnAuxTrick: " << gridColumnAuxTrick << std::endl;
+
+   //if( fluidToBufferCount == 0 )
+   //   return;
 
    thrust::sort( thrust::device,
                  receivingParticleMark_view.getArrayData(),
-                 receivingParticleMark_view.getArrayData() + numberOfParticle );
+                 receivingParticleMark_view.getArrayData() + numberOfBufferParticles );
+
+   std::cout << "... OutletBuffer: ... Retyping fluid. Sorted." << std::endl;
+   std::cout << "..................... openBoundary: fluidToBufferCount: " << fluidToBufferCount << std::endl;
+   //std::cout << "..................... particles to retype: " << receivingParticleMark_view << std::endl;
 
    //retype fluid particles to buffer particles
    auto retypeFluidToOutlet = [=] __cuda_callable__ ( int i ) mutable
@@ -235,23 +267,36 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
       view_v_buffer[ numberOfBufferParticles + i ] = view_v_fluid[ p ];
 
       //shift the particles to keep compact set TODO: This can be avoided by just particle sort if FLT_MAX.
+      printf( "[p: %d swap: %d ]", p,  numberOfParticle - i - 1);
       view_r_fluid[ p ] = FLT_MAX;
-      swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticle - i - 1 ] );
-      swap( view_rho_fluid[ p ], view_rho_fluid[ numberOfParticle - i -1 ] );
-      swap( view_v_fluid[ p ], view_v_fluid[ numberOfParticle - i -1 ] );
-      swap( view_rho_old[ p ], view_rho_old[ numberOfParticle - i -1 ] );
-      swap( view_v_old[ p ], view_v_old[ numberOfParticle - i -1 ] );
+      //swap( view_r_fluid[ p ], view_r_fluid[ numberOfParticle - i - 1 ] );
+      //swap( view_rho_fluid[ p ], view_rho_fluid[ numberOfParticle - i -1 ] );
+      //swap( view_v_fluid[ p ], view_v_fluid[ numberOfParticle - i -1 ] );
+      //swap( view_rho_old[ p ], view_rho_old[ numberOfParticle - i -1 ] );
+      //swap( view_v_old[ p ], view_v_old[ numberOfParticle - i -1 ] );
    };
    Algorithms::parallelFor< DeviceType >( 0, fluidToBufferCount, retypeFluidToOutlet );
 
    //update particle ranges for buffer and fluid
    openBoundary->particles->setNumberOfParticles( numberOfBufferParticles + fluidToBufferCount );
-   openBoundary->particles->setNumberOfParticles( openBoundary->particles->getLastActiveParticle() + fluidToBufferCount );
+   openBoundary->particles->setLastActiveParticle( openBoundary->particles->getLastActiveParticle() + fluidToBufferCount );
    openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() + fluidToBufferCount );
 
-   fluid->particles->setNumberOfParticles( numberOfParticle - fluidToBufferCount );
-   fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() - fluidToBufferCount );
-   fluid->setLastActiveParticle( fluid->getLastActiveParticle() - fluidToBufferCount );
+   openBoundary->numberOfFluidParticlesToRemove = fluidToBufferCount;
+
+   //fluid->particles->setNumberOfParticles( numberOfParticle - fluidToBufferCount );
+   //fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() - fluidToBufferCount );
+   //fluid->setLastActiveParticle( fluid->getLastActiveParticle() - fluidToBufferCount );
+
+   std::cout << "... OutletBuffer: ... All done." << std::endl;
+   std::cout << "..................... fluid: particles.numberOfParticles: " << fluid->particles->getNumberOfParticles() << std::endl;
+   std::cout << "..................... fluid: particles.firstActiveParticle: " << fluid->particles->getFirstActiveParticle() << std::endl;
+   std::cout << "..................... fluid: particles.lastActiveParticle: " << fluid->particles->getLastActiveParticle() << std::endl;
+   std::cout << "..................... openBoundary: numberOfRemovedParticles: " << removeFromBufferCount << std::endl;
+   std::cout << "..................... openBoundary: numberOfParticle: " << numberOfBufferParticles << std::endl;
+   std::cout << "..................... openBoundary: particles.numberOfParticles: " << openBoundary->particles->getNumberOfParticles() << std::endl;
+   std::cout << "..................... openBoundary: particles.firstActiveParticle: " << openBoundary->particles->getFirstActiveParticle() << std::endl;
+   std::cout << "..................... openBoundary: particles.lastActiveParticle: " << openBoundary->particles->getLastActiveParticle() << std::endl;
 }
 
 

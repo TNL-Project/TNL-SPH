@@ -54,13 +54,24 @@ SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer&
    std::cout << " - model->sortParticlesAndVariables();... done " << std::endl;
 
    /**
+    * Update number of fluid particles dute to the removed once.
+    */
+   fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles() - openBoundaryPatches[ 1 ]->numberOfFluidParticlesToRemove );
+   fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() - openBoundaryPatches[ 1 ]->numberOfFluidParticlesToRemove );
+   fluid->setLastActiveParticle( fluid->getLastActiveParticle() - openBoundaryPatches[ 1 ]->numberOfFluidParticlesToRemove );
+   openBoundaryPatches[ 1 ]->numberOfFluidParticlesToRemove = 0;
+
+   /**
     * Bucketing, particles to cells.
     */
    timer_toCells.start();
    fluid->particles->particlesToCells();
+   std::cout << " - fluid-neighborSearch->particlesToCells();... done " << std::endl;
    //openBoundaryPatches[ 0 ]->neighborSearch->particlesToCells();
    for( auto& openBoundaryPatch : openBoundaryPatches )
       openBoundaryPatch->particles->particlesToCells();
+   timer_toCells.stop();
+   std::cout << " - openBoundaryPatch-neighborSearch->particlesToCells();... done " << std::endl;
 
    if( step == 0 )
       boundary->particles->particlesToCells();
