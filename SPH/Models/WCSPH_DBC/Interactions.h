@@ -3,6 +3,7 @@
 #include "../../SPHTraits.h"
 #include "Variables.h"
 #include "../../../Particles/neighborSearchLoop.h"
+#include <TNL/Matrices/StaticMatrix.h>
 
 /**
  * Modules used as default.
@@ -46,6 +47,11 @@ public:
    using OpenBoundaryVariables = SPHOpenBoundaryVariables< SPHFluidConfig >;
 
    using ParticlesType = Particles;
+
+   //Open boundary
+   using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
+   //using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension, SPHConfig::spaceDimension >;
+   using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
 
    /**
     * Constructor.
@@ -106,6 +112,17 @@ public:
    void
    interactionWithOpenBoundary( FluidPointer& fluid,
                                 BoundaryPointer& boundary,
+                                OpenBoudaryPointer& openBoundary,
+                                SPHState& sphState );
+
+   //TODO: Figure this out:
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS,
+             typename SPHState  >
+   void
+   extrapolateOpenBoundaryData( FluidPointer& fluid,
                                 OpenBoudaryPointer& openBoundary,
                                 SPHState& sphState );
 
