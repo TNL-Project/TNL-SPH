@@ -220,6 +220,13 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
+      //TODO:
+      sph.model->extrapolateOpenBoundaryData< SPHSimulation::FluidPointer,
+                                              SPHSimulation::OpenBoundaryPointer,
+                                              SPH::WendlandKernel2D,
+                                              SPHParams::EOS,
+                                              SPHParams >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams );
+
       /**
        * Perform interaction with given model.
        */
@@ -245,6 +252,7 @@ int main( int argc, char* argv[] )
       sph.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
       timer_outlet.stop();
       std::cout << "Open boundary... done. " << std::endl;
+
 
       /**
        * Output particle data

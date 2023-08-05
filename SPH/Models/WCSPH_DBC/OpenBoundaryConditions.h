@@ -72,8 +72,10 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
          //const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth ; //This works in 1d
          //:const VectorType r_relative = view_r_buffer[ i ] - bufferPosition;
          //:const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation; //This works in 1d
+
          const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
-         const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation; //This works in 1d
+         //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation; //This works in 1d THIS IS RIGHT
+         const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation; //This works in 1d THIS IS EXPERIMENT
 
          view_r_buffer[ i ] = newBufferParticle;
          view_v_buffer[ i ] = inletConstVelocity;

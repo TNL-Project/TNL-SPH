@@ -13,6 +13,8 @@
 #include "../VisousTerms.h"
 #include "Integrator.h"
 
+#include "BoundaryConditionsTypes.h"
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
@@ -48,10 +50,15 @@ public:
 
    using ParticlesType = Particles;
 
+   //BC
+   using BCType = WCSPH_BCTypes::DynamicBoundaryConditions;
+
    //Open boundary
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
    //using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension, SPHConfig::spaceDimension >;
    using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
+
+
 
    /**
     * Constructor.
@@ -74,9 +81,21 @@ public:
              typename DiffusiveTerm,
              typename ViscousTerm,
              typename EOS,
-             typename SPHState  >
+             typename SPHState >
    void
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+
+   template< typename FluidPointer,
+             typename BoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename SPHState,
+             typename = std::enable_if_t<
+                  std::is_same< typename SPHState::BCType, WCSPH_BCTypes::DynamicBoundaryConditions >::value > >
+   void
+   interactionUpdateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
    //TODO: Remove, testing.
    template< typename FluidPointer,
@@ -96,7 +115,7 @@ public:
              typename DiffusiveTerm,
              typename ViscousTerm,
              typename EOS,
-             typename SPHState  >
+             typename SPHState >
    void
    interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, SPHState& sphState );
 

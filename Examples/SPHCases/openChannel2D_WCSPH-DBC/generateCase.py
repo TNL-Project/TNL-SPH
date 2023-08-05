@@ -24,14 +24,14 @@ write = '.vtk' #.ptcs or .vtk
 boxL = 1.
 boxH = 0.3
 
-fluidL = 0.3
+fluidL = 0.6
 fluidH = 0.1
 numberOfAllocatedParticles = 50000
 
 ## First inlet buffer. ##
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
-inletBufferPosition_x = 0.2
+inletBufferPosition_x = 0.1
 inletBufferPosition_z = 0. + dp*1
 inletBufferHeight = 0.1
 inletBufferLayers = numberOfBoundaryLayers + 1
@@ -46,7 +46,7 @@ inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z *
 ## Second inlet buffer. ##
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
-inlet2BufferPosition_x = 0.5 + dp
+inlet2BufferPosition_x = 0.7 + dp
 inlet2BufferPosition_z = 0. + dp*1
 inlet2BufferHeight = 0.1
 inlet2BufferLayers = numberOfBoundaryLayers + 1

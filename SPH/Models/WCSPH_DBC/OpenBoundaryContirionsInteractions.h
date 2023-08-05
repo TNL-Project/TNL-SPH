@@ -374,14 +374,14 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithOpenBound
    };
 
    //TODO: Temp to test.
-   if( openBoundary->parameters.identifier == "outlet" )
-   {
-      std::cout << "Running outlet interpolation." << std::endl;
-      SPHParallelFor::exec(
-            openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
-      std::cout << "Running outlet interpolation. DONE." << std::endl;
+   //if( openBoundary->parameters.identifier == "outlet" )
+   //{
+   //   std::cout << "Running outlet interpolation." << std::endl;
+   //   SPHParallelFor::exec(
+   //         openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
+   //   std::cout << "Running outlet interpolation. DONE." << std::endl;
 
-   }
+   //}
 
 }
 
@@ -403,6 +403,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = sphState.h;
+   const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
    const VectorType gravity = sphState.gravity;
 
@@ -432,13 +433,13 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
                                                     VectorExtendedType* vxgradvx_gn,
                                                     VectorExtendedType* vygradvy_gn  ) mutable
    {
-      const VectorType r_j = view_points_openBound[ j ];
+      const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
       if (drs <= searchRadius )
       {
-         const VectorType v_j = view_v_openBound[ j ];
-         const RealType rho_j = view_rho_openBound[ j ];
+         const VectorType v_j = view_v[ j ];
+         const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
 
          /* Interaction: */
@@ -467,6 +468,13 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
             vxgradvx_local[ 0 ] = v_j[ 0 ] * V; vxgradvx_local[ 1 ] = gradW[ 0 ] * v_j[ 0 ] * V; vxgradvx_local[ 2 ] = gradW[ 1 ] * v_j[ 0 ] * V;
             vygradvy_local[ 0 ] = v_j[ 1 ] * V; vygradvy_local[ 1 ] = gradW[ 0 ] * v_j[ 1 ] * V; vygradvy_local[ 2 ] = gradW[ 1 ] * v_j[ 1 ] * V;
 
+      if( i == 50 ){
+         printf( "%f, %f, %f \n" , A_local(0,0), A_local(0,1), A_local(0,2) );
+         printf( "%f, %f, %f \n" , A_local(1,0), A_local(1,1), A_local(1,2) );
+         printf( "%f, %f, %f \n" , A_local(2,0), A_local(2,1), A_local(2,2) );
+
+      }
+
             *A_gn += A_local;
             *rhogradrho_gn += rhogradrho_local;
             *vxgradvx_gn += vxgradvx_local;
@@ -489,7 +497,17 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
       VectorExtendedType vygradvy_gn = 0.f;
 
       NeighborsLoop::exec(
-            i, r_i, searchInFluid, OpenBoundaryFluid, v_i, rho_i, &A_gn, &rhogradrho_gn, &vxgradvx_gn, &vygradvy_gn );
+            i, ghostNode_i, searchInFluid, OpenBoundaryFluid, v_i, rho_i, &A_gn, &rhogradrho_gn, &vxgradvx_gn, &vygradvy_gn );
+
+      if( i == 50 ){
+         printf( "ri: %f, %f \n", r_i[ 0 ], r_i[ 1 ] );
+         printf( "gn: %f, %f \n", ghostNode_i[ 0 ], ghostNode_i[ 1 ] );
+
+         printf( "%f, %f, %f \n" , A_gn(0,0), A_gn(0,1), A_gn(0,2) );
+         printf( "%f, %f, %f \n" , A_gn(1,0), A_gn(1,1), A_gn(1,2) );
+         printf( "%f, %f, %f \n" , A_gn(2,0), A_gn(2,1), A_gn(2,2) );
+
+      }
 
       if( Matrices::determinant( A_gn ) > 0.001 )
       {
@@ -498,15 +516,16 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
          const VectorExtendedType rhogradrho = Matrices::solve( A_gn, rhogradrho_gn );
          const RealType rho_bound = rhogradrho[ 0 ] + rhogradrho[ 1 ] * r_ign[ 0 ] + rhogradrho[ 2 ] * r_ign[ 1 ];
 
-         const VectorExtendedType vgradvx = Matrices::solve( A_gn, vxgradvx_gn );
-         const VectorExtendedType vgradvy = Matrices::solve( A_gn, vygradvy_gn );
+         const VectorExtendedType vxgradvx = Matrices::solve( A_gn, vxgradvx_gn );
+         const VectorExtendedType vygradvy = Matrices::solve( A_gn, vygradvy_gn );
 
-         const RealType vx_bound = vgradvx[ 0 ] + vgradvx[ 1 ] * r_ign[ 0 ] + vgradvx[ 2 ] * r_ign[ 1 ];
-         const RealType vy_bound = vgradvy[ 0 ] + vgradvy[ 1 ] * r_ign[ 0 ] + vgradvy[ 2 ] * r_ign[ 1 ];
+         const RealType vx_bound = vxgradvx[ 0 ] + vxgradvx[ 1 ] * r_ign[ 0 ] + vxgradvx[ 2 ] * r_ign[ 1 ];
+         const RealType vy_bound = vygradvy[ 0 ] + vygradvy[ 1 ] * r_ign[ 0 ] + vygradvy[ 2 ] * r_ign[ 1 ];
 
          view_rho_openBound[ i ] = rho_bound;
          const VectorType v_b = { vx_bound, vy_bound };
-         view_v_openBound[ i ] = v_b;
+         //view_v_openBound[ i ] = v_b;
+         printf(" Linear interpolation. \n");
       }
       else if( A_gn( 0, 0 ) > 0.f )
       {
@@ -516,10 +535,13 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
 
          view_rho_openBound[ i ] = rho_bound;
          const VectorType v_b = { vx_bound, vy_bound };
-         view_v_openBound[ i ] = v_b;
+         //view_v_openBound[ i ] = v_b;
+
+         printf(" Constant interpolation. \n");
       }
       else
       {
+         //view_rho_openBound[ i ] = rho0;
 
       }
 
