@@ -6,18 +6,17 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
+template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
           typename DiffusiveTerm,
           typename ViscousTerm,
-          typename EOS,
-          typename SPHState >
+          typename EOS >
 void
-WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithOpenBoundary( FluidPointer& fluid,
-                                                                                     OpenBoudaryPointer& openBoundary,
-                                                                                     SPHState& sphState )
+WCSPH_DBC< ParticleSystem, SPHState >::interactionWithOpenBoundary( FluidPointer& fluid,
+                                                                    OpenBoudaryPointer& openBoundary,
+                                                                    SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -133,17 +132,16 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithOpenBound
    //};
 }
 
-template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
+template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename BoundaryPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
           typename DiffusiveTerm,
           typename ViscousTerm,
-          typename EOS,
-          typename SPHState >
+          typename EOS >
 void
-WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithOpenBoundary( FluidPointer& fluid,
+WCSPH_DBC< ParticleSystem, SPHState >::interactionWithOpenBoundary( FluidPointer& fluid,
                                                                                      BoundaryPointer& boundary,
                                                                                      OpenBoudaryPointer& openBoundary,
                                                                                      SPHState& sphState )
@@ -385,14 +383,13 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithOpenBound
 
 }
 
-template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
+template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS,
-          typename SPHState >
+          typename EOS >
 void
-WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryData( FluidPointer& fluid,
+WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData( FluidPointer& fluid,
                                                                                      OpenBoudaryPointer& openBoundary,
                                                                                      SPHState& sphState )
 {
@@ -465,15 +462,8 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
 
             rhogradrho_local[ 0 ] = W * m; rhogradrho_local[ 1 ] = gradW[ 0 ] * m; rhogradrho_local[ 2 ] = gradW[ 1 ] * m;
 
-            vxgradvx_local[ 0 ] = v_j[ 0 ] * V; vxgradvx_local[ 1 ] = gradW[ 0 ] * v_j[ 0 ] * V; vxgradvx_local[ 2 ] = gradW[ 1 ] * v_j[ 0 ] * V;
-            vygradvy_local[ 0 ] = v_j[ 1 ] * V; vygradvy_local[ 1 ] = gradW[ 0 ] * v_j[ 1 ] * V; vygradvy_local[ 2 ] = gradW[ 1 ] * v_j[ 1 ] * V;
-
-      if( i == 50 ){
-         printf( "%f, %f, %f \n" , A_local(0,0), A_local(0,1), A_local(0,2) );
-         printf( "%f, %f, %f \n" , A_local(1,0), A_local(1,1), A_local(1,2) );
-         printf( "%f, %f, %f \n" , A_local(2,0), A_local(2,1), A_local(2,2) );
-
-      }
+            vxgradvx_local[ 0 ] = v_j[ 0 ] * W * V; vxgradvx_local[ 1 ] = gradW[ 0 ] * v_j[ 0 ] * V; vxgradvx_local[ 2 ] = gradW[ 1 ] * v_j[ 0 ] * V;
+            vygradvy_local[ 0 ] = v_j[ 1 ] * W * V; vygradvy_local[ 1 ] = gradW[ 0 ] * v_j[ 1 ] * V; vygradvy_local[ 2 ] = gradW[ 1 ] * v_j[ 1 ] * V;
 
             *A_gn += A_local;
             *rhogradrho_gn += rhogradrho_local;
@@ -489,7 +479,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
       const VectorType v_i = view_v_openBound[ i ];
       const RealType rho_i = view_rho_openBound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ) * 2.f , r_i[ 1 ] }; //FIXME
+      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ] }; //FIXME
 
       Matrix A_gn = 0.f;
       VectorExtendedType rhogradrho_gn = 0.f;
@@ -499,17 +489,8 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
       NeighborsLoop::exec(
             i, ghostNode_i, searchInFluid, OpenBoundaryFluid, v_i, rho_i, &A_gn, &rhogradrho_gn, &vxgradvx_gn, &vygradvy_gn );
 
-      if( i == 50 ){
-         printf( "ri: %f, %f \n", r_i[ 0 ], r_i[ 1 ] );
-         printf( "gn: %f, %f \n", ghostNode_i[ 0 ], ghostNode_i[ 1 ] );
-
-         printf( "%f, %f, %f \n" , A_gn(0,0), A_gn(0,1), A_gn(0,2) );
-         printf( "%f, %f, %f \n" , A_gn(1,0), A_gn(1,1), A_gn(1,2) );
-         printf( "%f, %f, %f \n" , A_gn(2,0), A_gn(2,1), A_gn(2,2) );
-
-      }
-
-      if( Matrices::determinant( A_gn ) > 0.001 )
+      if( Matrices::determinant( A_gn ) > 0.001f )
+      //if( Matrices::determinant( A_gn ) > 1000.f )
       {
          VectorType r_ign = ghostNode_i - r_i;
 
@@ -524,8 +505,8 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
 
          view_rho_openBound[ i ] = rho_bound;
          const VectorType v_b = { vx_bound, vy_bound };
-         //view_v_openBound[ i ] = v_b;
-         printf(" Linear interpolation. \n");
+         view_v_openBound[ i ] = v_b;
+         //printf(" Linear interpolation v_i: %f, %f v_b: %f, %f. r_i: %f, %f, gn: %f, %f. det(A): %f vgx: %f vg: %f \n" , v_i[ 0 ], v_i[ 1 ], v_b[ 0 ], v_b[ 1 ], r_i[ 0 ], r_i[ 1 ], ghostNode_i[ 0 ], ghostNode_i[ 1 ], Matrices::determinant( A_gn ), vxgradvx_gn[ 0 ], vxgradvx_gn[ 0 ] / A_gn( 0, 0 ) );
       }
       else if( A_gn( 0, 0 ) > 0.f )
       {
@@ -535,14 +516,13 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::extrapolateOpenBoundaryD
 
          view_rho_openBound[ i ] = rho_bound;
          const VectorType v_b = { vx_bound, vy_bound };
-         //view_v_openBound[ i ] = v_b;
-
-         printf(" Constant interpolation. \n");
+         view_v_openBound[ i ] = v_b;
+         //printf(" Constant interpolation v_i: %f, %f v_b: %f, %f. r_i: %f, %f, gn: %f, %f. det(A): %f vgx: %f vg: %f \n" , v_i[ 0 ], v_i[ 1 ], v_b[ 0 ], v_b[ 1 ], r_i[ 0 ], r_i[ 1 ], ghostNode_i[ 0 ], ghostNode_i[ 1 ], Matrices::determinant( A_gn ), vxgradvx_gn[ 0 ], vxgradvx_gn[ 0 ] / A_gn( 0, 0 ) );
       }
       else
       {
          //view_rho_openBound[ i ] = rho0;
-
+         //printf("Nothing done. \n");
       }
 
    };
