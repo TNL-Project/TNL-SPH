@@ -29,8 +29,8 @@ class SPHSimulationControl
    const std::string inputParticleFile_outlet = "sources/openchannel_outlet.vtk";
    std::string outputFileName = "results/particles";
 
-   const float endTime = 0.5;
-   const float outputTime = 0.005f;
+   const float endTime = 3.0;
+   const float outputTime = 0.05f;
 };
 
 } //SimulationConstrolConfiguration

@@ -489,8 +489,8 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData( FluidPointer
       NeighborsLoop::exec(
             i, ghostNode_i, searchInFluid, OpenBoundaryFluid, v_i, rho_i, &A_gn, &rhogradrho_gn, &vxgradvx_gn, &vygradvy_gn );
 
-      if( Matrices::determinant( A_gn ) > 0.001f )
-      //if( Matrices::determinant( A_gn ) > 1000.f )
+      //if( Matrices::determinant( A_gn ) > 0.001f )
+      if( Matrices::determinant( A_gn ) > 1000.f )
       {
          VectorType r_ign = ghostNode_i - r_i;
 

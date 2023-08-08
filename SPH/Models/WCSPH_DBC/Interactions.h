@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../SPHTraits.h"
+#include "BoundaryConditionsTypes.h"
 #include "Variables.h"
 #include "../../../Particles/neighborSearchLoop.h"
 #include <TNL/Matrices/StaticMatrix.h>
@@ -13,19 +14,20 @@
 #include "../VisousTerms.h"
 #include "Integrator.h"
 
-#include "BoundaryConditionsTypes.h"
+//#include "BoundaryConditionsTypes.h"
+//#include "./BoundaryConditions/DBC.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename Particles, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig> >
+template< typename Particles, typename SPHState >
 class WCSPH_DBC
 {
 public:
 
-   using SPHConfig = SPHFluidConfig;
-   using SPHTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHConfig = typename SPHState::SPHConfig;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType; //TODO:Resolve
 
    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
@@ -36,28 +38,32 @@ public:
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
 
    /* VARIABLES FIELDS */
-   using EOS = TaitWeaklyCompressibleEOS< SPHFluidConfig >;
+   using EOS = TaitWeaklyCompressibleEOS< SPHConfig >;
 
    /* Integrator */
-   using Model = WCSPH_DBC< Particles, SPHFluidConfig >;
-   using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHFluidConfig >;
-   using IntegratorVariables = IntegratorVariables< SPHFluidConfig >;
+   using Model = WCSPH_DBC< Particles, SPHState >;
+   using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHConfig >;
+   using IntegratorVariables = IntegratorVariables< SPHConfig >;
 
    /*Swap variables*/
-	using FluidVariables = Variables;
-	using BoundaryVariables = Variables;
-   using OpenBoundaryVariables = SPHOpenBoundaryVariables< SPHFluidConfig >;
+	using FluidVariables = SPHFluidVariables< SPHConfig >;
+   using BoundaryConditions = typename SPHState::BCType;
+	//using BoundaryVariables = typename BoundaryConditions::Variables;
+
+	using BoundaryVariables = SPHOpenBoundaryVariables< SPHState >;
+   using OpenBoundaryVariables = SPHOpenBoundaryVariables< SPHConfig >;
 
    using ParticlesType = Particles;
 
-   //BC
-   using BCType = WCSPH_BCTypes::DynamicBoundaryConditions;
+
+
 
    //Open boundary
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
    //using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension, SPHConfig::spaceDimension >;
    using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
 
+   //using DefinedBCType = typename SPHState::BCType;
 
 
    /**
@@ -69,9 +75,8 @@ public:
     * Compute pressure from density.
     * TODO: Move out.
     */
-   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHFluidConfig >,
-             typename PhysicalObjectPointer,
-             typename SPHState >
+   template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHConfig >,
+             typename PhysicalObjectPointer >
    void
    computePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState );
 
@@ -80,33 +85,57 @@ public:
              typename SPHKernelFunction,
              typename DiffusiveTerm,
              typename ViscousTerm,
-             typename EOS,
-             typename SPHState >
+             typename EOS >
    void
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
+   /**
+    * Function to realiza boundary conditions for solid wall.
+    * Realized by Dynamic Boundary Conditions (DBC) - Crespo et. 2007
+    */
    template< typename FluidPointer,
              typename BoudaryPointer,
              typename SPHKernelFunction,
              typename DiffusiveTerm,
              typename ViscousTerm,
              typename EOS,
-             typename SPHState,
-             typename = std::enable_if_t<
-                  std::is_same< typename SPHState::BCType, WCSPH_BCTypes::DynamicBoundaryConditions >::value > >
+             typename BCType = typename SPHState::BCType,
+             std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
-   interactionUpdateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
-   //TODO: Remove, testing.
+   /**
+    * Function to realiza boundary conditions for solid wall.
+    * Realized by Modified Dynamic Boundary Conditions (MDBC) - English et. al. 2021
+    */
    template< typename FluidPointer,
              typename BoudaryPointer,
              typename SPHKernelFunction,
              typename DiffusiveTerm,
              typename ViscousTerm,
              typename EOS,
-             typename SPHState  >
-   RealType
-   interactionWithReduction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+             typename BCType = typename SPHState::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+
+   /**
+    * Function to realiza boundary conditions for solid wall.
+    * Realized by Generalized Wall Boundary Conditions (GWBC) - Adami, Hu 2022
+    *
+    * TODO: Not implemented.
+    */
+   template< typename FluidPointer,
+             typename BoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename BCType = typename SPHState::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled = true >
+   void
+   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+
 
    //TODO: Where should be this placed
    template< typename FluidPointer,
@@ -114,8 +143,7 @@ public:
              typename SPHKernelFunction,
              typename DiffusiveTerm,
              typename ViscousTerm,
-             typename EOS,
-             typename SPHState >
+             typename EOS >
    void
    interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, SPHState& sphState );
 
@@ -126,8 +154,7 @@ public:
              typename SPHKernelFunction,
              typename DiffusiveTerm,
              typename ViscousTerm,
-             typename EOS,
-             typename SPHState  >
+             typename EOS >
    void
    interactionWithOpenBoundary( FluidPointer& fluid,
                                 BoundaryPointer& boundary,
@@ -138,8 +165,7 @@ public:
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS,
-             typename SPHState  >
+             typename EOS >
    void
    extrapolateOpenBoundaryData( FluidPointer& fluid,
                                 OpenBoudaryPointer& openBoundary,
@@ -152,5 +178,13 @@ public:
 } // TNL
 
 #include "Interactions.hpp"
+
+#include "BoundaryConditions/DBC.h"
+//#include "BoundaryConditions/MDBC.h"
+
+//#include "BoundaryConditions/DBC_with_enable_if_t.h"
+//#include "BoundaryConditions/MDBC_with_enable_if_t.h"
+
+
 #include "OpenBoundaryContirionsInteractions.h"
 

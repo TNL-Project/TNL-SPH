@@ -82,12 +82,12 @@ template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTe
 void
 SPHOpenSystem< Model >::interact( SPHState& sphState )
 {
-   //model->template interaction<
-   //   FluidPointer, BoundaryPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
-   //         fluid, boundary, openBoundaryPatches[ 0 ], sphState );
 
    model->template interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
          fluid, boundary, sphState );
+   model->template updateSolidBoundary< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, sphState );
+
    //model->template interactionWithOpenBoundary< FluidPointer, OpenBoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
    //      fluid, openBoundaryPatches[ 0 ], sphState );
 

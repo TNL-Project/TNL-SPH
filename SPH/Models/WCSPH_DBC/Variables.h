@@ -2,6 +2,7 @@
 
 #include "../../SPHTraits.h"
 #include <thrust/gather.h>
+#include "BoundaryConditionsTypes.h"
 
 #ifdef HAVE_MPI
 #include "../../shared/utils.h"
@@ -11,20 +12,19 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHFluidConfig >
+template< typename SPHState >
 class SPHFluidVariables
 {
    public:
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHConfig = typename SPHState::SPHConfig;
+   using SPHFluidTraitsType = SPHFluidTraits< SPHConfig >;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using RealType = typename SPHFluidTraitsType::RealType;
-
    using ScalarArrayType = typename SPHFluidTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
-
    using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    SPHFluidVariables( GlobalIndexType size )
    : rho( size ), drho ( size ), p( size ), v( size ), a( size ),
@@ -119,32 +119,81 @@ class SPHFluidVariables
 
 };
 
-template< typename SPHFluidConfig >
-class SPHOpenBoundaryVariables : public SPHFluidVariables< SPHFluidConfig >
+template< typename SPHState >
+class SPHOpenBoundaryVariables : public SPHFluidVariables< SPHState >
 {
    public:
-   using BaseType = SPHFluidVariables< SPHFluidConfig >;
+   using BaseType = SPHFluidVariables< SPHState >;
    using SPHTraitsType = typename BaseType::SPHFluidTraitsType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
    SPHOpenBoundaryVariables( GlobalIndexType size )
-   : SPHFluidVariables< SPHFluidConfig >( size ), particleMark( size ), receivingParticleMark( size ) {};
+   : SPHFluidVariables< SPHState >( size ), particleMark( size ), receivingParticleMark( size ) {};
 
    IndexArrayType particleMark;
    IndexArrayType receivingParticleMark;
 };
 
-template< typename SPHFluidConfig >
-class SPHBoundaryVariables : public SPHFluidVariables< SPHFluidConfig >
+template< typename SPHState, typename Enable = void >
+class SPHBoundaryVariables : public SPHFluidVariables< SPHState >
+{};
+
+template< typename SPHState >
+class SPHBoundaryVariables< SPHState,
+                            typename std::enable_if_t< std::is_same_v< typename SPHState::BCType, WCSPH_BCTypes::DBC > > >
+: public SPHFluidVariables< SPHState >
 {
-  public:
-   public:
-   using BaseType = SPHFluidVariables< SPHFluidConfig >;
+public:
+   using BaseType = SPHFluidVariables< SPHState >;
    using GlobalIndexType = typename BaseType::GlobalIndexType;
 
    SPHBoundaryVariables( GlobalIndexType size )
-   : SPHFluidVariables< SPHFluidConfig >( size ) {};
+   : SPHFluidVariables< SPHState >( size ) {};
+};
+
+template< typename SPHState >
+class SPHBoundaryVariables< SPHState,
+                            typename std::enable_if_t< std::is_same_v< typename SPHState::BCType, WCSPH_BCTypes::MDBC > > >
+: public SPHFluidVariables< SPHState >
+{
+public:
+   using Base = SPHFluidTraits< SPHState >;
+   using SPHFluidTraitsType = SPHFluidTraits< typename SPHState::SPHConfig >;
+
+   using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
+   using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
+
+   SPHBoundaryVariables( GlobalIndexType size )
+   : SPHFluidVariables< SPHState >( size ), ghostNodes( size ), ghostNodes_swap( size ) {}
+
+   VectorArrayType ghostNodes;
+   VectorArrayType ghostNodes_swap;
+
+   template< typename IndexArrayTypePointer >
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   {
+      Base::sortVariables( map, numberOfParticles, firstActiveParticle );
+
+      auto view_map = map->getView();
+      auto view_ghostNodes = ghostNodes.getView();
+      auto view_ghostNodes_swap = ghostNodes_swap.getView();
+
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_ghostNodes.getArrayData() + firstActiveParticle, view_ghostNodes_swap.getArrayData() + firstActiveParticle );
+
+      ghostNodes.swap( ghostNodes_swap );
+   }
+
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      Base::readVariables( reader );
+      reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
+   }
+
 };
 
 } // SPH

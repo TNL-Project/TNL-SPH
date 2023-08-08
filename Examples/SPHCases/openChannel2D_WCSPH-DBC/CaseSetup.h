@@ -107,7 +107,7 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHParams >;
    using SPHSimulation = SPH::SPHOpenSystem< SPHModel >;
 
    /**
@@ -224,8 +224,7 @@ int main( int argc, char* argv[] )
       sph.model->extrapolateOpenBoundaryData< SPHSimulation::FluidPointer,
                                               SPHSimulation::OpenBoundaryPointer,
                                               SPH::WendlandKernel2D,
-                                              SPHParams::EOS,
-                                              SPHParams >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams );
+                                              SPHParams::EOS >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams );
 
       /**
        * Perform interaction with given model.

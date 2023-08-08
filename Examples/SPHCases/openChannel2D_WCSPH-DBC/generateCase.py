@@ -53,7 +53,7 @@ inlet2BufferLayers = numberOfBoundaryLayers + 1
 inlet2Velocity_x = 1.5
 inlet2Velocity_z = 0.
 
-inlet2BufferWidth = inlet2BufferLayers * dp - dp / 2
+inlet2BufferWidth = inlet2BufferLayers * dp # - dp / 2
 inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2 #remove, deprecated
 inlet2BufferReferencePoint_x = inlet2BufferPosition_x - inlet2BufferOrientation_x * ( inlet2BufferLayers - 1 ) * dp
 inlet2BufferReferencePoint_z = inlet2BufferPosition_z - inlet2BufferOrientation_z * ( inlet2BufferLayers - 1 ) * dp
@@ -136,15 +136,16 @@ for x in range( inlet2L_n ):
 
 ### Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
+ghost_rx = []; ghost_ry = []; ghost_rz = []
 box_density = [];
 
-# left wall
-for layer in range( numberOfBoundaryLayers ):
-    for z in range( boxH_n - 1 ):
-        box_rx.append( 0. - layer * dp )
-        box_ry.append( 0. ) #we use only 2D case
-        box_rz.append( ( z+1 ) * dp )
-        box_density.append( rho0 );
+#:# left wall
+#:for layer in range( numberOfBoundaryLayers ):
+#:    for z in range( boxH_n - 1 ):
+#:        box_rx.append( 0. - layer * dp )
+#:        box_ry.append( 0. ) #we use only 2D case
+#:        box_rz.append( ( z+1 ) * dp )
+#:        box_density.append( rho0 );
 
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
@@ -153,20 +154,24 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( 0. ) #we use only 2D case
         box_rz.append( 0. - layer * dp )
 
+        ghost_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+        ghost_ry.append( 0. + dp * ( layer + 1 ) )
+        ghost_rz.append( 0.)
+
         #hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
         hydrostaticPressure = rho0 * 9.81 * ( fluidH + layer * dp )
         hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
         box_density.append( hydrostaticDensity )
 
-x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
-
-# right wall
-for layer in range( numberOfBoundaryLayers ):
-    for z in range( boxH_n - 1 ):
-        box_rx.append( x_last + dp * layer )
-        box_ry.append( 0. ) #we use only 2D case
-        box_rz.append( ( z + 1 ) * dp )
-        box_density.append( rho0 );
+#:x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
+#:
+#:# right wall
+#:for layer in range( numberOfBoundaryLayers ):
+#:    for z in range( boxH_n - 1 ):
+#:        box_rx.append( x_last + dp * layer )
+#:        box_ry.append( 0. ) #we use only 2D case
+#:        box_rz.append( ( z + 1 ) * dp )
+#:        box_density.append( rho0 );
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 import sys
@@ -186,12 +191,13 @@ saveParticlesVTK.save_polydata( fluidToWrite, "sources/openchannel_fluid.vtk" )
 
 r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
 v = np.zeros( ( len( box_rx ), 3 ) )
+gn = np.array( ( ghost_rx, ghost_ry, ghost_rz ), dtype=float ).T #!!
 #rho = rho0 * np.ones( len( box_rx ) )
 rho = np.array( box_density, dtype=float )
 p = np.zeros( len( box_rx ) )
 ptype = np.ones( len( box_rx ) )
 
-boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype, ghostNodes=gn )
 saveParticlesVTK.save_polydata( boxToWrite, "sources/openchannel_boundary.vtk" )
 
 r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
@@ -289,7 +295,7 @@ fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_x', str( inletBuff
 fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_y', str( inletBufferOrientation_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_x', str( inletVelocity_x ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_y', str( inletVelocity_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderInletPosition_x', str( inletBufferPosition_x  + dp/2) ) #FIXME
+fileOBConf = fileOBConf.replace( 'placeholderInletPosition_x', str( inletBufferPosition_x  + dp/2 ) ) #FIXME
 fileOBConf = fileOBConf.replace( 'placeholderInletPosition_y', str( inletBufferPosition_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_x', str( round( inletBufferWidth, 7 ) ) )
@@ -301,7 +307,7 @@ fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_x', str( inlet2Bu
 fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_y', str( inlet2BufferOrientation_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_x', str( inlet2Velocity_x ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_y', str( inlet2Velocity_z ) )
-fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_x', str( inlet2BufferPosition_x ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_x', str( inlet2BufferPosition_x - dp/2 ) ) #FIXME
 fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_y', str( inlet2BufferPosition_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_x', str( round( inlet2BufferWidth, 7 ) ) )

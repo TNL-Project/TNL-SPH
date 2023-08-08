@@ -4,6 +4,9 @@
 #include "../../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../../SPH/Models/VisousTerms.h"
 
+#include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
+#include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditions/DBC.h"
+
 #include "../../../../SPH/SPHTraits.h"
 #include "../../../../SPH/TimeStep.h"
 #include <limits>
@@ -49,10 +52,12 @@ class SPHConfig
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename SPHConfig >
+template< typename SPHConfigType >
 class SPHParamsConfig
 {
    public:
+   using SPHConfig = SPHConfigType;
+
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]
@@ -94,6 +99,14 @@ class SPHParamsConfig
    float speedOfSound = placeholderSpeedOfSoundf;
    float coefB = placeholderCoefBf;
    float rho0 = placeholderDensityf;
+
+   /**
+    * Define type of boundary conditions.
+    * - DBC - dynamic boundary conditions
+    * - MDBC - modified dynamic boundary conditions {requires ghost nodes for boundary particles}
+    */
+   using BCType = TNL::ParticleSystem::SPH::BoundaryConditions::DBC< SPHConfig >;
+   //using BCType = TNL::ParticleSystem::SPH::BoundaryConditions::MDBC< SPHConfig >;
 
    /**
     * Define initial timestep [s].

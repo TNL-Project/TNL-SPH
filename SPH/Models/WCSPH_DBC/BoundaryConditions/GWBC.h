@@ -1,34 +1,30 @@
 #pragma once
 
-#include "../Variables.h"
-#include "../../../SPHTraits.h"
+#include "../Interactions.h"
+#include "../../../customParallelFor.h"
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
-namespace WCSPH {
-namespace BoundaryConditions {
 
-template< typename SPHConfig >
-class GWBCVariables : public SPHFluidVariables< SPHConfig >
+template< typename ParticleSystem, typename SPHFluidConfig >
+template< typename FluidPointer,
+          typename BoudaryPointer,
+          typename SPHKernelFunction,
+          typename DiffusiveTerm,
+          typename ViscousTerm,
+          typename EOS,
+          typename SPHState,
+          typename BCType,
+          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled >
+void
+WCSPH_DBC< ParticleSystem, SPHFluidConfig >::updateSolidBoundary( FluidPointer& fluid,
+                                                                  BoudaryPointer& boundary,
+                                                                  SPHState& sphState )
 {
-   public:
-   using BaseType = SPHFluidVariables< SPHConfig >;
-   using GlobalIndexType = typename BaseType::GlobalIndexType;
 
-   GWBCVariables( GlobalIndexType size )
-   : SPHFluidVariables< SPHConfig >( size ) {};
-};
+}
 
-template< typename SPHConfig >
-class GWBC
-{
-   public:
-
-};
-
-} // BoundaryConditions
-} // WSPH
 } // SPH
 } // ParticleSystem
 } // TNL

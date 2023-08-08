@@ -149,6 +149,7 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer(
    auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
+      //view_r_buffer[ i ][ 0 ] += view_v_buffer[ i ][ 0 ] * dt;
       const VectorType r = view_r_buffer[ i ];
       const VectorType r_relative = bufferPosition - r;
 
