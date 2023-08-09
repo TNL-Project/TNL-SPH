@@ -5,7 +5,6 @@
 #include "../../../../SPH/Models/VisousTerms.h"
 
 #include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
-#include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditions/DBC.h"
 
 #include "../../../../SPH/SPHTraits.h"
 #include "../../../../SPH/TimeStep.h"
@@ -105,8 +104,8 @@ class SPHParamsConfig
     * - DBC - dynamic boundary conditions
     * - MDBC - modified dynamic boundary conditions {requires ghost nodes for boundary particles}
     */
-   using BCType = TNL::ParticleSystem::SPH::BoundaryConditions::DBC< SPHConfig >;
-   //using BCType = TNL::ParticleSystem::SPH::BoundaryConditions::MDBC< SPHConfig >;
+   using BCType = TNL::ParticleSystem::SPH::WCSPH_BCTypes::DBC;
+   //using BCType = TNL::ParticleSystem::SPH::WCSPH_BCTypes::MDBC;
 
    /**
     * Define initial timestep [s].
