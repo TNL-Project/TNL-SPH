@@ -42,20 +42,15 @@ public:
 
    /* Integrator */
    using Model = WCSPH_DBC< Particles, SPHState >;
-   using Integrator = VerletIntegrator< typename Pointers::SharedPointer< Model, DeviceType >, SPHConfig >;
+   using Integrator = VerletIntegrator< SPHConfig >;
    using IntegratorVariables = IntegratorVariables< SPHConfig >;
 
    /*Swap variables*/
 	using FluidVariables = SPHFluidVariables< SPHConfig >;
-   using BoundaryConditions = typename SPHState::BCType;
-	//using BoundaryVariables = typename BoundaryConditions::Variables;
-
-	using BoundaryVariables = SPHOpenBoundaryVariables< SPHState >;
+	using BoundaryVariables = SPHBoundaryVariables< SPHState >;
    using OpenBoundaryVariables = SPHOpenBoundaryVariables< SPHConfig >;
 
    using ParticlesType = Particles;
-
-
 
 
    //Open boundary
@@ -69,7 +64,7 @@ public:
    /**
     * Constructor.
     */
-   WCSPH_DBC( ) = default; //THIS WORKS
+   WCSPH_DBC( ) = default;
 
    /**
     * Compute pressure from density.
@@ -90,7 +85,7 @@ public:
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
    /**
-    * Function to realiza boundary conditions for solid wall.
+    * Function to realize boundary conditions for solid wall.
     * Realized by Dynamic Boundary Conditions (DBC) - Crespo et. 2007
     */
    template< typename FluidPointer,
@@ -105,7 +100,7 @@ public:
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
    /**
-    * Function to realiza boundary conditions for solid wall.
+    * Function to realize boundary conditions for solid wall.
     * Realized by Modified Dynamic Boundary Conditions (MDBC) - English et. al. 2021
     */
    template< typename FluidPointer,
@@ -120,8 +115,8 @@ public:
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
    /**
-    * Function to realiza boundary conditions for solid wall.
-    * Realized by Generalized Wall Boundary Conditions (GWBC) - Adami, Hu 2022
+    * Function to realize boundary conditions for solid wall.
+    * Realized by Generalized Wall Boundary Conditions (GWBC) - Adami, Hu 2012
     *
     * TODO: Not implemented.
     */

@@ -4,10 +4,10 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename ModelPointer, typename SPHFluidConfig, typename Variables >
+template< typename SPHFluidConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
-VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
+VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
 {
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
@@ -123,10 +123,10 @@ VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateBuffer( RealT
    //std::cout << "... InletBuffer - system updated." << std::endl;
 }
 
-template< typename ModelPointer, typename SPHFluidConfig, typename Variables >
+template< typename SPHFluidConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
-VerletIntegrator< ModelPointer, SPHFluidConfig, Variables >::updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
+VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
 {
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
    GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();

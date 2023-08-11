@@ -85,7 +85,7 @@ class IntegratorVariables
    VectorArrayType v_old_swap;
 };
 
-template< typename ModelPointer, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig > >
+template< typename SPHFluidConfig >
 class VerletIntegrator
 {
 public:
@@ -236,6 +236,26 @@ public:
 
       correctBoundaryDensity( boundary );
    }
+
+   //: template< typename FluidPointer,
+   //:           typename BoundaryPointer,
+   //:           typename TimeStepping,
+   //:           typename BCType = typename SPHState::BCType,
+   //:           std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes >, bool > Enabled = true >
+   //: void
+   //: integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
+   //: {
+   //:    if( timeStepping.getStep() % 20 == 0 ) {
+   //:       integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+   //:       integrateEulerBoundary( timeStepping.getTimeStep(), boundary );
+   //:    }
+   //:    else {
+   //:       integrateVerlet( timeStepping.getTimeStep(), fluid );
+   //:       integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
+   //:    }
+
+   //:    correctBoundaryDensity( boundary );
+   //: }
 };
 
 } // SPH
