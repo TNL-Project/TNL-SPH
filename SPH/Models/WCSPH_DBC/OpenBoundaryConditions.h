@@ -190,7 +190,8 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointe
    auto view_v_old = fluid->integratorVariables->v_old.getView();
 
    //TODO: Ugly ugly ugly temp workaround.
-   const typename SPHFluidTraitsType::IndexVectorType gridIndex = TNL::floor( ( view_r_buffer.getElement( 0 ) - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
+   //const typename SPHFluidTraitsType::IndexVectorType gridIndex = TNL::floor( ( view_r_buffer.getElement( 0 ) - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
+   const typename SPHFluidTraitsType::IndexVectorType gridIndex = TNL::floor( ( bufferPosition[ 0 ] - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
    const GlobalIndexType gridColumnAuxTrick = gridIndex[ 0 ];
 
    const PairIndexType particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
