@@ -9,6 +9,11 @@
 fluidL = 0.5
 fluidH = 0.1
 
+# Obstacle position and size
+obstacleCenterX = 0.2
+obstacleCenterY = 0.07
+obstacleR = 0.01
+
 # Initial particle distance (dp)[m]:
 dp = 0.002
 
@@ -32,7 +37,6 @@ write = '.vtk' #.ptcs or .vtk
 boxL = 1.
 boxH = 0.3
 
-
 numberOfAllocatedParticles = 100000
 
 ## First inlet buffer. ##
@@ -42,7 +46,8 @@ inletBufferPosition_x = 0.0
 inletBufferPosition_z = 0. + dp*1
 inletBufferHeight = fluidH
 inletBufferLayers = numberOfBoundaryLayers + 1
-inletVelocity_x = 1.
+#inletVelocity_x = 1.
+inletVelocity_x = 0.5
 inletVelocity_z = 0.
 
 inletBufferWidth = inletBufferLayers * dp # - dp / 2
@@ -53,7 +58,7 @@ inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z *
 ## Second inlet buffer. ##
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
-inlet2BufferPosition_x = 5. + dp
+inlet2BufferPosition_x = fluidL + dp
 inlet2BufferPosition_z = 0. + dp*1
 inlet2BufferHeight = fluidH
 inlet2BufferLayers = numberOfBoundaryLayers + 1
@@ -95,13 +100,22 @@ fluid_density = []
 
 for x in range( fluidL_n ):
     for z in range( fluidH_n ):
-        fluid_rx.append( inletBufferPosition_x + dp * ( x + 1 ) )
-        fluid_ry.append( 0. ) #we use only 2D case
-        fluid_rz.append( dp * ( z + 1 ) )
 
-        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
-        fluid_density.append( hydrostaticDensity )
+        ptcs_x = inletBufferPosition_x + dp * ( x + 1 );
+        ptcs_z = dp * ( z + 1 )
+        r  = ( ( ptcs_x - obstacleCenterX )**2  + ( ptcs_z - obstacleCenterY )**2 )**0.5
+
+        if ( r  > obstacleR + dp*0.5):
+            #fluid_rx.append( inletBufferPosition_x + dp * ( x + 1 ) )
+            #fluid_ry.append( 0. ) #we use only 2D case
+            #fluid_rz.append( dp * ( z + 1 ) )
+            fluid_rx.append( ptcs_x )
+            fluid_ry.append( 0. ) #we use only 2D case
+            fluid_rz.append( ptcs_z )
+
+            hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+            fluid_density.append( hydrostaticDensity )
 
 ### Generate buffer particles
 inlet_rx = []; inlet_ry = []; inlet_rz = []
@@ -146,14 +160,6 @@ box_rx = []; box_ry = []; box_rz = []
 ghost_rx = []; ghost_ry = []; ghost_rz = []
 box_density = [];
 
-#:# left wall
-#:for layer in range( numberOfBoundaryLayers ):
-#:    for z in range( boxH_n - 1 ):
-#:        box_rx.append( 0. - layer * dp )
-#:        box_ry.append( 0. ) #we use only 2D case
-#:        box_rz.append( ( z+1 ) * dp )
-#:        box_density.append( rho0 );
-
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
     for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 ):
@@ -167,24 +173,44 @@ for layer in range( numberOfBoundaryLayers ):
 
         #hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
         hydrostaticPressure = rho0 * 9.81 * ( fluidH + layer * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
         box_density.append( hydrostaticDensity )
 
-#:x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
-#:
-#:# right wall
-#:for layer in range( numberOfBoundaryLayers ):
-#:    for z in range( boxH_n - 1 ):
-#:        box_rx.append( x_last + dp * layer )
-#:        box_ry.append( 0. ) #we use only 2D case
-#:        box_rz.append( ( z + 1 ) * dp )
-#:        box_density.append( rho0 );
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+import numpy as np
+# obstacle
+for layer in range( numberOfBoundaryLayers ):
+    r_layer = obstacleR - layer * dp
+    obstacleR_n = int(np.pi * 2 * r_layer / dp)
+    angleDP = 2 * np.pi / obstacleR_n
+
+    print("r_layer: ", r_layer)
+    print("obstacleR_n: ", obstacleR_n)
+    print("angleDP: ", angleDP)
+
+    for phi in range( obstacleR_n ):
+
+        angle = angleDP * phi;
+        #print( "angle", angle )
+
+        box_rx.append( np.cos( angle ) * r_layer + obstacleCenterX )
+        box_ry.append( 0. ) #we use only 2D case
+        box_rz.append( np.sin( angle ) * r_layer + obstacleCenterY )
+
+        ghost_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+        ghost_ry.append( 0. + dp * ( layer + 1 ) )
+        ghost_rz.append( 0.)
+
+        #hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH + layer * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+        box_density.append( hydrostaticDensity )
+
+
+
 import sys
 sys.path.append('../../tools/')
 import saveParticlesVTK
-import numpy as np
 
 r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
 v = np.zeros( ( len( fluid_rx ), 3 ) )
