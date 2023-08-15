@@ -43,6 +43,17 @@ class InletBuffer
 
    std::string waterLevelHandling = "defined";
    RealType waterLevel = 0.15;
+
+   /**
+    * Define value handling on the buffer.
+    *
+    * - In case of "extrapolated" is chosen, treshold for the interpolation
+    *   matrix needs to be specify: 1e-3 first order, 1e3 zero order.
+    */
+   std::string rho_bc = "fixed";
+   std::string v_bc = "fiexd";
+
+   float extrapolationDetTreshold = 1000.f;
 };
 
 template< typename SPHConfig >
@@ -65,6 +76,17 @@ class OutletBuffer
 
    std::string waterLevelHandling = "defined";
    RealType waterLevel = 0.15;
+
+   /**
+    * Define value handling on the buffer.
+    *
+    * - In case of "extrapolated" is chosen, treshold for the interpolation
+    *   matrix needs to be specify: 1e-3 first order, 1e3 zero order
+    */
+   std::string rho_bc = "extrapolated";
+   std::string v_bc = "extrapolated";
+
+   float extrapolationDetTreshold = 1000.f;
 };
 
 } //SPH

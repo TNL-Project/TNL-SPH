@@ -79,7 +79,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData2D( FluidPoint
       {
          const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
 
          /* Interaction: */
          const RealType F = SPHKernelFunction::F( drs, h );
@@ -108,8 +107,11 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData2D( FluidPoint
       VectorExtendedType vx_gradvx_gn = 0.f;
       VectorExtendedType vy_gradvy_gn = 0.f;
 
-      NeighborsLoop::exec(
-            i, ghostNode_i, searchInFluid, OpenBoundaryFluid, v_i, rho_i, &A_gn, &rho_gradrho_gn, &vx_gradvx_gn, &vy_gradvy_gn );
+      NeighborsLoop::exec( i,
+                           ghostNode_i,
+                           searchInFluid,
+                           OpenBoundaryFluid,
+                           v_i, rho_i, &A_gn, &rho_gradrho_gn, &vx_gradvx_gn, &vy_gradvy_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -120,7 +122,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData2D( FluidPoint
 
          const VectorExtendedType vx_gradvx = Matrices::solve( A_gn, vx_gradvx_gn );
          const VectorExtendedType vy_gradvy = Matrices::solve( A_gn, vy_gradvy_gn );
-
          const RealType vx_b = vx_gradvx[ 0 ] + vx_gradvx[ 1 ] * r_ign[ 0 ] + vx_gradvx[ 2 ] * r_ign[ 1 ];
          const RealType vy_b = vy_gradvy[ 0 ] + vy_gradvy[ 1 ] * r_ign[ 0 ] + vy_gradvy[ 2 ] * r_ign[ 1 ];
 
