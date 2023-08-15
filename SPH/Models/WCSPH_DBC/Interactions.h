@@ -55,11 +55,7 @@ public:
 
    //Open boundary
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
-   //using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension, SPHConfig::spaceDimension >;
    using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
-
-   //using DefinedBCType = typename SPHState::BCType;
-
 
    /**
     * Constructor.
@@ -68,7 +64,7 @@ public:
 
    /**
     * Compute pressure from density.
-    * TODO: Move out.
+    * TODO: This can be independent function.
     */
    template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHConfig >,
              typename PhysicalObjectPointer >
@@ -156,7 +152,10 @@ public:
                                 OpenBoudaryPointer& openBoundary,
                                 SPHState& sphState );
 
-   //TODO: Figure this out:
+   /**
+    * Functions to extrapolate data on open boundary buffers.
+    * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
+    */
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
@@ -192,9 +191,8 @@ public:
 #include "Interactions.hpp"
 
 #include "BoundaryConditions/DBC.h"
-//#include "BoundaryConditions/MDBC.h"
+#include "BoundaryConditions/MDBC.h"
 
-
-#include "OpenBoundaryContirionsInteractions.h"
+#include "OpenBoundaryConditionsInteractions.h"
 #include "OpenBoundaryConditionsDataExtrapolation.h"
 
