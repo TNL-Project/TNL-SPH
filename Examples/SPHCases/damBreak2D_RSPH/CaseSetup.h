@@ -236,12 +236,12 @@ int main( int argc, char* argv[] )
           * Its useful for output anyway
           */
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         sph.model->template ComputePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
