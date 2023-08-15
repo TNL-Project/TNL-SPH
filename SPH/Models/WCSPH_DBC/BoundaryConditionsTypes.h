@@ -20,6 +20,9 @@ struct GWBC //not implemented
 struct OpenBoundary
 {};
 
+struct None
+{};
+
 } // WCSPHSolidWallBCTypes
 } // SPH
 } // ParticleSystem

@@ -162,6 +162,23 @@ public:
              typename SPHKernelFunction,
              typename EOS >
    void
+   extrapolateOpenBoundaryData2D( FluidPointer& fluid,
+                                  OpenBoudaryPointer& openBoundary,
+                                  SPHState& sphState );
+
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS >
+   void
+   extrapolateOpenBoundaryData3D( FluidPointer& fluid,
+                                  OpenBoudaryPointer& openBoundary,
+                                  SPHState& sphState );
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS >
+   void
    extrapolateOpenBoundaryData( FluidPointer& fluid,
                                 OpenBoudaryPointer& openBoundary,
                                 SPHState& sphState );
@@ -177,9 +194,7 @@ public:
 #include "BoundaryConditions/DBC.h"
 //#include "BoundaryConditions/MDBC.h"
 
-//#include "BoundaryConditions/DBC_with_enable_if_t.h"
-//#include "BoundaryConditions/MDBC_with_enable_if_t.h"
-
 
 #include "OpenBoundaryContirionsInteractions.h"
+#include "OpenBoundaryConditionsDataExtrapolation.h"
 

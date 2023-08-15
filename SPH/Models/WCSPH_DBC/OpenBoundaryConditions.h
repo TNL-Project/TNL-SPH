@@ -12,13 +12,12 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
-   //Buffer
+   //Load buffer fields
    auto view_r_buffer = openBoundary->particles->getPoints().getView();
    auto view_v_buffer = openBoundary->variables->v.getView();
    auto view_rho_buffer = openBoundary->variables->rho.getView();
-
    auto view_inletMark = openBoundary->variables->particleMark.getView();
-   view_inletMark = 1; //TODO: this can be avoided
+   view_inletMark = 1;
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType inletConstVelocity = openBoundary->parameters.velocity;
@@ -26,7 +25,7 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
    const VectorType bufferPosition = openBoundary->parameters.position;
 
-   //Fluid ( variable arrays and integrator variable arrays )
+   //Load fluid fileds (variables + integrator variables)
    auto view_r_fluid = fluid->particles->getPoints().getView();
    auto view_v_fluid = fluid->variables->v.getView();
    auto view_rho_fluid = fluid->variables->rho.getView();
@@ -34,18 +33,21 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
    auto view_rho_old = fluid->integratorVariables->rho_old.getView();
    auto view_v_old = fluid->integratorVariables->v_old.getView();
 
+   //Move buffer particles
    auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
       const VectorType r = view_r_buffer[ i ];
       const VectorType r_relative = bufferPosition - r;
 
+      //Check if particle leaves the buffer
       if( ( r_relative, inletOrientation ) <= 0.f )
          view_inletMark[ i ] = 0;
 
       return view_inletMark[ i ];
    };
-   const GlobalIndexType numberOfNotRetyped = Algorithms::reduce< DeviceType >( 0, numberOfBufferParticles, moveBufferParticles, TNL::Plus() );
+   const GlobalIndexType numberOfNotRetyped = Algorithms::reduce< DeviceType >(
+         0, numberOfBufferParticles, moveBufferParticles, TNL::Plus() );
    const GlobalIndexType numberOfRetyped = numberOfBufferParticles - numberOfNotRetyped;
 
    if( numberOfRetyped == 0 )
@@ -54,28 +56,25 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
    //Sort particles by mark
    thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(),
                         view_inletMark.getArrayData() + numberOfBufferParticles,
-         thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(), view_v_buffer.getArrayData(), view_rho_buffer.getArrayData() ) ) );
+                        thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(),
+                                                                       view_v_buffer.getArrayData(),
+                                                                       view_rho_buffer.getArrayData() ) ) );
 
-
+   //Retype fluid to buffer
    auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       if( view_inletMark[ i ] == 0 )
       {
-         //Retype buffer particle to fluid
          view_r_fluid[ numberOfParticle + i ] = view_r_buffer[ i ];
          view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
          view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
          view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
          view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
 
-         //Generate new bufffer partice
-         //const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth ; //This works in 1d
-         //:const VectorType r_relative = view_r_buffer[ i ] - bufferPosition;
-         //:const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation; //This works in 1d
+         //const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
+         //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation;
 
-         const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
-         //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation; //This works in 1d THIS IS RIGHT
-         const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation; //This works in 1d THIS IS EXPERIMENT
+         const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation;
 
          view_r_buffer[ i ] = newBufferParticle;
          view_v_buffer[ i ] = inletConstVelocity;
@@ -84,43 +83,10 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
 
-
-   //fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+   //Update number of particles
    fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
    fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() + numberOfRetyped );
    fluid->setLastActiveParticle( fluid->getLastActiveParticle() + numberOfRetyped );
-
-   //------EXERIMENT-//update//profile-------------------------------------------
-   view_v_buffer = inletConstVelocity;
-
-   //auto bufferVelocityProfile = [=] __cuda_callable__ ( int i ) mutable
-   //{
-   //   const VectorType r = view_r_buffer[ i ];
-
-   //   const RealType eps = 0.0001;
-   //   if( ( r[ 1 ] > ( 0.002  - eps ) ) && ( r[ 1 ] < ( 0.002  + eps ) ) ){
-   //      view_v_buffer[ i ][ 0 ] = 0.3523f;
-   //      //view_rho_buffer[ i ] = 1001.2;
-   //   }
-   //   else if( ( r[ 1 ] > ( 0.004  - eps ) ) && ( r[ 1 ] < ( 0.004  + eps ) ) ){
-   //      view_v_buffer[ i ][ 0 ] = 0.6325f;
-   //      //view_rho_buffer[ i ] = 1001.0;
-   //   }
-   //   else if( ( r[ 1 ] > ( 0.006  - eps ) ) && ( r[ 1 ] < ( 0.006  + eps ) ) ){
-   //      view_v_buffer[ i ][ 0 ] = 0.8f;
-   //      //view_rho_buffer[ i ] = 1000.68;
-   //   }
-   //   else if( ( r[ 1 ] > ( 0.008  - eps ) ) && ( r[ 1 ] < ( 0.008  + eps ) ) )
-   //      view_v_buffer[ i ][ 0 ] = 0.9f;
-   //      //view_rho_buffer[ i ] = 1000.68;
-
-   //};
-   //Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, bufferVelocityProfile );
-
-
-
-   //added
-   //std::cout << "... InletBuffer - system updated." << std::endl;
 }
 
 template< typename SPHFluidConfig >
@@ -131,13 +97,12 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointe
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
    GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
-   //Buffer
+   //Load buffer fields
    auto view_r_buffer = openBoundary->particles->getPoints().getView();
    auto view_v_buffer = openBoundary->variables->v.getView();
    auto view_rho_buffer = openBoundary->variables->rho.getView();
-
    auto view_inletMark = openBoundary->variables->particleMark.getView();
-   view_inletMark = 0; //TODO: this can be avoided
+   view_inletMark = 0;
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType inletConstVelocity = openBoundary->parameters.velocity;
@@ -149,14 +114,13 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointe
    auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
-      //view_r_buffer[ i ][ 0 ] += view_v_buffer[ i ][ 0 ] * dt;
+      //view_r_buffer[ i ] += ( view_v_buffer[ i ], orientation ) * orientation * dt;
       const VectorType r = view_r_buffer[ i ];
       const VectorType r_relative = bufferPosition - r;
 
       //buffer particle leaves the entire computation space
       if( ( r_relative, inletOrientation ) > bufferWidth[ 0 ] )
          view_inletMark[ i ] = 1;
-
 
       return view_inletMark[ i ];
    };
@@ -190,8 +154,8 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointe
    auto view_v_old = fluid->integratorVariables->v_old.getView();
 
    //TODO: Ugly ugly ugly temp workaround.
-   //const typename SPHFluidTraitsType::IndexVectorType gridIndex = TNL::floor( ( view_r_buffer.getElement( 0 ) - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
-   const typename SPHFluidTraitsType::IndexVectorType gridIndex = TNL::floor( ( bufferPosition[ 0 ] - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
+   const typename SPHFluidTraitsType::IndexVectorType gridIndex = TNL::floor(
+         ( bufferPosition[ 0 ] - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
    const GlobalIndexType gridColumnAuxTrick = gridIndex[ 0 ];
 
    const PairIndexType particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
