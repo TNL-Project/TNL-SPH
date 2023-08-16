@@ -82,11 +82,11 @@ class SPHParamsConfig
     * - Use "ArtificialViscosity" and its parameter alpha.
     * - Use "PhysicalViscosity" defined by dynamic viscosity coeffition.
     */
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
-   float alpha = 0.02f;
+   //using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
+   //float alpha = 0.02f;
 
-   //using ViscousTerm = TNL::ParticleSystem::SPH::PhysicalViscosity< SPHConfig >;
-   //float dynamicViscosity = 1e-3f;
+   using ViscousTerm = TNL::ParticleSystem::SPH::PhysicalViscosity< SPHConfig >;
+   float dynamicViscosity = 1e-3f;
 
    /**
     * Define equation of state and its constants.
