@@ -158,9 +158,14 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointe
          ( bufferPosition[ 0 ] - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
    const GlobalIndexType gridColumnAuxTrick = gridIndex[ 0 ];
 
-   const PairIndexType particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
-   auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
+   //const PairIndexType particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
+   PairIndexType particleRangeToCheck;
+   if constexpr( SPHFluidConfig::spaceDimension == 2 )
+      particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
+   else if constexpr( SPHFluidConfig::spaceDimension == 3 )
+      particleRangeToCheck = fluid->particles->getFirstLastParticleInBlockOfCells( gridColumnAuxTrick );
 
+   auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
    receivingParticleMark_view = INT_MAX;
 
    //obtain fluid particles that should be retyped to buffer particles
