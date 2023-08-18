@@ -223,14 +223,14 @@ int main( int argc, char* argv[] )
       //TODO:
       sph.model->extrapolateOpenBoundaryData< SPHSimulation::FluidPointer,
                                               SPHSimulation::OpenBoundaryPointer,
-                                              SPH::WendlandKernel2D,
+                                              SPH::WendlandKernel3D,
                                               SPHParams::EOS >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams );
 
       /**
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
+      sph.template interact< SPH::WendlandKernel3D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
