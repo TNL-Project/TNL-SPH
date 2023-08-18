@@ -66,12 +66,12 @@ class OutletBuffer
    using VectorType = typename SPHTraitsType::VectorType;
 
    std::string identifier = "outlet";
-   VectorType orientation = { placeholderInletOrientation_xf, placeholderInletOrientation_yf, placeholderInletOrientation_zf };
-   VectorType position = { placeholderInletPosition_xf, placeholderInletPosition_yf, placeholderInletPosition_zf, };
-   VectorType bufferWidth = { placeholderInletWidth_xf, placeholderInletWidth_yf, placeholderInletWidth_zf, };
+   VectorType orientation = { placeholderOutletOrientation_xf, placeholderOutletOrientation_yf, placeholderOutletOrientation_zf };
+   VectorType position = { placeholderOutletPosition_xf, placeholderOutletPosition_yf, placeholderOutletPosition_zf, };
+   VectorType bufferWidth = { placeholderOutletWidth_xf, placeholderOutletWidth_yf, placeholderOutletWidth_zf, };
    RealType bufferEdge = placeholderOutletBufferEdgef; //TODO: Remove, deprecated
 
-   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf, placeholderInletVelocity_zf };
+   VectorType velocity = { placeholderOutletVelocity_xf, placeholderOutletVelocity_yf, placeholderOutletVelocity_zf };
    RealType density = placeholderOutletDensityf;
 
    std::string waterLevelHandling = "defined";

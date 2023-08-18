@@ -332,7 +332,7 @@ fileOBConf = fileOBConf.replace( 'placeholderInletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_x', str( round( inletBufferWidth, 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_y', str( 0. ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_z', str( 0. ) )
-fileOBConf = fileOBConf.replace( 'placeholderInletBufferEdge', str( round(  inletBufferEdge, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletBufferEdge', str( round( inletBufferEdge, 7 ) ) )
 
 #outlet
 fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_x', str( inlet2BufferOrientation_x ) )
@@ -340,7 +340,7 @@ fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_y', str( inlet2Bu
 fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_z', str( inlet2BufferOrientation_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_x', str( inlet2Velocity_x ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_y', str( inlet2Velocity_y ) )
-fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_y', str( inlet2Velocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_z', str( inlet2Velocity_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_x', str( inlet2BufferPosition_x - dp/2 ) ) #FIXME
 fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_y', str( inlet2BufferPosition_y ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_z', str( inlet2BufferPosition_z ) )
@@ -348,7 +348,7 @@ fileOBConf = fileOBConf.replace( 'placeholderOutletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_x', str( round( inlet2BufferWidth, 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_y', str( 0. ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_z', str( 0. ) )
-fileOBConf = fileOBConf.replace( 'placeholderOutletBufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletBufferEdge', str( round( inlet2BufferEdge, 7 ) ) )
 
 # Write the file out again
 with open( 'sources/OpenBoundaryConfig.h', 'w' ) as file:

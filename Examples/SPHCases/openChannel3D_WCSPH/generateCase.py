@@ -48,35 +48,43 @@ boxH = 0.3
 inletBufferWidth_start = -0.495
 inletBufferWidthY = 0.495 * 2
 inletBufferOrientation_x = 1.
+inletBufferOrientation_y = 0.
 inletBufferOrientation_z = 0.
 inletBufferPosition_x = -0.2 - dp
+inletBufferPosition_y = 0. + dp
 inletBufferPosition_z = 0. + dp*1
 inletBufferHeight = waterLevel
 inletBufferLayers = numberOfBoundaryLayers + 1
 #inletVelocity_x = 1.
 inletVelocity_x = 0.5
+inletVelocity_y = 0.
 inletVelocity_z = 0.
 
 inletBufferWidth = inletBufferLayers * dp # - dp / 2
 inletBufferEdge = inletBufferPosition_x + 4 * dp  + dp / 2 #remove, deprecated
 inletBufferReferencePoint_x = inletBufferPosition_x - inletBufferOrientation_x * ( inletBufferLayers - 1 ) * dp
+inletBufferReferencePoint_y = inletBufferPosition_y - inletBufferOrientation_y * ( inletBufferLayers - 1 ) * dp
 inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z * ( inletBufferLayers - 1 ) * dp
 
 ## Second inlet buffer. ##
 inlet2BufferWidth_start = -0.495
 inlet2BufferWidthY = 0.495 * 2
 inlet2BufferOrientation_x = -1.
+inlet2BufferOrientation_y = 0.
 inlet2BufferOrientation_z = 0.
 inlet2BufferPosition_x = 2. + dp
+inlet2BufferPosition_y = 0. + dp
 inlet2BufferPosition_z = 0. + dp*1
 inlet2BufferHeight = waterLevel
 inlet2BufferLayers = numberOfBoundaryLayers + 1
 inlet2Velocity_x = 1.5
+inlet2Velocity_y = 0.
 inlet2Velocity_z = 0.
 
 inlet2BufferWidth = inlet2BufferLayers * dp # - dp / 2
 inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2 #remove, deprecated
 inlet2BufferReferencePoint_x = inlet2BufferPosition_x - inlet2BufferOrientation_x * ( inlet2BufferLayers - 1 ) * dp
+inlet2BufferReferencePoint_y = inlet2BufferPosition_y - inlet2BufferOrientation_y * ( inlet2BufferLayers - 1 ) * dp
 inlet2BufferReferencePoint_z = inlet2BufferPosition_z - inlet2BufferOrientation_z * ( inlet2BufferLayers - 1 ) * dp
 
 #---------------------------------------------------------------------------#
@@ -275,27 +283,35 @@ with open( 'template/OpenBoundaryConfig_template.h', 'r' ) as file :
 
 #inlet1
 fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_x', str( inletBufferOrientation_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_y', str( inletBufferOrientation_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_y', str( inletBufferOrientation_y ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletOrientation_z', str( inletBufferOrientation_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_x', str( inletVelocity_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_y', str( inletVelocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_y', str( inletVelocity_y ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletVelocity_z', str( inletVelocity_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletPosition_x', str( inletBufferPosition_x  + dp/2 ) ) #FIXME
-fileOBConf = fileOBConf.replace( 'placeholderInletPosition_y', str( inletBufferPosition_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletPosition_y', str( inletBufferPosition_y ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletPosition_z', str( inletBufferPosition_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_x', str( round( inletBufferWidth, 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderInletWidth_y', str( 0. ) )
-fileOBConf = fileOBConf.replace( 'placeholderInletBufferEdge', str( round(  inletBufferEdge, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletWidth_z', str( 0. ) )
+fileOBConf = fileOBConf.replace( 'placeholderInletBufferEdge', str( round( inletBufferEdge, 7 ) ) )
 
 #outlet
 fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_x', str( inlet2BufferOrientation_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_y', str( inlet2BufferOrientation_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_y', str( inlet2BufferOrientation_y ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletOrientation_z', str( inlet2BufferOrientation_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_x', str( inlet2Velocity_x ) )
-fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_y', str( inlet2Velocity_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_y', str( inlet2Velocity_y ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletVelocity_z', str( inlet2Velocity_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_x', str( inlet2BufferPosition_x - dp/2 ) ) #FIXME
-fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_y', str( inlet2BufferPosition_z ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_y', str( inlet2BufferPosition_y ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletPosition_z', str( inlet2BufferPosition_z ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletDensity', str( rho0 ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_x', str( round( inlet2BufferWidth, 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_y', str( 0. ) )
-fileOBConf = fileOBConf.replace( 'placeholderOutletBufferEdge', str( round(  inlet2BufferEdge, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletWidth_z', str( 0. ) )
+fileOBConf = fileOBConf.replace( 'placeholderOutletBufferEdge', str( round( inlet2BufferEdge, 7 ) ) )
 
 # Write the file out again
 with open( 'sources/OpenBoundaryConfig.h', 'w' ) as file:
