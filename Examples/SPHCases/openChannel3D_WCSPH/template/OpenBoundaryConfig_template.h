@@ -33,12 +33,12 @@ class InletBuffer
    using VectorType = typename SPHTraitsType::VectorType;
 
    std::string identifier = "inlet";
-   VectorType orientation = { placeholderInletOrientation_xf, placeholderInletOrientation_yf };
-   VectorType position = { placeholderInletPosition_xf, placeholderInletPosition_yf };
-   VectorType bufferWidth = { placeholderInletWidth_xf, placeholderInletWidth_yf };
+   VectorType orientation = { placeholderInletOrientation_xf, placeholderInletOrientation_yf, placeholderInletOrientation_zf };
+   VectorType position = { placeholderInletPosition_xf, placeholderInletPosition_yf, placeholderInletPosition_zf, };
+   VectorType bufferWidth = { placeholderInletWidth_xf, placeholderInletWidth_yf, placeholderInletWidth_zf, };
    RealType bufferEdge = placeholderInletBufferEdgef; //TODO: Remove, deprecated
 
-   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf };
+   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf, placeholderInletVelocity_zf };
    RealType density = placeholderInletDensityf;
 
    std::string waterLevelHandling = "defined";
@@ -66,12 +66,12 @@ class OutletBuffer
    using VectorType = typename SPHTraitsType::VectorType;
 
    std::string identifier = "outlet";
-   VectorType orientation = { placeholderOutletOrientation_xf, placeholderOutletOrientation_yf };
-   VectorType position = { placeholderOutletPosition_xf, placeholderOutletPosition_yf };
-   VectorType bufferWidth = { placeholderOutletWidth_xf, placeholderOutletWidth_yf };
+   VectorType orientation = { placeholderInletOrientation_xf, placeholderInletOrientation_yf, placeholderInletOrientation_zf };
+   VectorType position = { placeholderInletPosition_xf, placeholderInletPosition_yf, placeholderInletPosition_zf, };
+   VectorType bufferWidth = { placeholderInletWidth_xf, placeholderInletWidth_yf, placeholderInletWidth_zf, };
    RealType bufferEdge = placeholderOutletBufferEdgef; //TODO: Remove, deprecated
 
-   VectorType velocity = { placeholderOutletVelocity_xf, placeholderOutletVelocity_yf };
+   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf, placeholderInletVelocity_zf };
    RealType density = placeholderOutletDensityf;
 
    std::string waterLevelHandling = "defined";
