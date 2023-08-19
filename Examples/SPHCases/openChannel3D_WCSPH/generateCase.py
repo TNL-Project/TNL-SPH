@@ -225,12 +225,12 @@ coefB = round( speedOfSound * speedOfSound * rho0 / 7 , 1 )
 
 #Determine grid size
 import math
-gridBegin_x = 1.005 * ( min( min( np_points_fluid[ : , 0 ] ), min( np_points_box[ :, 0 ] ) ) - searchRadius )
-gridBegin_y = 1.005 * ( min( min( np_points_fluid[ : , 1 ] ), min( np_points_box[ :, 1 ] ) ) - searchRadius )
-gridBegin_z = 1.005 * ( min( min( np_points_fluid[ : , 2 ] ), min( np_points_box[ : ,2 ] ) ) - searchRadius )
-gridEnd_x = 1.005 * ( max( max( np_points_fluid[ :, 0 ] ), max( np_points_box[ :, 0 ] ) ) + searchRadius )
-gridEnd_y = 1.005 * ( max( max( np_points_fluid[ :, 1 ] ), max( np_points_box[ :, 1 ] ) ) + searchRadius )
-gridEnd_z = 1.005 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :, 2 ] ) ) + searchRadius )
+gridBegin_x = 1.05 * ( min( min( np_points_fluid[ : , 0 ] ), min( np_points_box[ :, 0 ] ) ) - searchRadius * 2  )
+gridBegin_y = 1.05 * ( min( min( np_points_fluid[ : , 1 ] ), min( np_points_box[ :, 1 ] ) ) - searchRadius * 2  )
+gridBegin_z = 1.05 * ( min( min( np_points_fluid[ : , 2 ] ), min( np_points_box[ : ,2 ] ) ) - searchRadius * 2  )
+gridEnd_x = 1.05 * ( max( max( np_points_fluid[ :, 0 ] ), max( np_points_box[ :, 0 ] ) ) + searchRadius * 2 )
+gridEnd_y = 1.05 * ( max( max( np_points_fluid[ :, 1 ] ), max( np_points_box[ :, 1 ] ) ) + searchRadius * 2 )
+gridEnd_z = 1.05 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :, 2 ] ) ) + searchRadius * 2 )
 
 gridSize_x = math.ceil( ( gridEnd_x - gridBegin_x ) / searchRadius )
 gridSize_y = math.ceil( ( gridEnd_y - gridBegin_y ) / searchRadius )
