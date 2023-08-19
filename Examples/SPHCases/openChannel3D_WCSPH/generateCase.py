@@ -25,7 +25,7 @@ dp = 0.005
 #: DtIni=0.0001666666622179967
 #: DtMin=8.333333235076177e-06
 
-numberOfAllocatedParticles = 4e6
+numberOfAllocatedParticles = 4000000
 
 waterLevel = 0.2
 #---------------------------------------------------------------------------#
@@ -259,7 +259,7 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
 
 fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceDimension ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( np_points_fluid ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( len( np_points_fluid ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( numberOfAllocatedParticles ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( np_points_box ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( np_points_box ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderInletParticles', str( len( inlet_rx ) ) )
