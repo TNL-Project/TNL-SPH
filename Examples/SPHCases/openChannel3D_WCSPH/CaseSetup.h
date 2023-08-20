@@ -220,6 +220,29 @@ int main( int argc, char* argv[] )
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
 
+      /**
+       * Output particle data
+       */
+      if( timeStepping.checkOutputTimer( "save_results" ) )
+      {
+         /**
+          * Compute pressure from density.
+          * This is not necessary since we do this localy, if pressure is needed.
+          * It's useful for output anyway.
+          */
+         timer_pressure.start();
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
+         timer_pressure.stop();
+         std::cout << "Compute pressure... done. " << std::endl;
+
+         timer_pressure.start();
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
+         timer_pressure.stop();
+         std::cout << "Compute pressure... done. " << std::endl;
+
+         sph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
+      }
+
       //TODO:
       sph.model->extrapolateOpenBoundaryData< SPHSimulation::FluidPointer,
                                               SPHSimulation::OpenBoundaryPointer,
@@ -253,28 +276,28 @@ int main( int argc, char* argv[] )
       std::cout << "Open boundary... done. " << std::endl;
 
 
-      /**
-       * Output particle data
-       */
-      if( timeStepping.checkOutputTimer( "save_results" ) )
-      {
-         /**
-          * Compute pressure from density.
-          * This is not necessary since we do this localy, if pressure is needed.
-          * It's useful for output anyway.
-          */
-         timer_pressure.start();
-         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
-         timer_pressure.stop();
-         std::cout << "Compute pressure... done. " << std::endl;
+      //: /**
+      //:  * Output particle data
+      //:  */
+      //: if( timeStepping.checkOutputTimer( "save_results" ) )
+      //: {
+      //:    /**
+      //:     * Compute pressure from density.
+      //:     * This is not necessary since we do this localy, if pressure is needed.
+      //:     * It's useful for output anyway.
+      //:     */
+      //:    timer_pressure.start();
+      //:    sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
+      //:    timer_pressure.stop();
+      //:    std::cout << "Compute pressure... done. " << std::endl;
 
-         timer_pressure.start();
-         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
-         timer_pressure.stop();
-         std::cout << "Compute pressure... done. " << std::endl;
+      //:    timer_pressure.start();
+      //:    sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
+      //:    timer_pressure.stop();
+      //:    std::cout << "Compute pressure... done. " << std::endl;
 
-         sph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
-      }
+      //:    sph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
+      //: }
 
       timeStepping.updateTimeStep();
    }
