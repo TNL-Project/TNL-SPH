@@ -116,6 +116,7 @@ reader.Update()
 polydata = reader.GetOutput()
 np_points_fluid = dsa.WrapDataObject( polydata ).Points
 
+
 fluid_r = np.array( np_points_fluid, dtype=float ) #!!
 fluid_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
 fluid_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
@@ -323,3 +324,29 @@ with open( 'template/SimulationControlConfig.h', 'r' ) as file :
 
 with open( 'sources/SimulationControlConfig.h', 'w' ) as file:
   file.write( fileSimulationControl )
+
+# Save problem grid
+searchRadius_h = round( smoothingLentgh * 2 , 7 )
+from contextlib import redirect_stdout
+
+def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbegin, gridSector, name ):
+    with open( name, 'w' ) as f:
+        with redirect_stdout(f):
+            print( "# vtk DataFile Version 3.0" )
+            print( "vtk output" )
+            print( "ASCII" )
+            #print( "DATASET STRUCTURED_GRID" )
+            print( "DATASET STRUCTURED_POINTS" )
+            print( "DIMENSIONS ", gridXsize + 1 , " ", gridYsize + 1, " ", gridZsize + 1 )
+            print( "ASPECT_RATIO ", searchRadius_h , " ", searchRadius_h , " ",  searchRadius_h )
+            print( "ORIGIN ", gridXbegin , " ", gridYbegin , " ",  gridZbegin  )
+            print( "CELL_DATA ",  gridXsize * gridYsize * 1  )
+            print( "SCALARS GridSector int 1 ")
+            print( "LOOKUP_TABLE default" )
+            for i in range( gridXsize * gridYsize * gridZsize ):
+                print( gridSector[ i ] )
+
+DomainGrid( gridSize_x, gridSize_y, gridSize_z,                 # grid size
+            gridBegin_x, gridBegin_y, gridBegin_z,              # coordinates of grid origin
+            np.zeros( gridSize_x * gridSize_y * gridSize_z ),   # array with index of grid sector
+            'sources/openchannel_grid.vtk' )                    # outputfile name
