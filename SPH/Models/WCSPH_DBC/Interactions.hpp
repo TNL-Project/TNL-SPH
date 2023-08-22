@@ -33,16 +33,15 @@ WCSPH_DBC< ParticleSystem, SPHState >::interaction( FluidPointer& fluid,
    typename EOS::ParamsType eosParams( sphState );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
+   const auto view_points = fluid->particles->getPoints().getConstView();
+   const auto view_rho = fluid->variables->rho.getConstView();
    auto view_Drho = fluid->variables->drho.getView();
-   const auto view_v = fluid->variables->v.getView();
+   const auto view_v = fluid->variables->v.getConstView();
    auto view_a = fluid->variables->a.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   const auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_Drho_bound = boundary->variables->drho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_points_bound = boundary->particles->getPoints().getConstView();
+   const auto view_rho_bound = boundary->variables->rho.getConstView();
+   const auto view_v_bound = boundary->variables->v.getConstView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
@@ -100,30 +99,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::interaction( FluidPointer& fluid,
       }
    };
 
-   //:auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-   //:      VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
-   //:{
-   //:   const VectorType r_j = view_points[ j ];
-   //:   const VectorType r_ij = r_i - r_j;
-   //:   const RealType drs = l2Norm( r_ij );
-   //:   if( drs <= searchRadius )
-   //:   {
-   //:      const VectorType v_j = view_v[ j ];
-   //:      const RealType rho_j = view_rho[ j ];
-   //:      const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
-
-   //:      /* Interaction */
-   //:      const VectorType v_ij = v_i - v_j;
-
-   //:      const RealType F = SPHKernelFunction::F( drs, h );
-   //:      const VectorType gradW = r_ij * F;
-
-   //:      const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
-   //:      const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
-   //:      *drho_i += ( v_ij, gradW ) * m - diffTerm;
-   //:   }
-   //:};
-
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points[ i ];
@@ -142,21 +117,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::interaction( FluidPointer& fluid,
       view_a[ i ] = a_i;
    };
    SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
-
-   //:auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-   //:{
-   //:   const VectorType r_i = view_points_bound[ i ];
-   //:   const VectorType v_i = view_v_bound[ i ];
-   //:   const RealType rho_i = view_rho_bound[ i ];
-   //:   const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-
-   //:   RealType drho_i = 0.f;
-
-   //:   NeighborsLoop::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
-
-   //:   view_Drho_bound[ i ] = drho_i;
-   //:};
-   //:SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 template< typename ParticleSystem, typename SPHState >

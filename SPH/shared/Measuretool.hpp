@@ -127,9 +127,6 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   const VectorType gridOrigin = fluid->particles->getGridOrigin();
-   const IndexVectorType gridSize = fluid->particles->getGridSize();
-
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
    typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
@@ -252,9 +249,6 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
    GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
    const RealType searchRadius = fluid->particles->getSearchRadius();
-
-   const VectorType gridOrigin = fluid->particles->getGridOrigin();
-   const IndexVectorType gridSize = fluid->particles->getGridSize();
 
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
    typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );

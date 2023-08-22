@@ -106,7 +106,6 @@ public:
    void
    integrateVerlet( RealType dt, FluidPointer& fluid )
    {
-      auto rho_view = fluid->variables->rho.getView();
       auto v_view = fluid->variables->v.getView();
       auto r_view = fluid->particles->getPoints().getView();
 
@@ -135,7 +134,6 @@ public:
    void
    integrateVerletBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_view = boundary->variables->rho.getView();
       auto rho_old_view = boundary->integratorVariables->rho_old.getView();
 
       const auto drho_view = boundary->variables->drho.getView();
