@@ -158,7 +158,7 @@ class SPHBoundaryVariables< SPHState,
 : public SPHFluidVariables< SPHState >
 {
 public:
-   using Base = SPHFluidTraits< SPHState >;
+   using Base = SPHFluidVariables< SPHState >;
    using SPHFluidTraitsType = SPHFluidTraits< typename SPHState::SPHConfig >;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;

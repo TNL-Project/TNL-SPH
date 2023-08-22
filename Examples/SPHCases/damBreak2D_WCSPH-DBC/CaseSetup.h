@@ -93,7 +93,7 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHParams >;
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**

@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------#
 #
-# case: damBreak2D_WCSPH-DBC
+# case: damBreak2D_RSPH
 #
 #---------------------------------------------------------------------------#
 ### Parameters of the case necessary for case creation:
@@ -51,7 +51,6 @@ if not os.path.exists( sourcesPath ):
 
 ### Generate fluid particles
 fluid_rx = []; fluid_ry = []; fluid_rz = []
-fluid_density = []
 
 fluidL_n = round( fluidL / dp )
 fluidH_n = round( fluidH / dp )
@@ -62,12 +61,9 @@ for x in range( fluidL_n ):
         fluid_ry.append( dp * ( y + 1 ) )
         fluid_rz.append( 0. )
 
-        hydrostaticPressure = rho0 * 9.81 * ( fluidH - y * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
-        fluid_density.append( hydrostaticDensity )
-
 ### Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
+ghost_rx = []; ghost_ry = []; ghost_rz = []
 
 boxL_n = round( boxL / dp )
 boxH_n = round( boxH / dp )
@@ -79,24 +75,49 @@ for layer in range( numberOfBoundaryLayers ):
         box_ry.append( ( y+1 ) * dp )
         box_rz.append( 0. )
 
+        ghost_rx.append( 0. + dp * ( layer + 1 ) )
+        ghost_ry.append( ( y + 1 ) * dp )
+        ghost_rz.append( 0.)
+
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
-    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 + 1 ):
-        box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+    for x in range( boxL_n - numberOfBoundaryLayers + 1 ):
+        box_rx.append( ( x + 1 ) * dp )
         box_ry.append( 0. - layer * dp )
-        box_rz.append( 0. )
+        box_rz.append( 0. ) #we use only 2D case
 
-#due to discretisation, we need to save last value of bottom wall
-x_last = box_rx[ -1 - ( numberOfBoundaryLayers - 1 ) ]
+        ghost_rx.append( ( x + 1 ) * dp )
+        ghost_ry.append( 0. + dp * ( layer + 1 ) )
+        ghost_rz.append( 0.)
+
+x_last = box_rx[ -1 ] + dp #due to discretisation, we need to save last value of bottom wall
 
 # right wall
 for layer in range( numberOfBoundaryLayers ):
     for y in range( boxH_n - 1 ):
         box_rx.append( x_last + dp * layer )
         box_ry.append( ( y + 1 ) * dp )
-        box_rz.append( 0. )
+        box_rz.append( 0. ) #we use only 2D case
 
-### Save particles to vtk files
+        ghost_rx.append( x_last - dp * ( layer + 1 ) )
+        ghost_ry.append( ( y + 1 ) * dp )
+        ghost_rz.append( 0. )
+
+# generate the corners
+def generate90degCorner( x, y, dirx, diry ):
+  for layer in range( numberOfBoundaryLayers ):
+    for k in range( numberOfBoundaryLayers ):
+      box_rx.append( x + k * dp * dirx )
+      box_ry.append( y + layer * dp * diry )
+      box_rz.append( 0. )
+
+      ghost_rx.append( x + ( k + 1 ) * dp * dirx * ( -1 ) )
+      ghost_ry.append( y + ( layer + 1 ) * dp * diry * ( -1 ) )
+      ghost_rz.append( 0. )
+
+generate90degCorner( 0, 0., -1, -1 )
+generate90degCorner( x_last, 0., +1, -1 )
+
 import sys
 sys.path.append('../../tools/')
 import saveParticlesVTK
@@ -104,7 +125,7 @@ import numpy as np
 
 fluid_r = np.array( ( fluid_rx, fluid_ry, fluid_rz ), dtype=float ).T #!!
 fluid_v = np.zeros( ( len( fluid_rx ), 3 ) )
-fluid_rho = np.array( fluid_density, dtype=float )
+fluid_rho = rho0 * np.ones( len( fluid_rx ) )
 fluid_p = np.zeros( len( fluid_rx ) )
 fluid_ptype = np.zeros( len( fluid_rx ) )
 
@@ -112,12 +133,14 @@ fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fl
 saveParticlesVTK.save_polydata( fluidToWrite, "sources/dambreak_fluid.vtk" )
 
 boundary_r = np.array( ( box_rx, box_ry, box_rz ), dtype=float ).T #!!
+boundary_ghostNodes = np.array( ( ghost_rx, ghost_ry, ghost_rz ), dtype=float ).T #!!
 boundary_v = np.zeros( ( len( box_rx ), 3 ) )
 boundary_rho = rho0 * np.ones( len( box_rx ) )
 boundary_p = np.zeros( len( box_rx ) )
 boundary_ptype = np.ones( len( box_rx ) )
 
-boxToWrite = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype )
+boxToWrite = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
+                                                          ghostNodes=boundary_ghostNodes )
 saveParticlesVTK.save_polydata( boxToWrite, "sources/dambreak_boundary.vtk" )
 
 ### Compute remaining parameters
