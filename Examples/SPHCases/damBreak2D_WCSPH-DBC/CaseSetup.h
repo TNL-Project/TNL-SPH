@@ -207,9 +207,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      //sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
-      //      sphParams, timeStepping );
-      sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
+      sph.template interact< SPHParams::KernelFunction, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
             sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
@@ -257,20 +255,20 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
+         interpolator.template interpolate< SPHParams::KernelFunction >( sph.fluid, sph.boundary, sphParams );
          interpolator.save( outputFileNameInterpolation );
 
       }
 
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
-         sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+         sensorInterpolation.template interpolate< SPHParams::KernelFunction, SPHParams::EOS >(
                sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
       }
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
       {
-         sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+         sensorWaterLevel.template interpolate< SPHParams::KernelFunction, SPHParams::EOS >(
                sph.fluid, sph.boundary, sphParams );
       }
 

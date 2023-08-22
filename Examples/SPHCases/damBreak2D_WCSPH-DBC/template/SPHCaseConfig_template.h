@@ -3,6 +3,7 @@
 #include "../../../../SPH/Models/EquationOfState.h"
 #include "../../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../../SPH/Models/VisousTerms.h"
+#include "../../../../SPH/Kernels.h"
 
 #include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
 
@@ -66,6 +67,12 @@ class SPHParamsConfig
    float h = placeholderSmoothingLengthf;
 
    /**
+    * Define SPH weight function (kernel).
+    * - Use "WendlandKernel" for 4th order Wendland kernel.
+    */
+   using KernelFunction = TNL::ParticleSystem::SPH::WendlandKernel< SPHConfig >;
+
+   /**
     * Define Basics SPH constants.
     * - mass - particle mass [kg]
     */
@@ -117,7 +124,6 @@ class SPHParamsConfig
    //float dtInit = placeholderTimeStepf;
 
    using TimeStepping = TNL::ParticleSystem::SPH::VariableTimeStep< SPHConfig >;
-   //using TimeStepping = TNL::ParticleSystem::SPH::VariableTimeStepWithReduction< SPHConfig >;
    float CFL = 0.3f;
    float dtInit = 0.25f * h / speedOfSound;
    float dtMin = 0.05f * h / speedOfSound;
