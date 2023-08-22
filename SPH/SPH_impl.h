@@ -59,6 +59,8 @@ SPHSimpleFluid< Model >::interact( SPHState& sphState )
 {
    model->template interaction< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
          fluid, boundary, sphState );
+   model->template updateSolidBoundary< FluidPointer, BoundaryPointer, SPHKernelFunction, DiffusiveTerm, ViscousTerm, EOS >(
+         fluid, boundary, sphState );
 }
 
 template< typename Model >
