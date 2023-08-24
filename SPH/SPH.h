@@ -79,7 +79,7 @@ public:
 
    template< typename Writer >
    void
-   save( const std::string& outputFilename, const int step );
+   save( const std::string& outputFilename, const int step, bool writeParticleCellIndex = false );
 
    void
    writeProlog( TNL::Logger& logger ) const noexcept;

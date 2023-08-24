@@ -88,13 +88,13 @@ SPHSimpleFluid< Model >::interact( SPHState& sphState )
 template< typename Model >
 template< typename Writer >
 void
-SPHSimpleFluid< Model >::save( const std::string& outputFileName, const int step )
+SPHSimpleFluid< Model >::save( const std::string& outputFileName, const int step, bool writeParticleCellIndex )
 {
    std::string outputFileNameFluid = outputFileName + std::to_string( step ) + "_fluid.vtk";
-   fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
+   fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid, writeParticleCellIndex );
 
    std::string outputFileNameBound = outputFileName + std::to_string( step ) + "_boundary.vtk";
-   boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound );
+   boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
 }
 
 template< typename Model >

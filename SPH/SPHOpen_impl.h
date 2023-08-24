@@ -122,7 +122,7 @@ SPHOpenSystem< Model >::addOpenBoundaryPatch( SPHOpenSystemInit sphConfig )
 template< typename Model >
 template< typename Writer >
 void
-SPHOpenSystem< Model >::save( const std::string& outputFileName, const int step )
+SPHOpenSystem< Model >::save( const std::string& outputFileName, const int step, bool writeParticleCellIndex )
 {
    std::string outputFileNameFluid = outputFileName + std::to_string( step ) + "_fluid.vtk";
    fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid );
