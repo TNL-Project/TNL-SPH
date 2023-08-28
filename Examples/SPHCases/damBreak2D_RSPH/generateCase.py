@@ -33,7 +33,7 @@ speedOfSound = 34.3
 
 # Initial time step.
 # In case, that initial time step is not defined, is computed automatically.
-timeStep = 0.00002
+timeStep = 0.000005
 
 # CFL number (CFL):
 CFLnumber = 0.2

@@ -2,6 +2,7 @@
 
 #include "../../../../SPH/Models/EquationOfState.h"
 #include "../../../../SPH/Models/RiemannSolvers.h"
+#include "../../../../SPH/Kernels.h"
 
 #include "../../../../SPH/SPHTraits.h"
 #include <limits>
@@ -58,6 +59,12 @@ class SPHParamsConfig
     */
    float dp = placeholderInitParticleDistancef;
    float h = placeholderSmoothingLengthf;
+
+   /**
+    * Define SPH weight function (kernel).
+    * - Use "WendlandKernel" for 4th order Wendland kernel.
+    */
+   using KernelFunction = TNL::ParticleSystem::SPH::WendlandKernel< SPHConfig >;
 
    /**
     * Define Basics SPH constants.
