@@ -7,7 +7,7 @@
 
 # Dimensions of box:
 boxL = 1.61
-boxH = 0.8
+boxH = 1.0
 
 # Dimensions of the fluid box
 fluidL = 0.6
