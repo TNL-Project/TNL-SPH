@@ -103,7 +103,7 @@ int main( int argc, char* argv[] )
     *   moving boundaries or multiphase flows). For the chosen type of simulation,
     *   appropriate SPH scheme is required!
     */
-   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
+   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHParams >;
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
    /**
@@ -222,7 +222,7 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      distributedSph.template interact< SPH::WendlandKernel2D,
+      distributedSph.template interact< SPHParams::KernelFunction,
                                         SPHParams::DiffusiveTerm,
                                         SPHParams::ViscousTerm,
                                         SPHParams::EOS >( sphParams );

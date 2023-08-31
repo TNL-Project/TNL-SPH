@@ -3,6 +3,9 @@
 #include "../../../../SPH/Models/EquationOfState.h"
 #include "../../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../../SPH/Models/VisousTerms.h"
+#include "../../../../SPH/Kernels.h"
+
+#include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
 
 #include "../../../../SPH/SPHTraits.h"
 #include "../../../../SPH/TimeStep.h"
@@ -49,10 +52,12 @@ class SPHConfig
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename SPHConfig >
+template< typename SPHConfigType >
 class SPHParamsConfig
 {
    public:
+   using SPHConfig = SPHConfigType;
+
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]
@@ -60,6 +65,12 @@ class SPHParamsConfig
     */
    float dp = placeholderInitParticleDistancef;
    float h = placeholderSmoothingLengthf;
+
+   /**
+    * Define SPH weight function (kernel).
+    * - Use "WendlandKernel" for 4th order Wendland kernel.
+    */
+   using KernelFunction = TNL::ParticleSystem::SPH::WendlandKernel< SPHConfig >;
 
    /**
     * Define Basics SPH constants.
@@ -89,6 +100,14 @@ class SPHParamsConfig
    float speedOfSound = placeholderSpeedOfSoundf;
    float coefB = placeholderCoefBf;
    float rho0 = placeholderDensityf;
+
+   /**
+    * Define type of boundary conditions.
+    * - DBC - dynamic boundary conditions
+    * - MDBC - modified dynamic boundary conditions {requires ghost nodes for boundary particles}
+    */
+   using BCType = TNL::ParticleSystem::SPH::WCSPH_BCTypes::DBC;
+   //using BCType = TNL::ParticleSystem::SPH::WCSPH_BCTypes::MDBC;
 
    /**
     * Define initial timestep [s].
