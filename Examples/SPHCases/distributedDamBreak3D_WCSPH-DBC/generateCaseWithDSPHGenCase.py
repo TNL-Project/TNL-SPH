@@ -46,7 +46,6 @@ if not os.path.exists( sourcesPath ):
     os.makedirs( sourcesPath )
 
 import sys
-#sys.path.append('../../../tools')
 sys.path.append('../../tools')
 import saveParticlesVTK
 import numpy as np
@@ -56,8 +55,7 @@ from vtk.numpy_interface import dataset_adapter as dsa
 
 reader = vtk.vtkPolyDataReader()
 #reader.SetFileName( './template/damBreak3D_WCSPH-DBC_out/damBreak3D_WCSPH-DBC_Fluid.vtk' )
-reader.SetFileName( './fluid_new.vtk' )
-#reader.SetFileName( './template/damBreak3D_WCSPH-DBC_out/damBreak3D_WCSPH-DBC_Bound.vtk' )
+reader.SetFileName( 'template/geometry/fluid_dp0-02.vtk' )
 reader.ReadAllScalarsOn()
 reader.ReadAllVectorsOn()
 reader.Update()
@@ -66,9 +64,8 @@ reader.Update()
 polydata = reader.GetOutput()
 np_points_fluid = dsa.WrapDataObject( polydata ).Points
 
-r = np.array( np_points_fluid, dtype=float ) #!!
+r = np.array( np_points_fluid, dtype=float )
 v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
-#v = np.array( ( np_points_fluid[ :, 0 ], np_points_fluid[ :, 1 ], np_points_fluid[ :, 2 ], np.zeros(  len( np_points_fluid ) ) ), dtype=float )
 rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
 p = np.zeros( len( np_points_fluid ) )
 ptype = np.zeros( len( np_points_fluid ) )
@@ -76,35 +73,9 @@ ptype = np.zeros( len( np_points_fluid ) )
 fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
 saveParticlesVTK.save_polydata( fluidToWrite, "sources/dambreak_fluid.vtk" )
 
-"""
 reader = vtk.vtkPolyDataReader()
-reader.SetFileName( './template/damBreak3D_WCSPH-DBC_out/damBreak3D_WCSPH-DBC_Bound.vtk' )
-reader.ReadAllScalarsOn()
-reader.ReadAllVectorsOn()
-reader.Update()
-
-#It is possible to access PointData, CellData, FieldData, Points (subclasses of vtkPointSet only), Polygons (vtkPolyData only) this way.
-polydata = reader.GetOutput()
-np_points_box = dsa.WrapDataObject( polydata ).Points
-#np_data = dsa.WrapDataObject( polydata ).PointData[ 'Vel.m_average' ]
-
-r = np.array( np_points_box, dtype=float ) #!!
-#r = np.array( ( np_points_box[ :, 0 ], np_points_box[ :, 1 ], np_points_box[ :, 2 ], np.zeros(  len( np_points_box ) ) ), dtype=float ) #!!
-#v = np.zeros( ( len( np_points_box ), 4 ) )
-v = np.array( ( np_points_box[ :, 0 ], np_points_box[ :, 1 ], np_points_box[ :, 2 ], np.zeros(  len( np_points_box ) ) ), dtype=float )
-rho = rho0 * np.ones( len( np_points_box ) )
-p = np.zeros( len( np_points_box ) )
-ptype = np.zeros( len( np_points_box ) )
-
-#fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-#saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_bound.vtk" )
-"""
-
-reader = vtk.vtkPolyDataReader()
-#reader.SetFileName( './template/damBreak3D_WCSPH-DBC_out/damBreak3D_WCSPH-DBC_Fluid.vtk' )
 #reader.SetFileName( './template/damBreak3D_WCSPH-DBC_out/damBreak3D_WCSPH-DBC_Bound.vtk' )
-reader.SetFileName( './boundary_new.vtk' )
-#reader.SetFileName( './template/damBreak3D_WCSPH-DBC_out/boundary_new.vtk' )
+reader.SetFileName( 'template/geometry/boundary_dp0-02.vtk' )
 reader.ReadAllScalarsOn()
 reader.ReadAllVectorsOn()
 reader.Update()
@@ -113,9 +84,8 @@ reader.Update()
 polydata = reader.GetOutput()
 np_points_box = dsa.WrapDataObject( polydata ).Points
 
-r = np.array( np_points_box, dtype=float ) #!!
+r = np.array( np_points_box, dtype=float )
 v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
-#v = np.array( ( np_points_bound[ :, 0 ], np_points_fluid[ :, 1 ], np_points_fluid[ :, 2 ], np.zeros(  len( np_points_fluid ) ) ), dtype=float )
 rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
 p = np.zeros( len( np_points_box ) )
 ptype = np.zeros( len( np_points_box ) )
@@ -136,17 +106,17 @@ spaceDimension = 3
 
 #Determine grid size
 import math
-gridXbegin = 1.005 * ( min( min( np_points_fluid[ : , 0 ] ), min( np_points_box[ :, 0 ] ) ) - searchRadius )
-gridYbegin = 1.005 * ( min( min( np_points_fluid[ : , 1 ] ), min( np_points_box[ :, 1 ] ) ) - searchRadius )
-gridZbegin = 1.005 * ( min( min( np_points_fluid[ : , 2 ] ), min( np_points_box[ : ,2 ] ) ) - searchRadius )
+gridBegin_x = 1.005 * ( min( min( np_points_fluid[ : , 0 ] ), min( np_points_box[ :, 0 ] ) ) - searchRadius )
+gridBegin_y = 1.005 * ( min( min( np_points_fluid[ : , 1 ] ), min( np_points_box[ :, 1 ] ) ) - searchRadius )
+gridBegin_z = 1.005 * ( min( min( np_points_fluid[ : , 2 ] ), min( np_points_box[ : ,2 ] ) ) - searchRadius )
 
 gridXend = 1.005 * ( max( max( np_points_fluid[ :, 0 ] ), max( np_points_box[ :, 0 ] ) ) + searchRadius )
 gridYend = 1.005 * ( max( max( np_points_fluid[ :, 1 ] ), max( np_points_box[ :, 1 ] ) ) + searchRadius )
 gridZend = 1.005 * ( max( max( np_points_fluid[ :, 2 ] ), max( np_points_box[ :, 2 ] ) ) + searchRadius )
 
-gridXsize = math.ceil( ( gridXend - gridXbegin ) / searchRadius )
-gridYsize = math.ceil( ( gridYend - gridYbegin ) / searchRadius )
-gridZsize = math.ceil( ( gridZend - gridZbegin ) / searchRadius ) + 5
+gridXsize = math.ceil( ( gridXend - gridBegin_x ) / searchRadius )
+gridYsize = math.ceil( ( gridYend - gridBegin_y ) / searchRadius )
+gridZsize = math.ceil( ( gridZend - gridBegin_z ) / searchRadius ) + 5
 if dp == 0.005:
     gridZsize += 30
 
@@ -181,9 +151,9 @@ with open( 'sources/SPHCaseConfig.h', 'w' ) as file:
 #fileParticleConf = fileParticleConf.replace( 'placeholderGridXSize', str( gridXsize ) )
 #fileParticleConf = fileParticleConf.replace( 'placeholderGridYSize', str( gridYsize ) )
 #fileParticleConf = fileParticleConf.replace( 'placeholderGridZSize', str( gridZsize ) )
-#fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridXbegin, 8  ) ) )
-#fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridYbegin, 8  ) ) )
-#fileParticleConf = fileParticleConf.replace( 'placeholderGridZBegin', str( round( gridYbegin, 8  ) ) )
+#fileParticleConf = fileParticleConf.replace( 'placeholderGridXBegin', str( round( gridBegin_x, 8  ) ) )
+#fileParticleConf = fileParticleConf.replace( 'placeholderGridYBegin', str( round( gridBegin_y, 8  ) ) )
+#fileParticleConf = fileParticleConf.replace( 'placeholderGridZBegin', str( round( gridBegin_y, 8  ) ) )
 #
 ## Write the file out again
 #with open( 'ParticlesConfig.h', 'w' ) as file:
@@ -229,28 +199,28 @@ print ( f'Grid splits: {gridSplits}' )
 
 print( f'Grid global:' )
 print( f'Grid global - size: [ {gridXsize}, {gridYsize} ]' )
-print( f'Grid global - begin: [ {gridXbegin}, {gridYbegin} ]\n' )
+print( f'Grid global - begin: [ {gridBegin_x}, {gridBegin_y} ]\n' )
 
 gridSizes = []
 gridOrigins = []; gridIndexOrigins = []
 for subdomain in range( numberOfSubdomains ):
     if subdomain == 0:
         gridSizes.append( gridSplits[ subdomain ] - 0 )
-        gridOrigins.append( gridXbegin )
+        gridOrigins.append( gridBegin_x )
         gridIndexOrigins.append( 0 )
     elif subdomain == numberOfSubdomains - 1:
         gridSizes.append( gridXsize - gridSplits[ subdomain - 1 ] )
-        gridOrigins.append( gridXbegin + gridSplits[ subdomain - 1 ] * searchRadius )
+        gridOrigins.append( gridBegin_x + gridSplits[ subdomain - 1 ] * searchRadius )
         gridIndexOrigins.append( gridSplits[ subdomain - 1 ] )
     else:
         gridSizes.append( gridSplits[ subdomain - 1 ] - gridIndexOrigins[ subdomain -1 ] )
-        gridOrigins.append( gridXbegin + gridSplits[ subdomain - 1 ] * searchRadius )
+        gridOrigins.append( gridBegin_x + gridSplits[ subdomain - 1 ] * searchRadius )
         gridIndexOrigins.append( gridSplits[ subdomain - 1 ] )
 
     print( f'Grid subdomain: {subdomain}' )
     print( f'Grid subdomain - size: [ {gridSizes[ subdomain ]}, {gridYsize} ]' )
-    print( f'Grid subdomain - origin: [ {gridOrigins[ subdomain ]}, {gridYbegin} ]' )
-    print( f'Grid subdomain - index origin: [ {gridIndexOrigins[ subdomain ]}, {gridYbegin} ]\n' )
+    print( f'Grid subdomain - origin: [ {gridOrigins[ subdomain ]}, {gridBegin_y} ]' )
+    print( f'Grid subdomain - index origin: [ {gridIndexOrigins[ subdomain ]}, {gridBegin_y} ]\n' )
 
 print( f'Grid size: {gridXsize} gridSizeSplits: {np.sum( gridSizes )}\n' )
 
@@ -260,7 +230,7 @@ print( f'Grid size: {gridXsize} gridSizeSplits: {np.sum( gridSizes )}\n' )
 
 from contextlib import redirect_stdout
 
-def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbegin, gridSector, name ):
+def DomainGrid( gridXsize, gridYsize, gridZsize, gridBegin_x, gridBegin_y, gridBegin_z, gridSector, name ):
     with open( name, 'w' ) as f:
         with redirect_stdout(f):
             print( "# vtk DataFile Version 3.0" )
@@ -270,7 +240,7 @@ def DomainGrid( gridXsize, gridYsize, gridZsize, gridXbegin, gridYbegin, gridZbe
             print( "DATASET STRUCTURED_POINTS" )
             print( "DIMENSIONS ", gridXsize + 1 , " ", gridYsize + 1, " ", 1 )
             print( "ASPECT_RATIO ", searchRadius_h , " ", searchRadius_h , " ",  searchRadius_h )
-            print( "ORIGIN ", gridXbegin , " ", gridYbegin , " ",  0  )
+            print( "ORIGIN ", gridBegin_x , " ", gridBegin_y , " ",  0  )
             print( "CELL_DATA ",  gridXsize * gridYsize * 1  )
             print( "SCALARS GridSector int 1 ")
             print( "LOOKUP_TABLE default" )
@@ -335,9 +305,9 @@ def generateSubdomain( subdomain ):
         upperPositionLimit = gridOrigins[ subdomain + 1 ]
     elif subdomain == numberOfSubdomains - 1:
         #lowerPositionLimit = gridOrigins[ subdomain ]
-        #upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h
+        #upperPositionLimit = gridBegin_x + ( gridXsize + 1 ) * searchRadius_h
         lowerPositionLimit = gridOrigins[ subdomain ] - searchRadius_h #TODO
-        upperPositionLimit = gridXbegin + ( gridXsize + 1 ) * searchRadius_h
+        upperPositionLimit = gridBegin_x + ( gridXsize + 1 ) * searchRadius_h
     else:
         lowerPositionLimit = gridOrigins[ subdomain ]
         upperPositionLimit = gridOrigins[ subdomain + 1 ]
@@ -407,9 +377,9 @@ def generateSubdomain( subdomain ):
     infoString = infoString.replace( '#placeholderGridXSize', str( gridXsize ) )
     infoString = infoString.replace( '#placeholderGridYSize', str( gridYsize ) )
     infoString = infoString.replace( '#placeholderGridZSize', str( gridZsize ) )
-    infoString = infoString.replace( '#placeholderGridXBegin', str( round( gridXbegin, 9  ) ) )
-    infoString = infoString.replace( '#placeholderGridYBegin', str( round( gridYbegin, 9  ) ) )
-    infoString = infoString.replace( '#placeholderGridZBegin', str( round( gridZbegin, 9  ) ) )
+    infoString = infoString.replace( '#placeholderGridXBegin', str( round( gridBegin_x, 9  ) ) )
+    infoString = infoString.replace( '#placeholderGridYBegin', str( round( gridBegin_y, 9  ) ) )
+    infoString = infoString.replace( '#placeholderGridZBegin', str( round( gridBegin_z, 9  ) ) )
 
     infoString = infoString.replace( '#placeholderFluidParticles', str( len( subdomain_fluid_rx ) ) )
     infoString = infoString.replace( '#placeholderAllocatedFluidParticles', str( len( fluid_rx ) ) )
@@ -480,8 +450,8 @@ def generateSubdomain( subdomain ):
     # Write local grid G1
     subdomain_grid_outputname = "sources/dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
     DomainGrid( gridSizes[ subdomain ] + 1, gridYsize, gridZsize,   # grid size
-                #gridOrigins[ subdomain ], gridYbegin, 0,           # coordinates of grid origin
-                gridXOriginWithOverlap, gridYbegin, gridZbegin,     # coordinates of grid origin
+                #gridOrigins[ subdomain ], gridBegin_y, 0,          # coordinates of grid origin
+                gridXOriginWithOverlap, gridBegin_y, gridBegin_z,   # coordinates of grid origin
                 subdomain_gridSector,                               # array with index of grid sector
                 subdomain_grid_outputname )                         # outputfile name
 
@@ -495,8 +465,8 @@ for subdomain in range( numberOfSubdomains ):
     generateSubdomain( subdomain )
     subdomainsString += subdomainStringsArrays[ subdomain ]
 
-    inputFluidFilesString += "\"dambreak_fluid_subdomain" + str( subdomain ) + '.vtk\"'
-    inputBoundaryFilesString += "\"dambreak_boundary_subdomain" + str( subdomain ) + '.vtk\"'
+    inputFluidFilesString += "\"sources/dambreak_fluid_subdomain" + str( subdomain ) + '.vtk\"'
+    inputBoundaryFilesString += "\"sources/dambreak_boundary_subdomain" + str( subdomain ) + '.vtk\"'
 
     if subdomain < numberOfSubdomains - 1:
         inputFluidFilesString += ', '
