@@ -245,10 +245,6 @@ class PhysicalObject
    void
    completeSynchronization()
    {
-      //Update the particle ranges
-      //GlobalIndexType updatedNumberOfParticles = synchronizer.getNewParticleCount(
-      //      subdomainInfo, particles->getNumberOfParticles() );
-
       const GlobalIndexType numberOfParticlesToSet = subdomainInfo.lastParticleInLastGridColumn -
                                                      subdomainInfo.firstParticleInFirstGridColumn +
                                                      subdomainInfo.receivedEnd +

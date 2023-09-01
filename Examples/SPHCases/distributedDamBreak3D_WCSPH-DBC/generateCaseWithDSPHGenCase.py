@@ -1,33 +1,22 @@
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 #
 # damBreak3D_WCSPH-DBC_benchmark
 #
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 import sys
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument( "-resolution" )
+parser.add_argument( "-resolution", default=0.02, type=float )
 args = parser.parse_args()
 print("Input resolution: .....", args.resolution)
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+#---------------------------------------------------------------------------#
 
-boxL = 1.61
-boxH = 0.8
+dp =  args.resolution
+print( f'Initial particle distance: {dp}.' )
 
-fluidL = 0.6
-fluidH = 0.3
-
-#dp = float( args.resolution )
-dp = 0.02
 smoothingLentghCoef = 2
-
 rho0 = 1000.
-p0 = 0.
-
-numberOfBoundaryLayers = 3
-
-#speedOfSound = 45.17167357703276
 speedOfSound = 45.17
 CFLnumber = 0.15
 
@@ -45,8 +34,16 @@ numberOfSubdomains = 3
 
 # Print information during case generation
 printInfoString = False
+#---------------------------------------------------------------------------#
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+import os
+resultsPath = r'./results'
+if not os.path.exists( resultsPath ):
+    os.makedirs( resultsPath )
+
+sourcesPath = r'./sources'
+if not os.path.exists( sourcesPath ):
+    os.makedirs( sourcesPath )
 
 import sys
 #sys.path.append('../../../tools')
@@ -77,7 +74,7 @@ p = np.zeros( len( np_points_fluid ) )
 ptype = np.zeros( len( np_points_fluid ) )
 
 fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-saveParticlesVTK.save_polydata( fluidToWrite, "dambreak_fluid.vtk" )
+saveParticlesVTK.save_polydata( fluidToWrite, "sources/dambreak_fluid.vtk" )
 
 """
 reader = vtk.vtkPolyDataReader()
@@ -125,7 +122,7 @@ ptype = np.zeros( len( np_points_box ) )
 
 print("Number of boundary particles to write: ", len(r) )
 boundToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-saveParticlesVTK.save_polydata( boundToWrite, "dambreak_bound.vtk" )
+saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_bound.vtk" )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 ### Compute remaining parameters
@@ -168,7 +165,7 @@ fileSPHConf = fileSPHConf.replace( 'placeholderSmoothingLength', str( smoothingL
 fileSPHConf = fileSPHConf.replace( 'placeholderTimeStep', str( timeStep ) )
 
 # Write the file out again
-with open( 'SPHCaseConfig.h', 'w' ) as file:
+with open( 'sources/SPHCaseConfig.h', 'w' ) as file:
   file.write( fileSPHConf )
 
 #with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
@@ -196,7 +193,7 @@ with open( 'SPHCaseConfig.h', 'w' ) as file:
 with open( 'template/SimulationControlConfig_template.h', 'r' ) as file :
   fileSimulationControl = file.read()
 
-with open( 'SimulationControlConfig.h', 'w' ) as file:
+with open( 'sources/SimulationControlConfig.h', 'w' ) as file:
   file.write( fileSimulationControl )
 
 import os
@@ -384,7 +381,7 @@ def generateSubdomain( subdomain ):
     ptype = np.array( ( subdomain_fluid_ptype ), dtype=float ).T
 
     fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    subdomain_fluid_outputname = "dambreak_fluid_subdomain" + str( subdomain ) + '.vtk'
+    subdomain_fluid_outputname = "sources/dambreak_fluid_subdomain" + str( subdomain ) + '.vtk'
     print( f'Subdomain fluid ouputfilename: {subdomain_fluid_outputname}' )
     saveParticlesVTK.save_polydata( fluidToWrite, subdomain_fluid_outputname )
 
@@ -396,7 +393,7 @@ def generateSubdomain( subdomain ):
     ptype = np.array( ( subdomain_box_ptype ), dtype=float ).T
 
     boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
-    subdomain_boundary_outputname = "dambreak_boundary_subdomain" + str( subdomain ) + '.vtk'
+    subdomain_boundary_outputname = "sources/dambreak_boundary_subdomain" + str( subdomain ) + '.vtk'
     print( f'Subdomain boundary ouputfilename: {subdomain_boundary_outputname}' )
     saveParticlesVTK.save_polydata( boxToWrite, subdomain_boundary_outputname )
 
@@ -481,7 +478,7 @@ def generateSubdomain( subdomain ):
     if subdomain > 0: gridXOriginWithOverlap -= searchRadius_h
 
     # Write local grid G1
-    subdomain_grid_outputname = "dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
+    subdomain_grid_outputname = "sources/dambreak_grid_subdomain" + str( subdomain ) + '.vtk'
     DomainGrid( gridSizes[ subdomain ] + 1, gridYsize, gridZsize,   # grid size
                 #gridOrigins[ subdomain ], gridYbegin, 0,           # coordinates of grid origin
                 gridXOriginWithOverlap, gridYbegin, gridZbegin,     # coordinates of grid origin
@@ -514,7 +511,7 @@ with open( 'template/SimulationControlConfig_template.h', 'r' ) as file :
   fileSimulationControl = fileSimulationControl.replace( '#placeholderInputFluidFiles', inputFluidFilesString )
   fileSimulationControl = fileSimulationControl.replace( '#placeholderInputBoundaryFiles', inputBoundaryFilesString )
 
-with open( 'SimulationControlConfig.h', 'w' ) as file:
+with open( 'sources/SimulationControlConfig.h', 'w' ) as file:
   file.write( fileSimulationControl )
 
 #---------------------------------------------------------------------------#
@@ -527,7 +524,7 @@ with open( 'template/ParticlesConfig_template.h', 'r' ) as file :
   fileParticleConf = fileParticleConf.replace( '#placeholderNumberOfSubdomains', str( numberOfSubdomains ) )
 
 # Write the file out again
-with open( 'ParticlesConfig.h', 'w' ) as file:
+with open( 'sources/ParticlesConfig.h', 'w' ) as file:
   file.write( fileParticleConf )
 
 #---------------------------------------------------------------------------#

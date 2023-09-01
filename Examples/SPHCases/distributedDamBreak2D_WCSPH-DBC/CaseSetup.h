@@ -62,7 +62,7 @@ int main( int argc, char* argv[] )
 
    TNL::MPI::ScopedInitializer mpi(argc, argv);
 #ifdef HAVE_MPI
-      std::cout << "Running with MPI." << std::endl;
+   std::cout << "Running with MPI." << std::endl;
 #endif
 
    /**
