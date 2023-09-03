@@ -9,13 +9,13 @@ subdomainStringTemplate = """
       particlesParams[ #placeholderSubdomainNumber ].numberOfAllocatedBoundaryParticles = #placeholderAllocatedBoundaryParticles;
 
       particlesParams[ #placeholderSubdomainNumber ].searchRadius = #placeholderSearchRadiusf * 1.001f;
-      particlesParams[ #placeholderSubdomainNumber ].gridSize_x = #placeholderGridXSize;
-      particlesParams[ #placeholderSubdomainNumber ].gridSize_y = #placeholderGridYSize;
-      particlesParams[ #placeholderSubdomainNumber ].gridSize_z = #placeholderGridZSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridXsize = #placeholderGridXSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridYsize = #placeholderGridYSize;
+      particlesParams[ #placeholderSubdomainNumber ].gridZsize = #placeholderGridZSize;
       particlesParams[ #placeholderSubdomainNumber ].gridOrigin = { #placeholderGridXBeginf, #placeholderGridYBeginf, #placeholderGridZBeginf };
 
-      particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ #placeholderSubdomainNumber ].gridSize_x, particlesParams[ #placeholderSubdomainNumber ].gridSize_y, particlesParams[ #placeholderSubdomainNumber ].gridSize_y };
-      particlesParams[ #placeholderSubdomainNumber ].numberOfGridCells = particlesParams[ #placeholderSubdomainNumber ].gridSize_x * particlesParams[ #placeholderSubdomainNumber ].gridSize_y * particlesParams[ #placeholderSubdomainNumber ].gridSize_z;
+      particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ #placeholderSubdomainNumber ].gridXsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize };
+      particlesParams[ #placeholderSubdomainNumber ].numberOfGridCells = particlesParams[ #placeholderSubdomainNumber ].gridXsize * particlesParams[ #placeholderSubdomainNumber ].gridYsize * particlesParams[ #placeholderSubdomainNumber ].gridZsize;
 
       //Subdomain #placeholderSubdomainNumber - Subdomain info
       subdomainParams[ #placeholderSubdomainNumber ].particleIdxStart = #placeholderParticleIdxStart;
@@ -26,10 +26,6 @@ subdomainStringTemplate = """
       subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapStar = #placeholderGridIdxOverlapStart;
       subdomainParams[ #placeholderSubdomainNumber ].gridIdxStart = #placeholderGridIdxStart;
       subdomainParams[ #placeholderSubdomainNumber ].gridIdxOverlapEnd = #placeholderGridIdxOverlapEnd;
-        gridIdxOverlapStart = gridIndexOrigins[ subdomain ] - 1
-        gridIdxStart = gridIndexOrigins[ subdomain ]
-        gridIdxOverlapEnd = gridIndexOrigins[ subdomain + 1 ]
-        gridIdxEnd = gridIndexOrigins[ subdomain + 1 ] - 1
       subdomainParams[ #placeholderSubdomainNumber ].gridIdxEnd = #placeholderGridIdxEnd;
 """
 
@@ -79,10 +75,21 @@ class Subdomains:
                f' - subdomains index origins: {self.gridIndexOrigins}' )
 
     def generateSubdomains( self, points_fluid, fields_fluid, points_box, fields_box ):
+
+        inputFluidFilesString = ''
+        inputBoundaryFilesString = ''
+
         for subdomain in range( self.numberOfSubdomains ):
             self.subdomainConfigString += self.generateSubdomain ( subdomain, points_fluid, [], points_box, [] )
 
-        return self.subdomainConfigString
+            inputFluidFilesString += "\"sources/dambreak_fluid_subdomain" + str( subdomain ) + '.vtk\"'
+            inputBoundaryFilesString += "\"sources/dambreak_boundary_subdomain" + str( subdomain ) + '.vtk\"'
+
+            if subdomain < self.numberOfSubdomains - 1:
+                inputFluidFilesString += ', '
+                inputBoundaryFilesString += ', '
+
+        return self.subdomainConfigString, inputFluidFilesString, inputBoundaryFilesString
 
     def generateSubdomain( self,subdomain, points_fluid, fields_fluid, points_box, fields_box ):
         #Fields and variables to set

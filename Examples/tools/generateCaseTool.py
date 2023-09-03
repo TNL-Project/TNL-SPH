@@ -21,3 +21,54 @@ def getDomainLimits( points_fluid, points_box, searchRadius, modifySize_x, modif
     print( f'[getDomainLimits] Size and limits of domain:\n - gridBegin: {gridBegin}\n - gridEnd: {gridEnd}\n - gridSize: {gridSize}' )
 
     return gridBegin, gridEnd, gridSize
+
+import numpy as np
+import vtk
+from vtk.numpy_interface import dataset_adapter as dsa
+import saveParticlesVTK
+
+def processExternalParticleVTKFile( inputFileName, outputFileName, fieldsToRead ):
+    reader = vtk.vtkPolyDataReader()
+    reader.SetFileName( inputFileName )
+    reader.ReadAllScalarsOn()
+    reader.ReadAllVectorsOn()
+    reader.Update()
+
+    #It is possible to access PointData, CellData, FieldData, Points (subclasses of vtkPointSet only), Polygons (vtkPolyData only) this way.
+    polydata = reader.GetOutput()
+    np_points_fluid = dsa.WrapDataObject( polydata ).Points
+
+    r = np.array( np_points_fluid, dtype=float )
+
+    v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
+    rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
+    p = np.zeros( len( np_points_fluid ) )
+    ptype = np.zeros( len( np_points_fluid ) )
+
+    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    saveParticlesVTK.save_polydata( fluidToWrite, outputFileName )
+
+    return np_points_fluid
+
+#def processExternalParticleVTKFile( inputFileName, outputFileName, fieldsToRead, fields ):
+#    reader = vtk.vtkPolyDataReader()
+#    reader.SetFileName( inputFileName )
+#    reader.ReadAllScalarsOn()
+#    reader.ReadAllVectorsOn()
+#    reader.Update()
+#
+#    #It is possible to access PointData, CellData, FieldData, Points (subclasses of vtkPointSet only), Polygons (vtkPolyData only) this way.
+#    polydata = reader.GetOutput()
+#    np_points_fluid = dsa.WrapDataObject( polydata ).Points
+#
+#    r = np.array( np_points_fluid, dtype=float )
+#
+#    v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
+#    rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
+#    p = np.zeros( len( np_points_fluid ) )
+#    ptype = np.zeros( len( np_points_fluid ) )
+#
+#    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+#    saveParticlesVTK.save_polydata( fluidToWrite, outputFileName )
+#
+#    return np_points_fluid
