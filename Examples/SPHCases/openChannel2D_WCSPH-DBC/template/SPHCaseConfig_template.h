@@ -3,6 +3,7 @@
 #include "../../../../SPH/Models/EquationOfState.h"
 #include "../../../../SPH/Models/DiffusiveTerms.h"
 #include "../../../../SPH/Models/VisousTerms.h"
+#include "../../../../SPH/Kernels.h"
 
 #include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
 
@@ -56,6 +57,12 @@ class SPHParamsConfig
 {
    public:
    using SPHConfig = SPHConfigType;
+
+   /**
+    * Define SPH weight function (kernel).
+    * - Use "WendlandKernel" for 4th order Wendland kernel.
+    */
+   using KernelFunction = TNL::ParticleSystem::SPH::WendlandKernel< SPHConfig >;
 
    /**
     * Define SPH parameters connected to the resolution.
