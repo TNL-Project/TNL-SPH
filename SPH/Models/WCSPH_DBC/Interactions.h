@@ -153,9 +153,29 @@ public:
                                 SPHState& sphState );
 
    /**
-    * Functions to extrapolate data on open boundary buffers.
+    * Functions to extrapolate data on open boundary buffers in 2D.
+    * Extrapolation function is provided in 3 alternatives - extrapolation only density or velocity
+    * or extrapolating both together.
     * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
     */
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS >
+   void
+   extrapolateOpenBoundaryDensity2D( FluidPointer& fluid,
+                                     OpenBoudaryPointer& openBoundary,
+                                     SPHState& sphState );
+
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS >
+   void
+   extrapolateOpenBoundaryVelocity2D( FluidPointer& fluid,
+                                      OpenBoudaryPointer& openBoundary,
+                                      SPHState& sphState );
+
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
@@ -165,6 +185,30 @@ public:
                                   OpenBoudaryPointer& openBoundary,
                                   SPHState& sphState );
 
+   /**
+    * Functions to extrapolate data on open boundary buffers in 3D.
+    * Extrapolation function is provided in 3 alternatives - extrapolation only density or velocity
+    * or extrapolating both together.
+    * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
+    */
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS >
+   void
+   extrapolateOpenBoundaryDensity3D( FluidPointer& fluid,
+                                     OpenBoudaryPointer& openBoundary,
+                                     SPHState& sphState );
+
+   template< typename FluidPointer,
+             typename OpenBoudaryPointer,
+             typename SPHKernelFunction,
+             typename EOS >
+   void
+   extrapolateOpenBoundaryVelocity3D( FluidPointer& fluid,
+                                      OpenBoudaryPointer& openBoundary,
+                                      SPHState& sphState );
+
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
@@ -173,6 +217,10 @@ public:
    extrapolateOpenBoundaryData3D( FluidPointer& fluid,
                                   OpenBoudaryPointer& openBoundary,
                                   SPHState& sphState );
+
+   /**
+    * General function to perform extrapolation of open boundary conditions.
+    */
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
