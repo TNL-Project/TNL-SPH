@@ -154,7 +154,8 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData2D( FluidPoint
 template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
-          typename SPHKernelFunction >
+          typename SPHKernelFunction,
+          typename EOS >
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPointer& fluid,
                                                                          OpenBoudaryPointer& openBoundary,
@@ -186,7 +187,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPo
    auto OpenBoundaryFluid = [=] __cuda_callable__ ( LocalIndexType i,
                                                     LocalIndexType j,
                                                     VectorType& r_i,
-                                                    VectorType& v_i,
                                                     RealType& rho_i,
                                                     Matrix* A_gn,
                                                     VectorExtendedType* rho_gradrho_gn ) mutable
@@ -196,7 +196,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPo
       const RealType drs = l2Norm( r_ij );
       if (drs <= searchRadius )
       {
-         const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
 
          /* Interaction: */
@@ -214,9 +213,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPo
    auto particleLoopOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points_openBound[ i ];
-      const VectorType v_i = view_v_openBound[ i ];
       const RealType rho_i = view_rho_openBound[ i ];
-      const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
       const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ] }; //FIXME
 
       Matrix A_gn = 0.f;
@@ -226,7 +223,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPo
                            ghostNode_i,
                            searchInFluid,
                            OpenBoundaryFluid,
-                           v_i, rho_i, &A_gn, &rho_gradrho_gn );
+                           rho_i, &A_gn, &rho_gradrho_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -532,7 +529,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPo
    auto OpenBoundaryFluid = [=] __cuda_callable__ ( LocalIndexType i,
                                                     LocalIndexType j,
                                                     VectorType& r_i,
-                                                    VectorType& v_i,
                                                     RealType& rho_i,
                                                     Matrix* A_gn,
                                                     VectorExtendedType* rho_gradrho_gn ) mutable
@@ -559,9 +555,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPo
    auto particleLoopOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points_openBound[ i ];
-      const VectorType v_i = view_v_openBound[ i ];
       const RealType rho_i = view_rho_openBound[ i ];
-      const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
       const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ] }; //FIXME
 
       Matrix A_gn = 0.f;
@@ -571,7 +565,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPo
                            ghostNode_i,
                            searchInFluid,
                            OpenBoundaryFluid,
-                           v_i, rho_i, &A_gn, &rho_gradrho_gn );
+                           rho_i, &A_gn, &rho_gradrho_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -713,7 +707,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidP
          RealType vy_b = vy_gradvy_gn[ 0 ] / A_gn( 0, 0 );
          RealType vz_b = vz_gradvz_gn[ 0 ] / A_gn( 0, 0 );
 
-         view_rho_openBound[ i ] = rho_b;
          view_v_openBound[ i ] = { vx_b, vy_b, vz_b };
       }
    };
