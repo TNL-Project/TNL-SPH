@@ -9,22 +9,24 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData( FluidPointer& fluid,
                                                                     OpenBoudaryPointer& openBoundary,
-                                                                    SPHState& sphState )
+                                                                    SPHState& sphState,
+                                                                    OpenBoundaryParams& openBoundaryParams )
 {
    if constexpr( SPHState::SPHConfig::spaceDimension == 2 )
    {
       extrapolateOpenBoundaryData2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
-            fluid, openBoundary, sphState );
+            fluid, openBoundary, sphState, openBoundaryParams );
    }
 
    if constexpr( SPHState::SPHConfig::spaceDimension == 3 )
    {
       extrapolateOpenBoundaryData3D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
-            fluid, openBoundary, sphState );
+            fluid, openBoundary, sphState, openBoundaryParams );
    }
 }
 
@@ -32,11 +34,13 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData2D( FluidPointer& fluid,
                                                                       OpenBoudaryPointer& openBoundary,
-                                                                      SPHState& sphState )
+                                                                      SPHState& sphState,
+                                                                      OpenBoundaryParams& openBoundaryParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -47,7 +51,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData2D( FluidPoint
    const RealType h = sphState.h;
    const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
-   const RealType extrapolationDetTreshold = openBoundary->parameters.extrapolationDetTreshold;
+   const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -155,11 +159,14 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
+
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPointer& fluid,
                                                                          OpenBoudaryPointer& openBoundary,
-                                                                         SPHState& sphState )
+                                                                         SPHState& sphState,
+                                                                         OpenBoundaryParams& openBoundaryParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -170,7 +177,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPo
    const RealType h = sphState.h;
    const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
-   const RealType extrapolationDetTreshold = openBoundary->parameters.extrapolationDetTreshold;
+   const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -250,11 +257,14 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
+
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryVelocity2D( FluidPointer& fluid,
                                                                           OpenBoudaryPointer& openBoundary,
-                                                                          SPHState& sphState )
+                                                                          SPHState& sphState,
+                                                                          OpenBoundaryParams& openBoundaryParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -265,7 +275,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryVelocity2D( FluidP
    const RealType h = sphState.h;
    const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
-   const RealType extrapolationDetTreshold = openBoundary->parameters.extrapolationDetTreshold;
+   const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -360,11 +370,13 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& fluid,
                                                                       OpenBoudaryPointer& openBoundary,
-                                                                      SPHState& sphState )
+                                                                      SPHState& sphState,
+                                                                      OpenBoundaryParams& openBoundaryParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -375,7 +387,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData3D( FluidPoint
    const RealType h = sphState.h;
    const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
-   const RealType extrapolationDetTreshold = openBoundary->parameters.extrapolationDetTreshold;
+   const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -497,11 +509,13 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer& fluid,
                                                                          OpenBoudaryPointer& openBoundary,
-                                                                         SPHState& sphState )
+                                                                         SPHState& sphState,
+                                                                         OpenBoundaryParams& openBoundaryParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -512,7 +526,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPo
    const RealType h = sphState.h;
    const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
-   const RealType extrapolationDetTreshold = openBoundary->parameters.extrapolationDetTreshold;
+   const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -593,11 +607,13 @@ template< typename ParticleSystem, typename SPHState >
 template< typename FluidPointer,
           typename OpenBoudaryPointer,
           typename SPHKernelFunction,
-          typename EOS >
+          typename EOS,
+          typename OpenBoundaryParams >
 void
 WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointer& fluid,
                                                                           OpenBoudaryPointer& openBoundary,
-                                                                          SPHState& sphState )
+                                                                          SPHState& sphState,
+                                                                          OpenBoundaryParams& openBoundaryParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -609,7 +625,7 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidP
    const RealType rho0 = sphState.rho0;
    const RealType m = sphState.mass;
    const VectorType gravity = sphState.gravity;
-   const RealType extrapolationDetTreshold = openBoundary->parameters.extrapolationDetTreshold;
+   const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( sphState );
 

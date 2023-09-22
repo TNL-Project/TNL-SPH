@@ -39,23 +39,22 @@ boxH = 0.3
 
 numberOfAllocatedParticles = 100000
 
-## First inlet buffer. ##
+## Define inlet
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
 inletBufferPosition_x = 0.0
 inletBufferPosition_z = 0. + dp*1
 inletBufferHeight = fluidH
 inletBufferLayers = numberOfBoundaryLayers + 1
-#inletVelocity_x = 1.
 inletVelocity_x = 0.5
 inletVelocity_z = 0.
 
-inletBufferWidth = inletBufferLayers * dp # - dp / 2
+inletBufferWidth = inletBufferLayers * dp
 inletBufferEdge = inletBufferPosition_x + 4 * dp  + dp / 2 #remove, deprecated
 inletBufferReferencePoint_x = inletBufferPosition_x - inletBufferOrientation_x * ( inletBufferLayers - 1 ) * dp
 inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z * ( inletBufferLayers - 1 ) * dp
 
-## Second inlet buffer. ##
+## Define outlet
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
 inlet2BufferPosition_x = fluidL + dp
@@ -65,7 +64,7 @@ inlet2BufferLayers = numberOfBoundaryLayers + 1
 inlet2Velocity_x = 1.5
 inlet2Velocity_z = 0.
 
-inlet2BufferWidth = inlet2BufferLayers * dp # - dp / 2
+inlet2BufferWidth = inlet2BufferLayers * dp
 inlet2BufferEdge = inlet2BufferPosition_x  + dp / 2 #remove, deprecated
 inlet2BufferReferencePoint_x = inlet2BufferPosition_x - inlet2BufferOrientation_x * ( inlet2BufferLayers - 1 ) * dp
 inlet2BufferReferencePoint_z = inlet2BufferPosition_z - inlet2BufferOrientation_z * ( inlet2BufferLayers - 1 ) * dp

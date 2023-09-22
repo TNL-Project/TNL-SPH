@@ -224,7 +224,7 @@ int main( int argc, char* argv[] )
       sph.model->extrapolateOpenBoundaryData< SPHSimulation::FluidPointer,
                                               SPHSimulation::OpenBoundaryPointer,
                                               SPHParams::KernelFunction,
-                                              SPHParams::EOS >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams );
+                                              SPHParams::EOS >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams, outletBufferParams );
 
       /**
        * Perform interaction with given model.
@@ -233,8 +233,6 @@ int main( int argc, char* argv[] )
       sph.template interact< SPHParams::KernelFunction, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
-
-      //#include "outputForDebug.h"
 
       /**
        * Perform time integration, i.e. update particle positions.
@@ -245,13 +243,12 @@ int main( int argc, char* argv[] )
       std::cout << "Integration... done. " << std::endl;
 
       timer_inlet.start();
-      sph.integrator->updateBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ] );
+      sph.integrator->updateBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ] );
       timer_inlet.stop();
       timer_outlet.start();
-      sph.integrator->updateOutletBuffer< typename SPHSimulation::FluidPointer, typename SPHSimulation::OpenBoundaryPointer >( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
+      sph.integrator->updateOutletBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
       timer_outlet.stop();
       std::cout << "Open boundary... done. " << std::endl;
-
 
       /**
        * Output particle data

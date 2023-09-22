@@ -64,13 +64,15 @@ public:
 
    /**
     * Compute pressure from density.
-    * TODO: This can be independent function.
     */
    template< typename EquationOfState = TaitWeaklyCompressibleEOS< SPHConfig >,
              typename PhysicalObjectPointer >
    void
    computePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState );
 
+   /**
+    * Function to realize fluid-fluid and fluid-boundary interaction.
+    */
    template< typename FluidPointer,
              typename BoudaryPointer,
              typename SPHKernelFunction,
@@ -161,29 +163,35 @@ public:
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryDensity2D( FluidPointer& fluid,
                                      OpenBoudaryPointer& openBoundary,
-                                     SPHState& sphState );
+                                     SPHState& sphState,
+                                     OpenBoundaryParams& openBoundaryParams );
 
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryVelocity2D( FluidPointer& fluid,
                                       OpenBoudaryPointer& openBoundary,
-                                      SPHState& sphState );
+                                      SPHState& sphState,
+                                      OpenBoundaryParams& openBoundaryParams );
 
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryData2D( FluidPointer& fluid,
                                   OpenBoudaryPointer& openBoundary,
-                                  SPHState& sphState );
+                                  SPHState& sphState,
+                                  OpenBoundaryParams& openBoundaryParams );
 
    /**
     * Functions to extrapolate data on open boundary buffers in 3D.
@@ -194,29 +202,35 @@ public:
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryDensity3D( FluidPointer& fluid,
                                      OpenBoudaryPointer& openBoundary,
-                                     SPHState& sphState );
+                                     SPHState& sphState,
+                                     OpenBoundaryParams& openBoundaryParams );
 
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryVelocity3D( FluidPointer& fluid,
                                       OpenBoudaryPointer& openBoundary,
-                                      SPHState& sphState );
+                                      SPHState& sphState,
+                                      OpenBoundaryParams& openBoundaryParams );
 
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryData3D( FluidPointer& fluid,
                                   OpenBoudaryPointer& openBoundary,
-                                  SPHState& sphState );
+                                  SPHState& sphState,
+                                  OpenBoundaryParams& openBoundaryParams );
 
    /**
     * General function to perform extrapolation of open boundary conditions.
@@ -224,11 +238,13 @@ public:
    template< typename FluidPointer,
              typename OpenBoudaryPointer,
              typename SPHKernelFunction,
-             typename EOS >
+             typename EOS,
+             typename OpenBoundaryParams >
    void
    extrapolateOpenBoundaryData( FluidPointer& fluid,
                                 OpenBoudaryPointer& openBoundary,
-                                SPHState& sphState );
+                                SPHState& sphState,
+                                OpenBoundaryParams& openBoundaryParams );
 
 };
 

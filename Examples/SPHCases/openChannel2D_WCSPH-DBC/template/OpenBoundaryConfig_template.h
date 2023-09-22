@@ -10,81 +10,97 @@ namespace SPH {
  *
  * This class is used to store core parameters for inlet boundary patch
  * i.e. inlet or outlet. The values are used only for initialization.
- *
- * It is necessary to enter:
- *
- * - orientation_x - x component of normal buffer vector
- * - orientation_y - y component of normal buffer vector
- * - velocity_x - initial x component of open boundary patch velocity
- * - velocity_y - initial x component of open boundary patch velocity
- * - position_x - referential position of open boundary buffer TODO: Move to centre.
- * - inlet_density - referential position of open boundary buffer TODO: Move to centre.
- * - bufferWidth_x - width of buffer - dependent on number of layers
- * - bufferWidth_y - width of buffer - dependent on number of layers
- *
  */
 template< typename SPHConfig >
 class InletBuffer
 {
    public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
+   /**
+    * Define identifier of the open boundary buffer patch.
+    */
    std::string identifier = "inlet";
+
+   /**
+    * Define geometrical identifier of buffer.
+    * - orientation - unit normal buffer orientation [-]
+    * - position - referential point of buffer (corner or centre ) [m]
+    * - bufferWidth - with of buffer (depends on number of boundary layers) [m]
+    */
    VectorType orientation = { placeholderInletOrientation_xf, placeholderInletOrientation_yf };
    VectorType position = { placeholderInletPosition_xf, placeholderInletPosition_yf };
    VectorType bufferWidth = { placeholderInletWidth_xf, placeholderInletWidth_yf };
-   RealType bufferEdge = placeholderInletBufferEdgef; //TODO: Remove, deprecated
-
-   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf };
-   RealType density = placeholderInletDensityf;
-
-   std::string waterLevelHandling = "defined";
-   RealType waterLevel = 0.15;
 
    /**
-    * Define value handling on the buffer.
+    * Define value handling on the buffer. Three options are possible:
+    * - "fixed" sets constat value for given variable. Together with
+    *   this, values corresponding with given model needs to be specified.
     *
-    * - In case of "extrapolated" is chosen, treshold for the interpolation
-    *   matrix needs to be specify: 1e-3 first order, 1e3 zero order.
+    * - "profile" sets profile for given variable. Together with this
+    *   lambda function specifing the profil along the buffer needs to be specified.
+    *
+    * - "extrapolated" extrapolates given variable from fluid to boundary
+    *   buffer. Corresponding values are set based on initial condition.
+    *   Together with this, treshold for the interpolation matrix needs to be specify:
+    *   use 1e-3 first order, 1e3 zero order.
     */
    std::string rho_bc = "fixed";
-   std::string v_bc = "fiexd";
+   RealType density = placeholderInletDensityf;
 
-   float extrapolationDetTreshold = 1000.f;
+   std::string v_bc = "fiexd";
+   VectorType velocity = { placeholderInletVelocity_xf, placeholderInletVelocity_yf };
 };
 
+/**
+ * PARAMETERS OF OPEN BOUNDARY PATCH
+ *
+ * This class is used to store core parameters for inlet boundary patch
+ * i.e. inlet or outlet. The values are used only for initialization.
+ */
 template< typename SPHConfig >
 class OutletBuffer
 {
    public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
+   /**
+    * Define identifier of the open boundary buffer patch.
+    */
    std::string identifier = "outlet";
+
+   /**
+    * Define geometrical identifier of buffer.
+    * - orientation - unit normal buffer orientation [-]
+    * - position - referential point of buffer (corner or centre ) [m]
+    * - bufferWidth - with of buffer (depends on number of boundary layers) [m]
+    */
    VectorType orientation = { placeholderOutletOrientation_xf, placeholderOutletOrientation_yf };
    VectorType position = { placeholderOutletPosition_xf, placeholderOutletPosition_yf };
    VectorType bufferWidth = { placeholderOutletWidth_xf, placeholderOutletWidth_yf };
-   RealType bufferEdge = placeholderOutletBufferEdgef; //TODO: Remove, deprecated
-
-   VectorType velocity = { placeholderOutletVelocity_xf, placeholderOutletVelocity_yf };
-   RealType density = placeholderOutletDensityf;
-
-   std::string waterLevelHandling = "defined";
-   RealType waterLevel = 0.15;
 
    /**
-    * Define value handling on the buffer.
+    * Define value handling on the buffer. Three options are possible:
+    * - "fixed" sets constat value for given variable. Together with
+    *   this, values corresponding with given model needs to be specified.
     *
-    * - In case of "extrapolated" is chosen, treshold for the interpolation
-    *   matrix needs to be specify: 1e-3 first order, 1e3 zero order
+    * - "profile" sets profile for given variable. Together with this
+    *   lambda function specifing the profil along the buffer needs to be specified.
+    *
+    * - "extrapolated" extrapolates given variable from fluid to boundary
+    *   buffer. Corresponding values are set based on initial condition.
+    *   Together with this, treshold for the interpolation matrix needs to be specify:
+    *   use 1e-3 first order, 1e3 zero order.
     */
    std::string rho_bc = "extrapolated";
+   RealType density = placeholderOutletDensityf;
+
    std::string v_bc = "extrapolated";
+   VectorType velocity = { placeholderOutletVelocity_xf, placeholderOutletVelocity_yf };
 
    float extrapolationDetTreshold = 1000.f;
 };
