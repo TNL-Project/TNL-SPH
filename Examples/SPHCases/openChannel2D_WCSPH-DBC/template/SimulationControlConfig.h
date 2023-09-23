@@ -1,3 +1,5 @@
+#include <TNL/Devices/Cuda.h>
+
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {

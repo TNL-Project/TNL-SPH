@@ -1,68 +1,41 @@
-#include <iostream>
-#include <fstream> //temp, to write output
-
-#include <TNL/Devices/Cuda.h>
-#include <string>
-#include <sys/types.h>
-
 /**
- * Particle system.
+ * Include type of particle system.
  */
 #include "../../../Particles/ParticlesLinkedListFloating.h"
 
 /**
- * Particle system reader.
- **/
+ * Include type of SPH simulation.
+ */
+#include "../../../SPH/SPHOpen.h"
+
+/**
+ * Include particular formulation of SPH method/
+ */
+#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
+
+/**
+ * Include tools to read and write particle system.
+ */
 #include "../../../Readers/VTKReader.h"
 #include "../../../Writers/VTKWriter.h"
 #include "../../../Readers/readSPHSimulation.h"
 
 /**
- * Case configuration
- * One configuration for particle system, one for SPH.
+ * Include configuration files containing data for case definition.
+ * - "SimulationControlConfig.h" contains core informations to control the simulation
+ * - "ParticleConfig.h" contains information about domain and sizes of problem
+ * - "SPHCaseConfig.h" contains parameter of SPH method
+ * - "OpenBoundaryConfig.h" contains parameter of SPH method
  */
-//#include "ParticlesConfigNew.h"
-//#include "SPHCaseConfig.h"
-//#include "MeasuretoolConfig.h"
-//#include "SimulationControlConfig.h"
-//#include "OpenBoundaryConfigNew.h"
-
+#include "sources/SimulationControlConfig.h"
 #include "sources/ParticlesConfig.h"
 #include "sources/SPHCaseConfig.h"
-//#include "sources/MeasuretoolConfig.h"
-#include "sources/SimulationControlConfig.h"
 #include "sources/OpenBoundaryConfig.h"
-
-/**
- * SPH general toolds.
- */
-#include "../../../SPH/SPHOpen.h"
-
-/**
- * SPH model.
- */
-#include "../../../SPH/Models/WCSPH_DBC/Variables.h"
-#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
-#include "../../../SPH/Models/EquationOfState.h"
-
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Kernels.h"
-
-/**
- * Time step control.
- */
-#include "../../../SPH/TimeStep.h"
 
 using namespace TNL::ParticleSystem;
 
 int main( int argc, char* argv[] )
 {
-   /**
-    * Number of particles
-    */
-   using Device = Devices::Cuda;
-
    /**
     * Load simulation configs.
     * - Particle system config:
@@ -90,7 +63,6 @@ int main( int argc, char* argv[] )
 
    using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SimulationControl::DeviceType >;
    using ParticlesParams = ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
-
 
    /**
     * Particle and neighbor search model.
@@ -170,8 +142,6 @@ int main( int argc, char* argv[] )
     */
    sph.fluid->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile );
-   sph.fluid->variables->v = inletBufferParams.velocity;
-   sph.fluid->variables->v_swap = inletBufferParams.velocity;
 
    sph.boundary->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_bound );
@@ -179,26 +149,18 @@ int main( int argc, char* argv[] )
    sph.openBoundaryPatches[ 0 ]->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_inlet );
    sph.openBoundaryPatches[ 0 ]->readOpenBoundaryParameters( inletBufferParams );
-   //FIXME:
-   sph.openBoundaryPatches[ 0 ]->variables->v = inletBufferParams.velocity;
-   sph.openBoundaryPatches[ 0 ]->variables->v_swap = inletBufferParams.velocity;
 
    sph.openBoundaryPatches[ 1 ]->template readParticlesAndVariables< SimulationReaderType >(
          simulationControl.inputParticleFile_outlet );
    sph.openBoundaryPatches[ 1 ]->readOpenBoundaryParameters( outletBufferParams );
+
+   //FIXME - problem with 2D vectors:
+   sph.fluid->variables->v = inletBufferParams.velocity;
+   sph.fluid->variables->v_swap = inletBufferParams.velocity;
+   sph.openBoundaryPatches[ 0 ]->variables->v = inletBufferParams.velocity;
+   sph.openBoundaryPatches[ 0 ]->variables->v_swap = inletBufferParams.velocity;
    sph.openBoundaryPatches[ 1 ]->variables->v = inletBufferParams.velocity;
    sph.openBoundaryPatches[ 1 ]->variables->v_swap = inletBufferParams.velocity;
-
-
-   std::cout << "Inlet parameters: " << std::endl;
-   std::cout << "Orientation ................. " << sph.openBoundaryPatches[ 0 ]->parameters.orientation << std::endl;
-   std::cout << "Velocity .................... " << sph.openBoundaryPatches[ 0 ]->parameters.velocity << std::endl;
-   std::cout << "BufferWidth ................. " << sph.openBoundaryPatches[ 0 ]->parameters.bufferWidth << std::endl;
-
-  std::cout << "Inlet2 parameters: " << std::endl;
-  std::cout << "Orientation ................. " << sph.openBoundaryPatches[ 1 ]->parameters.orientation << std::endl;
-  std::cout << "Velocity .................... " << sph.openBoundaryPatches[ 1 ]->parameters.velocity << std::endl;
-  std::cout << "BufferWidth ................. " << sph.openBoundaryPatches[ 1 ]->parameters.bufferWidth << std::endl;
 
    /**
     * Define timers to measure computation time.
@@ -243,10 +205,10 @@ int main( int argc, char* argv[] )
       std::cout << "Integration... done. " << std::endl;
 
       timer_inlet.start();
-      sph.integrator->updateBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ] );
+      sph.integrator->updateBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], inletBufferParams );
       timer_inlet.stop();
       timer_outlet.start();
-      sph.integrator->updateOutletBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ] );
+      sph.integrator->updateOutletBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], outletBufferParams );
       timer_outlet.stop();
       std::cout << "Open boundary... done. " << std::endl;
 
@@ -277,7 +239,7 @@ int main( int argc, char* argv[] )
    }
 
    /**
-    * Output simulation stats.
+    * Write out simulation computation time.
     */
    float openBoundaryTime = timer_inlet.getRealTime() + timer_outlet.getRealTime();
 

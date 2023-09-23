@@ -46,12 +46,6 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
       parameters.position = config.position;
       parameters.orientation = config.orientation;
       parameters.bufferWidth = config.bufferWidth;
-
-      parameters.density = config.density;
-      parameters.velocity = config.velocity;
-
-      //if( config.extrapolationDetTreshold )
-      //   parameters.extrapolationDetTreshold = config.extrapolationDetTreshold;
    }
 
    struct OpenBoundaryParameters
@@ -60,13 +54,6 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
       VectorType position;
       VectorType orientation;
       VectorType bufferWidth;
-
-      RealType density;
-      VectorType velocity;
-
-      //Extrapolation
-      RealType extrapolationDetTreshold = 1000.f;
-
    };
    OpenBoundaryParameters parameters;
 

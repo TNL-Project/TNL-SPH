@@ -5,9 +5,12 @@ namespace ParticleSystem {
 namespace SPH {
 
 template< typename SPHFluidConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
 void
-VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
+VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt,
+                                                  FluidPointer& fluid,
+                                                  OpenBoundaryPointer& openBoundary,
+                                                  OpenBoundaryParams& openBoundaryParams )
 {
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
@@ -20,10 +23,11 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
    view_inletMark = 1;
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
-   const VectorType inletConstVelocity = openBoundary->parameters.velocity;
-   const RealType inletConstDensity = openBoundary->parameters.density;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
    const VectorType bufferPosition = openBoundary->parameters.position;
+
+   const VectorType inletConstVelocity = openBoundaryParams.velocity;
+   const RealType inletConstDensity = openBoundaryParams.density;
 
    //Load fluid fileds (variables + integrator variables)
    auto view_r_fluid = fluid->particles->getPoints().getView();
@@ -90,9 +94,12 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt, FluidPointer& flu
 }
 
 template< typename SPHFluidConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
 void
-VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary )
+VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt,
+                                                        FluidPointer& fluid,
+                                                        OpenBoundaryPointer& openBoundary,
+                                                        OpenBoundaryParams& openBoundaryParams)
 {
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
    GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
@@ -105,10 +112,11 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt, FluidPointe
    view_inletMark = 0;
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
-   const VectorType inletConstVelocity = openBoundary->parameters.velocity;
-   const RealType inletConstDensity = openBoundary->parameters.density;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
    const VectorType bufferPosition = openBoundary->parameters.position;
+
+   const VectorType inletConstVelocity = openBoundaryParams.velocity;
+   const RealType inletConstDensity = openBoundaryParams.density;
 
    //check for particles leaving the buffer
    auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable

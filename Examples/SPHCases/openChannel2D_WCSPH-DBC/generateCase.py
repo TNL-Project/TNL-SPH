@@ -70,30 +70,22 @@ sourcesPath = r'./sources'
 if not os.path.exists( sourcesPath ):
     os.makedirs( sourcesPath )
 
-boxL_n = round( boxL / dp )
-boxH_n = round( boxH / dp )
-
-fluidL_n = round( fluidL / dp )
-fluidH_n = round( fluidH / dp )
-
-inletL_n = inletBufferLayers
-inletH_n = round( inletBufferHeight / dp  )
-
-inlet2L_n = inlet2BufferLayers
-inlet2H_n = round( inlet2BufferHeight / dp  )
 
 ### Generate fluid particles
 fluid_rx = []; fluid_ry = []; fluid_rz = []
 fluid_density = []
 
-for x in range( fluidL_n ):
-    for z in range( fluidH_n ):
-        fluid_rx.append( inletBufferPosition_x + dp * ( x + 1 ) )
-        fluid_ry.append( 0. ) #we use only 2D case
-        fluid_rz.append( dp * ( z + 1 ) )
+fluidL_n = round( fluidL / dp )
+fluidH_n = round( fluidH / dp )
 
-        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+for x in range( fluidL_n ):
+    for y in range( fluidH_n ):
+        fluid_rx.append( inletBufferPosition_x + dp * ( x + 1 ) )
+        fluid_ry.append( dp * ( y + 1 ) )
+        fluid_rz.append( 0. )
+
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - y * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
         fluid_density.append( hydrostaticDensity )
 
 ### Generate buffer particles
@@ -101,18 +93,21 @@ inlet_rx = []; inlet_ry = []; inlet_rz = []
 inlet_vx = []; inlet_vy = []; inlet_vz = []
 inlet_density = []
 
+inletL_n = inletBufferLayers
+inletH_n = round( inletBufferHeight / dp  )
+
 for x in range( inletL_n ):
-    for z in range( inletH_n ):
+    for y in range( inletH_n ):
         inlet_rx.append( inletBufferPosition_x - inletBufferOrientation_x * dp * ( x ) )
-        inlet_ry.append( 0. ) #we use only 2D case
-        inlet_rz.append( inletBufferPosition_z + dp * ( z ) )
+        inlet_ry.append( inletBufferPosition_z + dp * ( y ) )
+        inlet_rz.append( 0. )
 
         inlet_vx.append( inletVelocity_x )
-        inlet_vy.append( 0. ) #we use only 2D case
-        inlet_vz.append( inletVelocity_z )
+        inlet_vy.append( inletVelocity_z )
+        inlet_vz.append( 0. )
 
-        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - y * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
         inlet_density.append( hydrostaticDensity )
 
 ### Generate buffer particles
@@ -120,24 +115,31 @@ inlet2_rx = []; inlet2_ry = []; inlet2_rz = []
 inlet2_vx = []; inlet2_vy = []; inlet2_vz = []
 inlet2_density = []
 
+inlet2L_n = inlet2BufferLayers
+inlet2H_n = round( inlet2BufferHeight / dp  )
+
 for x in range( inlet2L_n ):
-    for z in range( inlet2H_n ):
+    for y in range( inlet2H_n ):
         inlet2_rx.append( inlet2BufferPosition_x - inlet2BufferOrientation_x * dp * ( x ) )
-        inlet2_ry.append( 0. ) #we use only 2D case
-        inlet2_rz.append( inlet2BufferPosition_z + dp * ( z ) )
+        inlet2_ry.append( inlet2BufferPosition_z + dp * ( y ) )
+        inlet2_rz.append( 0. )
 
         inlet2_vx.append( inlet2Velocity_x )
-        inlet2_vy.append( 0. ) #we use only 2D case
-        inlet2_vz.append( inlet2Velocity_z )
+        inlet2_vy.append( inlet2Velocity_z )
+        inlet2_vz.append( 0. )
 
-        hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        hydrostaticPressure = rho0 * 9.81 * ( fluidH - y * dp )
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
         inlet2_density.append( hydrostaticDensity )
 
 ### Generate boundary particles
 box_rx = []; box_ry = []; box_rz = []
 ghost_rx = []; ghost_ry = []; ghost_rz = []
-box_density = [];
+box_density = []
+
+boxL_n = round( boxL / dp )
+boxH_n = round( boxH / dp )
+
 
 #:# left wall
 #:for layer in range( numberOfBoundaryLayers ):
@@ -160,49 +162,35 @@ for layer in range( numberOfBoundaryLayers ):
 
         #hydrostaticPressure = rho0 * 9.81 * ( fluidH - z * dp )
         hydrostaticPressure = rho0 * 9.81 * ( fluidH + layer * dp )
-        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0;
+        hydrostaticDensity = ( ( hydrostaticPressure / ( speedOfSound ** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
         box_density.append( hydrostaticDensity )
 
-#:x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
-#:
-#:# right wall
-#:for layer in range( numberOfBoundaryLayers ):
-#:    for z in range( boxH_n - 1 ):
-#:        box_rx.append( x_last + dp * layer )
-#:        box_ry.append( 0. ) #we use only 2D case
-#:        box_rz.append( ( z + 1 ) * dp )
-#:        box_density.append( rho0 );
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 import sys
 sys.path.append('../../tools/')
 import saveParticlesVTK
 import numpy as np
 
-r = np.array( ( fluid_rx, fluid_rz, fluid_ry ), dtype=float ).T #!!
-v = np.zeros( ( len( fluid_rx ), 3 ) )
-#rho = rho0 * np.ones( len( fluid_rx ) )
-rho = np.array( fluid_density, dtype=float )
-p = np.zeros( len( fluid_rx ) )
-ptype = np.zeros( len( fluid_rx ) )
+fluid_r = np.array( ( fluid_rx, fluid_ry, fluid_rz ), dtype=float ).T #!!
+fluid_v = np.zeros( ( len( fluid_rx ), 3 ) )
+fluid_rho = np.array( fluid_density, dtype=float )
+fluid_p = np.zeros( len( fluid_rx ) )
+fluid_ptype = np.zeros( len( fluid_rx ) )
 
-fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
 saveParticlesVTK.save_polydata( fluidToWrite, "sources/openchannel_fluid.vtk" )
 
-r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
-v = np.zeros( ( len( box_rx ), 3 ) )
-gn = np.array( ( ghost_rx, ghost_ry, ghost_rz ), dtype=float ).T #!!
-#rho = rho0 * np.ones( len( box_rx ) )
-rho = np.array( box_density, dtype=float )
-p = np.zeros( len( box_rx ) )
-ptype = np.ones( len( box_rx ) )
+boundary_r = np.array( ( box_rx, box_rz, box_ry ), dtype=float ).T #!!
+boundary_ghostNodes = np.array( ( ghost_rx, ghost_ry, ghost_rz ), dtype=float ).T #!!
+boundary_v = np.zeros( ( len( box_rx ), 3 ) )
+boundary_rho = np.array( box_density, dtype=float )
+boundary_p = np.zeros( len( box_rx ) )
+boundary_ptype = np.ones( len( box_rx ) )
 
-boxToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype, ghostNodes=gn )
+boxToWrite = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype, ghostNodes=boundary_ghostNodes )
 saveParticlesVTK.save_polydata( boxToWrite, "sources/openchannel_boundary.vtk" )
 
 r = np.array( ( inlet_rx, inlet_rz, inlet_ry ), dtype=float ).T #!!
 v = np.array( ( inlet_vx, inlet_vz, inlet_vy ), dtype=float ).T #!!
-#rho = rho0 * np.ones( len( inlet_rx ) )
 rho = np.array( inlet_density, dtype=float )
 p = np.zeros( len( inlet_rx ) )
 ptype = np.ones( len( inlet_rx ) )

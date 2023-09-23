@@ -178,13 +178,13 @@ public:
    }
 
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
-   template< typename FluidPointer, typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
    void
-   updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary );
+   updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
 
-   template< typename FluidPointer, typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
    void
-   updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary );
+   updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
 
    template< typename BoundaryPointer >
    void
