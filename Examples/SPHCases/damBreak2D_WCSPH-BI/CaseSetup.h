@@ -1,35 +1,7 @@
-#include <iostream>
-#include <fstream> //temp, to write output
-
-#include <TNL/Devices/Cuda.h>
-#include <string>
-#include <sys/types.h>
-
-/**
- *  Benchamrk stuff.
- */
-#include <TNL/Benchmarks/Benchmarks.h>
-
 /**
  * Particle system.
  */
 #include "../../../Particles/ParticlesLinkedListFloating.h"
-
-/**
- * Particle system reader.
- **/
-#include "../../../Readers/VTKReader.h"
-#include "../../../Writers/VTKWriter.h"
-#include "../../../Readers/readSPHSimulation.h"
-
-/**
- * Case configuration
- * One configuration for particle system, one for SPH.
- */
-#include "sources/ParticlesConfig.h"
-#include "sources/SPHCaseConfig.h"
-#include "sources/MeasuretoolConfig.h"
-#include "sources/SimulationControlConfig.h"
 
 /**
  * SPH general toolds.
@@ -39,27 +11,33 @@
 /**
  * SPH model.
  */
-#include "../../../SPH/Models/WCSPH_BI/Variables.h"
 #include "../../../SPH/Models/WCSPH_BI/Interactions.h"
-#include "../../../SPH/Models/EquationOfState.h"
-
-#include "../../../SPH/Models/EquationOfState.h"
-#include "../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../SPH/Kernels.h"
 
 /**
- * Time step control.
- */
-#include "../../../SPH/TimeStep.h"
+ * Particle system reader.
+ **/
+#include "../../../Readers/VTKReader.h"
+#include "../../../Writers/VTKWriter.h"
+#include "../../../Readers/readSPHSimulation.h"
 
 /**
- * Measuretool draft.
+ * Include configuration files containing data for case definition.
+ * - "SimulationControlConfig.h" contains core informations to control the simulation
+ * - "ParticleConfig.h" contains information about domain and sizes of problem
+ * - "SPHCaseConfig.h" contains parameter of SPH method
+ * - "MeasuretoolConfig.h" contains settings for processing variables during simulation
  */
-//#include "../../../SPH/Models/WCSPH_DBC/measuretool/Measuretool.h"
-#include "../../../SPH/shared/Measuretool.h"
-#include "../../../SPH/shared/ElasticBounce.h"
+#include "sources/SimulationControlConfig.h"
+#include "sources/ParticlesConfig.h"
+#include "sources/SPHCaseConfig.h"
+#include "sources/MeasuretoolConfig.h"
 
-using namespace TNL;
+/**
+ *  Benchamrk stuff.
+ */
+#include <TNL/Benchmarks/Benchmarks.h>
+
+using namespace TNL::ParticleSystem;
 
 int main( int argc, char* argv[] )
 {
@@ -104,14 +82,11 @@ int main( int argc, char* argv[] )
    using SPHModel = SPH::WCSPH_BI< ParticleSystem, SPHConfig >;
    using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
 
-   //I dont know where to place this yet.
-   using BoundaryCorrection = SPH::ElasticBounce< ParticleSystem, SPHConfig >;
-
    /**
-    * Define time step control.
-    * There is const time step option and variable time step option.
+    * Define additional special tools.
     */
-   using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
+    using BoundaryCorrection = TNL::ParticleSystem::SPH::ElasticBounce< ParticleSystem, SPHConfig >;
+
 
    /**
     * Define readers and writers to read and write initial geometry and results.
@@ -154,7 +129,7 @@ int main( int argc, char* argv[] )
     *
     * Add output timer to control saving to files.
     */
-   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   SPHParams::TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
    timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
@@ -225,7 +200,8 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sph.template interact< SPH::WendlandKernel2D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
+      sph.template interact< SPHParams::KernelFunction, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
+            sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
@@ -271,26 +247,34 @@ int main( int argc, char* argv[] )
           * Interpolate on the grid.
           */
          std::string outputFileNameInterpolation = simulationControl.outputFileName + std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
-         interpolator.template interpolate< SPH::WendlandKernel2D >( sph.fluid, sph.boundary, sphParams );
+         interpolator.template interpolate< SPHParams::KernelFunction >( sph.fluid, sph.boundary, sphParams );
          interpolator.save( outputFileNameInterpolation );
 
       }
 
+      /**
+       * Perform measuretool procedures.
+       * - Interpolate pressure in given points.
+       * - Obtain water level in given positions.
+       */
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
-         sensorInterpolation.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+         sensorInterpolation.template interpolate< SPHParams::KernelFunction, SPHParams::EOS >(
                sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
       }
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
       {
-         sensorWaterLevel.template interpolate< SPH::WendlandKernel2D, SPHParams::EOS >(
+         sensorWaterLevel.template interpolate< SPHParams::KernelFunction, SPHParams::EOS >(
                sph.fluid, sph.boundary, sphParams );
       }
 
       timeStepping.updateTimeStep();
    }
 
+   /**
+    * Write the results obtained from measureool.
+    */
    std::string outputFileNameInterpolation = simulationControl.outputFileName + "_sensors.dat";
    sensorInterpolation.save( outputFileNameInterpolation );
 
@@ -300,11 +284,8 @@ int main( int argc, char* argv[] )
    /**
     * Output simulation stats.
     */
-   float totalTime = ( timer_search.getRealTime() + \
-                       timer_interact.getRealTime() + \
-                       timer_integrate.getRealTime() + \
-                       timer_pressure.getRealTime()  + \
-                       timer_boundaryCorrection.getRealTime() );
+   float totalTime = ( timer_search.getRealTime() + timer_interact.getRealTime() + timer_integrate.getRealTime() + \
+                       timer_pressure.getRealTime() + timer_boundaryCorrection.getRealTime() );
 
    int steps = timeStepping.getStep();
    float totalTimePerStep = totalTime / steps;

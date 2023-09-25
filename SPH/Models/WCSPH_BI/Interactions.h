@@ -62,6 +62,9 @@ public:
    void
    computePressureFromDensity( PhysicalObjectPointer& physicalObject, SPHState& sphState );
 
+   /**
+    * Function to realize fluid-fluid and fluid-boundary interaction.
+    */
    template< typename FluidPointer,
              typename BoudaryPointer,
              typename SPHKernelFunction,
@@ -71,6 +74,16 @@ public:
              typename SPHState >
    void
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
+
+   template< typename FluidPointer,
+             typename BoudaryPointer,
+             typename SPHKernelFunction,
+             typename DiffusiveTerm,
+             typename ViscousTerm,
+             typename EOS,
+             typename SPHState >
+   void
+   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState );
 
 };
 

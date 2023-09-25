@@ -106,23 +106,6 @@ WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::interaction( FluidPointer
       }
    };
 
-   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& r_i, RealType* rho_i, RealType* gamma_i ) mutable
-   {
-      const VectorType r_j = view_points[ j ];
-      const VectorType r_ij = r_i - r_j;
-      const RealType drs = l2Norm( r_ij );
-      if( drs <= searchRadius )
-      {
-         const RealType rho_j = view_rho[ j ];
-
-         const RealType W = SPHKernelFunction::W( drs, h );
-
-         *rho_i += W * m;
-         *gamma_i += W * m / rho_j;
-      }
-   };
-
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points[ i ];
@@ -147,6 +130,56 @@ WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::interaction( FluidPointer
       }
    };
    SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+
+}
+
+template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
+template< typename FluidPointer,
+          typename BoudaryPointer,
+          typename SPHKernelFunction,
+          typename DiffusiveTerm,
+          typename ViscousTerm,
+          typename EOS,
+          typename SPHState >
+void
+WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::updateSolidBoundary( FluidPointer& fluid,
+                                                                            BoudaryPointer& boundary,
+                                                                            SPHState& sphState )
+{
+   /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
+   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
+
+   /* CONSTANT VARIABLES */
+   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType h = sphState.h;
+   const RealType m = sphState.mass;
+   const RealType rho0 = sphState.rho0;
+
+   /* VARIABLES AND FIELD ARRAYS */
+   const auto view_points = fluid->particles->getPoints().getView();
+   const auto view_rho = fluid->variables->rho.getView();
+
+   const auto view_points_bound = boundary->particles->getPoints().getView();
+   auto view_rho_bound = boundary->variables->rho.getView();
+   const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_n_bound = boundary->variables->n.getView();
+
+   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
+         VectorType& r_i, RealType* rho_i, RealType* gamma_i ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius )
+      {
+         const RealType rho_j = view_rho[ j ];
+
+         const RealType W = SPHKernelFunction::W( drs, h );
+
+         *rho_i += W * m;
+         *gamma_i += W * m / rho_j;
+      }
+   };
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
