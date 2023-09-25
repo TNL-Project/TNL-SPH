@@ -5,6 +5,7 @@
 #include "../../../../SPH/Kernels.h"
 
 #include "../../../../SPH/SPHTraits.h"
+#include "../../../../SPH/TimeStep.h"
 #include <limits>
 
 namespace TNL {
@@ -92,6 +93,7 @@ class SPHParamsConfig
    /**
     * Define initial timestep [s].
     */
+   using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
    float dtInit = placeholderTimeStepf;
 
    /**

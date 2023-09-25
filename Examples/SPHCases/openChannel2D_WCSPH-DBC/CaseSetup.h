@@ -9,7 +9,7 @@
 #include "../../../SPH/SPHOpen.h"
 
 /**
- * Include particular formulation of SPH method/
+ * Include particular formulation of SPH method.
  */
 #include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
 

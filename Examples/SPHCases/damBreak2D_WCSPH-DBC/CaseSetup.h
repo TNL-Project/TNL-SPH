@@ -1,15 +1,17 @@
-#include <iostream>
-#include <fstream> //temp, to write output
-
 /**
- *  Benchamrk stuff.
- */
-#include <TNL/Benchmarks/Benchmarks.h>
-
-/**
- * Particle system.
+ * Include type of particle system.
  */
 #include "../../../Particles/ParticlesLinkedListFloating.h"
+
+/**
+ * Include type of SPH simulation.
+ */
+#include "../../../SPH/SPH.h"
+
+/**
+ * Include particular formulation of SPH method.
+ */
+#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
 
 /**
  * Particle system reader.
@@ -19,37 +21,21 @@
 #include "../../../Readers/readSPHSimulation.h"
 
 /**
- * Case configuration
- * One configuration for particle system, one for SPH.
+ * Include configuration files containing data for case definition.
+ * - "SimulationControlConfig.h" contains core informations to control the simulation
+ * - "ParticleConfig.h" contains information about domain and sizes of problem
+ * - "SPHCaseConfig.h" contains parameter of SPH method
+ * - "MeasuretoolConfig.h" contains settings for processing variables during simulation
  */
+#include "sources/SimulationControlConfig.h"
 #include "sources/ParticlesConfig.h"
 #include "sources/SPHCaseConfig.h"
 #include "sources/MeasuretoolConfig.h"
-#include "sources/SimulationControlConfig.h"
-
 
 /**
- * SPH general toolds.
+ *  Used to write computation time to json format.
  */
-#include "../../../SPH/SPH.h"
-
-/**
- * SPH model.
- */
-#include "../../../SPH/Models/WCSPH_DBC/Variables.h"
-#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
-
-#include "../../../SPH/Kernels.h" //TODO: Move to another.
-
-/**
- * Time step control.
- */
-#include "../../../SPH/TimeStep.h"
-
-/**
- * Measuretool draft.
- */
-#include "../../../SPH/shared/Measuretool.h"
+#include <TNL/Benchmarks/Benchmarks.h>
 
 using namespace TNL::ParticleSystem;
 
@@ -260,6 +246,11 @@ int main( int argc, char* argv[] )
 
       }
 
+      /**
+       * Perform measuretool procedures.
+       * - Interpolate pressure in given points.
+       * - Obtain water level in given positions.
+       */
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
          sensorInterpolation.template interpolate< SPHParams::KernelFunction, SPHParams::EOS >(
@@ -275,6 +266,9 @@ int main( int argc, char* argv[] )
       timeStepping.updateTimeStep();
    }
 
+   /**
+    * Write the results obtained from measureool.
+    */
    std::string outputFileNameInterpolation = simulationControl.outputFileName + "_sensors.dat";
    sensorInterpolation.save( outputFileNameInterpolation );
 
