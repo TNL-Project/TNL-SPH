@@ -1,5 +1,5 @@
-#include "../../../../SPH/shared/Measuretool.h"
-#include "../../../../SPH/SPHTraits.h"
+#include <SPH/shared/Measuretool.h>
+#include <SPH/SPHTraits.h>
 
 namespace TNL {
 namespace ParticleSystem {

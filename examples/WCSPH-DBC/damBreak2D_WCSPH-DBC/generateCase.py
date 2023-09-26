@@ -119,7 +119,7 @@ generate90degCorner( 0, 0., -1, -1 )
 generate90degCorner( x_last, 0., +1, -1 )
 
 import sys
-sys.path.append('../../tools/')
+sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import numpy as np
 

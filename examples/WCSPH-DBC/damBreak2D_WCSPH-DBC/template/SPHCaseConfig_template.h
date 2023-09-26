@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../../../../SPH/Models/EquationOfState.h"
-#include "../../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../../SPH/Models/VisousTerms.h"
-#include "../../../../SPH/Kernels.h"
+#include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/DiffusiveTerms.h>
+#include <SPH/Models/VisousTerms.h>
+#include <SPH/Kernels.h>
 
-#include "../../../../SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
 
-#include "../../../../SPH/SPHTraits.h"
-#include "../../../../SPH/TimeStep.h"
+#include <SPH/SPHTraits.h>
+#include <SPH/TimeStep.h>
 #include <limits>
 
 namespace TNL {

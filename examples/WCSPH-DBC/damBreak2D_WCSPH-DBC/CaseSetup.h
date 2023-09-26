@@ -1,24 +1,24 @@
 /**
  * Include type of particle system.
  */
-#include "../../../Particles/ParticlesLinkedListFloating.h"
+#include <Particles/ParticlesLinkedListFloating.h>
 
 /**
  * Include type of SPH simulation.
  */
-#include "../../../SPH/SPH.h"
+#include <SPH/SPH.h>
 
 /**
  * Include particular formulation of SPH method.
  */
-#include "../../../SPH/Models/WCSPH_DBC/Interactions.h"
+#include <SPH/Models/WCSPH_DBC/Interactions.h>
 
 /**
  * Particle system reader.
- **/
-#include "../../../Readers/VTKReader.h"
-#include "../../../Writers/VTKWriter.h"
-#include "../../../Readers/readSPHSimulation.h"
+ */
+#include <Readers/VTKReader.h>
+#include <Writers/VTKWriter.h>
+#include <Readers/readSPHSimulation.h>
 
 /**
  * Include configuration files containing data for case definition.
