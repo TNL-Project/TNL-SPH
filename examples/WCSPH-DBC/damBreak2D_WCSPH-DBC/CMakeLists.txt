@@ -10,7 +10,7 @@ set(TARGETS
 
 foreach(target IN ITEMS ${TARGETS})
     # add special flags used in lbm3d
-    target_compile_definitions(${target} PUBLIC "-DUSE_CUDA")
+    target_compile_definitions(${target} PUBLIC "-DHAVE_CUDA")
 
     # enable OpenMP for the target
    find_package(OpenMP COMPONENTS CXX)
