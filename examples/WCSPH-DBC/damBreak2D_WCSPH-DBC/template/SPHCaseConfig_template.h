@@ -52,11 +52,11 @@ class SPHConfig
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename SPHConfigType >
+template< typename Device >
 class SPHParamsConfig
 {
    public:
-   using SPHConfig = SPHConfigType;
+   using SPHConfig = SPHConfig< Device >;
 
    /**
     * Define SPH parameters connected to the resolution.

@@ -12,50 +12,6 @@ namespace ParticleSystem {
 namespace ParticleSystemConfig {
 
 /**
- * PARAMETERS OF PARTICLE SYSTEM AND NEIGHBOR SEARCH (necessary)
- *
- * This class is used to store parameters necessary for particle system,
- * neighbor search and SPH simulation initialization. This is basically
- * just placeholder to load the data.
- *
- * It is necessary to enter:
- * - Number of loaded particles and nuber of allocated particles for
- *   all "objects" (i.e. fluid, boundary, inlet buffer, etc.) of the
- *   SPH simulation.
- * -- numberOfParticles - number of loaded fluid particles
- * -- numberOfAllocatedParticles - number of initially allocated fluid
- * -- numberOfBoundaryParticles - number of loaded bound particles
- * -- numberOfAllocatedBoundaryParticles - number of initially allocated bound
- *
- * - searchRadius - define the size of grid cell
- * - gridXsize - define the size of grid in dim X
- * - gridYsize - define the size of grid in dim Y
- * - gridXorigin - define the origin of grid in dim X
- * - gridYorigin - define the origin of grid in dim Y
- */
-template< typename ParticleSystemConfig >
-class ParticleInitialSetup
-{
-   public:
-   using ParticlesTraitsType = ParticlesTraits< ParticleSystemConfig, typename ParticleSystemConfig::DeviceType >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
-   using PointType = typename ParticlesTraitsType::PointType;
-
-   const int numberOfParticles = placeholderFluidParticles;
-   const int numberOfAllocatedParticles = placeholderFluidParticles;
-   const int numberOfBoundaryParticles = placeholderBoundaryParticles;
-   const int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
-
-   const float searchRadius = placeholderSearchRadius * 1.001;
-   const int gridXsize = placeholderGridXSize;
-   const int gridYsize = placeholderGridYSize;
-   const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf };
-
-   const IndexVectorType gridSize = { gridXsize, gridYsize };
-   const int numberOfGridCells = gridXsize * gridYsize;
-};
-
-/**
  * TYPES OF PARTICLE SYSTEM AND NEIGHBOR SEARCH (necessary)
  *
  * This class is used to store parameters necessary for particle system,
@@ -88,6 +44,52 @@ class ParticleSystemConfig
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
+};
+
+
+/**
+ * PARAMETERS OF PARTICLE SYSTEM AND NEIGHBOR SEARCH (necessary)
+ *
+ * This class is used to store parameters necessary for particle system,
+ * neighbor search and SPH simulation initialization. This is basically
+ * just placeholder to load the data.
+ *
+ * It is necessary to enter:
+ * - Number of loaded particles and nuber of allocated particles for
+ *   all "objects" (i.e. fluid, boundary, inlet buffer, etc.) of the
+ *   SPH simulation.
+ * -- numberOfParticles - number of loaded fluid particles
+ * -- numberOfAllocatedParticles - number of initially allocated fluid
+ * -- numberOfBoundaryParticles - number of loaded bound particles
+ * -- numberOfAllocatedBoundaryParticles - number of initially allocated bound
+ *
+ * - searchRadius - define the size of grid cell
+ * - gridXsize - define the size of grid in dim X
+ * - gridYsize - define the size of grid in dim Y
+ * - gridXorigin - define the origin of grid in dim X
+ * - gridYorigin - define the origin of grid in dim Y
+ */
+template< typename Device >
+class ParticleInitialSetup
+{
+   public:
+   using ParticlesConfig = ParticleSystemConfig< Device >;
+   using ParticlesTraitsType = ParticlesTraits< ParticlesConfig, Device >;
+   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using PointType = typename ParticlesTraitsType::PointType;
+
+   const int numberOfParticles = placeholderFluidParticles;
+   const int numberOfAllocatedParticles = placeholderFluidParticles;
+   const int numberOfBoundaryParticles = placeholderBoundaryParticles;
+   const int numberOfAllocatedBoundaryParticles = placeholderBoundaryParticles;
+
+   const float searchRadius = placeholderSearchRadius * 1.001;
+   const int gridXsize = placeholderGridXSize;
+   const int gridYsize = placeholderGridYSize;
+   const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf };
+
+   const IndexVectorType gridSize = { gridXsize, gridYsize };
+   const int numberOfGridCells = gridXsize * gridYsize;
 };
 
 } //namespace ParticleSystemConfig
