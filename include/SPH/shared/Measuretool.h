@@ -1,5 +1,6 @@
 #include <TNL/Meshes/Writers/VTKWriter.h>
 #include <TNL/Containers/NDArray.h>
+#include <TNL/Pointers/SharedPointer.h>
 
 #include "../SPHTraits.h"
 #include "../../Particles/neighborSearchLoop.h"

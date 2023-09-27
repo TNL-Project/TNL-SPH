@@ -29,7 +29,11 @@ class NoneDiffusiveTerm
 };
 
 /**
- * \brief Diffusive term proposed by Molteni & Colagrossi.
+ * \brief Diffusive term proposed by Molteni & Colagrossi (Molteni & Colagrossi, 2009).
+ *
+ * \tparam SPHCaseConfig is a default config definig all data types.
+
+
  */
 template< typename SPHCaseConfig >
 class MolteniDiffusiveTerm
