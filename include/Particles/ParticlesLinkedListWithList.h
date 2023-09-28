@@ -4,8 +4,8 @@
 #include <TNL/Pointers/SharedPointer.h>
 #include <TNL/Algorithms/sort.h>
 
+#include "../SPH/shared/thrustExecPolicySelector.h"
 #include <thrust/sort.h>
-#include <thrust/execution_policy.h>
 #include <thrust/gather.h>
 
 #include "ParticlesTraits.h"

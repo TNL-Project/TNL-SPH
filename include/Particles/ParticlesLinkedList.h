@@ -6,8 +6,8 @@
 
 #include <limits> //UINT_MAX
 
+#include "../SPH/shared/thrustExecPolicySelector.h"
 #include <thrust/sort.h>
-#include <thrust/execution_policy.h>
 #include <thrust/gather.h>
 
 #include "ParticlesTraits.h"

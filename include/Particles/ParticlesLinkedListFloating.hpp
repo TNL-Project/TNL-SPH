@@ -129,14 +129,16 @@ ParticlesLinkedList< ParticleConfig, Device >::sortParticles()
    auto view_particleCellIndices = this->particleCellInidices.getView();
    auto view_map = this->sortPermutations->getView();
    this->sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-   thrust::sort_by_key( thrust::device,
+   using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< Device >;
+   ThrustDeviceType thrustDevice;
+   thrust::sort_by_key( thrustDevice,
                         view_particleCellIndices.getArrayData() + firstActiveParticle,
                         view_particleCellIndices.getArrayData() + lastActiveParticle + 1,
                         view_map.getArrayData() ); //TODO: replace thrust::device
 
    auto view_points = this->getPoints().getView();
    auto view_points_swap = this->points_swap.getView();
-   thrust::gather( thrust::device,
+   thrust::gather( thrustDevice,
                    view_map.getArrayData(),
                    view_map.getArrayData() + numberOfParticle,
                    view_points.getArrayData() + firstActiveParticle,

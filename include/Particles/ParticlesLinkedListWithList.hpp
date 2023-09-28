@@ -180,12 +180,14 @@ Particles< ParticleConfig, DeviceType >::sortParticles()
    auto view_map = this->sortPermutations->getView();
 
    sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
-   thrust::sort_by_key( thrust::device, view_particleCellIndices.getArrayData(),
+   using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
+   ThrustDeviceType thrustDevice;
+   thrust::sort_by_key( thrustDevice, view_particleCellIndices.getArrayData(),
          view_particleCellIndices.getArrayData() + numberOfParticle, view_map.getArrayData() ); //TODO: replace thrust::device
 
    auto view_points = this->getPoints().getView();
    auto view_points_swap = this->points_swap.getView();
-   thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
+   thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticle,
          view_points.getArrayData(), view_points_swap.getArrayData() );
    this->getPoints().swap( this->points_swap );
 }
@@ -380,4 +382,3 @@ Particles< ParticleConfig, DeviceType >::saveNeighborList(std::string neigborLis
 
 } //namespace TNL
 } //namespace Particles
-

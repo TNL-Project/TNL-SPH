@@ -2,7 +2,7 @@
 
 #include <TNL/Containers/Array.h>
 #include <TNL/Containers/ArrayView.h>
-#include <thrust/execution_policy.h>
+#include "../../shared/thrustExecPolicySelector.h"
 #include <thrust/gather.h>
 
 #include "Variables.h"
@@ -16,11 +16,11 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class IntegratorVariables
 {
    public:
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHFluidTraitsType = SPHFluidTraits< SPHConfig >;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using RealType = typename SPHFluidTraitsType::RealType;
@@ -29,7 +29,7 @@ class IntegratorVariables
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
    using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    IntegratorVariables( GlobalIndexType size )
    : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size )
@@ -49,9 +49,11 @@ class IntegratorVariables
       auto view_rho_old_swap = rho_old_swap.getView();
       auto view_v_old_swap = v_old_swap.getView();
 
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_rho_old.getArrayData() + firstActiveParticle, view_rho_old_swap.getArrayData() + firstActiveParticle );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_v_old.getArrayData() + firstActiveParticle, view_v_old_swap.getArrayData() + firstActiveParticle );
 
       rho_old.swap( rho_old_swap );
@@ -85,19 +87,19 @@ class IntegratorVariables
    VectorArrayType v_old_swap;
 };
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class VerletIntegrator
 {
 public:
 
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename SPHFluidConfig::DeviceType;
+   using SPHFluidTraitsType = SPHFluidTraits< SPHConfig >;
+   using DeviceType = typename SPHConfig::DeviceType;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using RealType = typename SPHFluidTraitsType::RealType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
 
-   using IntegratorVariablesType = IntegratorVariables< SPHFluidConfig >;
+   using IntegratorVariablesType = IntegratorVariables< SPHConfig >;
    using IntegratorVariablesPointer = typename Pointers::SharedPointer< IntegratorVariablesType, DeviceType >;
 
    VerletIntegrator() = default;

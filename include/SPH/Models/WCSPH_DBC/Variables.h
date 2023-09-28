@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../SPHTraits.h"
+#include "../../shared/thrustExecPolicySelector.h"
 #include <thrust/gather.h>
 #include "BoundaryConditionsTypes.h"
 
@@ -52,9 +53,11 @@ class SPHFluidVariables
       auto view_rho_swap = rho_swap.getView();
       auto view_v_swap = v_swap.getView();
 
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_rho.getArrayData(), view_rho_swap.getArrayData() );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_v.getArrayData(), view_v_swap.getArrayData() );
 
       rho.swap( rho_swap );
@@ -72,9 +75,11 @@ class SPHFluidVariables
       auto view_rho_swap = rho_swap.getView();
       auto view_v_swap = v_swap.getView();
 
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
 
       rho.swap( rho_swap );
@@ -159,7 +164,8 @@ class SPHBoundaryVariables< SPHState,
 {
 public:
    using Base = SPHFluidVariables< SPHState >;
-   using SPHFluidTraitsType = SPHFluidTraits< typename SPHState::SPHConfig >;
+   using SPHConfig = typename SPHState::SPHConfig;
+   using SPHFluidTraitsType = SPHFluidTraits< SPHConfig >;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
@@ -180,7 +186,9 @@ public:
       auto view_ghostNodes = ghostNodes.getView();
       auto view_ghostNodes_swap = ghostNodes_swap.getView();
 
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_ghostNodes.getArrayData() + firstActiveParticle, view_ghostNodes_swap.getArrayData() + firstActiveParticle );
 
       ghostNodes.swap( ghostNodes_swap );

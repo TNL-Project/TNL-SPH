@@ -4,10 +4,10 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
 void
-VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt,
+VerletIntegrator< SPHConfig >::updateBuffer( RealType dt,
                                                   FluidPointer& fluid,
                                                   OpenBoundaryPointer& openBoundary,
                                                   OpenBoundaryParams& openBoundaryParams )
@@ -58,7 +58,9 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt,
       return;
 
    //Sort particles by mark
-   thrust::sort_by_key( thrust::device, view_inletMark.getArrayData(),
+   using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+   ThrustDeviceType thrustDevice;
+   thrust::sort_by_key( thrustDevice, view_inletMark.getArrayData(),
                         view_inletMark.getArrayData() + numberOfBufferParticles,
                         thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(),
                                                                        view_v_buffer.getArrayData(),
@@ -93,10 +95,10 @@ VerletIntegrator< SPHFluidConfig >::updateBuffer( RealType dt,
    fluid->setLastActiveParticle( fluid->getLastActiveParticle() + numberOfRetyped );
 }
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
 void
-VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt,
+VerletIntegrator< SPHConfig >::updateOutletBuffer( RealType dt,
                                                         FluidPointer& fluid,
                                                         OpenBoundaryPointer& openBoundary,
                                                         OpenBoundaryParams& openBoundaryParams)
@@ -142,7 +144,9 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt,
    //openBoundary->sortParticles();
 
    //TODO: Sort particle based on mark. This should be replaced with something.
-   thrust::sort_by_key( thrust::device,
+   using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+   ThrustDeviceType thrustDevice;
+   thrust::sort_by_key( thrustDevice,
                         view_inletMark.getArrayData(),
                         view_inletMark.getArrayData() + numberOfBufferParticles,
                         thrust::make_zip_iterator( thrust::make_tuple(
@@ -168,9 +172,9 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt,
 
    //const PairIndexType particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
    PairIndexType particleRangeToCheck;
-   if constexpr( SPHFluidConfig::spaceDimension == 2 )
+   if constexpr( SPHConfig::spaceDimension == 2 )
       particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
-   else if constexpr( SPHFluidConfig::spaceDimension == 3 )
+   else if constexpr( SPHConfig::spaceDimension == 3 )
       particleRangeToCheck = fluid->particles->getFirstLastParticleInBlockOfCells( gridColumnAuxTrick );
 
    auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
@@ -193,7 +197,7 @@ VerletIntegrator< SPHFluidConfig >::updateOutletBuffer( RealType dt,
    const GlobalIndexType fluidToBufferCount = Algorithms::reduce< DeviceType >(
          particleRangeToCheck[ 0 ], particleRangeToCheck[ 1 ] + 1, checkFluidParticles, TNL::Plus() );
 
-   thrust::sort( thrust::device,
+   thrust::sort( thrustDevice,
                  receivingParticleMark_view.getArrayData(),
                  receivingParticleMark_view.getArrayData() + numberOfBufferParticles );
 
