@@ -121,7 +121,7 @@ for layer in range( numberOfBoundaryLayers ):
 
 ### Save particles to vtk files
 import sys
-sys.path.append('../../tools/')
+sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import numpy as np
 

@@ -1,5 +1,6 @@
 # configure the include path(s) according to your TNL installation
 TNL_INCLUDE_DIRS := -I ~/.local/include
+TNLSPH_INCLUDE_DIRS := -I ../../../include
 
 WITH_OPENMP := yes
 WITH_DEBUG := no
@@ -18,7 +19,7 @@ CXX := g++
 CUDA_CXX := nvcc
 
 # host compiler flags
-CXXFLAGS := -std=c++17 $(TNL_INCLUDE_DIRS)
+CXXFLAGS := -std=c++17 $(TNL_INCLUDE_DIRS) $(TNLSPH_INCLUDE_DIRS)
 ifeq ($(WITH_DEBUG),yes)
     CXXFLAGS += -O0 -g
 else
@@ -26,7 +27,7 @@ else
 endif
 
 # CUDA compiler flags
-CUDA_CXXFLAGS := -std=c++17 --expt-relaxed-constexpr --expt-extended-lambda $(TNL_INCLUDE_DIRS)
+CUDA_CXXFLAGS := -std=c++17 --expt-relaxed-constexpr --expt-extended-lambda $(TNL_INCLUDE_DIRS) $(TNLSPH_INCLUDE_DIRS)
 CUDA_CXXFLAGS += -DHAVE_CUDA -DNDEBUG
 CUDA_CXXFLAGS += -lineinfo -use_fast_math -O3 -diag-suppress 20012
 ifeq ($(CUDA_ARCH),auto)
