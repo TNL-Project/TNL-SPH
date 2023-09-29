@@ -9,6 +9,10 @@ project(TNL-SPH
    LANGUAGES CXX CUDA
 )
 
+# Options to build
+option( TNL-SPH_USE_SYSTEM_GTEST "Use GTest installed in the local system and do not download the latest version" ON )
+option( TNL-SPH_BUILD_TESTS "Build tests" ON )
+
 # Require C++17, and disable compiler-specific extensions (if possible)
 foreach(lang CXX CUDA)
     set(CMAKE_${lang}_STANDARD 17)
@@ -44,6 +48,42 @@ if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
     endif()
 endif()
 
+# Build tests using gtest
+if( TNL-SPH_BUILD_TESTS )
+   enable_testing()
+
+   # repeat failed tests to tolerate sporadic failures
+   set( CMAKE_CTEST_ARGUMENTS ${CMAKE_CTEST_ARGUMENTS} --repeat until-pass:2 )
+
+   # let CTest write test results in the JUnit XML format
+   set( CMAKE_CTEST_ARGUMENTS ${CMAKE_CTEST_ARGUMENTS} --output-junit "${CMAKE_BINARY_DIR}/tests-report.xml" )
+
+   if( TNL-SPH_USE_SYSTEM_GTEST OR TNL-SPH_OFFLINE_BUILD )
+      # find GoogleTest installed in the local system
+      find_package( GTest REQUIRED )
+   else()
+      # fetch and build GoogleTest from source
+      include( FetchGoogleTest )
+   endif()
+   set( CXX_TESTS_FLAGS )
+   set( CUDA_TESTS_FLAGS )
+   set( TESTS_LIBRARIES GTest::gtest_main )
+   set( TESTS_LINKER_FLAGS "" )
+
+   if( TNL_BUILD_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug" )
+      # set compiler flags needed for code coverage
+      set( CXX_TESTS_FLAGS ${CXX_TESTS_FLAGS} --coverage )
+      set( CUDA_TESTS_FLAGS ${CUDA_TESTS_FLAGS} -Xcompiler --coverage )
+      set( TESTS_LINKER_FLAGS ${TESTS_LINKER_FLAGS} --coverage )
+   endif()
+
+   # TODO: Add mpi tests.
+endif()
+
+
+
+
+
 # Set the project's include path
 include_directories(include)
 
@@ -65,4 +105,4 @@ endif()
 # Add project subdirectories
 add_subdirectory(include)
 add_subdirectory(examples)
-# add_subdirectory(src)
+add_subdirectory(src)
