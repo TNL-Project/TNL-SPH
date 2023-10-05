@@ -991,16 +991,37 @@ int main(int argc, char* argv[])
 	auto NN = vd.getCellListGPU/*<CELLLIST_GPU_SPARSE<3,float>>*/(2*H / 2.0);
 	NN.setBoxNN(2);
 
-   int tot_steps = 0;
+
+   //Added timers to track every operation inside the time loop
 	timer tot_sim;
-   timer tot_vcluster; float vcluster_total_time = 0.f ;
-   timer tot_interaction; float interaction_total_time = 0.f ;
-   timer tot_pressure; float pressure_total_time = 0.f ;
-   timer tot_integrate; float integration_total_time = 0.f;
-   timer tot_rebalancing; float rebalanting_total_time = 0.f;
-   timer tot_map; float map_total_time = 0.f;
-   timer tot_reductions; float reduction_total_time = 0.f;
-   timer tot_ghosts; float ghost_total_time = 0.f;
+
+   timer timer_vcluster;
+   float vcluster_total_time = 0.f ;
+
+   timer timer_interaction;
+   float interaction_total_time = 0.f ;
+
+   timer tot_pressure;
+   float pressure_total_time = 0.f ;
+
+   timer timer_integrate;
+   float integration_total_time = 0.f;
+
+   timer tot_rebalancing;
+   float rebalanting_total_time = 0.f;
+
+   timer timer_map;
+   float map_total_time = 0.f;
+
+   timer timer_reductions;
+   float reduction_total_time = 0.f;
+
+   timer timer_ghosts;
+   float ghost_total_time = 0.f;
+
+   //Cout the total number of steps
+   int tot_steps = 0;
+
 	tot_sim.start();
 
 	size_t write = 0;
@@ -1011,10 +1032,10 @@ int main(int argc, char* argv[])
 	{
       tot_steps++;
 
-      tot_vcluster.start();
+      timer_vcluster.start();
 		Vcluster<> & v_cl = create_vcluster();
-      tot_vcluster.stop();
-      vcluster_total_time += tot_vcluster.getwct();
+      timer_vcluster.stop();
+      vcluster_total_time += timer_vcluster.getwct();
 		timer it_time;
 		it_time.start();
 
@@ -1040,10 +1061,10 @@ int main(int argc, char* argv[])
       tot_rebalancing.stop();
       rebalanting_total_time += tot_rebalancing.getwct();
 
-      tot_map.start();
+      timer_map.start();
 		vd.map(RUN_ON_DEVICE);
-      tot_map.stop();
-      rebalanting_total_time += tot_map.getwct();
+      timer_map.stop();
+      rebalanting_total_time += timer_map.getwct();
 
 		// Calculate pressure from the density
       tot_pressure.start();
@@ -1053,19 +1074,19 @@ int main(int argc, char* argv[])
 
 		real_number max_visc = 0.0;
 
-      tot_ghosts.start();
+      timer_ghosts.start();
 		vd.ghost_get<type,rho,Pressure,velocity>(RUN_ON_DEVICE);
-      tot_ghosts.stop();
-      ghost_total_time += tot_ghosts.getwct();
+      timer_ghosts.stop();
+      ghost_total_time += timer_ghosts.getwct();
 
 
 		// Calc forces
-      tot_interaction.start();
+      timer_interaction.start();
 		calc_forces(vd,NN,max_visc,cnt,fluid_ids,border_ids);
-      tot_interaction.stop();
-      interaction_total_time += tot_interaction.getwct();
+      timer_interaction.stop();
+      interaction_total_time += timer_interaction.getwct();
 
-      tot_reductions.start();
+      timer_reductions.start();
 		// Get the maximum viscosity term across processors
 		v_cl.max(max_visc);
 		v_cl.execute();
@@ -1073,11 +1094,11 @@ int main(int argc, char* argv[])
 		// Calculate delta t integration
 		real_number dt = calc_deltaT(vd,max_visc);
 
-      tot_reductions.stop();
-      reduction_total_time += tot_reductions.getwct();
+      timer_reductions.stop();
+      reduction_total_time += timer_reductions.getwct();
 
 		// VerletStep or euler step
-      tot_integrate.start();
+      timer_integrate.start();
 		it++;
 		if (it < 40)
 			verlet_int(vd,dt);
@@ -1086,8 +1107,8 @@ int main(int argc, char* argv[])
 			euler_int(vd,dt);
 			it = 0;
 		}
-      tot_integrate.stop();
-      integration_total_time += tot_integrate.getwct();
+      timer_integrate.stop();
+      integration_total_time += timer_integrate.getwct();
 
 		t += dt;
 
@@ -1145,43 +1166,45 @@ int main(int argc, char* argv[])
 	}
 
 	tot_sim.stop();
-	std::cout << "Time to complete: " << tot_sim.getwct() << " seconds" << std::endl;
-	std::cout << "Vcluster: " << vcluster_total_time << " seconds" << std::endl;
-	std::cout << "Interaction: " << interaction_total_time << " seconds" << std::endl;
-	std::cout << "Pressure: " << pressure_total_time << " seconds" << std::endl;
-	std::cout << "Integration: " << integration_total_time << " seconds" << std::endl;
-	std::cout << "Reabalancing: " << rebalanting_total_time << " seconds" << std::endl;
-	std::cout << "Map: " << map_total_time << " seconds" << std::endl;
-	std::cout << "Reduction: " << reduction_total_time << " seconds" << std::endl;
-	std::cout << "Ghost: " << ghost_total_time << " seconds" << std::endl;
-	std::cout << "Number of steps: " << tot_steps << " seconds" << std::endl;
 
-   //write output to the file:
-   std::ofstream myfile;
-   myfile.open ("timers.json");
+   std::cout << "TIME MEASUREMENT RESULTS:" << std::endl;
+	std::cout << "Time to complete: "   << tot_sim.getwct()           << " seconds" << std::endl;
+	std::cout << "Vcluster: "           << vcluster_total_time        << " seconds" << std::endl;
+	std::cout << "Interaction: "        << interaction_total_time     << " seconds" << std::endl;
+	std::cout << "Pressure: "           << pressure_total_time        << " seconds" << std::endl;
+	std::cout << "Integration: "        << integration_total_time     << " seconds" << std::endl;
+	std::cout << "Reabalancing: "       << rebalanting_total_time     << " seconds" << std::endl;
+	std::cout << "Map: "                << map_total_time             << " seconds" << std::endl;
+	std::cout << "Reduction: "          << reduction_total_time       << " seconds" << std::endl;
+	std::cout << "Ghost: "              << ghost_total_time           << " seconds" << std::endl;
+	std::cout << "Number of steps: "    << tot_steps                  << " seconds" << std::endl;
 
-   myfile <<"{" << std::endl;
-   myfile <<"	\"integrate\": \"" << integration_total_time  << "\"," << std::endl;
-   myfile <<"	\"integrate-average\": \"" << integration_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"interaction\": \"" << interaction_total_time  << "\"," << std::endl;
-   myfile <<"	\"interaction-average\": \"" << interaction_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"pressure-update\": \"" << pressure_total_time  << "\"," << std::endl;
-   myfile <<"	\"pressure-update-average\": \"" << pressure_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"vcluster\": \"" << vcluster_total_time << "\"," << std::endl;
-   myfile <<"	\"vcluster-average\": \"" << vcluster_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"rebalancing\": \"" << rebalanting_total_time << "\"," << std::endl;
-   myfile <<"	\"rebalancing-average\": \"" << rebalanting_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"map\": \"" << map_total_time << "\"," << std::endl;
-   myfile <<"	\"map-average\": \"" << map_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"reduction\": \"" << reduction_total_time << "\"," << std::endl;
-   myfile <<"	\"reduction_total_time-average\": \"" << reduction_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"ghost\": \"" << ghost_total_time << "\"," << std::endl;
-   myfile <<"	\"ghost-average\": \"" << ghost_total_time / tot_steps << "\"," << std::endl;
-   myfile <<"	\"total\": \"" << tot_sim.getwct()  << "\"," << std::endl;
-   myfile <<"	\"total-average\": \"" << tot_sim.getwct() / tot_steps << "\"" << std::endl;
-   myfile <<"}" << std::endl;
+   //Write timer into json like structure
+   std::ofstream file_timers;
+   file_timers.open ("timers.json");
 
-   myfile.close();
+   file_timers <<"{" << std::endl;
+   file_timers <<"	\"integrate\": \"" << integration_total_time  << "\"," << std::endl;
+   file_timers <<"	\"integrate-average\": \"" << integration_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"interaction\": \"" << interaction_total_time  << "\"," << std::endl;
+   file_timers <<"	\"interaction-average\": \"" << interaction_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"pressure-update\": \"" << pressure_total_time  << "\"," << std::endl;
+   file_timers <<"	\"pressure-update-average\": \"" << pressure_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"vcluster\": \"" << vcluster_total_time << "\"," << std::endl;
+   file_timers <<"	\"vcluster-average\": \"" << vcluster_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"rebalancing\": \"" << rebalanting_total_time << "\"," << std::endl;
+   file_timers <<"	\"rebalancing-average\": \"" << rebalanting_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"map\": \"" << map_total_time << "\"," << std::endl;
+   file_timers <<"	\"map-average\": \"" << map_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"reduction\": \"" << reduction_total_time << "\"," << std::endl;
+   file_timers <<"	\"reduction_total_time-average\": \"" << reduction_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"ghost\": \"" << ghost_total_time << "\"," << std::endl;
+   file_timers <<"	\"ghost-average\": \"" << ghost_total_time / tot_steps << "\"," << std::endl;
+   file_timers <<"	\"total\": \"" << tot_sim.getwct()  << "\"," << std::endl;
+   file_timers <<"	\"total-average\": \"" << tot_sim.getwct() / tot_steps << "\"" << std::endl;
+   file_timers <<"}" << std::endl;
+
+   file_timers.close();
 
 
 	openfpm_finalize();
