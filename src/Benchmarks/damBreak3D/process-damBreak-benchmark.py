@@ -11,12 +11,9 @@ from json2html import *
 
 #cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.00025_1" ]
 #folder = "results_A40galdor/"
-#cases = [ "0.005_1", "0.002_1", "0.001_1", "0.0005_1", "0.0003_1" ]
-#folder = "results_A40galdor_v3swap/"
-#folder = "results_T4adan/"
 
-cases = [ "0.02_1" ]
-folder = "results_local-test/"
+cases = [ "0.02_1", "0.015_1" ,"0.01_1", "0.008_1", "0.006_1" ]
+folder = "./results_metacentrum-nvidia-A40-first-test/"
 
 def getCaseDetails( case, TNLSPHTimers, dualSPHTimers, numberOfParticles_all ):
     #tnl-sph details
@@ -26,7 +23,7 @@ def getCaseDetails( case, TNLSPHTimers, dualSPHTimers, numberOfParticles_all ):
         caseMetadata_json_str = json.dumps( caseMetadata_lines )
         caseMetadata_json = json.loads( caseMetadata_json_str )
 
-        detail_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
+        detail_string = '<center>' +'<h1> SPH damBreak3D benchmark </h1>'
         detail_string += json2html.convert( json = caseMetadata_json ) + "<br><hr>"
         detail_string += json2html.convert( json = TNLSPHTimers ) + "<br><hr>"
         detail_string += json2html.convert( json = dualSPHTimers ) + "<br><hr>"
@@ -100,12 +97,22 @@ def parseTNLSPHOutput( case ):
 
         return timersDictionary
 
+def parseOpenFPMOutput( case ):
+    filename = folder + "open-fpm_" + case + ".out"
+    with open( filename ) as f:
+        out_idx = 0
+        lines = json.load( f )
+        json_str = json.dumps( lines )
+        timersDictionary = json.loads( json_str )
+
+        return timersDictionary
+
 def writeArrayToFile( fileName, array ):
     with open( fileName,'w' ) as file:
         for element in array:
             file.write(f"{element}\n")
 
-results_string = '<center>' +'<h1> SPH damBreak2D benchmark </h1>'
+results_string = '<center>' +'<h1> SPH damBreak3D benchmark </h1>'
 
 #device metadata
 deviceMetadataFileName = folder + "tnl-sph_" + cases[ 0 ] + ".device_metadata.json"
@@ -122,15 +129,17 @@ results_string += "<br><hr>"
 #data for plot
 numberOfParticles_all = []
 tnlSph_totalTime_average_all = []
+openfpm_totalTime_average_all = []
 dualSPHysics_totalTime_average_all = []
 
 for case in cases:
 
     dualSPHTimers = parseDualSPHysicsOutput( case )
     TNLSPHTimers = parseTNLSPHOutput( case )
+    openfpmTimers = parseOpenFPMOutput( case )
 
     frames = []
-    classes = [ 'dualSPHysics', 'TNL::SPH' ]
+    classes = [ 'dualSPHysics', 'OpenFPM', 'TNL::SPH' ]
 
     tnlSph_interactionTime = float( TNLSPHTimers['interaction'] ) + float( TNLSPHTimers['integrate'] )
     tnlSph_interactionTime_average = float( TNLSPHTimers['interaction-average'] ) + float( TNLSPHTimers['integrate-average'] )
@@ -138,6 +147,13 @@ for case in cases:
     tnlSph_searchTime_average = float( TNLSPHTimers[ 'search-average' ] )
     tnlSph_totalTime = float( TNLSPHTimers[ 'total' ] )
     tnlSph_totalTime_average = float( TNLSPHTimers[ 'total-average' ] )
+
+    openfpm_interactionTime = float( openfpmTimers['interaction'] ) + float( openfpmTimers['integrate'] )
+    openfpm_interactionTime_average = float( openfpmTimers['interaction-average'] ) + float( openfpmTimers['integrate-average'] )
+    openfpm_searchTime = "-"
+    openfpm_searchTime_average = "-"
+    openfpm_totalTime = float( openfpmTimers[ 'total' ] )
+    openfpm_totalTime_average = float( openfpmTimers[ 'total-average' ] )
 
     dualSph_totalSteps = int( dualSPHTimers['Steps of simulation'] )
     dualSph_interactionTime = float( dualSPHTimers['CF-PreForces'] ) + \
@@ -154,12 +170,12 @@ for case in cases:
     dualSph_totalTime = float( dualSPHTimers['Simulation Runtime'] )
     dualSph_totalTime_average = dualSph_totalTime / dualSph_totalSteps
 
-    data_f = { 'interaction:' : [ dualSph_interactionTime, tnlSph_interactionTime ],
-               'interaction-average:' : [ dualSph_interactionTime_average, tnlSph_interactionTime_average ],
-               'search:' :  [ dualSph_searchTime,  tnlSph_searchTime ],
-               'search-average:' : [ dualSph_searchTime_average, tnlSph_searchTime_average ],
-               'total:' : [ dualSph_totalTime, tnlSph_totalTime ],
-               'total-average:' : [ dualSph_totalTime_average, tnlSph_totalTime_average ] }
+    data_f = { 'interaction:' : [ dualSph_interactionTime, openfpm_interactionTime, tnlSph_interactionTime ],
+               'interaction-average:' : [ dualSph_interactionTime_average, openfpm_interactionTime_average, tnlSph_interactionTime_average ],
+               'search:' :  [ dualSph_searchTime, openfpm_searchTime, tnlSph_searchTime ],
+               'search-average:' : [ dualSph_searchTime_average, openfpm_searchTime_average, tnlSph_searchTime_average ],
+               'total:' : [ dualSph_totalTime, openfpm_totalTime, tnlSph_totalTime ],
+               'total-average:' : [ dualSph_totalTime_average, openfpm_totalTime_average, tnlSph_totalTime_average ] }
 
     new_df = pd.DataFrame( data_f, classes )
     frames.append( new_df )
@@ -171,6 +187,7 @@ for case in cases:
 
     #append data for plot:
     tnlSph_totalTime_average_all.append( tnlSph_totalTime_average );
+    openfpm_totalTime_average_all.append( openfpm_totalTime_average );
     dualSPHysics_totalTime_average_all.append( dualSph_totalTime_average );
 
 print( numberOfParticles_all )
@@ -180,6 +197,7 @@ import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(1,1, figsize=(10, 10))
 plt.plot( numberOfParticles_all, tnlSph_totalTime_average_all, linestyle='--', marker='o', color='b', label='TNL-SPH' )
+plt.plot( numberOfParticles_all, openfpm_totalTime_average_all, '--', marker='v', color='g', label='OpenFPM' )
 plt.plot( numberOfParticles_all, dualSPHysics_totalTime_average_all, '--sr', label='DualSPHysics' )
 
 ax.set_xlabel(r'number of particles', fontsize=24)
