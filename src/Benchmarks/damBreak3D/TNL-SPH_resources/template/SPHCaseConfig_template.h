@@ -1,10 +1,14 @@
 #pragma once
 
-#include "../../../../../SPH/Models/EquationOfState.h"
-#include "../../../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../../../SPH/Models/VisousTerms.h"
+#include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/DiffusiveTerms.h>
+#include <SPH/Models/VisousTerms.h>
+#include <SPH/Kernels.h>
 
-#include "../../../../../SPH/SPHTraits.h"
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
+
+#include <SPH/SPHTraits.h>
+#include <SPH/TimeStep.h>
 #include <limits>
 
 namespace TNL {
@@ -48,10 +52,12 @@ class SPHConfig
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename SPHConfig >
+template< typename Device >
 class SPHParamsConfig
 {
    public:
+   using SPHConfig = SPHConfig< Device >;
+
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]
@@ -59,6 +65,12 @@ class SPHParamsConfig
     */
    float dp = placeholderInitParticleDistancef;
    float h = placeholderSmoothingLengthf;
+
+   /**
+    * Define SPH weight function (kernel).
+    * - Use "WendlandKernel" for 4th order Wendland kernel.
+    */
+   using KernelFunction = TNL::ParticleSystem::SPH::WendlandKernel< SPHConfig >;
 
    /**
     * Define Basics SPH constants.
@@ -90,8 +102,14 @@ class SPHParamsConfig
    float rho0 = placeholderDensityf;
 
    /**
+    * Define type of boundary conditions.
+    */
+   using BCType = TNL::ParticleSystem::SPH::WCSPH_BCTypes::DBC;
+
+   /**
     * Define initial timestep [s].
     */
+   using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
    float dtInit = placeholderTimeStepf;
 
    /**

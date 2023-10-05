@@ -10,11 +10,11 @@ export dirout=${name}_out
 export diroutdata=${dirout}/data
 
 #nacteni prislusnych souboru
-export dirbin=$1
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${dirbin}
-export gencase="${dirbin}/GenCase_linux64"
-export dualsphysicscpu="${dirbin}/DualSPHysics5.0CPU_linux64"
-export dualsphysicsgpu="${dirbin}/DualSPHysics5.0_linux64"
+#export dirbin=$1
+#export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${dirbin}
+#export gencase="${dirbin}/GenCase_linux64"
+#export dualsphysicscpu="${dirbin}/DualSPHysics5.0CPU_linux64"
+#export dualsphysicsgpu="${dirbin}/DualSPHysics5.0_linux64"
 
 # "dirout" to store results is removed if it already exists
 if [ -e ${dirout} ]; then rm -r ${dirout}; fi

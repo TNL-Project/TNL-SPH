@@ -991,7 +991,16 @@ int main(int argc, char* argv[])
 	auto NN = vd.getCellListGPU/*<CELLLIST_GPU_SPARSE<3,float>>*/(2*H / 2.0);
 	NN.setBoxNN(2);
 
+   int tot_steps = 0;
 	timer tot_sim;
+   timer tot_vcluster; float vcluster_total_time = 0.f ;
+   timer tot_interaction; float interaction_total_time = 0.f ;
+   timer tot_pressure; float pressure_total_time = 0.f ;
+   timer tot_integrate; float integration_total_time = 0.f;
+   timer tot_rebalancing; float rebalanting_total_time = 0.f;
+   timer tot_map; float map_total_time = 0.f;
+   timer tot_reductions; float reduction_total_time = 0.f;
+   timer tot_ghosts; float ghost_total_time = 0.f;
 	tot_sim.start();
 
 	size_t write = 0;
@@ -1000,11 +1009,17 @@ int main(int argc, char* argv[])
 	real_number t = 0.0;
 	while (t <= t_end)
 	{
+      tot_steps++;
+
+      tot_vcluster.start();
 		Vcluster<> & v_cl = create_vcluster();
+      tot_vcluster.stop();
+      vcluster_total_time += tot_vcluster.getwct();
 		timer it_time;
 		it_time.start();
 
 		////// Do rebalancing every 200 timesteps
+      tot_rebalancing.start();
 		it_reb++;
 		if (it_reb == 300)
 		{
@@ -1022,20 +1037,35 @@ int main(int argc, char* argv[])
 			if (v_cl.getProcessUnitID() == 0)
 			{std::cout << "REBALANCED " << it_reb << std::endl;}
 		}
+      tot_rebalancing.stop();
+      rebalanting_total_time += tot_rebalancing.getwct();
 
+      tot_map.start();
 		vd.map(RUN_ON_DEVICE);
+      tot_map.stop();
+      rebalanting_total_time += tot_map.getwct();
 
 		// Calculate pressure from the density
+      tot_pressure.start();
 		EqState(vd);
+      tot_pressure.stop();
+      pressure_total_time += tot_pressure.getwct();
 
 		real_number max_visc = 0.0;
 
+      tot_ghosts.start();
 		vd.ghost_get<type,rho,Pressure,velocity>(RUN_ON_DEVICE);
+      tot_ghosts.stop();
+      ghost_total_time += tot_ghosts.getwct();
 
 
 		// Calc forces
+      tot_interaction.start();
 		calc_forces(vd,NN,max_visc,cnt,fluid_ids,border_ids);
+      tot_interaction.stop();
+      interaction_total_time += tot_interaction.getwct();
 
+      tot_reductions.start();
 		// Get the maximum viscosity term across processors
 		v_cl.max(max_visc);
 		v_cl.execute();
@@ -1043,7 +1073,11 @@ int main(int argc, char* argv[])
 		// Calculate delta t integration
 		real_number dt = calc_deltaT(vd,max_visc);
 
+      tot_reductions.stop();
+      reduction_total_time += tot_reductions.getwct();
+
 		// VerletStep or euler step
+      tot_integrate.start();
 		it++;
 		if (it < 40)
 			verlet_int(vd,dt);
@@ -1052,66 +1086,102 @@ int main(int argc, char* argv[])
 			euler_int(vd,dt);
 			it = 0;
 		}
+      tot_integrate.stop();
+      integration_total_time += tot_integrate.getwct();
 
 		t += dt;
 
-		if (write < t*10)
-		{
-			// Sensor pressure require update ghost, so we ensure that particles are distributed correctly
-			// and ghost are updated
-			vd.map(RUN_ON_DEVICE);
-			vd.ghost_get<type,rho,Pressure,velocity>(RUN_ON_DEVICE);
-			vd.updateCellList(NN);
+		//: if (write < t*10)
+		//: {
+		//: 	// Sensor pressure require update ghost, so we ensure that particles are distributed correctly
+		//: 	// and ghost are updated
+		//: 	vd.map(RUN_ON_DEVICE);
+		//: 	vd.ghost_get<type,rho,Pressure,velocity>(RUN_ON_DEVICE);
+		//: 	vd.updateCellList(NN);
 
-			// calculate the pressure at the sensor points
-			//sensor_pressure(vd,NN,press_t,probes);
+		//: 	// calculate the pressure at the sensor points
+		//: 	//sensor_pressure(vd,NN,press_t,probes);
 
-			std::cout << "OUTPUT " << dt << std::endl;
+		//: 	std::cout << "OUTPUT " << dt << std::endl;
 
-			// When we write we have move all the particles information back to CPU
+		//: 	// When we write we have move all the particles information back to CPU
 
-			vd.deviceToHostPos();
-			vd.deviceToHostProp<type,rho,rho_prev,Pressure,drho,force,velocity,velocity_prev,red,red2>();
+		//: 	vd.deviceToHostPos();
+		//: 	vd.deviceToHostProp<type,rho,rho_prev,Pressure,drho,force,velocity,velocity_prev,red,red2>();
 
-			// We copy on another vector with less properties to reduce the size of the output
-			vector_dist_gpu<3,real_number,aggregate<unsigned int,real_number[3]>> vd_out(vd.getDecomposition(),0);
+		//: 	// We copy on another vector with less properties to reduce the size of the output
+		//: 	vector_dist_gpu<3,real_number,aggregate<unsigned int,real_number[3]>> vd_out(vd.getDecomposition(),0);
 
-			auto ito = vd.getDomainIterator();
+		//: 	auto ito = vd.getDomainIterator();
 
-			while(ito.isNext())
-			{
-				auto p = ito.get();
+		//: 	while(ito.isNext())
+		//: 	{
+		//: 		auto p = ito.get();
 
-				vd_out.add();
+		//: 		vd_out.add();
 
-				vd_out.getLastPos()[0] = vd.getPos(p)[0];
-				vd_out.getLastPos()[1] = vd.getPos(p)[1];
-				vd_out.getLastPos()[2] = vd.getPos(p)[2];
+		//: 		vd_out.getLastPos()[0] = vd.getPos(p)[0];
+		//: 		vd_out.getLastPos()[1] = vd.getPos(p)[1];
+		//: 		vd_out.getLastPos()[2] = vd.getPos(p)[2];
 
-				vd_out.template getLastProp<0>() = vd.template getProp<type>(p);
+		//: 		vd_out.template getLastProp<0>() = vd.template getProp<type>(p);
 
-				vd_out.template getLastProp<1>()[0] = vd.template getProp<velocity>(p)[0];
-				vd_out.template getLastProp<1>()[1] = vd.template getProp<velocity>(p)[1];
-				vd_out.template getLastProp<1>()[2] = vd.template getProp<velocity>(p)[2];
+		//: 		vd_out.template getLastProp<1>()[0] = vd.template getProp<velocity>(p)[0];
+		//: 		vd_out.template getLastProp<1>()[1] = vd.template getProp<velocity>(p)[1];
+		//: 		vd_out.template getLastProp<1>()[2] = vd.template getProp<velocity>(p)[2];
 
-				++ito;
-			}
+		//: 		++ito;
+		//: 	}
 
-			vd_out.write_frame("Particles",write,VTK_WRITER | FORMAT_BINARY);
-			write++;
+		//: 	vd_out.write_frame("Particles",write,VTK_WRITER | FORMAT_BINARY);
+		//: 	write++;
 
-			if (v_cl.getProcessUnitID() == 0)
-			{std::cout << "TIME: " << t << "  write " << it_time.getwct() << "   " << it_reb << "   " << cnt << " Max visc: " << max_visc << "   " << vd.size_local()  << std::endl;}
-		}
-		else
-		{
-			if (v_cl.getProcessUnitID() == 0)
-			{std::cout << "TIME: " << t << "  " << it_time.getwct() << "   " << it_reb << "   " << cnt  << " Max visc: " << max_visc << "   " << vd.size_local() << std::endl;}
-		}
+		//: 	if (v_cl.getProcessUnitID() == 0)
+		//: 	{std::cout << "TIME: " << t << "  write " << it_time.getwct() << "   " << it_reb << "   " << cnt << " Max visc: " << max_visc << "   " << vd.size_local()  << std::endl;}
+		//: }
+
+		if (v_cl.getProcessUnitID() == 0)
+		{std::cout << "TIME: " << t << "  " << it_time.getwct() << "   " << it_reb << "   " << cnt  << " Max visc: " << max_visc << "   " << vd.size_local() << std::endl;}
 	}
 
 	tot_sim.stop();
 	std::cout << "Time to complete: " << tot_sim.getwct() << " seconds" << std::endl;
+	std::cout << "Vcluster: " << vcluster_total_time << " seconds" << std::endl;
+	std::cout << "Interaction: " << interaction_total_time << " seconds" << std::endl;
+	std::cout << "Pressure: " << pressure_total_time << " seconds" << std::endl;
+	std::cout << "Integration: " << integration_total_time << " seconds" << std::endl;
+	std::cout << "Reabalancing: " << rebalanting_total_time << " seconds" << std::endl;
+	std::cout << "Map: " << map_total_time << " seconds" << std::endl;
+	std::cout << "Reduction: " << reduction_total_time << " seconds" << std::endl;
+	std::cout << "Ghost: " << ghost_total_time << " seconds" << std::endl;
+	std::cout << "Number of steps: " << tot_steps << " seconds" << std::endl;
+
+   //write output to the file:
+   std::ofstream myfile;
+   myfile.open ("timers.json");
+
+   myfile <<"{" << std::endl;
+   myfile <<"	\"integrate\": \"" << integration_total_time  << "\"," << std::endl;
+   myfile <<"	\"integrate-average\": \"" << integration_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"interaction\": \"" << interaction_total_time  << "\"," << std::endl;
+   myfile <<"	\"interaction-average\": \"" << interaction_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"pressure-update\": \"" << pressure_total_time  << "\"," << std::endl;
+   myfile <<"	\"pressure-update-average\": \"" << pressure_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"vcluster\": \"" << vcluster_total_time << "\"," << std::endl;
+   myfile <<"	\"vcluster-average\": \"" << vcluster_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"rebalancing\": \"" << rebalanting_total_time << "\"," << std::endl;
+   myfile <<"	\"rebalancing-average\": \"" << rebalanting_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"map\": \"" << map_total_time << "\"," << std::endl;
+   myfile <<"	\"map-average\": \"" << map_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"reduction\": \"" << reduction_total_time << "\"," << std::endl;
+   myfile <<"	\"reduction_total_time-average\": \"" << reduction_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"ghost\": \"" << ghost_total_time << "\"," << std::endl;
+   myfile <<"	\"ghost-average\": \"" << ghost_total_time / tot_steps << "\"," << std::endl;
+   myfile <<"	\"total\": \"" << tot_sim.getwct()  << "\"," << std::endl;
+   myfile <<"	\"total-average\": \"" << tot_sim.getwct() / tot_steps << "\"" << std::endl;
+   myfile <<"}" << std::endl;
+
+   myfile.close();
 
 
 	openfpm_finalize();

@@ -1,107 +1,55 @@
-#include <iostream>
-#include <fstream> //temp, to write output
+/**
+ * Include configuration files containing data for case definition.
+ * - "SimulationControlConfig.h" contains core informations to control the simulation
+ * - "ParticleConfig.h" contains information about domain and sizes of problem
+ * - "SPHCaseConfig.h" contains parameter of SPH method
+ * - "MeasuretoolConfig.h" contains settings for processing variables during simulation
+ */
+#include "sources/SimulationControlConfig.h"
+using SimulationControl = TNL::ParticleSystem::SPH::SimulationControlConfiguration::SPHSimulationControl;
+
+#include "sources/ParticlesConfig.h"
+using ParticlesParams = TNL::ParticleSystem::ParticleSystemConfig::ParticleInitialSetup< SimulationControl::DeviceType >;
+
+#include "sources/SPHCaseConfig.h"
+using SPHParams = TNL::ParticleSystem::SPH::SPHConfig::SPHParamsConfig< SimulationControl::DeviceType >;
 
 /**
- *  Benchamrk stuff.
+ * Include type of particle system.
  */
-#include <TNL/Benchmarks/Benchmarks.h>
+#include <Particles/ParticlesLinkedListFloating.h>
+using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesParams::ParticlesConfig, SimulationControl::DeviceType >;
 
 /**
- * Particle system.
+ * Include particular formulation of SPH method.
  */
-#include "../../../../Particles/ParticlesLinkedListFloating.h"
+#include <SPH/Models/WCSPH_DBC/Interactions.h>
+using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticlesSys, SPHParams >;
+
+/**
+ * Include type of SPH simulation.
+ */
+#include <SPH/SPH.h>
+using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel >;
 
 /**
  * Particle system reader.
- **/
-#include "../../../../Readers/VTKReader.h"
-#include "../../../../Writers/VTKWriter.h"
-#include "../../../../Readers/readSPHSimulation.h"
+ */
+#include <Readers/VTKReader.h>
+#include <Writers/VTKWriter.h>
+#include <Readers/readSPHSimulation.h>
+using Reader = TNL::ParticleSystem::Readers::VTKReader;
+using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesSys >;
+using SimulationReaderType = TNL::ParticleSystem::ReadParticles< ParticlesParams::ParticlesConfig, Reader >;
 
 /**
- * Case configuration
- * One configuration for particle system, one for SPH.
+ *  Used to write computation time to json format.
  */
-#include "sources/ParticlesConfig.h"
-#include "sources/SPHCaseConfig.h"
-#include "sources/SimulationControlConfig.h"
+#include <TNL/Benchmarks/Benchmarks.h>
 
-/**
- * SPH general toolds.
- */
-#include "../../../../SPH/SPH.h"
-
-/**
- * SPH model.
- */
-#include "../../../../SPH/Models/WCSPH_DBC/Variables.h"
-#include "../../../../SPH/Models/WCSPH_DBC/Interactions.h"
-
-#include "../../../../SPH/Kernels.h" //TODO: Move to another.
-
-/**
- * Time step control.
- */
-#include "../../../../SPH/TimeStep.h"
-
-using namespace TNL::ParticleSystem;
 
 int main( int argc, char* argv[] )
 {
-   /**
-    * Load simulation configs.
-    * - Particle system config:
-    *   config for definition of particle system (datatypes, dimension,...)
-    *   config with parameters of particle system (domain size, search radius,...)
-    *
-    * - Configuration of particle system.
-    *   config with initial parameters of the particle system
-    *
-    * - SPH method config:
-    *   config with parameteres and constants of the SPH method
-    *
-    * - Simulation control:
-    *   config with path to initial condition, path to store results, end time etc.
-    */
-   using SimulationControl = SPH::SimulationControlConfiguration::SPHSimulationControl;
-
-   using SPHConfig = SPH::SPHConfig::SPHConfig< SimulationControl::DeviceType >;
-   using SPHParams = SPH::SPHConfig::SPHParamsConfig< SPHConfig >;
-
-   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SimulationControl::DeviceType >;
-   using ParticlesParams = ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
-
-   /**
-    * Particle and neighbor search model.
-    */
-   using ParticleSystem = ParticlesLinkedList< ParticlesConfig, SimulationControl::DeviceType >;
-
-   /**
-    * Define simulation SPH model and SPH formulation.
-    *
-    * - SPHModel: is the model of used SPH method (WCSPH_DBC, WCSPH_BI, RSPH, etc.)
-    *   IMPORTANT: Constants and parameters of used model have to be defined in the SPHConfig.
-    *
-    * - SPHSimulation: defines the type of problem (simple fluid, problem with open or
-    *   moving boundaries or multiphase flows). For the chosen type of simulation,
-    *   appropriate SPH scheme is required!
-    */
-   using SPHModel = SPH::WCSPH_DBC< ParticleSystem, SPHConfig >;
-   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
-
-   /**
-    * Define time step control.
-    * There is const time step option and variable time step option.
-    */
-   using TimeStepping = SPH::ConstantTimeStep< SPHConfig >;
-
-   /**
-    * Define readers and writers to read and write initial geometry and results.
-    */
-   using Reader = Readers::VTKReader;
-   using Writer = Writers::VTKWriter< ParticleSystem >;
-   using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
-
    /**
     * Create instance of SPHParams class, which is object holding all the
     * necessary SPH constants, informations about terms in particular scheme etc.
@@ -136,7 +84,7 @@ int main( int argc, char* argv[] )
     *
     * Add output timer to control saving to files.
     */
-   TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
+   SPHParams::TimeStepping timeStepping( sphParams.dtInit, simulationControl.endTime );
    timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    /**
@@ -173,7 +121,8 @@ int main( int argc, char* argv[] )
        * Perform interaction with given model.
        */
       timer_interact.start();
-      sph.template interact< SPH::WendlandKernel3D, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
+      sph.template interact< SPHParams::KernelFunction, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >(
+            sphParams );
       timer_interact.stop();
       std::cout << "Interact... done. " << std::endl;
 
