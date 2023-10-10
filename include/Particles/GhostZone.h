@@ -38,7 +38,7 @@ public:
     */
    template< typename CellIndexer >
    void
-   assignCells( IndexVectorType startingPoint, IndexVectorType size );
+   assignCells( IndexVectorType startingPoint, IndexVectorType size, IndexVectorType gridSize );
 
    /**
     * Assign cells from another array.
@@ -102,4 +102,6 @@ protected:
 
 } // Particles
 } // TNL
+
+#include "GhostZone.hpp"
 
