@@ -4,6 +4,7 @@
 
 set( CUDA_TESTS
          ParticleSystemTest
+         GhostZoneTest
 )
 
 #foreach( target IN ITEMS ${CPP_TESTS} )

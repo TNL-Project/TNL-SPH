@@ -12,6 +12,7 @@ project(TNL-SPH
 # Options to build
 option( TNL-SPH_USE_SYSTEM_GTEST "Use GTest installed in the local system and do not download the latest version" ON )
 option( TNL-SPH_BUILD_TESTS "Build tests" ON )
+option( TNL_BUILD_BENCHMARKS "Compile the 'src/Benchmarks' directory" OFF )
 
 # Require C++17, and disable compiler-specific extensions (if possible)
 foreach(lang CXX CUDA)

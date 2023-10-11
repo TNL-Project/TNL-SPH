@@ -19,8 +19,21 @@ __*__
 build
 
 # examples source files
-examples/WCSPH-DBC/*/results
-examples/WCSPH-DBC/*/sources
+examples/*/*/results
+examples/*/*/sources
+
+# ignore products of unit tests
+src/Benchmarks/damBreak3D/TNL-SPH_resources/sources
+src/Benchmarks/damBreak3D/TNL-SPH_resources/damBreak3D_WCSPH-DBC
+src/Benchmarks/damBreak3D/TNL-SPH_resources/template/generateGeometryWithDualSPHysicsGenCase/damBreak3D_WCSPH-DBC_Def.xml
+
+src/Benchmarks/damBreak3D/dualSPHysics_resources/damBreak3D_WCSPH-DBC_Def.xml
+src/Benchmarks/damBreak3D/dualSPHysics_resources/damBreak3D_WCSPH-DBC_out
+
+src/Benchmarks/damBreak3D/openFPM_resources/VTPDATA
+src/Benchmarks/damBreak3D/openFPM_resources/Particles_0.pvtp
+src/Benchmarks/damBreak3D/openFPM_resources/main.cu
+src/Benchmarks/damBreak3D/openFPM_resources/sph_dlb
 
 # CaseSetupFiles
 Examples/SPHCases/*/MeasuretoolConfig.h

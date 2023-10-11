@@ -1,7 +1,9 @@
-#add_subdirectory( Benchmarks )
 #add_subdirectory( tools )
-add_subdirectory( UnitTests )
 
-if( TNL_BUILD_TESTS )
+if( TNL-SPH_BUILD_BENCHMARKS )
+   add_subdirectory( Benchmarks )
+endif()
+
+if( TNL-SPH_BUILD_TESTS )
    add_subdirectory( UnitTests )
 endif()
