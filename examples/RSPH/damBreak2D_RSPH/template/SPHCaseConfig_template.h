@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../../../../SPH/Models/EquationOfState.h"
-#include "../../../../SPH/Models/RiemannSolvers.h"
-#include "../../../../SPH/Kernels.h"
+#include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/RiemannSolvers.h>
+#include <SPH/Kernels.h>
 
-#include "../../../../SPH/SPHTraits.h"
-#include "../../../../SPH/TimeStep.h"
+#include <SPH/SPHTraits.h>
+#include <SPH/TimeStep.h>
 #include <limits>
 
 namespace TNL {
@@ -49,10 +49,12 @@ class SPHConfig
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename SPHConfig >
+template< typename Device >
 class SPHParamsConfig
 {
    public:
+   using SPHConfig = SPHConfig< Device >;
+
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]

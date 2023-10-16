@@ -1,26 +1,4 @@
 /**
- * Include type of particle system.
- */
-#include "../../../Particles/ParticlesLinkedListFloating.h"
-
-/**
- * Include type of SPH simulation.
- */
-#include "../../../SPH/SPH.h"
-
-/**
- * Include particular formulation of SPH method.
- */
-#include "../../../SPH/Models/RSPH/Interactions.h"
-
-/**
- * Particle system reader.
- **/
-#include "../../../Readers/VTKReader.h"
-#include "../../../Writers/VTKWriter.h"
-#include "../../../Readers/readSPHSimulation.h"
-
-/**
  * Include configuration files containing data for case definition.
  * - "SimulationControlConfig.h" contains core informations to control the simulation
  * - "ParticleConfig.h" contains information about domain and sizes of problem
@@ -28,67 +6,63 @@
  * - "MeasuretoolConfig.h" contains settings for processing variables during simulation
  */
 #include "sources/SimulationControlConfig.h"
+using SimulationControl = TNL::ParticleSystem::SPH::SimulationControlConfiguration::SPHSimulationControl;
+
 #include "sources/ParticlesConfig.h"
+using ParticlesParams = TNL::ParticleSystem::ParticleSystemConfig::ParticleInitialSetup< SimulationControl::DeviceType >;
+
 #include "sources/SPHCaseConfig.h"
+using SPHParams = TNL::ParticleSystem::SPH::SPHConfig::SPHParamsConfig< SimulationControl::DeviceType >;
+
+/**
+ * Include type of particle system.
+ */
+#include <Particles/ParticlesLinkedListFloating.h>
+using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesParams::ParticlesConfig, SimulationControl::DeviceType >;
+
+/**
+ * Include particular formulation of SPH method.
+ */
+#include <SPH/Models/RSPH/Interactions.h>
+using SPHModel = TNL::ParticleSystem::SPH::RSPH< ParticlesSys, SPHParams::SPHConfig >;
+
+/**
+ * Include type of SPH simulation.
+ */
+#include <SPH/SPH.h>
+using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel >;
+
+/**
+ * Particle system reader.
+ */
+#include <Readers/VTKReader.h>
+#include <Writers/VTKWriter.h>
+#include <Readers/readSPHSimulation.h>
+using Reader = TNL::ParticleSystem::Readers::VTKReader;
+using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesSys >;
+using SimulationReaderType = TNL::ParticleSystem::ReadParticles< ParticlesParams::ParticlesConfig, Reader >;
+
+/**
+ * Import additional tools - measuretool
+ */
 #include "sources/MeasuretoolConfig.h"
+using GridInterpolationParams = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHParams::SPHConfig >;
+using SensorPressureParams = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::MeasuretoolConfigForPressure< SPHParams::SPHConfig >;
+using SensorWaterLevelParams = TNL::ParticleSystem::SPH::MeasuretoolConfiguration::MeasuretoolConfigForWaterLevel< SPHParams::SPHConfig >;
+
+#include <SPH/shared/Measuretool.h>
+using GridInterpolation = TNL::ParticleSystem::SPH::InterpolateToGrid< SPHParams::SPHConfig, SPHSimulation >;
+using SensorPressure = TNL::ParticleSystem::SPH::SensorInterpolation< SPHParams::SPHConfig, SPHSimulation >;
+using SensorWaterLevel = TNL::ParticleSystem::SPH::SensorWaterLevel< SPHParams::SPHConfig, SPHSimulation >;
 
 /**
  *  Used to write computation time to json format.
  */
 #include <TNL/Benchmarks/Benchmarks.h>
 
-using namespace TNL::ParticleSystem;
 
 int main( int argc, char* argv[] )
 {
-   /**
-    * Load simulation configs.
-    * - Particle system config:
-    *   config for definition of particle system (datatypes, dimension,...)
-    *   config with parameters of particle system (domain size, search radius,...)
-    *
-    * - Configuration of particle system.
-    *   config with initial parameters of the particle system
-    *
-    * - SPH method config:
-    *   config with parameteres and constants of the SPH method
-    *
-    * - Simulation control:
-    *   config with path to initial condition, path to store results, end time etc.
-    */
-   using SimulationControl = SPH::SimulationControlConfiguration::SPHSimulationControl;
-
-   using SPHConfig = SPH::SPHConfig::SPHConfig< SimulationControl::DeviceType >;
-   using SPHParams = SPH::SPHConfig::SPHParamsConfig< SPHConfig >;
-
-   using ParticlesConfig = ParticleSystemConfig::ParticleSystemConfig< SimulationControl::DeviceType >;
-   using ParticlesParams = ParticleSystemConfig::ParticleInitialSetup< ParticlesConfig >;
-
-   /**
-    * Particle and neighbor search model.
-    */
-   using ParticleSystem = ParticlesLinkedList< ParticlesConfig, SimulationControl::DeviceType >;
-
-   /**
-    * Define simulation SPH model and SPH formulation.
-    *
-    * - SPHModel: is the model of used SPH method (WCSPH_DBC, WCSPH_BI, RSPH, etc.)
-    *   IMPORTANT: Constants and parameters of used model have to be defined in the SPHConfig.
-    *
-    * - SPHSimulation: defines the type of problem (simple fluid, problem with open or
-    *   moving boundaries or multiphase flows). For the chosen type of simulation,
-    *   appropriate SPH scheme is required!
-    */
-   using SPHModel = SPH::RSPH< ParticleSystem, SPHConfig >;
-   using SPHSimulation = SPH::SPHSimpleFluid< SPHModel >;
-
-   /**
-    * Define readers and writers to read and write initial geometry and results.
-    */
-   using Reader = Readers::VTKReader;
-   using Writer = Writers::VTKWriter< ParticleSystem >;
-   using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
-
    /**
     * Create instance of SPHParams class, which is object holding all the
     * necessary SPH constants, informations about terms in particular scheme etc.
@@ -151,24 +125,18 @@ int main( int argc, char* argv[] )
     *   config for grid interpolation
     *    - sensors to measure pressure in given points
     */
-   using GridInterpolation = SPH::InterpolateToGrid< SPHConfig, SPHSimulation >;
-   using MeasuretoolInitGridInterpolation = SPH::MeasuretoolConfiguration::GridInterpolationConfig< SPHConfig >;
-   MeasuretoolInitGridInterpolation interpolateGridParams;
-   GridInterpolation interpolator( interpolateGridParams );
+   GridInterpolationParams interpolationParams;
+   GridInterpolation interpolator( interpolationParams );
 
-   using SensorInterpolation = SPH::SensorInterpolation< SPHConfig, SPHSimulation >;
-   using MeasuretoolInitParametersPressure = SPH::MeasuretoolConfiguration::MeasuretoolConfigForPressure< SPHConfig >;
-   MeasuretoolInitParametersPressure measuretoolPressure;
-   timeStepping.addOutputTimer( "sensor_pressure", measuretoolPressure.outputTime );
-   SensorInterpolation sensorInterpolation( TNL::ceil( simulationControl.endTime / measuretoolPressure.outputTime ),
-         measuretoolPressure.points );
+   SensorPressureParams sensorPressureParams;
+   timeStepping.addOutputTimer( "sensor_pressure", sensorPressureParams.outputTime );
+   SensorPressure sensorInterpolation( TNL::ceil( simulationControl.endTime / sensorPressureParams.outputTime ),
+         sensorPressureParams.points );
 
-   using MeasuretoolInitParametersWaterLevel = SPH::MeasuretoolConfiguration::MeasuretoolConfigForWaterLevel< SPHConfig >;
-   using SensorWaterLevel = SPH::SensorWaterLevel< SPHConfig, SPHSimulation >;
-   MeasuretoolInitParametersWaterLevel measuretoolWaterLevel;
-   timeStepping.addOutputTimer( "sensor_waterLevel", measuretoolWaterLevel.outputTime );
-   SensorWaterLevel sensorWaterLevel( TNL::ceil( simulationControl.endTime / measuretoolWaterLevel.outputTime ), measuretoolWaterLevel.points,
-         sphParams.h, measuretoolWaterLevel.direction, measuretoolWaterLevel.startMeasureAtLevel, measuretoolWaterLevel.stopMeasureAtLevel );
+   SensorWaterLevelParams sensorWaterLevelParams;
+   timeStepping.addOutputTimer( "sensor_waterLevel", sensorWaterLevelParams.outputTime );
+   SensorWaterLevel sensorWaterLevel( TNL::ceil( simulationControl.endTime / sensorWaterLevelParams.outputTime ), sensorWaterLevelParams.points,
+         sphParams.h, sensorWaterLevelParams.direction, sensorWaterLevelParams.startMeasureAtLevel, sensorWaterLevelParams.stopMeasureAtLevel );
 
    /**
     * Define timers to measure computation time.
@@ -213,7 +181,7 @@ int main( int argc, char* argv[] )
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
-          * Its useful for output anyway
+          * It's useful for output anyway
           */
          timer_pressure.start();
          sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
@@ -221,7 +189,7 @@ int main( int argc, char* argv[] )
          std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
-         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams ); //TODO: FIX.
+         sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
          timer_pressure.stop();
          std::cout << "Compute pressure... done. " << std::endl;
 
@@ -236,10 +204,15 @@ int main( int argc, char* argv[] )
 
       }
 
+      /**
+       * Perform measuretool procedures.
+       * - Interpolate pressure in given points.
+       * - Obtain water level in given positions.
+       */
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
          sensorInterpolation.template interpolate< SPHParams::KernelFunction, SPHParams::EOS >(
-               sph.fluid, sph.boundary, sphParams, measuretoolPressure.includeBoundary );
+               sph.fluid, sph.boundary, sphParams, sensorPressureParams.includeBoundary );
       }
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
@@ -251,6 +224,9 @@ int main( int argc, char* argv[] )
       timeStepping.updateTimeStep();
    }
 
+   /**
+    * Write the results obtained from measureool.
+    */
    std::string outputFileNameInterpolation = simulationControl.outputFileName + "_sensors.dat";
    sensorInterpolation.save( outputFileNameInterpolation );
 
@@ -260,8 +236,8 @@ int main( int argc, char* argv[] )
    /**
     * Output simulation stats.
     */
-   float totalTime = ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
+   float totalTime = timer_search.getRealTime() + timer_interact.getRealTime() + timer_integrate.getRealTime() + \
+                     timer_pressure.getRealTime();
 
    int steps = timeStepping.getStep();
    float totalTimePerStep = totalTime / steps;

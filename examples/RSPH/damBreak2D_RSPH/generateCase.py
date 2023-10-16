@@ -90,7 +90,6 @@ for layer in range( numberOfBoundaryLayers ):
         normal_y.append( 1. )
         normal_z.append( 0. )
 
-#x_last = box_rx[-1 -(numberOfBoundaryLayers - 1)] #due to discretisation, we need to save last value of bottom wall
 x_last = box_rx[ -1 ] + dp #due to discretisation, we need to save last value of bottom wall
 
 # right wall
@@ -112,8 +111,6 @@ def generate90degCorner( x, y, dirx, diry ):
       box_ry.append( y + l * dp * diry )
       box_rz.append( 0. )
 
-      #nx = x - ( x + k * dp * dirx )
-      #nz = z - ( z + l * dp * dirz )
       nx = ( x + ( -1 ) * dirx * dp ) - ( x + k * dp * dirx )
       ny = ( y + ( -1 ) * diry * dp ) - ( y + l * dp * diry )
 
@@ -127,7 +124,7 @@ generate90degCorner( x_last, 0., +1, -1 )
 
 ### Save particles to vtk files
 import sys
-sys.path.append('../../tools/')
+sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import numpy as np
 
