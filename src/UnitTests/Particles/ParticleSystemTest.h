@@ -364,75 +364,31 @@ TEST( SearchForNeighbors2DTest, ParticlesToCellsCuda )
    PairIndexType cell_4_1 = { 4, 4 };
    EXPECT_EQ( firstLastCellParticle.getElement( 10 ), cell_4_1 );
 
-   ////[ 1, 2 ]
-   //EXPECT_EQ( cellIndices.getElement( 5 ), 13 );
-   //Point p5 = { 0.17, 0.6 };
-   //EXPECT_EQ( points.getElement( 5 ), p5 );
-   //EXPECT_EQ( permutations.getElement( 5 ), 0 );
-   //EXPECT_EQ( cellIndices.getElement( 6 ), 13 );
-   //Point p6 = { 0.3, 0.82 };
-   //EXPECT_EQ( points.getElement( 6 ), p6 );
-   //EXPECT_EQ( permutations.getElement( 6 ), 18 );
-   ////[ 2, 2 ]
-   //EXPECT_EQ( cellIndices.getElement( 7 ), 14 );
-   //Point p7 = { 0.65, 0.7 };
-   //EXPECT_EQ( points.getElement( 7 ), p7 );
-   //EXPECT_EQ( permutations.getElement( 7 ), 19 );
-   ////[ 3, 2 ]
-   //EXPECT_EQ( cellIndices.getElement( 8 ), 15 );
-   //Point p8 = { 1.25, 0.58 };
-   //EXPECT_EQ( points.getElement( 8 ), p8 );
-   //EXPECT_EQ( permutations.getElement( 8 ), 6 );
-   //EXPECT_EQ( cellIndices.getElement( 9 ), 15 );
-   //Point p9 = { 1.2, 0.92 };
-   //EXPECT_EQ( points.getElement( 9 ), p9 );
-   //EXPECT_EQ( permutations.getElement( 9 ), 9 );
-   ////[ 4, 2 ]
-   //EXPECT_EQ( cellIndices.getElement( 10 ), 16 );
-   //Point p10 = { 1.67, 0.69 };
-   //EXPECT_EQ( points.getElement( 10 ), p10 );
-   //EXPECT_EQ( permutations.getElement( 10 ), 2 );
-   //EXPECT_EQ( cellIndices.getElement( 11 ), 16 );
-   //Point p11 = { 1.9, 0.58 };
-   //EXPECT_EQ( points.getElement( 11 ), p11 );
-   //EXPECT_EQ( permutations.getElement( 11 ), 14 );
-   //EXPECT_EQ( cellIndices.getElement( 12 ), 16 );
-   //Point p12 = { 1.8, 0.89 };
-   //EXPECT_EQ( points.getElement( 12 ), p12 );
-   //EXPECT_EQ( permutations.getElement( 12 ), 15 );
+   //[ 1, 2 ]
+   PairIndexType cell_1_2 = { 5, 6 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 13 ), cell_1_2 );
+   //[ 2, 2 ]
+   PairIndexType cell_2_2 = { 7, 7 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 14 ), cell_2_2 );
+   //[ 3, 2 ]
+   PairIndexType cell_3_2 = { 8, 9 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 15 ), cell_3_2 );
+   //[ 4, 2 ]
+   PairIndexType cell_4_2 = { 10, 12 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 16 ), cell_4_2 );
 
-   ////[ 1, 3 ]
-   //EXPECT_EQ( cellIndices.getElement( 13 ), 19 );
-   //Point p13 = { 0.18, 1.3 };
-   //EXPECT_EQ( points.getElement( 13 ), p13 );
-   //EXPECT_EQ( permutations.getElement( 13 ), 1 );
-   //EXPECT_EQ( cellIndices.getElement( 14 ), 19 );
-   //Point p14 = { 0.4, 1.15 };
-   //EXPECT_EQ( points.getElement( 14 ), p14 );
-   //EXPECT_EQ( permutations.getElement( 14 ), 12 );
-   ////[ 2, 3 ]
-   //EXPECT_EQ( cellIndices.getElement( 15 ), 20 );
-   //Point p15 = { 0.53, 1.33 };
-   //EXPECT_EQ( points.getElement( 15 ), p15 );
-   //EXPECT_EQ( permutations.getElement( 15 ), 7 );
-   //EXPECT_EQ( cellIndices.getElement( 16 ), 20 );
-   //Point p16 = { 0.8, 1.3 };
-   //EXPECT_EQ( points.getElement( 16 ), p16 );
-   //EXPECT_EQ( permutations.getElement( 16 ), 8 );
-   //EXPECT_EQ( cellIndices.getElement( 17 ), 20 );
-   //Point p17 = { 0.7, 1.18 };
-   //EXPECT_EQ( points.getElement( 17 ), p17 );
-   //EXPECT_EQ( permutations.getElement( 17 ), 17 );
-   ////[ 3, 3 ]
-   //EXPECT_EQ( cellIndices.getElement( 18 ), 21 );
-   //Point p18 = { 1.3, 1.21 };
-   //EXPECT_EQ( points.getElement( 18 ), p18 );
-   //EXPECT_EQ( permutations.getElement( 18 ), 13 );
-   ////[ 4, 3 ]
-   //EXPECT_EQ( cellIndices.getElement( 19 ), 22 );
-   //Point p19 = { 1.7, 1.33 };
-   //EXPECT_EQ( points.getElement( 19 ), p19 );
-   //EXPECT_EQ( permutations.getElement( 19 ), 3 );
+   //[ 1, 3 ]
+   PairIndexType cell_1_3 = { 13, 14 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 19 ), cell_1_3 );
+   //[ 2, 3 ]
+   PairIndexType cell_2_3 = { 15, 17 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 20 ), cell_2_3 );
+   //[ 3, 3 ]
+   PairIndexType cell_3_3 = { 18, 18 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 21 ), cell_3_3 );
+   //[ 4, 3 ]
+   PairIndexType cell_4_3 = { 19, 19 };
+   EXPECT_EQ( firstLastCellParticle.getElement( 22 ), cell_4_3 );
 
 }
 
