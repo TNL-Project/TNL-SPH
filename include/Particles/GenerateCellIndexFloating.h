@@ -75,8 +75,10 @@ public:
       {
          auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
-            //view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
-            //                               TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
+            /*
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
+                                           TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
+            */
             view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] / searchRadius - gridOrigin[ 1 ] / searchRadius ) ) + \
                                            TNL::floor( ( view_points[ i ][ 0 ] / searchRadius - gridOrigin[ 0 ] / searchRadius ) ) * gridSize[ 1 ];
          };

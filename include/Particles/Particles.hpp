@@ -106,7 +106,6 @@ Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, P
 }
 
 template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
 Particles< ParticleConfig, DeviceType >::getSortPermutations() const
 {
@@ -114,7 +113,6 @@ Particles< ParticleConfig, DeviceType >::getSortPermutations() const
 }
 
 template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
 Particles< ParticleConfig, DeviceType >::getSortPermutations()
 {
