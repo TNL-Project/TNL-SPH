@@ -33,7 +33,6 @@ WCSPH_DBC< ParticleSystem, SPHState >::updateSolidBoundary( FluidPointer& fluid,
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
    const auto view_rho = fluid->variables->rho.getView();
-   const auto view_v = fluid->variables->v.getView();
 
    const auto view_points_bound = boundary->particles->getPoints().getView();
    auto view_rho_bound = boundary->variables->rho.getView();
@@ -48,12 +47,9 @@ WCSPH_DBC< ParticleSystem, SPHState >::updateSolidBoundary( FluidPointer& fluid,
       const RealType drs = l2Norm( r_ij );
       if( drs <= searchRadius )
       {
-         const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
 
          /* Interaction */
-         const VectorType v_ij = v_i - v_j;
-
          const RealType F = SPHKernelFunction::F( drs, h );
          const RealType W = SPHKernelFunction::W( drs, h );
          const VectorType gradW = r_ij * F;
