@@ -161,8 +161,6 @@ WCSPH_BI< ParticleSystem, SPHFluidConfig, Variables >::updateSolidBoundary( Flui
 
    const auto view_points_bound = boundary->particles->getPoints().getView();
    auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
-   const auto view_n_bound = boundary->variables->n.getView();
 
    auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, RealType* rho_i, RealType* gamma_i ) mutable

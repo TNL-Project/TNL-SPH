@@ -82,7 +82,6 @@ public:
    void
    integrateVerlet( RealType dt, FluidPointer& fluid )
    {
-      auto rho_view = fluid->variables->rho.getView();
       auto v_view = fluid->variables->v.getView();
       auto r_view = fluid->particles->getPoints().getView();
 
