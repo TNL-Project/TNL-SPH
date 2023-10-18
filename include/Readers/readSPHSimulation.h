@@ -56,7 +56,7 @@ public:
       HostArray hostArray( reader.getNumberOfPoints() );
 
       std::vector< Type > hostBuffer;
-      for( int i = 1; i < temporary.size() + 1; i ++ )
+      for( long unsigned int i = 1; i < temporary.size() + 1; i ++ )
       {
          if( ( i % 3 == 0 ) )
           continue;
@@ -65,7 +65,7 @@ public:
       }
 
       int counter = 0;
-      for( int i = 0; i < hostBuffer.size(); i++ )
+      for( long unsigned int i = 0; i < hostBuffer.size(); i++ )
       {
          //std::cout << hostBuffer[ i ] << " ";
          if( i % 2 == 0 )
