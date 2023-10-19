@@ -49,7 +49,7 @@ if generateNewGeometry:
     subprocess.check_call( [ './generateGeometryWithDualSPHysicsGenCase.sh', str( dp ) ], cwd='./template/generateGeometryWithDualSPHysicsGenCase/' )
 
 import sys
-sys.path.append('../../tools')
+sys.path.append('../../../src/tools/')
 import saveParticlesVTK
 import numpy as np
 import vtk

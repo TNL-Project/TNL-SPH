@@ -1,10 +1,14 @@
 #pragma once
 
-#include "../../../../SPH/Models/EquationOfState.h"
-#include "../../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../../SPH/Models/VisousTerms.h"
+#include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/DiffusiveTerms.h>
+#include <SPH/Models/VisousTerms.h>
+#include <SPH/Kernels.h>
 
-#include "../../../../SPH/SPHTraits.h"
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
+
+#include <SPH/SPHTraits.h>
+#include <SPH/TimeStep.h>
 #include <limits>
 
 namespace TNL {
@@ -48,10 +52,12 @@ class SPHConfig
  * and saving files or the length of the simulation and the frequency of saving outputs.
  *
  */
-template< typename SPHConfig >
+template< typename Device >
 class SPHParamsConfig
 {
    public:
+   using SPHConfig = SPHConfig< Device >;
+
    /**
     * Define SPH parameters connected to the resolution.
     * - h - smoothing length [m]
@@ -59,6 +65,12 @@ class SPHParamsConfig
     */
    float dp = placeholderInitParticleDistancef;
    float h = placeholderSmoothingLengthf;
+
+   /**
+    * Define SPH weight function (kernel).
+    * - Use "WendlandKernel" for 4th order Wendland kernel.
+    */
+   using KernelFunction = TNL::ParticleSystem::SPH::WendlandKernel< SPHConfig >;
 
    /**
     * Define Basics SPH constants.
@@ -73,10 +85,15 @@ class SPHParamsConfig
    float delta = 0.1f;
 
    /**
-    * Define coefficient of artificial viscosity.
+    * Define viscous term and its coefficients.
+    * - Use "ArtificialViscosity" and its parameter alpha.
+    * - Use "PhysicalViscosity" defined by dynamic viscosity coeffition.
     */
    using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
    float alpha = 0.02f;
+
+   //using ViscousTerm = TNL::ParticleSystem::SPH::PhysicalViscosity< SPHConfig >;
+   //float dynamicViscosity = 1e-3f;
 
    /**
     * Define equation of state and its constants.
@@ -90,9 +107,25 @@ class SPHParamsConfig
    float rho0 = placeholderDensityf;
 
    /**
-    * Define initial timestep [s].
+    * Define type of boundary conditions.
+    * - DBC - dynamic boundary conditions
+    * - MDBC - modified dynamic boundary conditions {requires ghost nodes for boundary particles}
     */
+   using BCType = TNL::ParticleSystem::SPH::WCSPH_BCTypes::DBC;
+
+   /**
+    * Define initial timestep [s].
+    * - Use "ConstantTimeStep" with dtInit representing the step [s].
+    * - Use "VariableTimeStep" with CFL number [-], initial tiem steop [s] and minimum timestep [s].
+    * - Use "VariableTimeStepWithReduction" with CFL number [-], initial tiem steop [s] and minimum timestep [s].
+    */
+   using TimeStepping = TNL::ParticleSystem::SPH::ConstantTimeStep< SPHConfig >;
    float dtInit = placeholderTimeStepf;
+
+   //using TimeStepping = TNL::ParticleSystem::SPH::VariableTimeStep< SPHConfig >;
+   //float CFL = 0.3f;
+   //float dtInit = 0.25f * h / speedOfSound;
+   //float dtMin = 0.05f * h / speedOfSound;
 
    /**
     * Define external forces [m^2 / s].

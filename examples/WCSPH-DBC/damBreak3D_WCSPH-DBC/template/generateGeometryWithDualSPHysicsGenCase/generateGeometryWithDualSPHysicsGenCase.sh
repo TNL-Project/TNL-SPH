@@ -14,7 +14,7 @@ export dirout=${name}_out
 export diroutdata=${dirout}/data
 
 #Load the path for DualSPHysics GenCase
-export dirbin=../../../../tools
+export dirbin=./../../../../../src/tools/3rdparty
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${dirbin}
 export gencase="${dirbin}/GenCase_linux64"
 
