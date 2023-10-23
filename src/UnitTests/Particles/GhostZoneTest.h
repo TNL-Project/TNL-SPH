@@ -112,18 +112,30 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    particles->setGridSize( setup.gridSize );
    particles->setGridOrigin( setup.gridOrigin );
 
+   assignPoints2D( particles );
+
+   //Put particles to cells (TODO: Use single command to do this.)
+   particles->computeParticleCellIndices();
+   particles->sortParticles();
+   particles->particlesToCells();
+
+
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
 
    GhostZone zone_A( 3, 5 );
    IndexVectorType zone_A_begin = { 1, 1 };
-   IndexVectorType zone_A_size = { 0, 2 };
+   IndexVectorType zone_A_direction = { 0, 1 };
 
    //:GhostZone zone_B( 3, 5 );
    //:GhostZone zone_C( 4, 5 );
    //:GhostZone zone_D( 3, 5 );
 
-   zone_A.template assignCells< Particles::CellIndexer >( zone_A_begin, zone_A_size, particles->getGridSize() );
+   zone_A.template assignCells< Particles::CellIndexer >( zone_A_begin, zone_A_direction, particles->getGridSize() );
+   std::cout << zone_A.getCellsInZone() << std::endl;
+   std::cout << zone_A.getParticlesInZone() << std::endl;
+
+   zone_A.updateParticlesInZone( particles );
    std::cout << zone_A.getCellsInZone() << std::endl;
    std::cout << zone_A.getParticlesInZone() << std::endl;
 
