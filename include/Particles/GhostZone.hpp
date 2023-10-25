@@ -67,6 +67,37 @@ ParticleZone< ParticleConfig >::getParticlesInZone()
 }
 
 template< typename ParticleConfig >
+const typename ParticleZone< ParticleConfig >::GlobalIndexType
+ParticleZone< ParticleConfig >::getNumberOfParticles() const
+{
+   return numberOfParticlesInZone;
+}
+
+template< typename ParticleConfig >
+const typename ParticleZone< ParticleConfig >::GlobalIndexType
+ParticleZone< ParticleConfig >::getNumberOfCells() const
+{
+   return numberOfCellsInZone;
+}
+
+template< typename ParticleConfig >
+void
+ParticleZone< ParticleConfig >::resetParticles()
+{
+   numberOfParticlesInZone = 0;
+   particlesInZone = 0;
+}
+
+template< typename ParticleConfig >
+void
+ParticleZone< ParticleConfig >::resetZoneCells()
+{
+   numberOfParticlesInZone = 0;
+   particlesInZone = 0;
+   cellsInZone = 0;
+}
+
+template< typename ParticleConfig >
 template< typename ParticlesPointer >
 void
 ParticleZone< ParticleConfig >::collectNumbersOfParticlesInCells( ParticlesPointer& particles )
@@ -74,14 +105,13 @@ ParticleZone< ParticleConfig >::collectNumbersOfParticlesInCells( ParticlesPoint
    const auto firstLastParticle_view = particles->getCellFirstLastParticleList().getConstView();
    const auto cellsInZone_view = this->cellsInZone.getConstView();
    auto numberOfParticlesInCell_view = this->numberOfParticlesInCell.getView();
-   std::cout << "flp: "  << firstLastParticle_view << std::endl;
 
    auto collectParticlesCounts = [=] __cuda_callable__ ( int i ) mutable
    {
       const GlobalIndexType cell = cellsInZone_view[ i ];
       const PairIndexType firstAndLastParticleInCell = firstLastParticle_view[ cell ];
 
-      if( firstAndLastParticleInCell[ 0 ] != FLT_MAX )
+      if( firstAndLastParticleInCell[ 0 ] != INT_MAX )
       {
          numberOfParticlesInCell_view[ i ] = firstAndLastParticleInCell[ 1 ] - firstAndLastParticleInCell[ 0 ] + 1;
       }
@@ -94,12 +124,9 @@ template< typename ParticlesPointer >
 void
 ParticleZone< ParticleConfig >::buildParticleList( ParticlesPointer& particles )
 {
-   std::cout << "Prefix field before scan: " << numberOfParticlesInCell << std::endl;
 
    Algorithms::inplaceExclusiveScan( this->numberOfParticlesInCell );
-   this->numberOfCellsInZone = this->numberOfParticlesInCell.getElement( numberOfCellsInZone - 1 );
-
-   std::cout << "Prefix field: " << numberOfParticlesInCell << std::endl;
+   this->numberOfParticlesInZone = this->numberOfParticlesInCell.getElement( numberOfCellsInZone - 1 ); //without last cell!
 
    const auto firstLastCellParticle_view = particles->getCellFirstLastParticleList().getConstView();
    const auto cellsInZone_view = this->cellsInZone.getConstView();
@@ -111,7 +138,7 @@ ParticleZone< ParticleConfig >::buildParticleList( ParticlesPointer& particles )
       const GlobalIndexType cell = cellsInZone_view[ i ];
       const PairIndexType firstLastParticle = firstLastCellParticle_view[ cell ];
 
-      if( firstLastParticle[ 0 ] != FLT_MAX )
+      if( firstLastParticle[ 0 ] != INT_MAX )
       {
          const GlobalIndexType numberOfPtcsInThisCell = firstLastParticle[ 1 ] - firstLastParticle[ 0 ] + 1;
          const GlobalIndexType particleListCellPrefix = numberOfParticlesInCell_view[ i ];
@@ -121,9 +148,17 @@ ParticleZone< ParticleConfig >::buildParticleList( ParticlesPointer& particles )
             particlesInZone_view[ particleListCellPrefix + j ] = firstLastParticle[ 0 ] + j;
          }
       }
-
    };
    Algorithms::parallelFor< DeviceType >( 0, this->numberOfCellsInZone, collectParticles );
+
+   //Add the particle from last cell
+   const PairIndexType firstLastParticleLastCell = firstLastCellParticle_view.getElement(
+         cellsInZone_view.getElement( this->numberOfCellsInZone - 1 ) );
+   if( firstLastParticleLastCell[ 0 ] != INT_MAX )
+   {
+      this->numberOfParticlesInZone += ( firstLastParticleLastCell[ 1 ] - firstLastParticleLastCell[ 0 ] + 1 );
+   }
+
 }
 
 
@@ -132,9 +167,7 @@ template< typename ParticlesPointer >
 void
 ParticleZone< ParticleConfig >::updateParticlesInZone( ParticlesPointer& particles )
 {
-   std::cout << "collect number of particles" << std::endl;
    this->collectNumbersOfParticlesInCells( particles );
-   std::cout << "buildParticleList" << std::endl;
    this->buildParticleList( particles );
 }
 

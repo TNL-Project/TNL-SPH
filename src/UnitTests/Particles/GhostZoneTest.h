@@ -127,17 +127,65 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    IndexVectorType zone_A_begin = { 1, 1 };
    IndexVectorType zone_A_direction = { 0, 1 };
 
-   //:GhostZone zone_B( 3, 5 );
-   //:GhostZone zone_C( 4, 5 );
-   //:GhostZone zone_D( 3, 5 );
+   GhostZone zone_B( 4, 4 );
+   IndexVectorType zone_B_begin = { 1, 1 };
+   IndexVectorType zone_B_direction = { 1, 0 };
+
+   GhostZone zone_C( 3, 5 );
+   IndexVectorType zone_C_begin = { 2, 1 };
+   IndexVectorType zone_C_direction = { 1, 1 };
+
+   //GhostZone zone_D( 3, 5 );
 
    zone_A.template assignCells< Particles::CellIndexer >( zone_A_begin, zone_A_direction, particles->getGridSize() );
-   std::cout << zone_A.getCellsInZone() << std::endl;
-   std::cout << zone_A.getParticlesInZone() << std::endl;
-
    zone_A.updateParticlesInZone( particles );
-   std::cout << zone_A.getCellsInZone() << std::endl;
-   std::cout << zone_A.getParticlesInZone() << std::endl;
+
+   const auto particlesInZoneA = zone_A.getParticlesInZone().getConstView();
+
+   EXPECT_EQ( zone_A.getNumberOfCells(), 3 );
+   EXPECT_EQ( zone_A.getNumberOfParticles(), 5 );
+
+   //[ 1, 1 ]
+   EXPECT_EQ( particlesInZoneA.getElement( 0 ), 0 );
+   //[ 1, 2 ]
+   EXPECT_EQ( particlesInZoneA.getElement( 1 ), 5 );
+   EXPECT_EQ( particlesInZoneA.getElement( 2 ), 6 );
+   //[ 1, 3 ]
+   EXPECT_EQ( particlesInZoneA.getElement( 3 ), 13 );
+   EXPECT_EQ( particlesInZoneA.getElement( 4 ), 14 );
+
+
+   zone_B.template assignCells< Particles::CellIndexer >( zone_B_begin, zone_B_direction, particles->getGridSize() );
+   zone_B.updateParticlesInZone( particles );
+
+   const auto particlesInZoneB = zone_B.getParticlesInZone().getConstView();
+
+   EXPECT_EQ( zone_B.getNumberOfCells(), 4 );
+   EXPECT_EQ( zone_B.getNumberOfParticles(), 5 );
+
+   //[ 1, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 0 ), 0 );
+   //[ 2, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 1 ), 1 );
+   EXPECT_EQ( particlesInZoneB.getElement( 2 ), 2 );
+   //[ 3, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 3 ), 3 );
+   //[ 4, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 4 ), 4 );
+
+   zone_C.template assignCells< Particles::CellIndexer >( zone_C_begin, zone_C_direction, particles->getGridSize() );
+   zone_C.updateParticlesInZone( particles );
+
+   const auto particlesInZoneC = zone_C.getParticlesInZone().getConstView();
+
+   //[ 2, 1 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 0 ), 1 );
+   EXPECT_EQ( particlesInZoneC.getElement( 1 ), 2 );
+   //[ 3, 2 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 2 ), 8 );
+   EXPECT_EQ( particlesInZoneC.getElement( 3 ), 9 );
+   //[ 4, 3 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 4 ), 19 );
 
 }
 

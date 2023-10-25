@@ -66,6 +66,30 @@ public:
    getParticlesInZone();
 
    /**
+    * Get number of particles in zone.
+    */
+   const GlobalIndexType
+   getNumberOfParticles() const;
+
+   /**
+    * Get number of cells in zone.
+    */
+   const GlobalIndexType
+   getNumberOfCells() const;
+
+   ///**
+   // * Get number of cells in zone.
+   // */
+   //const GlobalIndexType
+   //getMaxNumberOfParticlesPerCell() const;
+
+   void
+   resetParticles();
+
+   void
+   resetZoneCells();
+
+   /**
     * Collect particles contained in the zone
     */
    template< typename ParticlesPointer >
