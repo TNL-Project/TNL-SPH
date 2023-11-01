@@ -32,7 +32,7 @@ class SPHSimulationControl
    std::string outputFileName = "results/particles";
 
    const float endTime = 3.0;
-   const float outputTime = 0.01f;
+   const float outputTime = 0.05f;
 };
 
 } //SimulationConstrolConfiguration

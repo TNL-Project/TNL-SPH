@@ -5,37 +5,64 @@
 #---------------------------------------------------------------------------#
 ### Parameters of the case necessary for case creation:
 
-## Parameters
-dp = 0.002
+# Channel width H [m]:
+channelH = 0.1
+
+#Channel length L [m]
+channelL = 0.75
+
+#Inlet velocity vx_0 [m/s]:
+inletVelocity = 0.5
+
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument( "-resolution", default=0.002, type=float )
+args = parser.parse_args()
+
+# Initial particle distance (dp):
+dp =  args.resolution
+
+# Smoothing length coefitient:
+# smoothing length (h) = smoothing length coef (Coef_h) * initial particle distance (d_p)
+# [ h = Coef_h * dp ]
 smoothingLentghCoef = 2**0.5
-#smoothingLentghCoef = 2
 
+# Referential density of the medium (rho0):
 rho0 = 1000.
-p0 = 0.
 
+# Numerical speed of sound (c0):
+speedOfSound = 34.3
+
+# Number of boundary layers:
 numberOfBoundaryLayers = 3
 
-speedOfSound = 34.3
+# Initial time step.
+# In case, that initial time step is not defined, is computed automatically.
+timeStep = 0.00001
+
+# CFL number (CFL):
 CFLnumber = 0.2
-timeStep = 0.00002*0.5 #otherwise is obtained automatically
 
-write = '.vtk' #.ptcs or .vtk
+#Number of allocated particles (necessary for inlet)
+# In case, that number of allocated particles is not defined, is computed automatically.
+numberOfAllocatedParticles = 50000
+#---------------------------------------------------------------------------#
 
-boxL = 1.
+boxL = 0.75
 boxH = 0.3
 
-fluidL = 0.6
+fluidL = 0.75 - dp
 fluidH = 0.1 - dp
-numberOfAllocatedParticles = 50000
 
-## First inlet buffer. ##
+# Inlet buffer parameters
 inletBufferOrientation_x = 1.
 inletBufferOrientation_z = 0.
-inletBufferPosition_x = 0.1
-inletBufferPosition_z = 0. + dp*1
-inletBufferHeight = fluidH
+inletBufferPosition_x = 0.0
+inletBufferPosition_z = 0. + dp #right bottom corner as referential point
+inletBufferHeight = channelH - dp
 inletBufferLayers = numberOfBoundaryLayers + 1
-inletVelocity_x = 0.5
+inletVelocity_x = inletVelocity
 inletVelocity_z = 0.
 
 inletBufferWidth = inletBufferLayers * dp # - dp / 2
@@ -46,11 +73,11 @@ inletBufferReferencePoint_z = inletBufferPosition_z - inletBufferOrientation_z *
 ## Second inlet buffer. ##
 inlet2BufferOrientation_x = -1.
 inlet2BufferOrientation_z = 0.
-inlet2BufferPosition_x = 0.7 + dp
-inlet2BufferPosition_z = 0. + dp*1
-inlet2BufferHeight = fluidH
+inlet2BufferPosition_x = channelL
+inlet2BufferPosition_z = 0. + dp #left bottom corner as referential point
+inlet2BufferHeight = channelH - dp
 inlet2BufferLayers = numberOfBoundaryLayers + 1
-inlet2Velocity_x = 1.5
+inlet2Velocity_x = inletVelocity #initialize with inlet velocity
 inlet2Velocity_z = 0.
 
 inlet2BufferWidth = inlet2BufferLayers * dp # - dp / 2
@@ -151,8 +178,9 @@ boxH_n = round( boxH / dp )
 
 # bottom wall
 for layer in range( numberOfBoundaryLayers ):
-    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 ):
-        box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+    for x in range( boxL_n + ( inletBufferLayers - 1 ) * 2 + 1):
+        #box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+        box_rx.append( ( x - ( inletBufferLayers - 1 ) ) * dp )
         box_ry.append( 0. - layer * dp )
         box_rz.append( 0. )
 
@@ -167,8 +195,9 @@ for layer in range( numberOfBoundaryLayers ):
 
 # top wall
 for layer in range( numberOfBoundaryLayers ):
-    for x in range( boxL_n + ( numberOfBoundaryLayers - 1 ) * 2 ):
-        box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+    for x in range( boxL_n + ( inletBufferLayers - 1 ) * 2 + 1 ):
+        #box_rx.append( ( x - ( numberOfBoundaryLayers - 1 ) ) * dp )
+        box_rx.append( ( x - ( inletBufferLayers - 1 ) ) * dp )
         box_ry.append( ( fluidH + dp ) + layer * dp )
         box_rz.append( 0. ) #we use only 2D case
 
