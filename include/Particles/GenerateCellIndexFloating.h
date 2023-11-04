@@ -97,6 +97,17 @@ public:
          return i * gridSize[ 1 ]  + j;
    }
 
+   __cuda_callable__
+   static uint32_t
+   EvaluateCellIndex( const IndexVectorType& i, const IndexVectorType& gridSize )
+   {
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
+         return i[ 1 ] * gridSize[ 0 ]  + i[ 0 ];
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
+         return i[ 0 ] * gridSize[ 1 ]  + i[ 1 ];
+   }
+
 };
 
 template< typename ParticleConfig, typename Permutation >
@@ -166,6 +177,17 @@ public:
 
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
          return i * gridSize[ 1 ] * gridSize[ 2 ] + j * gridSize[ 1 ] + k;
+   }
+
+   __cuda_callable__
+   static uint32_t
+   EvaluateCellIndex( const IndexVectorType& i, const IndexVectorType& gridSize )
+   {
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1, 2 > > )
+         return i[ 2 ] * gridSize[ 0 ] * gridSize[ 1 ] + i[ 1 ] * gridSize[ 0 ] + i[ 0 ];
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
+         return i[ 0 ] * gridSize[ 1 ] * gridSize[ 2 ] + i[ 1 ] * gridSize[ 1 ] + i[ 2 ];
    }
 
 };
