@@ -103,6 +103,7 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
 
    using GhostZone = ParticleZone< ParticlesSetup::ParticlesConfig >;
    using IndexVectorType = typename GhostZone::IndexVectorType;
+   using PointType = typename Particles::PointType;
 
    ParticlesSetup setup;
    ParticlesPointer particles( setup.numberOfParticles,
@@ -134,8 +135,6 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    GhostZone zone_C( 3, 5 );
    IndexVectorType zone_C_begin = { 2, 1 };
    IndexVectorType zone_C_direction = { 1, 1 };
-
-   //GhostZone zone_D( 3, 5 );
 
    zone_A.template assignCells< Particles::CellIndexer >( zone_A_begin, zone_A_direction, particles->getGridSize() );
    zone_A.updateParticlesInZone( particles );
@@ -186,6 +185,32 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    EXPECT_EQ( particlesInZoneC.getElement( 3 ), 9 );
    //[ 4, 3 ]
    EXPECT_EQ( particlesInZoneC.getElement( 4 ), 19 );
+
+   GhostZone zone_D( 5 );
+   PointType zone_D_firstPoint = { 0.6f, 0.f };
+   PointType zone_D_secondPoint = { 1.2f, 1.5f };
+
+   zone_D.template assignCells< Particles::CellIndexer >( zone_D_firstPoint, zone_D_secondPoint, setup.gridSize, setup.gridOrigin, setup.searchRadius );
+   zone_D.updateParticlesInZone( particles );
+
+   const auto particlesInZoneD = zone_D.getParticlesInZone().getConstView();
+
+   //[ 2, 1 ]
+   EXPECT_EQ( particlesInZoneD.getElement( 0 ), 1 );
+   EXPECT_EQ( particlesInZoneD.getElement( 1 ), 2 );
+   //[ 3, 1 ]
+   EXPECT_EQ( particlesInZoneD.getElement( 2 ), 3 );
+   //[ 2, 2 ]
+   EXPECT_EQ( particlesInZoneD.getElement( 3 ), 7 );
+   //[ 3, 2 ]
+   EXPECT_EQ( particlesInZoneD.getElement( 4 ), 8 );
+   EXPECT_EQ( particlesInZoneD.getElement( 5 ), 9 );
+   //[ 2, 3 ]
+   EXPECT_EQ( particlesInZoneD.getElement( 6 ), 15 );
+   EXPECT_EQ( particlesInZoneD.getElement( 7 ), 16 );
+   EXPECT_EQ( particlesInZoneD.getElement( 8 ), 17 );
+   //[ 3, 3 ]
+   EXPECT_EQ( particlesInZoneD.getElement( 9 ), 18 );
 
 }
 

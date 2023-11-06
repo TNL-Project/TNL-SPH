@@ -20,8 +20,20 @@ public:
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
    using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //FIXME
+   using PointType = typename ParticleTraitsType::PointType;
+   using RealType = typename ParticleTraitsType::RealType;
 
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
+
+   /**
+    * Constructor.
+    */
+   ParticleZone() = default;
+
+   /**
+    * Constructor.
+    */
+   ParticleZone( GlobalIndexType numberOfParticlesPerCell ) : numberOfParticlesPerCell( numberOfParticlesPerCell ) {}
 
    /**
     * Constructor - allocate only the field.
@@ -39,6 +51,17 @@ public:
    template< typename CellIndexer >
    void
    assignCells( IndexVectorType startingPoint, IndexVectorType size, IndexVectorType gridSize );
+
+   /**
+    * Assign cells from point and direction for grid-base orthogonal zones
+    */
+   template< typename CellIndexer >
+   void
+   assignCells( const PointType firstPoint,
+                const PointType secondPoint,
+                IndexVectorType gridSize,
+                PointType gridOrigin,
+                RealType searchRadius );
 
    /**
     * Assign cells from another array.
@@ -111,6 +134,8 @@ public:
 
 
 protected:
+
+   GlobalIndexType numberOfParticlesPerCell;
 
    GlobalIndexType numberOfCellsInZone;
 

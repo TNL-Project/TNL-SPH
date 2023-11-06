@@ -31,6 +31,43 @@ ParticleZone< ParticleConfig >::assignCells( IndexVectorType startingPoint, Inde
 }
 
 template< typename ParticleConfig >
+template< typename CellIndexer >
+void
+ParticleZone< ParticleConfig >::assignCells( const PointType firstPoint,
+                                             const PointType secondPoint,
+                                             IndexVectorType gridSize,
+                                             PointType gridOrigin,
+                                             RealType searchRadius )
+{
+   const PointType zoneSize = secondPoint - firstPoint;
+   const IndexVectorType zoneSizeInCells = TNL::ceil( zoneSize / searchRadius );
+   const IndexVectorType firstPointIdx = (firstPoint - gridOrigin ) / searchRadius;
+
+   if constexpr( ParticleConfig::spaceDimension == 2 )
+      this->numberOfCellsInZone = zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
+
+   if constexpr( ParticleConfig::spaceDimension == 3 )
+      this->numberOfCellsInZone = zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ] * zoneSizeInCells[ 2 ];
+
+   cellsInZone.resize( this->numberOfCellsInZone );
+   numberOfParticlesInCell.resize( this->numberOfCellsInZone );
+   particlesInZone.resize( numberOfCellsInZone * numberOfParticlesPerCell );
+
+   auto cellsInZone_view = this->cellsInZone.getView();
+
+   if constexpr( ParticleConfig::spaceDimension == 2 )
+   {
+      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      {
+         const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ];
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+      };
+      const IndexVectorType begin = { 0, 0 };
+      Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
+   }
+}
+
+template< typename ParticleConfig >
 template< typename Array >
 void
 ParticleZone< ParticleConfig >::assignCells( Array& inputCells )
