@@ -107,6 +107,9 @@ public:
    //getMaxNumberOfParticlesPerCell() const;
 
    void
+   setNumberOfParticlesPerCell( const GlobalIndexType numberOfParticlesPerCell );
+
+   void
    resetParticles();
 
    void
@@ -117,20 +120,20 @@ public:
     */
    template< typename ParticlesPointer >
    void
-   collectNumbersOfParticlesInCells( ParticlesPointer& particles );
+   collectNumbersOfParticlesInCells( const ParticlesPointer& particles );
 
    /**
     * Collect particles contained in the zone
     */
    template< typename ParticlesPointer >
    void
-   buildParticleList( ParticlesPointer& particles );
+   buildParticleList( const ParticlesPointer& particles );
 
    /**
     * Collect particles contained in the zone
     */
    template< typename ParticlesPointer >
-   void updateParticlesInZone( ParticlesPointer& particles );
+   void updateParticlesInZone( const ParticlesPointer& particles );
 
 
 protected:
@@ -141,7 +144,7 @@ protected:
 
    IndexArrayType cellsInZone;
 
-   IndexArrayType numberOfParticlesInCell;
+   IndexArrayType numberOfParticlesInCell; //FIXME: Rename.
 
    GlobalIndexType numberOfParticlesInZone = 0;
    IndexArrayType particlesInZone;

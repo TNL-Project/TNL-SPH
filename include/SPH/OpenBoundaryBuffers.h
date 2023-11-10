@@ -2,6 +2,7 @@
 
 #include <string>
 #include "PhysicalObject.h"
+#include "../Particles/GhostZone.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -21,6 +22,8 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
 
    using SPHTraitsType = typename BaseType::SPHTraitsType;
    using VectorType = typename SPHTraitsType::VectorType;
+
+   using ParticleZone = ParticleZone< typename ParticleSystem::Config >;
 
    OpenBoundary( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : PhysicalObject< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells ) {};
@@ -48,6 +51,26 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
       parameters.bufferWidth = config.bufferWidth;
    }
 
+   template< typename Params, typename SPHParams >
+   void
+   readOpenBoundaryParameters( Params config, SPHParams params )
+   {
+      parameters.identifier = config.identifier;
+      parameters.position = config.position;
+      parameters.orientation = config.orientation;
+      parameters.bufferWidth = config.bufferWidth;
+
+      //initialize adjecent zone
+      zone.setNumberOfParticlesPerCell( config.numberOfParticlesPerCell );
+      VectorType zoneBoxFirstPoit = config.periodicityFirstPoint;
+      //VectorType zoneBoxSecondPoit = config.periodicitySecondPoint + config.bufferWidth * config.orientation;
+      VectorType zoneBoxSecondPoit = config.periodicitySecondPoint;
+      zone.template assignCells< typename ParticleSystem::CellIndexer >(
+            zoneBoxFirstPoit, zoneBoxSecondPoit, params.gridSize, params.gridOrigin, params.searchRadius  );
+
+   }
+
+
    struct OpenBoundaryParameters
    {
       std::string identifier;
@@ -60,6 +83,8 @@ class OpenBoundary : public PhysicalObject< ParticleSystem, SPHCaseConfig, Varia
    GlobalIndexType numberOfFluidParticlesToRemove = 0;
 
    //zone grid
+   ParticleZone zone;
+
 };
 
 }

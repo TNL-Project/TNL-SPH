@@ -119,9 +119,17 @@ ParticleZone< ParticleConfig >::getNumberOfCells() const
 
 template< typename ParticleConfig >
 void
+ParticleZone< ParticleConfig >::setNumberOfParticlesPerCell( const GlobalIndexType numberOfParticlesPerCell )
+{
+   this->numberOfParticlesPerCell = numberOfParticlesPerCell;
+}
+
+template< typename ParticleConfig >
+void
 ParticleZone< ParticleConfig >::resetParticles()
 {
    numberOfParticlesInZone = 0;
+   numberOfParticlesInCell = 0;
    particlesInZone = 0;
 }
 
@@ -137,7 +145,7 @@ ParticleZone< ParticleConfig >::resetZoneCells()
 template< typename ParticleConfig >
 template< typename ParticlesPointer >
 void
-ParticleZone< ParticleConfig >::collectNumbersOfParticlesInCells( ParticlesPointer& particles )
+ParticleZone< ParticleConfig >::collectNumbersOfParticlesInCells( const ParticlesPointer& particles )
 {
    const auto firstLastParticle_view = particles->getCellFirstLastParticleList().getConstView();
    const auto cellsInZone_view = this->cellsInZone.getConstView();
@@ -159,7 +167,7 @@ ParticleZone< ParticleConfig >::collectNumbersOfParticlesInCells( ParticlesPoint
 template< typename ParticleConfig >
 template< typename ParticlesPointer >
 void
-ParticleZone< ParticleConfig >::buildParticleList( ParticlesPointer& particles )
+ParticleZone< ParticleConfig >::buildParticleList( const ParticlesPointer& particles )
 {
 
    Algorithms::inplaceExclusiveScan( this->numberOfParticlesInCell );
@@ -202,8 +210,9 @@ ParticleZone< ParticleConfig >::buildParticleList( ParticlesPointer& particles )
 template< typename ParticleConfig >
 template< typename ParticlesPointer >
 void
-ParticleZone< ParticleConfig >::updateParticlesInZone( ParticlesPointer& particles )
+ParticleZone< ParticleConfig >::updateParticlesInZone( const ParticlesPointer& particles )
 {
+   this->resetParticles();
    this->collectNumbersOfParticlesInCells( particles );
    this->buildParticleList( particles );
 }

@@ -188,6 +188,18 @@ public:
    void
    updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
 
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   applyPeriodicBoundary( FluidPointer& fluid, OpenBoundaryPointer& openBoundary1, OpenBoundaryPointer& openBoundary2, VectorType shift );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   copyGhostParticles( FluidPointer& fluid, OpenBoundaryPointer& sendingBuffer, OpenBoundaryPointer& receivingBuffer, VectorType shift );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   periodicityParticleTransfer( FluidPointer& fluid, OpenBoundaryPointer& periodicBuffer, VectorType& posShift );
+
    template< typename BoundaryPointer >
    void
    integrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
