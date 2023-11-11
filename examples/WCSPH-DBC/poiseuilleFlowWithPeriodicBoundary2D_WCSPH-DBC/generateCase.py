@@ -307,9 +307,9 @@ fileParticleConf = fileParticleConf.replace( 'placeholderDimension', str( spaceD
 fileParticleConf = fileParticleConf.replace( 'placeholderFluidParticles', str( len( fluid_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedFluidParticles', str( numberOfAllocatedParticles ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderBoundaryParticles', str( len( box_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedBoundaryParticles', str( len( box_rx ) * 4 ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderInletParticles', str( len( inlet_rx ) ) )
-fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedInletParticles', str( len( inlet_rx ) ) )
+fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedInletParticles', str( len( inlet_rx ) * 4 ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderOutletParticles', str( len( inlet2_rx ) ) )
 fileParticleConf = fileParticleConf.replace( 'placeholderAllocatedOutletParticles', str( len( inlet2_rx ) * 3 ) )
 
@@ -338,10 +338,10 @@ fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftHeigth_y', str( roun
 fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftShiftVector_x', str( round( leftShiftVector_x, 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftShiftVector_y', str( 0. ) )
 
-fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftFirstPoint_x', str( round( inlet2BufferPosition_x, 7 ) ) )
-fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftFirstPoint_y', str( round( inlet2BufferPosition_z, 7 ) ) )
-fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftSecondPoint_x', str(round( inlet2BufferPosition_x - dp/2 + searchRadius * 1.1 , 7 ) ) )
-fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftSecondPoint_y', str( round( inlet2BufferPosition_z, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftFirstPoint_x', str( round( inletBufferPosition_x, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftFirstPoint_y', str( round( inletBufferPosition_z, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftSecondPoint_x', str(round( inletBufferPosition_x - dp/2 + searchRadius * 1.1 , 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderPeriodicityLeftSecondPoint_y', str( round( inletBufferHeight, 7 ) ) )
 
 #outlet
 fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightOrientation_x', str( inlet2BufferOrientation_x ) )
@@ -361,7 +361,7 @@ fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightShiftVector_y', str
 fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightFirstPoint_x', str( round( inlet2BufferPosition_x - dp/2 - searchRadius * 1.1 , 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightFirstPoint_y', str( round( inlet2BufferPosition_z, 7 ) ) )
 fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightSecondPoint_x', str( inlet2BufferPosition_x - dp/2 ) )
-fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightSecondPoint_y', str( round( inlet2BufferPosition_z, 7 ) ) )
+fileOBConf = fileOBConf.replace( 'placeholderPeriodicityRightSecondPoint_y', str( round( inlet2BufferHeight, 7 ) ) )
 
 # BOTH
 fileOBConf = fileOBConf.replace( 'placeholderNumberOfParticlesPerCell', str( numberOfParticlesPerCell ) )
