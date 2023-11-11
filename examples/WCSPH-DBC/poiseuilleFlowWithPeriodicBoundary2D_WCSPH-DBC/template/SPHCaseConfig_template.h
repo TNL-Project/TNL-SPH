@@ -131,7 +131,7 @@ class SPHParamsConfig
    /**
     * Define external forces [m^2 / s].
     */
-   float gravity[ 2 ] { 0.f, 0.f };
+   float gravity[ 2 ] { 0.1f, 0.f };
 
    /**
     * Define constant to prevent zero in denominator [-].
