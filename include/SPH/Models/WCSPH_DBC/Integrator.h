@@ -188,6 +188,57 @@ public:
    void
    updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
 
+   /**
+    * New set of functions to realize open boundary conditions.
+    */
+   template< typename FluidPointer,
+             typename OpenBoundaryPointer,
+             typename OpenBoundaryParams,
+             typename OpenBCType = typename OpenBoundaryParams:: OpenBCType,
+             std::enable_if_t< std::is_same_v< OpenBCType, WCSPH_BCTypes::Inlet >, bool > Enabled = true >
+   void
+   applyOpenBoundary( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
+
+   template< typename FluidPointer,
+             typename OpenBoundaryPointer,
+             typename OpenBoundaryParams,
+             typename OpenBCType = typename OpenBoundaryParams:: OpenBCType,
+             std::enable_if_t< std::is_same_v< OpenBCType, WCSPH_BCTypes::Outlet >, bool > Enabled = true >
+   void
+   applyOpenBoundary( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
+
+   template< typename OpenBoundaryPointer >
+   GlobalIndexType
+   moveInletBufferParticles( RealType dt, OpenBoundaryPointer& openBoundary );
+
+   template< typename OpenBoundaryPointer >
+   GlobalIndexType
+   moveOutletBufferParticles( RealType dt, OpenBoundaryPointer& openBoundary );
+
+   template< typename OpenBoundaryPointer >
+   void
+   sortBufferParticlesByMark( OpenBoundaryPointer& openBoundary );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
+   void
+   convertBufferToFluid( FluidPointer& fluid,
+                         OpenBoundaryPointer& openBoundary,
+                         OpenBoundaryParams& openBoundaryParams,
+                         const GlobalIndexType numberOfRetyped );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   GlobalIndexType
+   getFluidParticlesEnteringOutlet( FluidPointer& fluid, OpenBoundaryPointer& openBoundary );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   convertFluidToBuffer( FluidPointer& fluid,
+                         OpenBoundaryPointer& openBoundary,
+                         const GlobalIndexType fluidToBufferCount );
+
+   /**
+    * Functions to realize periodic boundary conditions.
+    */
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    applyPeriodicBoundary( FluidPointer& fluid, OpenBoundaryPointer& openBoundary1, OpenBoundaryPointer& openBoundary2, VectorType shift );

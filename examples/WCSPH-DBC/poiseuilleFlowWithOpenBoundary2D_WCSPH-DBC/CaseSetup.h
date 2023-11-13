@@ -170,10 +170,12 @@ int main( int argc, char* argv[] )
       std::cout << "Integration... done. " << std::endl;
 
       timer_inlet.start();
-      sph.integrator->updateBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], inletParams );
+      //sph.integrator->updateBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], inletParams );
+      sph.integrator->applyOpenBoundary( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], inletParams );
       timer_inlet.stop();
       timer_outlet.start();
-      sph.integrator->updateOutletBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], outletParams );
+      //sph.integrator->updateOutletBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], outletParams );
+      sph.integrator->applyOpenBoundary( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], outletParams );
       timer_outlet.stop();
       std::cout << "Open boundary... done. " << std::endl;
 

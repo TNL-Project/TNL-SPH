@@ -20,6 +20,12 @@ struct GWBC //not implemented
 struct OpenBoundary
 {};
 
+struct Inlet
+{};
+
+struct Outlet
+{};
+
 struct None
 {};
 
