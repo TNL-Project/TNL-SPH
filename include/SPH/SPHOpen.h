@@ -69,10 +69,33 @@ public:
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
-   void PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells );
+   void
+   performNeighborSearch( GlobalIndexType step,
+                          TNL::Timer& timer_reset,
+                          TNL::Timer& timer_cellIndices,
+                          TNL::Timer& timer_sort,
+                          TNL::Timer& timer_toCells );
+
+   template< typename PhysicalObjectPointer >
+   void
+   performNeighborSearchForObject( const GlobalIndexType& step,
+                                   PhysicalObjectPointer& objectPointer,
+                                   TNL::Timer& timer_reset,
+                                   TNL::Timer& timer_cellIndices,
+                                   TNL::Timer& timer_sort,
+                                   TNL::Timer& timer_toCells );
+
+   template< typename PhysicalObjectPointer >
+   void
+   performNeighborSearchForOpenBoundaryPatches( const GlobalIndexType& step,
+                                                TNL::Timer& timer_reset,
+                                                TNL::Timer& timer_cellIndices,
+                                                TNL::Timer& timer_sort,
+                                                TNL::Timer& timer_toCells );
 
    /**
-    * Perform interaction for all particles, i.e. for all types.
+    * \brief Perform interaction between all particles and all particle objects
+    * in the simulation.
     */
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
    void interact( SPHState& sphState );

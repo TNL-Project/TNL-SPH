@@ -7,7 +7,7 @@ namespace SPH {
 
 template< typename Model >
 void
-SPHOpenSystem< Model >::PerformNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
+SPHOpenSystem< Model >::performNeighborSearch( GlobalIndexType step, TNL::Timer& timer_reset, TNL::Timer& timer_cellIndices, TNL::Timer& timer_sort, TNL::Timer& timer_toCells )
 {
    /**
     * Compute gird nad partice cell indices.
@@ -110,8 +110,6 @@ SPHOpenSystem< Model >::addOpenBoundaryPatch( SPHOpenSystemInit sphConfig )
                                         sphConfig.numberOfAllocatedOpenBoundaryParticles[ i ],
                                         sphConfig.searchRadius,
                                         sphConfig.numberOfGridCells );
-      //openBoundaryPatches[ 0 ]->particles->setGridSize( sphConfig.gridSize );
-      //openBoundaryPatches[ 0 ]->particles->setGridOrigin( sphConfig.gridOrigin );
 
       openBoundaryPatches[ i ]->particles->setGridSize( sphConfig.gridSize );
       openBoundaryPatches[ i ]->particles->setGridOrigin( sphConfig.gridOrigin );

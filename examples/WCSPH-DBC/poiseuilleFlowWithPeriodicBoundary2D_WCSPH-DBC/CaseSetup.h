@@ -129,7 +129,7 @@ int main( int argc, char* argv[] )
        * Find neighbors within the SPH simulation.
        */
       timer_search.start();
-      sph.PerformNeighborSearch(
+      sph.performNeighborSearch(
             timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
       timer_search.stop();
       std::cout << "Search... done. " << std::endl;
