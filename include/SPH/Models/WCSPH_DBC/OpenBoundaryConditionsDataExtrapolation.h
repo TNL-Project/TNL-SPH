@@ -19,14 +19,40 @@ WCSPH_DBC< ParticleSystem, SPHState >::extrapolateOpenBoundaryData( FluidPointer
 {
    if constexpr( SPHState::SPHConfig::spaceDimension == 2 )
    {
-      extrapolateOpenBoundaryData2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
-            fluid, openBoundary, sphState, openBoundaryParams );
+      if( ( openBoundaryParams.rho_bc == "extrapolated" ) && ( openBoundaryParams.v_bc == "extrapolated" ) )
+      {
+         extrapolateOpenBoundaryData2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
+               fluid, openBoundary, sphState, openBoundaryParams );
+      }
+      else if ( openBoundaryParams.rho_bc == "extrapolated"  )
+      {
+         extrapolateOpenBoundaryDensity2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
+               fluid, openBoundary, sphState, openBoundaryParams );
+      }
+      else if ( openBoundaryParams.v_bc == "extrapolated"  )
+      {
+         extrapolateOpenBoundaryVelocity2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
+               fluid, openBoundary, sphState, openBoundaryParams );
+      }
    }
 
    if constexpr( SPHState::SPHConfig::spaceDimension == 3 )
    {
-      extrapolateOpenBoundaryData3D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
-            fluid, openBoundary, sphState, openBoundaryParams );
+      if( ( openBoundaryParams.rho_bc == "extrapolated" ) && ( openBoundaryParams.v_bc == "extrapolated" ) )
+      {
+         extrapolateOpenBoundaryData2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
+               fluid, openBoundary, sphState, openBoundaryParams );
+      }
+      else if ( openBoundaryParams.rho_bc == "extrapolated"  )
+      {
+         extrapolateOpenBoundaryDensity2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
+               fluid, openBoundary, sphState, openBoundaryParams );
+      }
+      else if ( openBoundaryParams.v_bc == "extrapolated"  )
+      {
+         extrapolateOpenBoundaryVelocity2D< FluidPointer, OpenBoudaryPointer, SPHKernelFunction, EOS >(
+               fluid, openBoundary, sphState, openBoundaryParams );
+      }
    }
 }
 

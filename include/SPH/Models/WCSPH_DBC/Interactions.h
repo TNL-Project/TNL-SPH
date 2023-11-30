@@ -2,6 +2,7 @@
 
 #include "../../SPHTraits.h"
 #include "BoundaryConditionsTypes.h"
+#include "OpenBoundaryConfig.h"
 #include "Variables.h"
 #include "../../../Particles/neighborSearchLoop.h"
 #include <TNL/Matrices/StaticMatrix.h>
@@ -56,6 +57,7 @@ public:
    //Open boundary
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
    using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
+   using OpenBoundaryConfig = DBCOpenBoundaryConfig< SPHConfig >;
 
    /**
     * Constructor.

@@ -1,17 +1,50 @@
 #pragma once
 #include "../../OpenBoundaryConfig.h"
+#include "BoundaryConditionsTypes.h"
+#include <SPH/SPHTraits.h>
 
 namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename OpenBoundaryType, typename SPHConfig >
-class DBCOpenBoundaryConfig : public OpenBoundaryConfig< OpenBoundaryType, SPHConfig >
+template< typename SPHConfig >
+bool SPHModelInit( TNL::Config::ConfigDescription config )
+{
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+
+   config.addEntry< std::string >( "identifier", "Identifier of the open boundary patch.", "empty" );
+   config.addEntry< VectorType >( "orientation", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< VectorType >( "position", "Position of the open boundary buffer.", 0 );
+   config.addEntry< VectorType >( "bufferWidth", "Width of the open boundary buffer.", 0 );
+   config.addEntry< VectorType >( "bufferHeight", "Height of the open boundary buffer.", 0 );
+   config.addEntry< int >( "numberOfParticlesPerCell", "Maximum allowed number of particles per grid cell.", 0 );
+
+   config.addEntry< std::string >( "rho_bc", "Define type of open boundary condition for density.", "undefine" );
+   config.addEntryEnum( "fiexd" );
+   config.addEntryEnum( "extrapolated" );
+   config.addEntry< RealType >( "density", "Open boundary value for density.", 0 );
+   config.addEntry< std::string >( "v_bc", "Define type of open boundary condition for velocity.", "undefine" );
+   config.addEntry< RealType >( "velocity", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( "extrapolationDetTreshold", "Velocity treshold required in case of extrapolation.", 0 );
+   config.addEntryEnum( "fiexd" );
+   config.addEntryEnum( "extrapolated" );
+}
+
+template< typename SPHConfig >
+class DBCOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
 {
    public:
-   using Base = OpenBoundaryConfig< OpenBoundaryType, SPHConfig >;
-   using RealType = typename OpenBoundaryType::RealType;
-   using VectorType = typename OpenBoundaryType::VectorType;
+   using Base = OpenBoundaryConfig< SPHConfig >;
+   using RealType = typename Base::RealType;
+   using VectorType = typename Base::VectorType;
+
+   DBCOpenBoundaryConfig() = default;
+   DBCOpenBoundaryConfig( DBCOpenBoundaryConfig&& config );
+
+   WCSPH_BCTypes::OpenBoundaryConditionsType type;
 
    /**
     * Define value handling on the buffer. Three options are possible:

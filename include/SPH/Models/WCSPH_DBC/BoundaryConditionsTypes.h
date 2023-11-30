@@ -29,6 +29,16 @@ struct Outlet
 struct None
 {};
 
+enum class OpenBoundaryConditionsType
+: std::uint8_t
+{
+    PeriodicBoundary = 0,
+
+    Inlet = 1,
+
+    Outlet = 2
+};
+
 } // WCSPHSolidWallBCTypes
 } // SPH
 } // ParticleSystem

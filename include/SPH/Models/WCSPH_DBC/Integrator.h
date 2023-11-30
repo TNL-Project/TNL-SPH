@@ -4,6 +4,8 @@
 #include <TNL/Containers/ArrayView.h>
 #include "../../shared/thrustExecPolicySelector.h"
 #include <thrust/gather.h>
+#include "BoundaryConditionsTypes.h"
+#include "OpenBoundaryConfig.h"
 
 #include "Variables.h"
 #include "../../SPHTraits.h"
@@ -30,6 +32,7 @@ class IntegratorVariables
 
    using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
+
 
    IntegratorVariables( GlobalIndexType size )
    : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size )
@@ -101,6 +104,8 @@ public:
 
    using IntegratorVariablesType = IntegratorVariables< SPHConfig >;
    using IntegratorVariablesPointer = typename Pointers::SharedPointer< IntegratorVariablesType, DeviceType >;
+
+   using OpenBoundaryConfig = DBCOpenBoundaryConfig< SPHConfig >;
 
    VerletIntegrator() = default;
 
@@ -180,32 +185,31 @@ public:
    }
 
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
-   template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
-   void
-   updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
+   //template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
+   //void
+   //updateBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
 
-   template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
-   void
-   updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
+   //template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
+   //void
+   //updateOutletBuffer( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
 
    /**
     * New set of functions to realize open boundary conditions.
     */
    template< typename FluidPointer,
-             typename OpenBoundaryPointer,
-             typename OpenBoundaryParams,
-             typename OpenBCType = typename OpenBoundaryParams:: OpenBCType,
-             std::enable_if_t< std::is_same_v< OpenBCType, WCSPH_BCTypes::Inlet >, bool > Enabled = true >
+             typename OpenBoundaryPointer >
    void
-   applyOpenBoundary( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
+   applyOpenBoundary( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer,
-             typename OpenBoundaryPointer,
-             typename OpenBoundaryParams,
-             typename OpenBCType = typename OpenBoundaryParams:: OpenBCType,
-             std::enable_if_t< std::is_same_v< OpenBCType, WCSPH_BCTypes::Outlet >, bool > Enabled = true >
+             typename OpenBoundaryPointer >
    void
-   applyOpenBoundary( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryParams& openBoundaryParams );
+   applyInletBoundaryCondition( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryConfig& openBoundaryParams );
+
+   template< typename FluidPointer,
+             typename OpenBoundaryPointer >
+   void
+   applyOuletBoundaryCondition( RealType dt, FluidPointer& fluid, OpenBoundaryPointer& openBoundary, OpenBoundaryConfig& openBoundaryParams );
 
    template< typename OpenBoundaryPointer >
    GlobalIndexType
@@ -219,11 +223,11 @@ public:
    void
    sortBufferParticlesByMark( OpenBoundaryPointer& openBoundary );
 
-   template< typename FluidPointer, typename OpenBoundaryPointer, typename OpenBoundaryParams >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    convertBufferToFluid( FluidPointer& fluid,
                          OpenBoundaryPointer& openBoundary,
-                         OpenBoundaryParams& openBoundaryParams,
+                         OpenBoundaryConfig& openBoundaryParams,
                          const GlobalIndexType numberOfRetyped );
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
