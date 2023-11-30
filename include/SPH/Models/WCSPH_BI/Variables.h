@@ -21,7 +21,7 @@ class SPHFluidVariables
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    SPHFluidVariables( GlobalIndexType size )
-   : rho( size ), drho ( size ), p( size ), v( size ), a( size ), rho_swap( size ), v_swap( size ) {}
+   : rho( size ), drho ( size ), p( size ), v( size ), a( size ), gamma( size ), rho_swap( size ), v_swap( size ) {}
 
    //Variables - Fields
    ScalarArrayType rho;
@@ -29,6 +29,7 @@ class SPHFluidVariables
    ScalarArrayType p;
    VectorArrayType v;
    VectorArrayType a;
+   ScalarArrayType gamma;
 
    //Additional variable fields to avoid inmpace sort
    ScalarArrayType rho_swap;
@@ -71,6 +72,22 @@ class SPHFluidVariables
       writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 ); //TODO: Obvious.
    }
 
+};
+
+template< typename SPHState >
+class SPHOpenBoundaryVariables : public SPHFluidVariables< SPHState >
+{
+   public:
+   using BaseType = SPHFluidVariables< SPHState >;
+   using SPHTraitsType = typename BaseType::SPHTraitsType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+
+   SPHOpenBoundaryVariables( GlobalIndexType size )
+   : SPHFluidVariables< SPHState >( size ), particleMark( size ), receivingParticleMark( size ) {};
+
+   IndexArrayType particleMark;
+   IndexArrayType receivingParticleMark;
 };
 
 template< typename SPHConfig >

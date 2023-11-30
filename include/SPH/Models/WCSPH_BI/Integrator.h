@@ -12,11 +12,11 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHFluidConfig >
+template< typename SPHConfig >
 class IntegratorVariables
 {
    public:
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
+   using SPHFluidTraitsType = SPHFluidTraits< SPHConfig >;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using RealType = typename SPHFluidTraitsType::RealType;
@@ -25,7 +25,7 @@ class IntegratorVariables
    using VectorArrayType = typename SPHFluidTraitsType::VectorArrayType;
 
    using IndexArrayType = typename SPHFluidTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHFluidConfig::DeviceType >;
+   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    IntegratorVariables( GlobalIndexType size )
    : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size )
@@ -61,19 +61,19 @@ class IntegratorVariables
    VectorArrayType v_old_swap;
 };
 
-template< typename ModelPointer, typename SPHFluidConfig, typename Variables = SPHFluidVariables< SPHFluidConfig > >
+template< typename SPHConfig >
 class VerletIntegrator
 {
 public:
 
-   using SPHFluidTraitsType = SPHFluidTraits< SPHFluidConfig >;
-   using DeviceType = typename SPHFluidConfig::DeviceType;
+   using SPHFluidTraitsType = SPHFluidTraits< SPHConfig >;
+   using DeviceType = typename SPHConfig::DeviceType;
 
    using GlobalIndexType = typename SPHFluidTraitsType::GlobalIndexType;
    using RealType = typename SPHFluidTraitsType::RealType;
    using VectorType = typename SPHFluidTraitsType::VectorType;
 
-   using IntegratorVariablesType = IntegratorVariables< SPHFluidConfig >;
+   using IntegratorVariablesType = IntegratorVariables< SPHConfig >;
    using IntegratorVariablesPointer = typename Pointers::SharedPointer< IntegratorVariablesType, DeviceType >;
 
    VerletIntegrator() = default;
@@ -154,6 +154,21 @@ public:
       Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
    }
 
+   /**
+    * Functions to realize periodic boundary conditions.
+    */
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   applyPeriodicBoundary( FluidPointer& fluid, OpenBoundaryPointer& openBoundary1, OpenBoundaryPointer& openBoundary2, VectorType shift );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   copyGhostParticles( FluidPointer& fluid, OpenBoundaryPointer& sendingBuffer, OpenBoundaryPointer& receivingBuffer, VectorType shift );
+
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   periodicityParticleTransfer( FluidPointer& fluid, OpenBoundaryPointer& periodicBuffer, VectorType& posShift );
+
    template< typename BoundaryPointer >
    void
    integrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
@@ -189,4 +204,6 @@ public:
 } // SPH
 } // ParticleSystem
 } // TNL
+
+#include "OpenBoundaryConditions.hpp"
 
