@@ -10,6 +10,10 @@
 #include "Fluid.h"
 #include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
+#include "OpenBoundaryConfig.h"
+#include "TNL/Functional.h"
+#include "TNL/Logger.h"
+#include "TimeMeasurement.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -44,6 +48,9 @@ public:
    using OpenBoundary = OpenBoundary< ParticleSystem, SPHConfig, OpenBoundaryVariables, IntegratorVariables >;
    using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
 
+   //using OpenBoundaryConfigType = OpenBoundaryConfig< TNL::ParticleSystem::SPH::None, SPHConfig >;
+   using OpenBoundaryConfigType = typename Model::OpenBoundaryConfig;
+
    SPHOpenSystem() = default;
 
    template< typename SPHOpenSystemInit >
@@ -66,40 +73,48 @@ public:
    void
    addOpenBoundaryPatch( SPHOpenSystemInit sphConfig );
 
+   template< typename SPHOpenSystemInit >
+   void
+   addOpenBoundaryPatch( SPHOpenSystemInit sphConfig, std::vector< OpenBoundaryConfigType >& bufferParams );
+
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
    void
-   performNeighborSearch( GlobalIndexType step,
-                          TNL::Timer& timer_reset,
-                          TNL::Timer& timer_cellIndices,
-                          TNL::Timer& timer_sort,
-                          TNL::Timer& timer_toCells );
+   performNeighborSearch( GlobalIndexType step, TimerMeasurement& timeMeasurement, TNL::Logger& log);
 
    template< typename PhysicalObjectPointer >
    void
    performNeighborSearchForObject( const GlobalIndexType& step,
                                    PhysicalObjectPointer& objectPointer,
-                                   TNL::Timer& timer_reset,
-                                   TNL::Timer& timer_cellIndices,
-                                   TNL::Timer& timer_sort,
-                                   TNL::Timer& timer_toCells );
+                                   TimerMeasurement& timeMeasurement,
+                                   TNL::Logger& log);
 
    template< typename PhysicalObjectPointer >
    void
    performNeighborSearchForOpenBoundaryPatches( const GlobalIndexType& step,
-                                                TNL::Timer& timer_reset,
-                                                TNL::Timer& timer_cellIndices,
-                                                TNL::Timer& timer_sort,
-                                                TNL::Timer& timer_toCells );
+                                                TimerMeasurement& timeMeasurement,
+                                                TNL::Logger& log );
+   /**
+    * \brief Perform interaction between all particles and all particle objects
+    * in the simulation.
+    */
+   template< typename SPHKernelFunction, typename EOS, typename SPHState >
+   void
+   extrapolateOpenBC( SPHState& sphState, std::vector< OpenBoundaryConfigType >& bufferParams );
 
    /**
     * \brief Perform interaction between all particles and all particle objects
     * in the simulation.
     */
    template< typename SPHKernelFunction, typename DiffusiveTerm, typename ViscousTerm, typename EOS, typename SPHState >
-   void interact( SPHState& sphState );
+   void
+   interact( SPHState& sphState );
 
+   /**
+    * \brief Save all particle object to vtk files. Automatically saves all
+    * available fileds.
+    */
    template< typename Writer >
    void
    save( const std::string& outputFilename, const int step, bool writeParticleCellIndex = false  );
@@ -112,6 +127,9 @@ public:
    FluidPointer fluid;
    BoundaryPointer boundary;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
+   std::vector< OpenBoundaryConfigType > openBoundaryPatchesConfigs;
+
+   //std::map< std::string, int > openBoundaryPatchesMap;
 
    ModelPointer model;
 

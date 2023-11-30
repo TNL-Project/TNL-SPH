@@ -50,6 +50,7 @@ using SimulationReaderType = TNL::ParticleSystem::ReadParticles< ParticlesParams
  *  Used to write computation time to json format.
  */
 #include <TNL/Benchmarks/Benchmarks.h>
+#include <SPH/TimeMeasurement.h>
 
 
 int main( int argc, char* argv[] )

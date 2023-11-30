@@ -6,6 +6,7 @@
  * - "OpenBoundaryConfig.h" contains parameter of SPH method
  */
 #include "sources/SimulationControlConfig.h"
+#include <string>
 using SimulationControl = TNL::ParticleSystem::SPH::SimulationControlConfiguration::SPHSimulationControl;
 
 #include "sources/ParticlesConfig.h"
@@ -50,7 +51,16 @@ using SimulationReaderType = TNL::ParticleSystem::ReadParticles< ParticlesParams
  *  Used to write computation time to json format.
  */
 #include <TNL/Benchmarks/Benchmarks.h>
+#include <SPH/TimeMeasurement.h>
 
+#include <SPH/Models/WCSPH_DBC/OpenBoundaryConfig.h>
+
+#include "sources/OpenBoundaryConfig.test.h"
+
+/**
+ * Test
+ */
+#include <SPH/Models/WCSPH_DBC/OpenBoundaryConfig.h>
 
 int main( int argc, char* argv[] )
 {
@@ -60,6 +70,9 @@ int main( int argc, char* argv[] )
     * necessary SPH constants, informations about terms in particular scheme etc.
     */
    SPHParams sphParams;
+
+   std::vector< SPHModel::OpenBoundaryConfig > openBoundaryConfigs( 2 );
+   #include "sources/OpenBoundaryConfig.test2.h"
 
    /**
     * Create instance of Simulation control class, which is object holding all the
@@ -100,7 +113,8 @@ int main( int argc, char* argv[] )
    timeStepping.addOutputTimer( "save_results", simulationControl.outputTime );
 
    //TODO: Resolve this
-   sph.addOpenBoundaryPatch( particlesParams );
+   //sph.addOpenBoundaryPatch( particlesParams );
+   sph.addOpenBoundaryPatch( particlesParams, openBoundaryConfigs );
 
    /**
     * Read the particle file and setup the inlets and outlets.
@@ -119,6 +133,10 @@ int main( int argc, char* argv[] )
          simulationControl.inputParticleFile_outlet );
    sph.openBoundaryPatches[ 1 ]->readOpenBoundaryParameters( outletParams );
 
+   //sph.template addOpenBoundaryPatch< TNL::ParticleSystem::SPH::WCSPH_BCTypes::Inlet >( "inlet", particlesParams, 0 );
+   //sph.template addOpenBoundaryPatch< TNL::ParticleSystem::SPH::WCSPH_BCTypes::Outlet >( "outlet", particlesParams, 1 );
+
+
    //FIXME - problem with 2D vectors:
    sph.fluid->variables->v = inletParams.velocity;
    sph.fluid->variables->v_swap = inletParams.velocity;
@@ -133,51 +151,50 @@ int main( int argc, char* argv[] )
    TNL::Timer timer_search, timer_interact, timer_integrate, timer_inlet, timer_outlet, timer_pressure;
    TNL::Timer timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells;
 
-   while( timeStepping.runTheSimulation() )
+   TNL::ParticleSystem::SPH::TimerMeasurement timeMeasurement;
+
+   TNL::Logger log( 100, std::cout );
+
+   //while( timeStepping.runTheSimulation() )
+   while( timeStepping.getStep() < 3 )
    {
-      std::cout << "Time: " << timeStepping.getTime() << " step: " <<  timeStepping.getStep() << std::endl;
-      std::cout << "Number of fluid particles: " << sph.fluid->particles->getNumberOfParticles() << std::endl;
+      log.writeHeader( "Time: " + std::to_string( timeStepping.getTime() ) + ", simulation step: " \
+                       + std::to_string( timeStepping.getStep() ) );
 
       /**
        * Find neighbors within the SPH simulation.
        */
-      timer_search.start();
-      sph.performNeighborSearch(
-            timeStepping.getStep(), timer_search_reset, timer_search_cellIndices, timer_search_sort, timer_search_toCells );
-      timer_search.stop();
-      std::cout << "Search... done. " << std::endl;
+      timeMeasurement.start( "search" );
+      sph.performNeighborSearch( timeStepping.getStep(), timeMeasurement, log );
+      timeMeasurement.stop( "search" );
+      log.writeParameter( "Search...", "Done." );
 
-      //TODO:
-      sph.model->extrapolateOpenBoundaryData< SPHSimulation::FluidPointer,
-                                              SPHSimulation::OpenBoundaryPointer,
-                                              SPHParams::KernelFunction,
-                                              SPHParams::EOS >( sph.fluid, sph.openBoundaryPatches[ 1 ], sphParams, outletParams );
+      sph.template extrapolateOpenBC< SPHParams::KernelFunction, SPHParams::EOS >( sphParams, openBoundaryConfigs );
+      log.writeParameter( "Extrapolate open BC...", "Done." );
 
       /**
        * Perform interaction with given model.
        */
-      timer_interact.start();
+      timeMeasurement.start( "interact" );
       sph.template interact< SPHParams::KernelFunction, SPHParams::DiffusiveTerm, SPHParams::ViscousTerm, SPHParams::EOS >( sphParams );
-      timer_interact.stop();
-      std::cout << "Interact... done. " << std::endl;
+      timeMeasurement.stop( "interact" );
+      log.writeParameter( "Interact...", "Done." );
 
       /**
        * Perform time integration, i.e. update particle positions.
        */
-      timer_integrate.start();
+      timeMeasurement.start( "integrate" );
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, timeStepping );
-      timer_integrate.stop();
-      std::cout << "Integration... done. " << std::endl;
+      timeMeasurement.stop( "integrate" );
+      log.writeParameter( "Integrate...", "Done." );
 
       timer_inlet.start();
-      //sph.integrator->updateBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], inletParams );
-      sph.integrator->applyOpenBoundary( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], inletParams );
+      sph.integrator->applyOpenBoundary( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 0 ], openBoundaryConfigs[ 0 ] );
       timer_inlet.stop();
       timer_outlet.start();
-      //sph.integrator->updateOutletBuffer( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], outletParams );
-      sph.integrator->applyOpenBoundary( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], outletParams );
+      sph.integrator->applyOpenBoundary( timeStepping.getTimeStep(), sph.fluid, sph.openBoundaryPatches[ 1 ], openBoundaryConfigs[ 1 ] );
       timer_outlet.stop();
-      std::cout << "Open boundary... done. " << std::endl;
+      log.writeParameter( "Update open BC...", "Done." );
 
       /**
        * Output particle data
@@ -192,12 +209,10 @@ int main( int argc, char* argv[] )
          timer_pressure.start();
          sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.fluid, sphParams );
          timer_pressure.stop();
-         std::cout << "Compute pressure... done. " << std::endl;
 
          timer_pressure.start();
          sph.model->template computePressureFromDensity< SPHParams::EOS >( sph.boundary, sphParams );
          timer_pressure.stop();
-         std::cout << "Compute pressure... done. " << std::endl;
 
          sph.template save< Writer >( simulationControl.outputFileName, timeStepping.getStep() );
       }
@@ -205,56 +220,7 @@ int main( int argc, char* argv[] )
       timeStepping.updateTimeStep();
    }
 
-   /**
-    * Write out simulation computation time.
-    */
-   float openBoundaryTime = timer_inlet.getRealTime() + timer_outlet.getRealTime();
-
-   float totalTime = ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() );
-
-   int steps = timeStepping.getStep();
-   float totalTimePerStep = totalTime / steps;
-
-   std::cout << std::endl << "COMPUTATION TIME:" << std::endl;
-   std::cout << "Search........................................ " << timer_search.getRealTime() << " sec." << std::endl;
-   std::cout << "Search (average time per step)................ " << timer_search.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Search (percentage)........................... " << timer_search.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Reset ..................................... " << timer_search_reset.getRealTime() << " sec." << std::endl;
-   std::cout << " - Reset (average time per step).............. " << timer_search_reset.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Reset (percentage)......................... " << timer_search_reset.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Index by cell ............................. " << timer_search_cellIndices.getRealTime() << " sec." << std::endl;
-   std::cout << " - Index by cell (average time per step)...... " << timer_search_cellIndices.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Index by cell (percentage)................. " << timer_search_cellIndices.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Sort ...................................... " << timer_search_sort.getRealTime() << " sec." << std::endl;
-   std::cout << " - Sort (average time per step)............... " << timer_search_sort.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Sort (percentage).......................... " << timer_search_sort.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Particle to cell .......................... " << timer_search_toCells.getRealTime() << " sec." << std::endl;
-   std::cout << " - Particle to cell (average time per step)... " << timer_search_toCells.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Particle to cell (percentage).............. " << timer_search_toCells.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Interaction................................... " << timer_interact.getRealTime() << " sec." << std::endl;
-   std::cout << "Interaction (average time per step)........... " << timer_interact.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Interaction (percentage)...................... " << timer_interact.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Integrate..................................... " << timer_integrate.getRealTime() << " sec." << std::endl;
-   std::cout << "Integrate (average time per step)............. " << timer_integrate.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Integrate (percentage)........................ " << timer_integrate.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Open boundary................................. " << openBoundaryTime << " sec." << std::endl;
-   std::cout << "Open boundary (average time per step)......... " << openBoundaryTime / steps << " sec." << std::endl;
-   std::cout << "Open boundary (percentage).................... " << openBoundaryTime / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Update inlet............................... " << timer_inlet.getRealTime() << " sec." << std::endl;
-   std::cout << " - Update inlet (average time per step)....... " << timer_inlet.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Update inlet (percentage).................. " << timer_inlet.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << " - Update outlet.............................. " << timer_outlet.getRealTime() << " sec." << std::endl;
-   std::cout << " - Update outlet (average time per step)...... " << timer_outlet.getRealTime() / steps << " sec." << std::endl;
-   std::cout << " - Update outlet (percentage)................. " << timer_outlet.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Pressure update............................... " << timer_pressure.getRealTime() << " sec." << std::endl;
-   std::cout << "Pressure update (average time per step)....... " << timer_pressure.getRealTime() / steps << " sec." << std::endl;
-   std::cout << "Pressure update (percentage).................. " << timer_pressure.getRealTime() / totalTime * 100 << " %." << std::endl;
-   std::cout << "Total......................................... " << ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) << " sec." << std::endl;
-   std::cout << "Total (average time per step)................. " << ( timer_search.getRealTime() + \
-   + timer_interact.getRealTime() + timer_integrate.getRealTime() + timer_pressure.getRealTime() ) / steps << " sec." << std::endl;
-
+   timeMeasurement.print( timeStepping.getStep() );
    std::cout << "\nDone ... " << std::endl;
 }
 

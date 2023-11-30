@@ -7,14 +7,9 @@ namespace TNL {
 namespace ParticleSystem {
 namespace SPH {
 
-template< typename SPHConfig >
 class TimerMeasurement
 {
 public:
-
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using RealType = typename SPHTraitsType::RealType;
 
    TimerMeasurement()
    {
@@ -47,7 +42,7 @@ public:
    }
 
    void
-   print( const GlobalIndexType stepsTotal )
+   print( const int stepsTotal )
    {
       std::ostream &str = std::cout;
       TNL::Logger logger( 100, str );
@@ -61,10 +56,6 @@ public:
          logger.writeParameter( key + "-percentage", val.getRealTime() );
          logger.writeSeparator();
       }
-
-      std::stringstream string;
-      string << str.rdbuf();
-      std::cout << string.str() << std::endl;
    }
 
 protected:

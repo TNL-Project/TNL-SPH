@@ -10,7 +10,7 @@ mkdir ${resultsPlotPath}
 caseName="damBreak2D_WCSPH-DBC"
 
 #Path to folder with experimental data and postprocessing scripts.
-resourcesPath="../resources/damBreak2D"
+resourcesPath="../../resources/damBreak2D"
 
 plotPressure_s1="$resourcesPath/plotPressure_s1.gp"
 plotPressure_s2="$resourcesPath/plotPressure_s2.gp"
