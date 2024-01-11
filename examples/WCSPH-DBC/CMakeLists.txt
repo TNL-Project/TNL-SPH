@@ -1,0 +1,4 @@
+add_subdirectory(damBreak2D_WCSPH-DBC)
+add_subdirectory(damBreak3D_WCSPH-DBC)
+add_subdirectory(poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC)
+add_subdirectory(poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC)

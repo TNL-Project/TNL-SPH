@@ -1,11 +1,11 @@
-# Files with particles
+# particle files
 *.ptcs
 *.vtk
 
-# Output files
+# output files
 *.json
 
-# Object files
+# object files
 *.o
 *.cuo
 
@@ -15,27 +15,28 @@ __*__
 # deprecated files
 *.old
 
-# CaseSetupFiles
-Examples/SPHCases/*/MeasuretoolConfig.h
-Examples/SPHCases/*/ParticlesConfig.h
-Examples/SPHCases/*/SPHCaseConfig.h
-Examples/SPHCases/*/SimulationControlConfig.h
-Examples/SPHCases/*/OpenBoundaryConfig.h
-Examples/SPHCases/*/results/*
-Examples/SPHCases/*/sources/*
+# build files
+build
 
-# Examples executable
-Examples/SPHCases/damBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
-Examples/SPHCases/damBreak3D_WCSPH-DBC/damBreak3D_WCSPH-DBC
-Examples/SPHCases/damBreak2D_WCSPH-BI/damBreak2D_WCSPH-BI
-Examples/SPHCases/damBreak2D_WCSPH-MDBC/damBreak2D_WCSPH-MDBC
-Examples/SPHCases/damBreak2D_RSPH/damBreak2D_RSPH
+# examples source files
+examples/*/*/results
+examples/*/*/sources
 
-Examples/SPHCases/distributedDamBreak2D_WCSPH-DBC/damBreak2D_WCSPH-DBC
-Examples/SPHCases/openChannel2D_WCSPH-DBC/openChannel2D_WCSPH-DBC
+# gencase generated configuration files (not the templates!)
+examples/*/*/template/generateGeometryWithDualSPHysicsGenCase/*_Def.xml
 
-Examples/SPHCases/periodicOpenChannel2D_WCSPH-BI/periodicOpenChannel2D_WCSPH-BI
-Examples/SPHCases/periodicOpenChannel2D_WCSPH-DBC/periodicOpenChannel2D_WCSPH-DBC
+# ignore products of unit tests
+src/Benchmarks/damBreak3D/TNL-SPH_resources/sources
+src/Benchmarks/damBreak3D/TNL-SPH_resources/damBreak3D_WCSPH-DBC
+src/Benchmarks/damBreak3D/TNL-SPH_resources/template/generateGeometryWithDualSPHysicsGenCase/damBreak3D_WCSPH-DBC_Def.xml
+
+src/Benchmarks/damBreak3D/dualSPHysics_resources/damBreak3D_WCSPH-DBC_Def.xml
+src/Benchmarks/damBreak3D/dualSPHysics_resources/damBreak3D_WCSPH-DBC_out
+
+src/Benchmarks/damBreak3D/openFPM_resources/VTPDATA
+src/Benchmarks/damBreak3D/openFPM_resources/Particles_0.pvtp
+src/Benchmarks/damBreak3D/openFPM_resources/main.cu
+src/Benchmarks/damBreak3D/openFPM_resources/sph_dlb
 
 #Documentation files
 Documentation/html

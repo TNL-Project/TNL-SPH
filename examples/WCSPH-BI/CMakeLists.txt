@@ -1,0 +1,2 @@
+add_subdirectory(damBreak2D_WCSPH-BI)
+add_subdirectory(poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI)
