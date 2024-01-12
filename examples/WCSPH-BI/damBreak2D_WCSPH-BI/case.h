@@ -3,7 +3,7 @@
 #include <TNL/Logger.h>
 
 #include <SPH/configSetup.h>
-#include "sources/config.h"
+#include "template/config.h"
 
 #include <SPH/Models/WCSPH_BI/control.h>
 

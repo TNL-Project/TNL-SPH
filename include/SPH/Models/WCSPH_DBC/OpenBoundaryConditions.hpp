@@ -17,7 +17,6 @@ OpenBoundaryConditionsBuffers< SPHConfig >::moveInletBufferParticles( RealType d
    auto view_inletMark = openBoundary->variables->particleMark.getView();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
-   const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
    const VectorType bufferPosition = openBoundary->parameters.position;
 
    view_inletMark = 1;
@@ -113,11 +112,9 @@ OpenBoundaryConditionsBuffers< SPHConfig >::convertBufferToFluid( FluidPointer& 
    auto view_r_buffer = openBoundary->particles->getPoints().getView();
    auto view_v_buffer = openBoundary->variables->v.getView();
    auto view_rho_buffer = openBoundary->variables->rho.getView();
-   auto view_inletMark = openBoundary->variables->particleMark.getView();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
-   const VectorType bufferPosition = openBoundary->parameters.position;
    const VectorType inletConstVelocity = openBoundaryParams.velocity;
    const RealType inletConstDensity = openBoundaryParams.density;
 
@@ -163,7 +160,6 @@ OpenBoundaryConditionsBuffers< SPHConfig >::getFluidParticlesEnteringOutlet( Flu
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
-   const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
    const VectorType bufferPosition = openBoundary->parameters.position;
 
    auto view_r_fluid = fluid->particles->getPoints().getView();

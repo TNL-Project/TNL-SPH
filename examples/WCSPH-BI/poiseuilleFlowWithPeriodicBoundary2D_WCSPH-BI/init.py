@@ -178,12 +178,6 @@ def write_simulation_params( setup ):
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 
-    # write config with templated configuration
-    with open( 'template/config_template.h', 'r' ) as file :
-      config_file = file.read()
-    with open( 'sources/config.h', 'w' ) as file:
-      file.write( config_file )
-
 def write_domain_background_grid( setup ):
     #TODO: Rename the DomainGrid function
     search_radius = setup[ "search_radius" ]

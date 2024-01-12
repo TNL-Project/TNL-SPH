@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticlesTraits.h"
+#include <bits/utility.h>
 
 using namespace TNL;
 using namespace TNL::ParticleSystem;
@@ -9,7 +10,22 @@ using namespace TNL::ParticleSystem;
 //row-major - std::index_sequence< 0, 1 >
 //column-major - std::index_sequence< 1, 0 >
 
-template< int Dimension, typename ParticleConfig, typename Permutation = std::index_sequence< 0, 1 > >
+template< int Dimension >
+struct DefaultPermutation;
+
+template <>
+struct DefaultPermutation< 2 >
+{
+   using type = std::index_sequence< 0, 1 >;
+};
+
+template <>
+struct DefaultPermutation< 3 >
+{
+   using type = std::index_sequence< 0, 1, 2 >;
+};
+
+template< int Dimension, typename ParticleConfig, typename Permutation = typename DefaultPermutation< Dimension >::value >
 class SimpleCellIndex
 {};
 

@@ -114,12 +114,6 @@ def write_simulation_params( setup ):
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 
-    # write config with templated configuration
-    with open( 'template/config_template.h', 'r' ) as file :
-      config_file = file.read()
-    with open( 'sources/config.h', 'w' ) as file:
-      file.write( config_file )
-
 if __name__ == "__main__":
     import sys
     import argparse

@@ -2,7 +2,11 @@
 using Device = TNL::Devices::Cuda;
 
 #include <TNL/Containers/StaticVector.h>
+#include <TNL/Algorithms/Segments/CSR.h>
+#include <TNL/Algorithms/Segments/Ellpack.h>
+
 #include <Particles/GenerateCellIndex.h>
+#include <Particles/ParticlesTraits.h>
 
 template< typename Device >
 class ParticleSystemConfig
@@ -15,10 +19,11 @@ class ParticleSystemConfig
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr int spaceDimension = 2;
+   static constexpr int spaceDimension = 3;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
 
 template< typename Device >
@@ -32,14 +37,16 @@ class SPHConfig
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr int spaceDimension = 2;
+   static constexpr int spaceDimension = 3;
    static constexpr int numberOfBoundaryBuffers = 0;
 };
 
 #include <SPH/Models/EquationOfState.h>
-#include <SPH/Models/RiemannSolvers.h>
+#include <SPH/Models/DiffusiveTerms.h>
+#include <SPH/Models/VisousTerms.h>
 #include <SPH/Kernels.h>
-#include <SPH/Models/RSPH/IntegrationSchemes/VerletScheme.h>
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
+#include <SPH/Models/WCSPH_DBC/IntegrationSchemes/VerletScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -56,24 +63,33 @@ public:
    using SPHConfig = SPHConfig< Device >;
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
-   using RiemannSolver = TNL::SPH::RiemannSolvers::RoeLinearized< SPHConfig >;
+   using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
+   using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
+   using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
 
 using SPHDefs = SPHParams< Device >;
+
 using ParticlesConfig = ParticleSystemConfig< Device >;
 
-// particle system
+/**
+ * Include type of particle system.
+ */
 #include <Particles/ParticlesLinkedList.h>
-using ParticleSystemType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
-// SPH model
-#include <SPH/Models/RSPH/Interactions.h>
-using Model = TNL::SPH::RSPH< ParticleSystemType, SPHDefs >;
+/**
+ * Include particular formulation of SPH method.
+ */
+#include <SPH/Models/WCSPH_DBC/Interactions.h>
+using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
 
-// SPH simulation type
+/**
+ * Include type of SPH simulation.
+ */
 #include <SPH/SPHMultiset_CFD.h>
 using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 

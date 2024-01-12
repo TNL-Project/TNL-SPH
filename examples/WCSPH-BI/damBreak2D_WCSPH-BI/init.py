@@ -144,12 +144,6 @@ def compute_and_write_simulation_params( dp,
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 
-    # write config with templated configuration
-    with open( 'template/config_template.h', 'r' ) as file :
-      config_file = file.read()
-    with open( 'sources/config.h', 'w' ) as file:
-      file.write( config_file )
-
 def configure_and_write_measuretool_parameters():
     # write parameters to config file
     with open( 'template/config-measuretool_template.ini', 'r' ) as file :

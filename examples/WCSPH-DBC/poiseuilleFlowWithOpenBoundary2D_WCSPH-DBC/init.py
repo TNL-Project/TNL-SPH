@@ -1,4 +1,4 @@
-#////! /usr/bin/env python3
+#! /usr/bin/env python3
 
 import numpy as np
 import sys
@@ -185,12 +185,6 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderOutletWidth_y', str( 0. ) )
 
     with open( 'sources/config.ini', 'w' ) as file:
-      file.write( config_file )
-
-    # write config with templated configuration
-    with open( 'template/config_template.h', 'r' ) as file :
-      config_file = file.read()
-    with open( 'sources/config.h', 'w' ) as file:
       file.write( config_file )
 
 def write_domain_background_grid( setup ):

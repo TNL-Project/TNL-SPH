@@ -224,7 +224,6 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
-   const VectorType gravity = modelParams.gravity;
 
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
@@ -241,15 +240,10 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    const auto view_points_bound = boundary->particles->getPoints().getView();
    const auto view_rho_bound = boundary->variables->rho.getView();
    auto view_Drho_bound = boundary->variables->drho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
-   const auto view_n_bound = boundary->variables->n.getView();
 
    const auto view_points_openBound = openBoundary->particles->getPoints().getView();
    auto view_rho_openBound = openBoundary->variables->rho.getView();
    auto view_v_openBound = openBoundary->variables->v.getView();
-
-   //temp
-   const VectorType bufferPosition = openBoundary->parameters.position;
 
    auto FluidOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i, RealType* gamma_i ) mutable

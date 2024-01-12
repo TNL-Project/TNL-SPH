@@ -3,7 +3,7 @@
 #include <TNL/Logger.h>
 
 #include <SPH/configSetup.h>
-#include "sources/config.h"
+#include "template/config.h"
 
 #include <SPH/Models/WCSPH_DBC/control.h>
 
@@ -90,7 +90,6 @@ int main( int argc, char* argv[] )
    //sph.exec();
 
    // Library model:
-   bool additionalSave = false;
 
    while( sph.timeStepping.runTheSimulation() )
    {
@@ -104,33 +103,11 @@ int main( int argc, char* argv[] )
       sph.extrapolateOpenBC();
       sph.writeLog( log, "Extrapolate open BC...", "Done." );
 
-      // for open boundary, is better to write output here
-      //if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      //{
-      //   sph.save( log, "partI", true );
-      //   sph.writeLog( log, "Save results...", "Done." );
-      //   additionalSave = true;
-      //}
-      //sph.writeInfo( log );
-      //if( sph.timeStepping.getStep() == 101 ){
-      //   //std::cout << sph.fluid->variables->v.getElement( 18330 ) << std::endl;
-      //   //std::cout << sph.fluid->variables->v.getElement( 18331 ) << std::endl;
-      //   //std::cout << sph.fluid->variables->v.getElement( 18332 ) << std::endl;
-      //   std::cout << "v.getSize(): " << sph.fluid->variables->v.getSize() << std::endl;
-      //   std::cout << sph.fluid->variables->v.getElement( 0 ) << std::endl;
-      //   std::cout << sph.fluid->variables->v.getElement( 1 ) << std::endl;
-      //   std::cout << sph.fluid->variables->v.getElement( 2 ) << std::endl;
-      //}
-
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
       sph.interact();
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
-
-      //if( additionalSave == true ){
-      //   sph.save( log, "partII", true );
-      //}
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
@@ -138,20 +115,11 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
-      //if( additionalSave == true ){
-      //   sph.save( log, "partIII", true );
-      //}
-
       // apply open boundary condition
       sph.applyOpenBC();
       sph.writeLog( log, "Update open BC...", "Done." );
 
-      //if( additionalSave == true ){
-      //   sph.save( log, "partIV", true );
-      //   additionalSave = false;
-      //}
-
-      //// output particle data
+      // output particle data
       if( sph.timeStepping.checkOutputTimer( "save_results" ) )
       {
          /**

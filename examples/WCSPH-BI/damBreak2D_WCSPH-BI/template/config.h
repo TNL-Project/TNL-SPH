@@ -22,7 +22,7 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 2;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
 
@@ -45,8 +45,8 @@ class SPHConfig
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Kernels.h>
-#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
-#include <SPH/Models/WCSPH_DBC/IntegrationSchemes/VerletScheme.h>
+#include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -66,7 +66,7 @@ public:
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BI_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
@@ -84,8 +84,8 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
 /**
  * Include particular formulation of SPH method.
  */
-#include <SPH/Models/WCSPH_DBC/Interactions.h>
-using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
+#include <SPH/Models/WCSPH_BI/Interactions.h>
+using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
 
 /**
  * Include type of SPH simulation.
