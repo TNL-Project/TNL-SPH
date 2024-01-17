@@ -164,41 +164,33 @@ OpenBoundaryConditionsBuffers< SPHConfig >::getFluidParticlesEnteringOutlet( Flu
 
    auto view_r_fluid = fluid->particles->getPoints().getView();
 
-   // - This part has to be replaced with zone --------------------------------------------------------------------------
-   const typename SPHTraitsType::IndexVectorType gridIndex = TNL::floor(
-         ( bufferPosition[ 0 ] - openBoundary->particles->getGridOrigin() ) / openBoundary->particles->getSearchRadius() );
-   const GlobalIndexType gridColumnAuxTrick = gridIndex[ 0 ];
-
-   PairIndexType particleRangeToCheck;
-   if constexpr( SPHConfig::spaceDimension == 2 )
-      particleRangeToCheck = fluid->particles->getFirstLastParticleInColumnOfCells( gridColumnAuxTrick );
-   else if constexpr( SPHConfig::spaceDimension == 3 )
-      particleRangeToCheck = fluid->particles->getFirstLastParticleInBlockOfCells( gridColumnAuxTrick );
-   // -------------------------------------------------------------------------------------------------------------------
+   const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
+   const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
 
    auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
    receivingParticleMark_view = INT_MAX;
 
    auto checkFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
-      const VectorType r = view_r_fluid[ i ];
+      const GlobalIndexType p = zoneParticleIndices_view[ i ];
+      const VectorType r = view_r_fluid[ p ];
       const VectorType r_relative = bufferPosition - r;
 
       if( ( r_relative, inletOrientation ) > 0 ){
-         receivingParticleMark_view[ i - particleRangeToCheck[ 0 ] ] = i;
+         receivingParticleMark_view[ i ] = p;
          return 1;
       }
-
       return 0;
    };
    const GlobalIndexType fluidToBufferCount = Algorithms::reduce< DeviceType >(
-         particleRangeToCheck[ 0 ], particleRangeToCheck[ 1 ] + 1, checkFluidParticles, TNL::Plus() );
+         0, numberOfZoneParticles, checkFluidParticles, TNL::Plus() );
 
+   const GlobalIndexType rangeToSort = ( numberOfZoneParticles > numberOfBufferParticles ) ? numberOfZoneParticles : numberOfBufferParticles;
    using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
    ThrustDeviceType thrustDevice;
    thrust::sort( thrustDevice,
                  receivingParticleMark_view.getArrayData(),
-                 receivingParticleMark_view.getArrayData() + numberOfBufferParticles );
+                 receivingParticleMark_view.getArrayData() + rangeToSort );
 
    return fluidToBufferCount;
 }
