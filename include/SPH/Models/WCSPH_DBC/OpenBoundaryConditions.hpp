@@ -235,9 +235,9 @@ template< typename FluidPointer,
           typename OpenBoundaryPointer >
 void
 OpenBoundaryConditionsBuffers< SPHConfig >::applyOpenBoundary( RealType dt,
-                                                  FluidPointer& fluid,
-                                                  OpenBoundaryPointer& openBoundary,
-                                                  OpenBoundaryConfig& openBoundaryParams )
+                                                               FluidPointer& fluid,
+                                                               OpenBoundaryPointer& openBoundary,
+                                                               OpenBoundaryConfig& openBoundaryParams )
 {
    if( openBoundaryParams.type == WCSPH_BCTypes::OpenBoundaryConditionsType::Inlet )
       applyInletBoundaryCondition( dt, fluid, openBoundary, openBoundaryParams );
@@ -254,9 +254,9 @@ template< typename FluidPointer,
           typename OpenBoundaryPointer >
 void
 OpenBoundaryConditionsBuffers< SPHConfig >::applyInletBoundaryCondition( RealType dt,
-                                                            FluidPointer& fluid,
-                                                            OpenBoundaryPointer& openBoundary,
-                                                            OpenBoundaryConfig& openBoundaryParams )
+                                                                         FluidPointer& fluid,
+                                                                         OpenBoundaryPointer& openBoundary,
+                                                                         OpenBoundaryConfig& openBoundaryParams )
 {
    const GlobalIndexType bufferToFluidCount = moveInletBufferParticles( dt, openBoundary );
 
@@ -272,9 +272,9 @@ template< typename FluidPointer,
           typename OpenBoundaryPointer >
 void
 OpenBoundaryConditionsBuffers< SPHConfig >::applyOuletBoundaryCondition( RealType dt,
-                                                            FluidPointer& fluid,
-                                                            OpenBoundaryPointer& openBoundary,
-                                                            OpenBoundaryConfig& openBoundaryParams )
+                                                                         FluidPointer& fluid,
+                                                                         OpenBoundaryPointer& openBoundary,
+                                                                         OpenBoundaryConfig& openBoundaryParams )
 {
    //Remove leaving buffer particles:
    const GlobalIndexType bufferToVoidCount = moveOutletBufferParticles( dt, openBoundary );
@@ -291,10 +291,6 @@ OpenBoundaryConditionsBuffers< SPHConfig >::applyOuletBoundaryCondition( RealTyp
    convertFluidToBuffer( fluid, openBoundary, fluidToBufferCount );
 }
 
-//--------------------------------------------------------------------------------------------------------------
-
-
-//PERIODIC OPEN BOUNDARY
 template< typename SPHConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
