@@ -150,7 +150,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData2D( FluidPointer& f
          view_v_openBound[ i ] = { vx_b, vy_b };
       }
    };
-   SPHParallelFor::exec(
+   Algorithms::parallelFor< DeviceType >(
          openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
 }
 
@@ -244,7 +244,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPointer
          view_rho_openBound[ i ] = rho_b;
       }
    };
-   SPHParallelFor::exec(
+   Algorithms::parallelFor< DeviceType >(
          openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
 }
 
@@ -353,7 +353,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity2D( FluidPointe
          view_v_openBound[ i ] = { vx_b, vy_b };
       }
    };
-   SPHParallelFor::exec(
+   Algorithms::parallelFor< DeviceType >(
          openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
 }
 
@@ -488,7 +488,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& f
          view_v_openBound[ i ] = { vx_b, vy_b, vz_b };
       }
    };
-   SPHParallelFor::exec(
+   Algorithms::parallelFor< DeviceType >(
          openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
 }
 
@@ -582,7 +582,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer
          view_rho_openBound[ i ] = rho_b;
       }
    };
-   SPHParallelFor::exec(
+   Algorithms::parallelFor< DeviceType >(
          openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
 }
 
@@ -705,7 +705,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointe
          view_v_openBound[ i ] = { vx_b, vy_b, vz_b };
       }
    };
-   SPHParallelFor::exec(
+   Algorithms::parallelFor< DeviceType >(
          openBoundary->getFirstActiveParticle(), openBoundary->getLastActiveParticle() + 1, particleLoopOpenBoundary );
 }
 
