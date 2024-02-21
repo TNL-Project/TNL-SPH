@@ -105,7 +105,8 @@ WCSPH_DBC< ParticleSystem, ModelConfig >::updateSolidBoundary( FluidPointer& flu
       view_rho_bound[ i ] = rho_bound;
 
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   TNL::Algorithms::parallelFor< DeviceType >(
+         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 
 }
 

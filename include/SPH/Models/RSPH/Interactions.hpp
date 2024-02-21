@@ -1,5 +1,4 @@
 #include "Interactions.h"
-#include "../../customParallelFor.h"
 
 namespace TNL {
 namespace SPH {
@@ -121,7 +120,7 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   TNL::Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 }
 
 template< typename Particles, typename ModelConfig >

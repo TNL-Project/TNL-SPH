@@ -1,5 +1,4 @@
 #include "Interactions.h"
-#include "../../customParallelFor.h"
 
 namespace TNL {
 namespace SPH {
@@ -127,7 +126,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid,
       view_gamma[ i ] = gamma_i;
 
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   TNL::Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 
 }
 
@@ -187,7 +186,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
          view_rho_bound[ i ] = rho0;
       }
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   TNL::Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -245,6 +244,9 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    auto view_rho_openBound = openBoundary->variables->rho.getView();
    auto view_v_openBound = openBoundary->variables->v.getView();
 
+   const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
+   const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
+
    auto FluidOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i, RealType* gamma_i ) mutable
    {
@@ -295,23 +297,24 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
 
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
-      const VectorType r_i = view_points[ i ];
-      const VectorType v_i = view_v[ i ];
-      const RealType rho_i = view_rho[ i ];
+      const GlobalIndexType p = zoneParticleIndices_view[ i ];
+      const VectorType r_i = view_points[ p ];
+      const VectorType v_i = view_v[ p ];
+      const RealType rho_i = view_rho[ p ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, FluidOpenBoundary, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( p, r_i, searchInOpenBoundary, FluidOpenBoundary, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
 
-      view_Drho[ i ] += drho_i;
-      view_a[ i ] += a_i;
-      view_gamma[ i ] += gamma_i;
+      view_Drho[ p ] += drho_i;
+      view_a[ p ] += a_i;
+      view_gamma[ p ] += gamma_i;
 
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -326,7 +329,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
       //   view_rho_bound[ i ] += ( rho_i / gamma_i > rho0 ) ? ( rho_i / gamma_i ) : rho0;
 		//}
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   TNL::Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -355,7 +358,7 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
          view_a[ i ] = 0.f + gravity;
       }
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   TNL::Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 }
 
 } // SPH

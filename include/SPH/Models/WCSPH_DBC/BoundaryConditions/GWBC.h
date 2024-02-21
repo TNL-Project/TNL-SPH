@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Interactions.h"
-#include "../../../customParallelFor.h"
 
 namespace TNL {
 namespace SPH {

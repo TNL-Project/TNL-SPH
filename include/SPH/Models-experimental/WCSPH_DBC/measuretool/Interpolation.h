@@ -4,7 +4,6 @@
 #include <TNL/Containers/NDArray.h>
 
 #include "../../SPHTraits.h"
-#include "../../customParallelFor.h"
 
 namespace TNL {
 namespace ParticleSystem {
