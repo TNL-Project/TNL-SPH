@@ -1,5 +1,4 @@
 #include "Interactions.h"
-#include "../../customParallelFor.h"
 #include "TNL/Algorithms/parallelFor.h"
 #include <TNL/Algorithms/reduce.h>
 
