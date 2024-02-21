@@ -43,7 +43,7 @@ template< typename SPHConfig >
 template< typename OpenBoundaryPointer >
 typename OpenBoundaryConditionsBuffers< SPHConfig>::GlobalIndexType
 OpenBoundaryConditionsBuffers< SPHConfig >::moveOutletBufferParticles( RealType dt,
-                                                                        OpenBoundaryPointer& openBoundary )
+                                                                       OpenBoundaryPointer& openBoundary )
 {
    GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
@@ -79,7 +79,6 @@ template< typename OpenBoundaryPointer >
 void
 OpenBoundaryConditionsBuffers< SPHConfig >::sortBufferParticlesByMark( OpenBoundaryPointer& openBoundary )
 {
-
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
    auto view_r_buffer = openBoundary->particles->getPoints().getView();
@@ -87,7 +86,7 @@ OpenBoundaryConditionsBuffers< SPHConfig >::sortBufferParticlesByMark( OpenBound
    auto view_rho_buffer = openBoundary->variables->rho.getView();
    auto view_inletMark = openBoundary->variables->particleMark.getView();
 
-   //Sort particles by mark
+   //sort particles by mark
    using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
    ThrustDeviceType thrustDevice;
    thrust::sort_by_key( thrustDevice,
@@ -96,7 +95,6 @@ OpenBoundaryConditionsBuffers< SPHConfig >::sortBufferParticlesByMark( OpenBound
                         thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(),
                                                                        view_v_buffer.getArrayData(),
                                                                        view_rho_buffer.getArrayData() ) ) );
-
 }
 
 template< typename SPHConfig >
@@ -135,7 +133,6 @@ OpenBoundaryConditionsBuffers< SPHConfig >::convertBufferToFluid( FluidPointer& 
 
          //const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
          //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation;
-
          const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation;
 
          view_r_buffer[ i ] = newBufferParticle;
@@ -302,9 +299,9 @@ template< typename SPHConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 OpenBoundaryConditionsBuffers< SPHConfig >::copyGhostParticles( FluidPointer& fluid,
-                                                   OpenBoundaryPointer& sendingBuffer,
-                                                   OpenBoundaryPointer& receivingBuffer,
-                                                   VectorType shift )
+                                                                OpenBoundaryPointer& sendingBuffer,
+                                                                OpenBoundaryPointer& receivingBuffer,
+                                                                VectorType shift )
 {
    sendingBuffer->zone.updateParticlesInZone( fluid->particles );
 
@@ -353,7 +350,6 @@ void
 OpenBoundaryConditionsBuffers< SPHConfig >::periodicityParticleTransfer( FluidPointer& fluid,
                                                                          OpenBoundaryPointer& periodicBuffer,
                                                                          OpenBoundaryConfig& periodicBoundaryParams )
-
 {
    const auto zoneParticleIndices_view = periodicBuffer->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = periodicBuffer->zone.getNumberOfParticles();
@@ -373,10 +369,8 @@ OpenBoundaryConditionsBuffers< SPHConfig >::periodicityParticleTransfer( FluidPo
 
       if( ( r_relative, bufferOrientation ) > 0.f )
          view_r_fluid[ p ] += posShift;
-
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, moveParticles );
-
 }
 
 } // SPH

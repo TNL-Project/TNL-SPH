@@ -108,7 +108,7 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
       view_Drho[ i ] += drho_i;
       view_a[ i ] += a_i;
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 
    //auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    //{
@@ -232,7 +232,7 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
       view_Drho[ p ] += drho_i;
       view_a[ p ] += a_i;
    };
-   SPHParallelFor::exec( 0, numberOfZoneParticles, particleLoop );
+   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -247,7 +247,7 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
 
       view_Drho_bound[ i ] += drho_i;
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 } // SPH

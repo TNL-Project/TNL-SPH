@@ -8,6 +8,7 @@
 //#include "variant.hpp"
 //old: #include <mpark/variant.hpp>
 #include <variant>
+#include <TNL/Exceptions/NotImplementedError.h>
 
 #include "VTKTraits.h"
 

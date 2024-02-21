@@ -142,7 +142,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interaction( FluidPointe
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   TNL::Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
@@ -157,7 +157,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interaction( FluidPointe
 
       view_Drho_bound[ i ] = drho_i;
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   TNL::Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 template< typename ParticleSystem, typename SPHFluidConfig, typename Variables >
@@ -303,7 +303,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithReduction
 
       return maxVisco_i;
    };
-   //SPHParallelFor::exec( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   //TNL::Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
    RealType maxVisco = Algorithms::reduce< DeviceType >( fluid->getFirstActiveParticle(),
                                                          fluid->getLastActiveParticle() + 1,
                                                          particleLoop,
@@ -323,7 +323,7 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig, Variables >::interactionWithReduction
 
       view_Drho_bound[ i ] = drho_i;
    };
-   SPHParallelFor::exec( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   TNL::Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 
    return maxVisco;
 }
