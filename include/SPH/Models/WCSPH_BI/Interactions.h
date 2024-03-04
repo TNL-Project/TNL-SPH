@@ -48,6 +48,7 @@ public:
    using KernelFunction = typename ModelConfig::KernelFunction;
    using DiffusiveTerm = typename ModelConfig::DiffusiveTerm;
    using ViscousTerm = typename ModelConfig::ViscousTerm;
+   using BoundaryViscousTerm = typename ModelConfig::BoundaryViscousTerm;
    using EOS = typename ModelConfig::EOS;
 
    using OpenBoundaryConfig = BIOpenBoundaryConfig< SPHConfig >;

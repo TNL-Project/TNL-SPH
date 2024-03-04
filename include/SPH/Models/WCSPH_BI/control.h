@@ -70,6 +70,7 @@ public:
    {
       h = parameters.getParameter< RealType >( "h" );
       dp = parameters.getParameter< RealType >( "dp" );
+      searchRadius = parameters.getParameter< RealType >( "searchRadius" );
       mass = parameters.getParameter< RealType >( "mass" );
       boundaryElementSize = parameters.getParameter< RealType >( "boundaryElementSize" );
       delta = parameters.getParameter< RealType >( "delta" );
@@ -90,6 +91,8 @@ public:
    RealType dp = 0.f;
    //h - smoothing length [m]
    RealType h = 0.f;
+   //searchRadius - radius of kernel support [m]
+   RealType searchRadius = 0.f;
    //mass - particle mass [kg]
    RealType mass = 0.f;
    //boundaryElementSize - size of boundary element [m]
@@ -108,6 +111,9 @@ public:
    RealType alpha = 0.02f;
    //dynamicViscosity - value of dynamic viscosity [Pa/s];
    RealType dynamicViscosity = 0.f;
+
+   //Viscosity model for boundary interaction
+   using BoundaryViscousTerm = typename SPHDefs::BoundaryViscousTerm;
 
    // Define equation of state and its constants.
    using EOS = typename SPHDefs::EOS;
@@ -149,6 +155,7 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Initial particle distance (dp):", modelParams.dp, 1 );
    logger.writeParameter( "Smoothing length (h):", modelParams.h, 1 );
    logger.writeParameter( "Spatial resolution (dp/h):", modelParams.dp / modelParams.h, 1 );
+   logger.writeParameter( "Search radius (searchRadius):", modelParams.searchRadius, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Size of boundary elements (boundaryElementSize):", modelParams.boundaryElementSize, 1 );
    logger.writeParameter( "Model parameters", "" );

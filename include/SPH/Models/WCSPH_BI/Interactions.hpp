@@ -27,6 +27,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid,
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
    typename EOS::ParamsType eosParams( modelParams );
+   typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -94,7 +95,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid,
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
          const RealType visco =  ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermsParams );
-         *a_i += ( p_term + visco ) * n_j * W * rho_j * ds;
+         *a_i += ( p_term + visco ) * n_j * W * rho_j * ds + BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
       }
    };
 
