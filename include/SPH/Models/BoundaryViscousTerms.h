@@ -26,7 +26,7 @@ class None
 
    __cuda_callable__
    static VectorType
-   Xi( const VectorType& r_ik,  const VectorType& v_ik, const VectorType& n_k )
+   Xi( const VectorType& r_ik,  const VectorType& v_ik, const VectorType& n_k, const ParamsType& params  )
    {
       return 0.f;
    }

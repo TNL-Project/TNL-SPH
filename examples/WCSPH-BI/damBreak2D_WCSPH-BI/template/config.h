@@ -44,7 +44,7 @@ class SPHConfig
 #include <SPH/Models/EquationOfState.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
-#include <SPH/Models/BoundaryViscousTemrs.h>
+#include <SPH/Models/BoundaryViscousTerms.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
