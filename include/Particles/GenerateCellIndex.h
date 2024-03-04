@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ParticlesTraits.h"
-#include <bits/utility.h>
 
 using namespace TNL;
 using namespace TNL::ParticleSystem;
