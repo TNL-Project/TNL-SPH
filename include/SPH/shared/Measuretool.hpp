@@ -55,8 +55,9 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
          RealType gamma = 0.f;
 
          //TODO: Replace following lines with some reasonable function
-         const VectorType  r = { ( i[ 0 ] + 1 ) * _gridStep[ 0 ] + _gridOrigin[ 0 ],
-                                 ( i[ 1 ] + 1 ) * _gridStep[ 1 ] + _gridOrigin[ 1 ]  };
+         //NOTE: I used to increase the indices i[ 0 ], i[ 1 ] by + 1 but I dont know why.
+         const VectorType  r = { ( i[ 0 ] ) * _gridStep[ 0 ] + _gridOrigin[ 0 ],
+                                 ( i[ 1 ] ) * _gridStep[ 1 ] + _gridOrigin[ 1 ]  };
          const GlobalIndexType  idx =  i[ 1 ] * _gridDimension[ 0 ] + i[ 0 ];
 
          TNL::ParticleSystem::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
@@ -82,6 +83,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
          RealType gamma = 0.f;
 
          //TODO: Replace following lines with some reasonable function
+         //NOTE: I used to increase the indices i[ 0 ], i[ 1 ], i[ 2 ]  by + 1 but I dont know why.
          const VectorType r = { ( i[ 0 ] + 1 ) * _gridStep[ 0 ] + _gridOrigin[ 0 ],
                                 ( i[ 1 ] + 1 ) * _gridStep[ 1 ] + _gridOrigin[ 1 ],
                                 ( i[ 2 ] + 1 ) * _gridStep[ 2 ] + _gridOrigin[ 2 ]};
