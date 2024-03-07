@@ -97,6 +97,13 @@ public:
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
+   template< typename OpenBoundaryPointer,
+             typename BoudaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   void
+   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
+
    /**
     * Function to realize boundary conditions for solid wall.
     * Realized by Modified Dynamic Boundary Conditions (MDBC) - English et. al. 2021
