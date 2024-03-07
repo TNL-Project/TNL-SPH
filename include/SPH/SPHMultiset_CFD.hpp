@@ -246,8 +246,9 @@ SPHMultiset_CFD< Model >::interact()
    //Interact between fluid and open boundary patches
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ){
-         openBoundaryPatches[ i ]->zone.updateParticlesInZone( fluid->particles ); //Should this be here?
+         openBoundaryPatches[ i ]->zone.updateParticlesInZone( fluid->particles );
          model.interactionWithOpenBoundary( fluid, boundary, openBoundaryPatches[ i ], modelParams );
+         model.updateSolidBoundaryOpenBoundary( boundary, openBoundaryPatches[ i ], modelParams );
       }
    }
 

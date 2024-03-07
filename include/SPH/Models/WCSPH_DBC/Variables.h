@@ -193,6 +193,9 @@ public:
 
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using VectorExtendedArrayType = typename SPHTraitsType::VectorExtendedArrayType;
+   using MatrixExtendedArrayType = typename SPHTraitsType::MatrixExtendedArrayType;
+
 
    //SPHBoundaryVariables( GlobalIndexType size )
    //: SPHFluidVariables< SPHState >( size ), ghostNodes( size ), ghostNodes_swap( size ) {}
@@ -203,10 +206,15 @@ public:
       Base::setSize( size );
       ghostNodes.setSize( size );
       ghostNodes_swap.setSize( size );
+      rhoGradRho_gn.setSize( size );
+      cMatrix_gn.setSize( size );
    }
 
    VectorArrayType ghostNodes;
    VectorArrayType ghostNodes_swap;
+   VectorExtendedArrayType rhoGradRho_gn;
+   MatrixExtendedArrayType cMatrix_gn;
+
 
    template< typename IndexArrayTypePointer >
    void

@@ -131,5 +131,53 @@ WCSPH_DBC< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectP
    Algorithms::parallelFor< DeviceType >( physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
 }
 
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer,
+          typename BoundaryPointer,
+          typename BCType,
+          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
+
+void
+WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
+                                                          BoundaryPointer& boundary,
+                                                          ModelParams& modelParams )
+{
+   const RealType rho0 = modelParams.rho0;
+
+   auto view_rho_bound = boundary->variables->rho.getView();
+   const auto view_points_bound = boundary->particles->getPoints().getConstView();
+   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getConstView();
+   const auto view_rhoGradRhoGhostNode_bound = boundary->variables->rhoGradRho_gn.getConstView();
+   const auto view_correctionMatrices_bound = boundary->variables->cMatrix_gn.getConstView();
+
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   {
+      const VectorType r_i = view_points_bound[ i ];
+      const VectorType ghostNode_i = view_ghostNode_bound[ i ];
+      const Matrix cMatrix_gn = view_correctionMatrices_bound[ i ];
+      const VectorExtendedType rhoGradRho_gn = view_rhoGradRhoGhostNode_bound[ i ];
+      RealType rho_bound = 0.f;
+
+      if( Matrices::determinant( cMatrix_gn ) > 0.001 ) {
+         VectorExtendedType cRhoGradRho = Matrices::solve( cMatrix_gn, rhoGradRho_gn );
+         VectorType r_ign = ghostNode_i - r_i;
+         rho_bound = cRhoGradRho[ 0 ] + cRhoGradRho[ 1 ] * r_ign[ 0 ] + cRhoGradRho[ 2 ] * r_ign[ 1 ];
+      }
+      else if( cMatrix_gn( 0, 0 ) > 0.f ) {
+         rho_bound = rhoGradRho_gn[ 0 ] / cMatrix_gn( 0, 0 );
+      }
+      else {
+         rho_bound = rho0;
+      }
+
+      if( rho_bound < rho0 )
+         rho_bound = rho0;
+
+      view_rho_bound[ i ] = rho_bound;
+   };
+   TNL::Algorithms::parallelFor< DeviceType >(
+         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoop );
+}
+
 } // SPH
 } // TNL
