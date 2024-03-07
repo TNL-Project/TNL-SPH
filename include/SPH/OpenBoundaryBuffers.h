@@ -3,6 +3,7 @@
 #include <string>
 #include "ParticleSet.h"
 #include "../Particles/GhostZone.h"
+#include "OpenBoundaryConfig.h"
 
 namespace TNL {
 namespace SPH {
@@ -49,7 +50,6 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
       zone.assignCells( zoneBoxFirstPoint, zoneBoxSecondPoit, gridSize, gridOrigin, searchRadius );
    }
 
-
    VariablesPointerType&
    getOpenBoundaryVariables()
    {
@@ -60,35 +60,6 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    getOpenBoundaryVariables() const
    {
       return this->variables;
-   }
-
-   template< typename Params >
-   void
-   readOpenBoundaryParameters( Params config )
-   {
-      parameters.identifier = config.identifier;
-      parameters.position = config.position;
-      parameters.orientation = config.orientation;
-      parameters.bufferWidth = config.bufferWidth;
-   }
-
-   template< typename Params, typename SPHParams >
-   void
-   readOpenBoundaryParameters( Params config, SPHParams params )
-   {
-      parameters.identifier = config.identifier;
-      parameters.position = config.position;
-      parameters.orientation = config.orientation;
-      parameters.bufferWidth = config.bufferWidth;
-
-      //initialize adjecent zone
-      zone.setNumberOfParticlesPerCell( config.numberOfParticlesPerCell );
-      VectorType zoneBoxFirstPoit = config.periodicityFirstPoint;
-      //VectorType zoneBoxSecondPoit = config.periodicitySecondPoint + config.bufferWidth * config.orientation;
-      VectorType zoneBoxSecondPoit = config.periodicitySecondPoint;
-      zone.template assignCells< typename ParticleSystem::CellIndexer >(
-            zoneBoxFirstPoit, zoneBoxSecondPoit, params.gridSize, params.gridOrigin, params.searchRadius  );
-
    }
 
    void
@@ -114,6 +85,56 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
 
 };
 
-}
-}
+template< typename ParticlesType,
+          typename SPHCaseConfig,
+          typename FluidVariables,
+          typename BoundaryVariables,
+          typename IntegratorVariables >
+class PeriodicBoundary
+{
+   using DeviceType = typename SPHCaseConfig::DeviceType;
+   using RealType = typename ParticlesType::RealType;
+   using VectorType = typename ParticlesType::PointType;
+   using IndexVectorType = typename ParticlesType::PointType;
+
+   using OpenBoundaryFluidType = OpenBoundary< ParticlesType, SPHCaseConfig, FluidVariables, IntegratorVariables >;
+   using OpenBoundaryFluidPointer = Pointers::SharedPointer< OpenBoundaryFluidType, DeviceType >;
+   using OpenBoundaryBoundaryType = OpenBoundary< ParticlesType, SPHCaseConfig, BoundaryVariables, IntegratorVariables >;
+   using OpenBoundaryBoundaryPointer = Pointers::SharedPointer< OpenBoundaryBoundaryType, DeviceType >;
+   using OpenBoundaryConfigType = OpenBoundaryConfig< SPHCaseConfig >;
+
+   void
+   initialize( TNL::Config::ParameterContainer& parameters, std::string prefix, TNL::Logger& logger )
+   {
+      //compute domain properetis
+      const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
+      const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+      const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+      const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+
+      fluidPeriodicPatch->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
+                                      parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+                                      searchRadius,
+                                      gridSize,
+                                      domainOrigin,
+                                      config.zoneFirstPoint,
+                                      config.zoneSecondPoint );
+
+      boundaryPeriodicPatch->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
+                                         parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+                                         searchRadius,
+                                         gridSize,
+                                         domainOrigin,
+                                         config.zoneFirstPoint,
+                                         config.zoneSecondPoint );
+   }
+
+   OpenBoundaryConfigType config;
+   OpenBoundaryFluidPointer fluidPeriodicPatch;
+   OpenBoundaryBoundaryPointer boundaryPeriodicPatch;
+};
+
+
+} // SPH
+} // TNL
 

@@ -155,6 +155,8 @@ public:
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
    std::vector< OpenBoundaryConfigType > openBoundaryPatchesConfigs;
 
+   //std::vector< PeriodicBoundaryPointer > periodicBoundaryPatches;
+
    Model model;
    ModelParams modelParams;
    OpenBoundaryModel openBoundaryModel;

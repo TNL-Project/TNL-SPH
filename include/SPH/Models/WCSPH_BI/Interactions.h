@@ -88,6 +88,12 @@ public:
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
+   template< typename OpenBoundaryPointer, typename BoudaryPointer >
+   void
+   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary,
+                                    OpenBoundaryPointer& openBoundaryPointer,
+                                    ModelParams& modelParams );
+
    template< typename FluidPointer, typename BoundaryPointer, typename OpenBoudaryPointer >
    void
    interactionWithOpenBoundary( FluidPointer& fluid,

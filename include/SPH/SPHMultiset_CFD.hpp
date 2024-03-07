@@ -12,7 +12,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 {
    logger.writeHeader( "SPH simulation initialization." );
 
-   //compute domain properetis
+   // compute domain properetis
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
@@ -59,6 +59,29 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
       }
    }
 
+   // init periodic boundary conditions
+   /*
+   const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffer > 0 ) //TODO: I dont like this.
+   {
+      periodicBoundaryPatches.resize( numberOfPeriodicPatches );
+      for( int i = 0; i < numberOfPeriodicPatches; i++ )
+      {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         periodicBoundaryPatches[ i ]->config.init( parameters, prefix );
+         openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
+                                               parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+                                               searchRadius,
+                                               gridSize,
+                                               domainOrigin,
+                                               openBoundaryPatchesConfigs[ i ].zoneFirstPoint,
+                                               openBoundaryPatchesConfigs[ i ].zoneSecondPoint );
+                                               //openBoundaryPatchesConfigs[ i ].numberOfParticlesPerCell );
+      }
+   }
+   */
+
+
    // init model parameters
    modelParams.init( parameters );
 
@@ -67,7 +90,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    timeStepping.setEndTime( parameters.getParameter< RealType >( "final-time" ) );
    timeStepping.addOutputTimer( "save_results", parameters.getParameter< RealType >( "snapshot-period" ) );
 
-   //control
+   // control
    caseName = parameters.getParameter< std::string >( "case-name" );
    verbose = parameters.getParameter< std::string >( "verbose-intensity" );
    outputDirecotry = parameters.getParameter< std::string >( "output-directory" );
@@ -75,16 +98,19 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
    // read particle data
    logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
-   fluid->template readParticlesAndVariables< SimulationReaderType>( parameters.getParameter< std::string >( "fluid-particles" ) );
+   fluid->template readParticlesAndVariables< SimulationReaderType>(
+         parameters.getParameter< std::string >( "fluid-particles" ) );
    logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
-   boundary->template readParticlesAndVariables< SimulationReaderType >( parameters.getParameter< std::string >( "boundary-particles" ) );
+   boundary->template readParticlesAndVariables< SimulationReaderType >(
+         parameters.getParameter< std::string >( "boundary-particles" ) );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) //TODO: I dont like this.
    {
       for( int i = 0; i < numberOfBoundaryPatches; i++ )
       {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >( parameters.getParameter< std::string >( prefix + "particles" ) );
+         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+               parameters.getParameter< std::string >( prefix + "particles" ) );
       }
    }
 
