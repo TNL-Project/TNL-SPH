@@ -49,6 +49,7 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< double >( "domainSize-z", "The size of domain in y direction.", 0. );
 
     config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
+    config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
 
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );

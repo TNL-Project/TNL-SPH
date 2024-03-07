@@ -34,53 +34,35 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
    // init open boundary patches
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) //TODO: I dont like this.
-   {
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) { //TODO: I dont like this.
       openBoundaryPatches.resize( numberOfBoundaryPatches );
-      openBoundaryPatchesConfigs.resize( numberOfBoundaryPatches );
-      for( int i = 0; i < numberOfBoundaryPatches; i++ )
-      {
+      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         openBoundaryPatchesConfigs[ i ].init( parameters, prefix );
+         openBoundaryPatches[ i ]->config.init( parameters, prefix );
          openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
                                                parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
                                                searchRadius,
                                                gridSize,
-                                               domainOrigin,
-                                               openBoundaryPatchesConfigs[ i ].zoneFirstPoint,
-                                               openBoundaryPatchesConfigs[ i ].zoneSecondPoint );
-                                               //openBoundaryPatchesConfigs[ i ].numberOfParticlesPerCell );
-
-         //TODO: move this to appropriate palce
-         openBoundaryPatches[ i ]->parameters.identifier = openBoundaryPatchesConfigs[ i ].identifier;
-         openBoundaryPatches[ i ]->parameters.position = openBoundaryPatchesConfigs[ i ].position;
-         openBoundaryPatches[ i ]->parameters.orientation = openBoundaryPatchesConfigs[ i ].orientation;
-         openBoundaryPatches[ i ]->parameters.bufferWidth = openBoundaryPatchesConfigs[ i ].bufferWidth;
+                                               domainOrigin );
       }
    }
 
    // init periodic boundary conditions
-   /*
    const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffer > 0 ) //TODO: I dont like this.
-   {
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {//TODO: I dont like this.
       periodicBoundaryPatches.resize( numberOfPeriodicPatches );
-      for( int i = 0; i < numberOfPeriodicPatches; i++ )
-      {
+      for( int i = 0; i < numberOfPeriodicPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
          periodicBoundaryPatches[ i ]->config.init( parameters, prefix );
-         openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
-                                               parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
-                                               searchRadius,
-                                               gridSize,
-                                               domainOrigin,
-                                               openBoundaryPatchesConfigs[ i ].zoneFirstPoint,
-                                               openBoundaryPatchesConfigs[ i ].zoneSecondPoint );
-                                               //openBoundaryPatchesConfigs[ i ].numberOfParticlesPerCell );
+         periodicBoundaryPatches[ i ]->initialize( parameters,
+                                                   prefix,
+                                                   parameters.getParameter< int >( prefix + "numberOfParticles" ),
+                                                   parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+                                                   searchRadius,
+                                                   gridSize,
+                                                   domainOrigin );
       }
    }
-   */
-
 
    // init model parameters
    modelParams.init( parameters );
@@ -104,10 +86,8 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    boundary->template readParticlesAndVariables< SimulationReaderType >(
          parameters.getParameter< std::string >( "boundary-particles" ) );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) //TODO: I dont like this.
-   {
-      for( int i = 0; i < numberOfBoundaryPatches; i++ )
-      {
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) { //TODO: I dont like this.
+      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
          openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
                parameters.getParameter< std::string >( prefix + "particles" ) );
@@ -211,7 +191,7 @@ SPHMultiset_CFD< Model >::extrapolateOpenBC()
 {
    for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ){
       //TODO Check if open boundary buffer is really open boundary buffer
-      model.extrapolateOpenBoundaryData( fluid, openBoundaryPatches[ i ], modelParams, openBoundaryPatchesConfigs[ i ] );
+      model.extrapolateOpenBoundaryData( fluid, openBoundaryPatches[ i ], modelParams, openBoundaryPatches[ i ]->config );
    }
 }
 
@@ -224,7 +204,7 @@ SPHMultiset_CFD< Model >::applyOpenBC()
       openBoundaryModel.applyOpenBoundary( timeStepping.getTimeStep(),
                                            fluid,
                                            openBoundaryPatches[ i ],
-                                           openBoundaryPatchesConfigs[ i ] );
+                                           openBoundaryPatches[ i ]->config );
    }
 }
 
@@ -234,13 +214,13 @@ SPHMultiset_CFD< Model >::applyPeriodicBCEnforce()
 {
    for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ){
       //TODO Check if open boundary buffer is really periodic buffer
-      int pairedPeriodicBuffer = openBoundaryPatchesConfigs[ i ].pairedPeriodicBuffer - 1;
+      int pairedPeriodicBuffer = openBoundaryPatches[ i ]->config.pairedPeriodicBuffer - 1;
       //TODO Add assert and check if pairedPeriodicBuffer is initialized i.e. != -1
       openBoundaryModel.applyPeriodicBoundary( fluid,
                                                openBoundaryPatches[ i ],
                                                openBoundaryPatches[ pairedPeriodicBuffer ],
-                                               openBoundaryPatchesConfigs[ i ],
-                                               openBoundaryPatchesConfigs[ pairedPeriodicBuffer ] );
+                                               openBoundaryPatches[ i ]->config,
+                                               openBoundaryPatches[ pairedPeriodicBuffer ]->config );
 
    }
 
@@ -257,7 +237,7 @@ SPHMultiset_CFD< Model >::applyPeriodicBCTransfer()
       //TODO Check if open boundary buffer is really periodic buffer
       openBoundaryModel.periodicityParticleTransfer( fluid,
                                                      openBoundaryPatches[ i ],
-                                                     openBoundaryPatchesConfigs[ i ] );
+                                                     openBoundaryPatches[ i ]->config );
    }
 }
 
@@ -358,9 +338,18 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
          logger.writeHeader( "Open boundary buffer" + std::to_string( i + 1 ) + "." );
          openBoundaryPatches[ i ]->writeProlog( logger );
          logger.writeSeparator();
-         openBoundaryPatchesConfigs[ i ].writeProlog( logger );
+         openBoundaryPatches[ i ]->config.writeProlog( logger );
       }
    }
+   //if constexpr( Model::ModelConfigType::SPHConfig::numberOPeriodicBuffers > 0 ){
+   //   for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ )
+   //   {
+   //      logger.writeHeader( "Open boundary buffer" + std::to_string( i + 1 ) + "." );
+   //      openBoundaryPatches[ i ]->writeProlog( logger );
+   //      logger.writeSeparator();
+   //      openBoundaryPatches[ i ]->config.writeProlog( logger );
+   //   }
+   //}
 
    logger.writeHeader( "System information." );
    if( writeSystemInformation ) {
@@ -411,10 +400,10 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
          logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " particles:",
                                 openBoundaryPatches[ i ]->getNumberOfParticles() );
          if( verbose == "full" ){
-            logger.writeParameter( "Patch " + openBoundaryPatchesConfigs[ i ].identifier + " object - first active particle:", openBoundaryPatches[ i ]->getFirstActiveParticle(), 1 );
-            logger.writeParameter( "Patch " + openBoundaryPatchesConfigs[ i ].identifier + " particles - first active particle:", openBoundaryPatches[ i ]->particles->getFirstActiveParticle(), 1 );
-            logger.writeParameter( "Patch " + openBoundaryPatchesConfigs[ i ].identifier + " object - last active particle:", openBoundaryPatches[ i ]->getLastActiveParticle(), 1 );
-            logger.writeParameter( "Patch " + openBoundaryPatchesConfigs[ i ].identifier + " particles - last active particle:", openBoundaryPatches[ i ]->particles->getLastActiveParticle(), 1 );
+            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier + " object - first active particle:", openBoundaryPatches[ i ]->getFirstActiveParticle(), 1 );
+            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier + " particles - first active particle:", openBoundaryPatches[ i ]->particles->getFirstActiveParticle(), 1 );
+            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier + " object - last active particle:", openBoundaryPatches[ i ]->getLastActiveParticle(), 1 );
+            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier + " particles - last active particle:", openBoundaryPatches[ i ]->particles->getLastActiveParticle(), 1 );
          }
       }
    }
