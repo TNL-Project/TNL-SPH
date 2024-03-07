@@ -53,7 +53,7 @@ def generate_channel_boundary_particles( setup ):
             box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
             ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
-            ghost_ry.append( 0. + dp * ( layer + 1 ) )
+            ghost_ry.append( setup[ "channel_height" ] - dp * ( layer + 1 ) )
 
     boundary_n = len( box_rx )
     boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!

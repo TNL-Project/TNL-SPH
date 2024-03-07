@@ -108,6 +108,13 @@ public:
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
+   template< typename OpenBoundaryPointer,
+             typename BoudaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
+
    /**
     * Function to realize boundary conditions for solid wall.
     * Realized by Generalized Wall Boundary Conditions (GWBC) - Adami, Hu 2012
@@ -203,9 +210,19 @@ public:
    void
    initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
 
-   template< typename FluidPointer, typename BoundaryPointer >
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
 };
 

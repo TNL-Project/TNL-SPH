@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TNL/Containers/StaticVector.h>
+#include <TNL/Matrices/StaticMatrix.h>
 #include <TNL/Containers/Array.h>
 
 namespace TNL {
@@ -27,6 +28,14 @@ class SPHFluidTraits
    using VectorArrayType = Containers::Array< VectorType, DeviceType, GlobalIndexType >;
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
    using IndexVectorType = Containers::StaticVector< spaceDimension, GlobalIndexType >;
+
+   //types for correction matrices related to MDBC
+   using MatrixType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension, SPHFluidConfig::spaceDimension >;
+   using MatrixExtendedType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension + 1, SPHFluidConfig::spaceDimension + 1 >;
+   using MatrixExtendedArrayType = Containers::Array< MatrixExtendedType, DeviceType, GlobalIndexType >;
+   using VectorExtendedType = Containers::StaticVector< SPHFluidConfig::spaceDimension + 1, RealType >;
+   using VectorExtendedArrayType = Containers::Array< VectorExtendedType, DeviceType, GlobalIndexType >;
+
 };
 
 } // SPH
