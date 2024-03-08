@@ -70,30 +70,6 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
       }
    };
 
-   auto BoundOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
-   {
-      const VectorType r_j = view_points_openBound[ j ];
-      const VectorType r_ij = r_i - r_j;
-      const RealType drs = l2Norm( r_ij );
-      if( drs <= searchRadius )
-      {
-         const VectorType v_j = view_v_openBound[ j ];
-         const RealType rho_j = view_rho_openBound[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
-
-         /* Interaction */
-         const VectorType v_ij = v_i - v_j;
-
-         const RealType F = KernelFunction::F( drs, h );
-         const VectorType gradW = r_ij * F;
-
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
-         const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
-         *drho_i += ( v_ij, gradW ) * m - diffTerm;
-      }
-   };
-
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const GlobalIndexType p = zoneParticleIndices_view[ i ];
@@ -111,21 +87,6 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
       view_a[ p ] += a_i;
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
-
-   //auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-   //{
-   //   const VectorType r_i = view_points_bound[ i ];
-   //   const VectorType v_i = view_v_bound[ i ];
-   //   const RealType rho_i = view_rho_bound[ i ];
-   //   const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-
-   //   RealType drho_i = 0.f;
-
-   //   TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInOpenBoundary, BoundOpenBoundary, v_i, rho_i, p_i, &drho_i );
-
-   //   view_Drho_bound[ i ] += drho_i;
-   //};
-   //Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
 }
 
 } // SPH

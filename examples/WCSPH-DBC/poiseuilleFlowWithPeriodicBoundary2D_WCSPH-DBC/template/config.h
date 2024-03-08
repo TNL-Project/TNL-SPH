@@ -38,7 +38,8 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfBoundaryBuffers = 2;
+   static constexpr int numberOfBoundaryBuffers = 0;
+   static constexpr int numberOfPeriodicBuffers = 2;
 };
 
 #include <SPH/Models/EquationOfState.h>
@@ -78,13 +79,13 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  * Include type of particle system.
  */
 #include <Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_DBC/Interactions.h>
-using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHDefs >;
+using Model = TNL::SPH::WCSPH_DBC< ParticlesType, SPHDefs >;
 
 /**
  * Include type of SPH simulation.

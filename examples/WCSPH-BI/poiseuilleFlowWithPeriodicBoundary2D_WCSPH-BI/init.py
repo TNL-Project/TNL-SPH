@@ -44,8 +44,9 @@ def generate_channel_boundary_particles( setup ):
         #FIXME: Im currently no able to do periodicity with boundary set, so the wall is artificialy extended
         #       which is dane by setting n_boundary_layers fixed to 3
         #       for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
-        for x in range( box_length_n + ( 3 - 1 ) * 2 + 1):
-            box_rx.append( ( x - ( 3 - 1 ) ) * dp )
+        #for x in range( box_length_n + ( 3 - 1 ) * 2 + 1):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( 0. - layer * dp )
             normal_x.append( 0. )
             normal_y.append( 1. )
@@ -55,8 +56,9 @@ def generate_channel_boundary_particles( setup ):
         #FIXME: Im currently no able to do periodicity with boundary set, so the wall is artificialy extended
         #       which is dane by setting n_boundary_layers fixed to 3
         #       for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
-        for x in range( box_length_n + ( 3 - 1 ) * 2 + 1):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #for x in range( box_length_n + ( 3 - 1 ) * 2 + 1):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
             normal_x.append( 0. )
             normal_y.append( -1. )

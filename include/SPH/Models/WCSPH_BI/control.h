@@ -50,6 +50,11 @@ configSetupModel( TNL::Config::ConfigDescription& config )
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
    }
+   for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ )
+   {
+      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+   }
 }
 
 /**

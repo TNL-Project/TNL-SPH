@@ -20,7 +20,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
-
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename EOS::ParamsType eosParams( modelParams );
 
@@ -66,7 +65,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
       RealType drho_i = 0.f;
-      TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
+      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] = drho_i;
    };
    TNL::Algorithms::parallelFor< DeviceType >(
@@ -90,7 +89,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
    const RealType searchRadius = openBoundary->particles->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
-
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename EOS::ParamsType eosParams( modelParams );
 
@@ -136,7 +134,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
       RealType drho_i = 0.f;
-      TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInOpenBoundary, BoundFluid, v_i, rho_i, p_i, &drho_i );
+      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] += drho_i;
    };
    TNL::Algorithms::parallelFor< DeviceType >(

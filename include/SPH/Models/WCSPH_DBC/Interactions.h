@@ -68,10 +68,6 @@ public:
    }
 
    /**
-    * Fluid - fluid interaction function.
-    */
-
-   /**
     * Compute pressure from density.
     */
    template< typename EquationOfState = EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >,
@@ -142,12 +138,9 @@ public:
    interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
    //TODO: Experiment:
-   template< typename FluidPointer, typename BoundaryPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   interactionWithOpenBoundary( FluidPointer& fluid,
-                                BoundaryPointer& boundary,
-                                OpenBoudaryPointer& openBoundary,
-                                ModelParams& modelParams );
+   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& boundaryPatch, ModelParams& modelParams );
 
    /**
     * Functions to extrapolate data on open boundary buffers in 2D.
@@ -231,7 +224,7 @@ public:
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
-};
+}; // SPH
 
 } // SPH
 } // TNL
@@ -239,7 +232,7 @@ public:
 #include "Interactions.hpp"
 #include "BoundaryConditions/DBC.h"
 #include "BoundaryConditions/MDBC.h"
-#include "OpenBoundaryConditionsInteractions.h"
+//#include "OpenBoundaryConditionsInteractions.h"
 
 #include "OpenBoundaryConditionsDataExtrapolation.h"
 

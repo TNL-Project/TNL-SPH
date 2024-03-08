@@ -102,6 +102,7 @@ template< typename ParticlesType,
           typename OpenBoundaryConfigType >
 class PeriodicBoundary
 {
+   public:
    using DeviceType = typename SPHCaseConfig::DeviceType;
    using RealType = typename ParticlesType::RealType;
    using VectorType = typename ParticlesType::PointType;

@@ -41,18 +41,20 @@ def generate_channel_boundary_particles( setup ):
 
     # bottom wall
     for layer in range( n_boundary_layers ):
-        for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( 0. - layer * dp )
-            ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+            ghost_rx.append( ( x + 1 ) * dp )
             ghost_ry.append( 0. + dp * ( layer + 1 ) )
 
     # top wall
     for layer in range( n_boundary_layers ):
-        for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1 ):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1 ):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
-            ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+            ghost_rx.append( ( x + 1 ) * dp )
             ghost_ry.append( setup[ "channel_height" ] - dp * ( layer + 1 ) )
 
     boundary_n = len( box_rx )
@@ -200,6 +202,7 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Periodic channel example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -280,7 +283,7 @@ if __name__ == "__main__":
     # setup parameters
     compute_domain_size( openchannel_setup )
 
-    print( openchannel_setup )
+    pprint( openchannel_setup )
     # write simulation params
     write_simulation_params( openchannel_setup )
 

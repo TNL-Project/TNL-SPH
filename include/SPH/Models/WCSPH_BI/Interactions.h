@@ -94,12 +94,13 @@ public:
                                     OpenBoundaryPointer& openBoundaryPointer,
                                     ModelParams& modelParams );
 
-   template< typename FluidPointer, typename BoundaryPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   interactionWithOpenBoundary( FluidPointer& fluid,
-                                BoundaryPointer& boundary,
-                                OpenBoudaryPointer& openBoundary,
-                                ModelParams& modelParams );
+   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
    template< typename FluidPointer, typename BoundaryPointer >
    void
