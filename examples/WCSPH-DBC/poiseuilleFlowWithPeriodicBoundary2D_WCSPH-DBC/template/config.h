@@ -67,7 +67,7 @@ class SPHParams
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
+   using BCType = TNL::SPH::WCSPH_BCTypes::MDBC;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };

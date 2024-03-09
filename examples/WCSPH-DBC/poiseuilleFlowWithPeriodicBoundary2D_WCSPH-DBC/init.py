@@ -105,11 +105,11 @@ def compute_domain_size( setup ):
     search_radius = setup[ "search_radius" ]
 
     # Resize domain by one layer of cells
-    eps = 1.005
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
-    domain_end_y = eps * ( setup[ "domain_end_y" ] + search_radius )
+    eps = 1.01
+    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - 2 * search_radius )
+    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - 2 * search_radius )
+    domain_end_x = eps * ( setup[ "domain_end_x" ] + 2 * search_radius )
+    domain_end_y = eps * ( setup[ "domain_end_y" ] + 2 * search_radius )
     domain_size_x = domain_end_x - domain_origin_x
     domain_size_y = domain_end_y - domain_origin_y
 
@@ -237,11 +237,11 @@ if __name__ == "__main__":
         "channel_height" : args.channel_height,
         # left periodic boundary condition
         "periodicityLeft_position_x" : 0.,
-        "periodicityLeft_position_y" : 0. + args.dp,
+        "periodicityLeft_position_y" : 0. - args.dp * args.n_boundary_layers,
         "periodicityLeft_orientation_x" : 1.,
         "periodicityLeft_orientation_y" : 0.,
         "periodicityLeft_layers" : args.n_boundary_layers + 1,
-        "periodicityLeft_height" : args.channel_height - args.dp,
+        "periodicityLeft_height" : args.channel_height + 2 * args.dp * args.n_boundary_layers,
         "periodicityLeft_width" : args.n_boundary_layers * args.dp,
         "periodicityLeft_velocity_x" : args.v_init,
         "periodicityLeft_velocity_y" : 0.,
@@ -251,11 +251,11 @@ if __name__ == "__main__":
         "periodicityLeft_shift_vector_y" : 0.,
         # right periodic condition
         "periodicityRight_position_x" : args.channel_length,
-        "periodicityRight_position_y" : 0. + args.dp,
+        "periodicityRight_position_y" : 0. - args.dp * args.n_boundary_layers,
         "periodicityRight_orientation_x" : -1.,
         "periodicityRight_orientation_y" : 0.,
         "periodicityRight_layers" : args.n_boundary_layers + 1,
-        "periodicityRight_height" : args.channel_height - args.dp,
+        "periodicityRight_height" : args.channel_height + 2 * args.dp * args.n_boundary_layers,
         "periodicityRight_width" : args.n_boundary_layers * args.dp,
         "periodicityRight_velocity_x" : args.v_init,
         "periodicityRight_velocity_y" : 0.,
