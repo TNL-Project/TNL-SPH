@@ -219,11 +219,11 @@ SPHMultiset_CFD< Model >::applyPeriodicBCEnforce()
                                                periodicBoundaryPatches[ pairedPeriodicBuffer ]->fluidPeriodicPatch,
                                                periodicBoundaryPatches[ i ]->config,
                                                periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
-      openBoundaryModel.applyPeriodicBoundary( boundary,
-                                               periodicBoundaryPatches[ i ]->boundaryPeriodicPatch,
-                                               periodicBoundaryPatches[ pairedPeriodicBuffer ]->boundaryPeriodicPatch,
-                                               periodicBoundaryPatches[ i ]->config,
-                                               periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
+      openBoundaryModel.applyPeriodicBoundaryOnBoundary( boundary,
+                                                         periodicBoundaryPatches[ i ]->boundaryPeriodicPatch,
+                                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->boundaryPeriodicPatch,
+                                                         periodicBoundaryPatches[ i ]->config,
+                                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
    }
 
    //sort the buffer after updating the periodicity zones

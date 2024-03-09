@@ -4,11 +4,11 @@
 namespace TNL {
 namespace SPH {
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename OpenBoundaryPointer >
-typename OpenBoundaryConditionsBuffers< SPHConfig>::GlobalIndexType
-OpenBoundaryConditionsBuffers< SPHConfig >::moveInletBufferParticles( RealType dt,
-                                                                      OpenBoundaryPointer& openBoundary )
+typename OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::GlobalIndexType
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::moveInletBufferParticles( RealType dt,
+                                                                                   OpenBoundaryPointer& openBoundary )
 {
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
@@ -39,11 +39,11 @@ OpenBoundaryConditionsBuffers< SPHConfig >::moveInletBufferParticles( RealType d
    return numberOfRetyped;
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename OpenBoundaryPointer >
-typename OpenBoundaryConditionsBuffers< SPHConfig>::GlobalIndexType
-OpenBoundaryConditionsBuffers< SPHConfig >::moveOutletBufferParticles( RealType dt,
-                                                                       OpenBoundaryPointer& openBoundary )
+typename OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::GlobalIndexType
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::moveOutletBufferParticles( RealType dt,
+                                                                                    OpenBoundaryPointer& openBoundary )
 {
    GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
@@ -74,10 +74,10 @@ OpenBoundaryConditionsBuffers< SPHConfig >::moveOutletBufferParticles( RealType 
    return removeFromBufferCount;
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::sortBufferParticlesByMark( OpenBoundaryPointer& openBoundary )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::sortBufferParticlesByMark( OpenBoundaryPointer& openBoundary )
 {
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
 
@@ -97,13 +97,13 @@ OpenBoundaryConditionsBuffers< SPHConfig >::sortBufferParticlesByMark( OpenBound
                                                                        view_rho_buffer.getArrayData() ) ) );
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::convertBufferToFluid( FluidPointer& fluid,
-                                                                  OpenBoundaryPointer& openBoundary,
-                                                                  OpenBoundaryConfig& openBoundaryParams,
-                                                                  const GlobalIndexType numberOfRetyped )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( FluidPointer& fluid,
+                                                                               OpenBoundaryPointer& openBoundary,
+                                                                               OpenBoundaryConfig& openBoundaryParams,
+                                                                               const GlobalIndexType numberOfRetyped )
 {
    const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
 
@@ -147,11 +147,11 @@ OpenBoundaryConditionsBuffers< SPHConfig >::convertBufferToFluid( FluidPointer& 
    fluid->setLastActiveParticle( fluid->getLastActiveParticle() + numberOfRetyped );
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
-typename OpenBoundaryConditionsBuffers< SPHConfig>::GlobalIndexType
-OpenBoundaryConditionsBuffers< SPHConfig >::getFluidParticlesEnteringOutlet( FluidPointer& fluid,
-                                                                             OpenBoundaryPointer& openBoundary )
+typename OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::GlobalIndexType
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::getFluidParticlesEnteringOutlet( FluidPointer& fluid,
+                                                                                          OpenBoundaryPointer& openBoundary )
 {
 
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
@@ -192,12 +192,12 @@ OpenBoundaryConditionsBuffers< SPHConfig >::getFluidParticlesEnteringOutlet( Flu
    return fluidToBufferCount;
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::convertFluidToBuffer( FluidPointer& fluid,
-                                                                  OpenBoundaryPointer& openBoundary,
-                                                                  const GlobalIndexType fluidToBufferCount )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertFluidToBuffer( FluidPointer& fluid,
+                                                                               OpenBoundaryPointer& openBoundary,
+                                                                               const GlobalIndexType fluidToBufferCount )
 {
    const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
    auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
@@ -230,14 +230,14 @@ OpenBoundaryConditionsBuffers< SPHConfig >::convertFluidToBuffer( FluidPointer& 
 
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer,
           typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::applyOpenBoundary( RealType dt,
-                                                               FluidPointer& fluid,
-                                                               OpenBoundaryPointer& openBoundary,
-                                                               OpenBoundaryConfig& openBoundaryParams )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOpenBoundary( RealType dt,
+                                                                            FluidPointer& fluid,
+                                                                            OpenBoundaryPointer& openBoundary,
+                                                                            OpenBoundaryConfig& openBoundaryParams )
 {
    if( openBoundaryParams.type == WCSPH_BCTypes::OpenBoundaryConditionsType::Inlet )
       applyInletBoundaryCondition( dt, fluid, openBoundary, openBoundaryParams );
@@ -249,14 +249,14 @@ OpenBoundaryConditionsBuffers< SPHConfig >::applyOpenBoundary( RealType dt,
    }
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer,
           typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::applyInletBoundaryCondition( RealType dt,
-                                                                         FluidPointer& fluid,
-                                                                         OpenBoundaryPointer& openBoundary,
-                                                                         OpenBoundaryConfig& openBoundaryParams )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyInletBoundaryCondition( RealType dt,
+                                                                                      FluidPointer& fluid,
+                                                                                      OpenBoundaryPointer& openBoundary,
+                                                                                      OpenBoundaryConfig& openBoundaryParams )
 {
    const GlobalIndexType bufferToFluidCount = moveInletBufferParticles( dt, openBoundary );
 
@@ -267,14 +267,14 @@ OpenBoundaryConditionsBuffers< SPHConfig >::applyInletBoundaryCondition( RealTyp
    convertBufferToFluid( fluid, openBoundary, openBoundaryParams, bufferToFluidCount );
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer,
           typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::applyOuletBoundaryCondition( RealType dt,
-                                                                         FluidPointer& fluid,
-                                                                         OpenBoundaryPointer& openBoundary,
-                                                                         OpenBoundaryConfig& openBoundaryParams )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOuletBoundaryCondition( RealType dt,
+                                                                                      FluidPointer& fluid,
+                                                                                      OpenBoundaryPointer& openBoundary,
+                                                                                      OpenBoundaryConfig& openBoundaryParams )
 {
    //Remove leaving buffer particles:
    const GlobalIndexType bufferToVoidCount = moveOutletBufferParticles( dt, openBoundary );
@@ -291,13 +291,14 @@ OpenBoundaryConditionsBuffers< SPHConfig >::applyOuletBoundaryCondition( RealTyp
    convertFluidToBuffer( fluid, openBoundary, fluidToBufferCount );
 }
 
-template< typename SPHConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename SPHConfig, typename ModelConfig >
+template< typename FluidPointer,
+          typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::copyGhostParticles( FluidPointer& fluid,
-                                                                OpenBoundaryPointer& sendingBuffer,
-                                                                OpenBoundaryPointer& receivingBuffer,
-                                                                VectorType shift )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyGhostParticles( FluidPointer& fluid,
+                                                                             OpenBoundaryPointer& sendingBuffer,
+                                                                             OpenBoundaryPointer& receivingBuffer,
+                                                                             VectorType shift )
 {
    sendingBuffer->zone.updateParticlesInZone( fluid->particles );
 
@@ -327,25 +328,119 @@ OpenBoundaryConditionsBuffers< SPHConfig >::copyGhostParticles( FluidPointer& fl
    receivingBuffer->particles->setNumberOfParticles( numberOfZoneParticles );
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
+template< typename FluidPointer,
+          typename OpenBoundaryPointer,
+          typename BCType,
+          std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
+void
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostParticles( FluidPointer& fluid,
+                                                                                     OpenBoundaryPointer& sendingBuffer,
+                                                                                     OpenBoundaryPointer& receivingBuffer,
+                                                                                     VectorType shift )
+{
+   sendingBuffer->zone.updateParticlesInZone( fluid->particles );
+
+   const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
+   const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
+
+   auto view_r = fluid->particles->getPoints().getView();
+   auto view_v = fluid->variables->v.getView();
+   auto view_rho = fluid->variables->rho.getView();
+
+   auto view_r_recBuffer = receivingBuffer->particles->getPoints().getView();
+   auto view_v_recBuffer = receivingBuffer->variables->v.getView();
+   auto view_rho_recBuffer = receivingBuffer->variables->rho.getView();
+
+   auto copyParticles = [=] __cuda_callable__ ( int i ) mutable
+   {
+      const GlobalIndexType p = zoneParticleIndices_view[ i ];
+
+      view_r_recBuffer[ i ] = view_r[ p ] + shift;
+      view_v_recBuffer[ i ] = view_v[ p ];
+      view_rho_recBuffer[ i ] = view_rho[ p ];
+   };
+   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyParticles );
+
+   receivingBuffer->setLastActiveParticle( numberOfZoneParticles - 1 );
+   receivingBuffer->particles->setLastActiveParticle( numberOfZoneParticles - 1 );
+   receivingBuffer->particles->setNumberOfParticles( numberOfZoneParticles );
+}
+
+template< typename SPHConfig, typename ModelConfig >
+template< typename FluidPointer,
+          typename OpenBoundaryPointer,
+          typename BCType,
+          std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
+void
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostParticles( FluidPointer& fluid,
+                                                                                     OpenBoundaryPointer& sendingBuffer,
+                                                                                     OpenBoundaryPointer& receivingBuffer,
+                                                                                     VectorType shift )
+{
+   sendingBuffer->zone.updateParticlesInZone( fluid->particles );
+
+   const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
+   const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
+
+   auto view_r = fluid->particles->getPoints().getView();
+   auto view_v = fluid->variables->v.getView();
+   auto view_rho = fluid->variables->rho.getView();
+   auto view_gn = fluid->variables->ghostNodes.getView();
+
+   auto view_r_recBuffer = receivingBuffer->particles->getPoints().getView();
+   auto view_v_recBuffer = receivingBuffer->variables->v.getView();
+   auto view_rho_recBuffer = receivingBuffer->variables->rho.getView();
+   auto view_gn_recBuffer = receivingBuffer->variables->ghostNodes.getView();
+
+   auto copyParticles = [=] __cuda_callable__ ( int i ) mutable
+   {
+      const GlobalIndexType p = zoneParticleIndices_view[ i ];
+
+      view_r_recBuffer[ i ] = view_r[ p ] + shift;
+      view_v_recBuffer[ i ] = view_v[ p ];
+      view_rho_recBuffer[ i ] = view_rho[ p ];
+      view_gn_recBuffer[ i ] = view_gn[ p ];
+   };
+   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyParticles );
+
+   receivingBuffer->setLastActiveParticle( numberOfZoneParticles - 1 );
+   receivingBuffer->particles->setLastActiveParticle( numberOfZoneParticles - 1 );
+   receivingBuffer->particles->setNumberOfParticles( numberOfZoneParticles );
+}
+
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::applyPeriodicBoundary( FluidPointer& fluid,
-                                                                   OpenBoundaryPointer& periodicBoundary1,
-                                                                   OpenBoundaryPointer& periodicBoundary2,
-                                                                   OpenBoundaryConfig& periodicBoundary1Params,
-                                                                   OpenBoundaryConfig& periodicBoundary2Params)
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyPeriodicBoundary( FluidPointer& fluid,
+                                                                                OpenBoundaryPointer& periodicBoundary1,
+                                                                                OpenBoundaryPointer& periodicBoundary2,
+                                                                                OpenBoundaryConfig& periodicBoundary1Params,
+                                                                                OpenBoundaryConfig& periodicBoundary2Params)
 {
    const VectorType shiftFromPatch1ToPatch2 = periodicBoundary1Params.shift;
    copyGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2 );
 }
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoundaryPointer >
 void
-OpenBoundaryConditionsBuffers< SPHConfig >::periodicityParticleTransfer( FluidPointer& fluid,
-                                                                         OpenBoundaryPointer& periodicBuffer,
-                                                                         OpenBoundaryConfig& periodicBoundaryParams )
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyPeriodicBoundaryOnBoundary( FluidPointer& fluid,
+                                                                                          OpenBoundaryPointer& periodicBoundary1,
+                                                                                          OpenBoundaryPointer& periodicBoundary2,
+                                                                                          OpenBoundaryConfig& periodicBoundary1Params,
+                                                                                          OpenBoundaryConfig& periodicBoundary2Params)
+{
+   const VectorType shiftFromPatch1ToPatch2 = periodicBoundary1Params.shift;
+   copyBoundaryGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2 );
+}
+
+template< typename SPHConfig, typename ModelConfig >
+template< typename FluidPointer, typename OpenBoundaryPointer >
+void
+OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::periodicityParticleTransfer( FluidPointer& fluid,
+                                                                                      OpenBoundaryPointer& periodicBuffer,
+                                                                                      OpenBoundaryConfig& periodicBoundaryParams )
 {
    const auto zoneParticleIndices_view = periodicBuffer->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = periodicBuffer->zone.getNumberOfParticles();

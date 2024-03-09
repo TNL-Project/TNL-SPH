@@ -58,7 +58,11 @@ class NewtonViscousLaw
    static VectorType
    Xi( const VectorType& r_ik,  const VectorType& v_ik, const VectorType& n_k, const ParamsType& params )
    {
-      const VectorType t_k = { n_k[ 1 ], -n_k[ 0 ] };
+      const VectorType t_k = { -1.f, 0.f };
+      //if( n_k[ 1 ] > 0.5f )
+      //   t_k = { -n_k[ 1 ], n_k[ 0 ] };
+      //else if( n_k[ 1 ] < -0.5f )
+      //   t_k = { n_k[ 1 ], -n_k[ 0 ] };
 
       const RealType intersection = 2 * sqrt( pow( params.searchRadius, 2 ) - pow( ( n_k, r_ik ), 2 ) );
       const RealType normalDerivative = ( -1.0f ) * ( v_ik, t_k ) / ( n_k, r_ik );

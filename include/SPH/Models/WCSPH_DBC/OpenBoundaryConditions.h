@@ -19,7 +19,7 @@
 namespace TNL {
 namespace SPH {
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 class OpenBoundaryConditionsBuffers
 {
 public:
@@ -100,6 +100,13 @@ public:
                           OpenBoundaryConfig& periodicBoundary1Params,
                           OpenBoundaryConfig& periodicBoundary2Params );
 
+   template< typename FluidPointer, typename OpenBoundaryPointer >
+   void
+   applyPeriodicBoundaryOnBoundary( FluidPointer& fluid,
+                                    OpenBoundaryPointer& periodicBoundary1,
+                                    OpenBoundaryPointer& periodicBoundary2,
+                                    OpenBoundaryConfig& periodicBoundary1Params,
+                                    OpenBoundaryConfig& periodicBoundary2Params );
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
@@ -107,6 +114,26 @@ public:
                        OpenBoundaryPointer& sendingBuffer,
                        OpenBoundaryPointer& receivingBuffer,
                        VectorType shift );
+
+   template< typename FluidPointer,
+             typename OpenBoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   void
+   copyBoundaryGhostParticles( FluidPointer& fluid,
+                               OpenBoundaryPointer& sendingBuffer,
+                               OpenBoundaryPointer& receivingBuffer,
+                               VectorType shift );
+
+   template< typename FluidPointer,
+             typename OpenBoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   copyBoundaryGhostParticles( FluidPointer& fluid,
+                               OpenBoundaryPointer& sendingBuffer,
+                               OpenBoundaryPointer& receivingBuffer,
+                               VectorType shift );
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void

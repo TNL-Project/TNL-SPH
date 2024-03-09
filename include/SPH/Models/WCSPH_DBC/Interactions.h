@@ -51,7 +51,7 @@ public:
    using EOS = typename ModelConfig::EOS;
 
    using OpenBoundaryConfig = DBCOpenBoundaryConfig< SPHConfig >;
-   using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig >;
+   using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >;
 
    /**
     * Constructor.
