@@ -89,6 +89,10 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
    //sph.exec();
 
+   sph.timeMeasurement.addTimer( "extrapolate-openbc" );
+   sph.timeMeasurement.addTimer( "apply-openbc" );
+
+
    // Library model:
 
    while( sph.timeStepping.runTheSimulation() )
@@ -100,7 +104,9 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Search...", "Done." );
 
       // extrapolate open boundary
+      sph.timeMeasurement.start( "extrapolate-openbc" );
       sph.extrapolateOpenBC();
+      sph.timeMeasurement.stop( "extrapolate-openbc" );
       sph.writeLog( log, "Extrapolate open BC...", "Done." );
 
       // perform interaction with given model
@@ -116,7 +122,9 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Integrate...", "Done." );
 
       // apply open boundary condition
+      sph.timeMeasurement.start( "apply-openbc" );
       sph.applyOpenBC();
+      sph.timeMeasurement.stop( "apply-openbc" );
       sph.writeLog( log, "Update open BC...", "Done." );
 
       // output particle data
