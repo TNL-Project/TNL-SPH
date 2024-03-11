@@ -12,46 +12,47 @@ public:
 
    TimerMeasurement()
    {
-      timers.insert( { "search", TNL::Timer()  } );
-      timers.insert( { "search_reset", TNL::Timer()  } );
-      timers.insert( { "search_cellIndices", TNL::Timer()  } );
-      timers.insert( { "search_sort", TNL::Timer()  } );
-      timers.insert( { "search_toCells", TNL::Timer()  } );
-      timers.insert( { "interact", TNL::Timer()  } );
-      timers.insert( { "integrate", TNL::Timer()  } );
+      timers.insert( { "search", std::make_pair( TNL::Timer(), true ) } );
+      timers.insert( { "search_reset", std::make_pair( TNL::Timer(), false ) } );
+      timers.insert( { "search_cellIndices", std::make_pair( TNL::Timer(), false ) } );
+      timers.insert( { "search_sort", std::make_pair( TNL::Timer(), false ) } );
+      timers.insert( { "search_toCells", std::make_pair( TNL::Timer(), false ) } );
+      timers.insert( { "interact", std::make_pair( TNL::Timer(), true ) } );
+      timers.insert( { "integrate", std::make_pair( TNL::Timer(), true ) } );
    }
 
    void
-   addTimer( const std::string keyword )
+   addTimer( const std::string keyword, const bool subTimer = true )
    {
-      timers.insert( { keyword, TNL::Timer() } );
+      timers.insert( { keyword, std::make_pair( TNL::Timer(), subTimer ) } );
    }
 
    void
    start( const std::string keyword )
    {
-      this->timers[ keyword ].start();
+      this->timers[ keyword ].first.start();
    }
 
    void
    stop( const std::string keyword )
    {
-      this->timers[ keyword ].stop();
+      this->timers[ keyword ].first.stop();
    }
 
    void
    writeInfo( TNL::Logger& logger, const int stepsTotal ) const noexcept
    {
       logger.writeHeader( "Computation time" );
-      float totalTime = this->timers.at( "search" ).getRealTime() + \
-                        this->timers.at( "interact" ).getRealTime() + \
-                        this->timers.at( "integrate" ).getRealTime();
+      float totalTime = 0.f;
+      for ( auto const& [ key, val ] : this->timers ) {
+         if ( val.second == true )
+            totalTime += val.first.getRealTime();
+      }
 
-      for ( auto const& [ key, val ] : this->timers )
-      {
-         logger.writeParameter( key, val.getRealTime() );
-         logger.writeParameter( key + "-average", val.getRealTime() / stepsTotal );
-         logger.writeParameter( key + "-percentage", val.getRealTime() / totalTime * 100 );
+      for ( auto const& [ key, val ] : this->timers ) {
+         logger.writeParameter( key, val.first.getRealTime() );
+         logger.writeParameter( key + "-average", val.first.getRealTime() / stepsTotal );
+         logger.writeParameter( key + "-percentage", val.first.getRealTime() / totalTime * 100 );
          logger.writeSeparator();
       }
       logger.writeParameter( "Total time:", totalTime );
@@ -60,7 +61,7 @@ public:
 
 protected:
 
-   std::map< std::string, TNL::Timer > timers;
+   std::map< std::string, std::pair< TNL::Timer, bool >> timers;
 
 };
 

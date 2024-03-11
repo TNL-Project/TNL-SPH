@@ -64,12 +64,12 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
       }
       //DEBUG
-      timeMeasurement.addTimer( "periodic-fluid" );
-      timeMeasurement.addTimer( "periodic-fluid-interaction" );
-      timeMeasurement.addTimer( "periodic-fluid-updateZone" );
-      timeMeasurement.addTimer( "periodic-boundary" );
-      timeMeasurement.addTimer( "periodic-boundary-interaction" );
-      timeMeasurement.addTimer( "periodic-boundary-updateZone" );
+      timeMeasurement.addTimer( "periodic-fluid", false );
+      timeMeasurement.addTimer( "periodic-fluid-interaction", false );
+      timeMeasurement.addTimer( "periodic-fluid-updateZone", false );
+      timeMeasurement.addTimer( "periodic-boundary", false );
+      timeMeasurement.addTimer( "periodic-boundary-interaction", false );
+      timeMeasurement.addTimer( "periodic-boundary-updateZone", false );
       timeMeasurement.addTimer( "zone-reset" );
       timeMeasurement.addTimer( "zone-collect" );
       timeMeasurement.addTimer( "zone-build" );
