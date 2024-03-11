@@ -619,7 +619,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryPeriodicBoundary( FluidPo
                                                                          const VectorType shift )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
@@ -658,12 +658,12 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryPeriodicBoundary( FluidPo
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const GlobalIndexType p = zoneParticleIndices_view[ i ];
-      const VectorType r_i = view_points_bound[ p ] + shift;
+      const VectorType r_i = view_points_bound[ i ] + shift;
 
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( p, r_i, searchInOpenBoundary, BoundFluid, &rho_i, &gamma_i );
+      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( p, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
 
       view_rho_bound[ p ] += rho_i;
       view_gamma_bound[ p ] += gamma_i;

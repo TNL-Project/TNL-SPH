@@ -293,9 +293,8 @@ SPHMultiset_CFD< Model >::interact()
                fluid, boundary, periodicBoundaryPatches[ i ]->fluidPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
          timeMeasurement.stop( "periodic-fluid-interaction" );
          timeMeasurement.start( "periodic-boundary-interaction" );
-         //periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->zone.updateParticlesInZone( boundary->particles );
-         //model.updateSolidBoundaryPeriodicBoundary(
-         //      fluid, boundary, periodicBoundaryPatches[ i ]->boundaryPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
+         model.updateSolidBoundaryPeriodicBoundary(
+               fluid, boundary, periodicBoundaryPatches[ i ]->boundaryPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
          timeMeasurement.stop( "periodic-boundary-interaction" );
       }
    }
