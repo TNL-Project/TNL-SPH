@@ -208,9 +208,10 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryPeriodicBoundary( FluidP
       const VectorType v_i = view_v_bound[ p ];
       const RealType rho_i = view_rho_bound[ p ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
+      //printf( " ( r_i = [ %f, %f ], r_i + shift = [ %f, %f ] ) ", view_points_bound[ p ][ 0 ], view_points_bound[ p ][ 1 ], r_i[ 0 ], r_i[ 1 ] );
 
       RealType drho_i = 0.f;
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( p, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
+      TNL::ParticleSystem::NeighborsLoop::exec( p, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] += drho_i;
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoopBoundary );
