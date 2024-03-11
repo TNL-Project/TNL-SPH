@@ -212,7 +212,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryPeriodicBoundary( FluidP
 
       RealType drho_i = 0.f;
       TNL::ParticleSystem::NeighborsLoop::exec( p, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
-      view_Drho_bound[ i ] += drho_i;
+      view_Drho_bound[ p ] += drho_i;
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoopBoundary );
 }

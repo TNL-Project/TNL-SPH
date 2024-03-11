@@ -658,7 +658,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryPeriodicBoundary( FluidPo
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
       const GlobalIndexType p = zoneParticleIndices_view[ i ];
-      const VectorType r_i = view_points_bound[ i ] + shift;
+      const VectorType r_i = view_points_bound[ p ] + shift;
 
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
