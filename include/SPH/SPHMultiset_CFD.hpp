@@ -232,21 +232,14 @@ SPHMultiset_CFD< Model >::applyPeriodicBCEnforce()
    for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
       int pairedPeriodicBuffer = periodicBoundaryPatches[ i ]->config.pairedPeriodicBuffer - 1;
       timeMeasurement.start( "periodic-fluid" );
-      //openBoundaryModel.applyPeriodicBoundary( fluid,
-      //                                         periodicBoundaryPatches[ i ]->fluidPeriodicPatch,
-      //                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->fluidPeriodicPatch,
-      //                                         periodicBoundaryPatches[ i ]->config,
-      //                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
-      //                                         //timeMeasurement );
       periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
+      if( i == 1 ) {
+         //std::cout << "Number of particles in zone: " << periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.getNumberOfParticles() << std::endl;
+         //std::cout << "Number of cells in zone: " << periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.getNumberOfCells() << std::endl;
+      }
       timeMeasurement.stop( "periodic-fluid" );
+
       timeMeasurement.start( "periodic-boundary" );
-      //openBoundaryModel.applyPeriodicBoundaryOnBoundary( boundary,
-      //                                                   periodicBoundaryPatches[ i ]->boundaryPeriodicPatch,
-      //                                                   periodicBoundaryPatches[ pairedPeriodicBuffer ]->boundaryPeriodicPatch,
-      //                                                   periodicBoundaryPatches[ i ]->config,
-      //                                                   periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
-      //                                                   //timeMeasurement );
       periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->zone.updateParticlesInZone( boundary->particles );
       timeMeasurement.stop( "periodic-boundary" );
    }

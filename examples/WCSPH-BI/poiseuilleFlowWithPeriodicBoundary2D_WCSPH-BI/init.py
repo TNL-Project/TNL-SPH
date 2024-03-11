@@ -113,10 +113,10 @@ def compute_domain_size( setup ):
     # Resize domain by one layer of cells
     # For BI, we use overlap 2 * search_radius just to be sure we have the additional layer of empty cells
     eps = 1.005
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] -  2 * search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - 2 * search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + 2 * search_radius )
-    domain_end_y = eps * ( setup[ "domain_end_y" ] + 2 * search_radius )
+    domain_origin_x = eps * ( setup[ "domain_origin_x" ] -  1.5 * search_radius )
+    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - 1.5 * search_radius )
+    domain_end_x = eps * ( setup[ "domain_end_x" ] + 1.5 * search_radius )
+    domain_end_y = eps * ( setup[ "domain_end_y" ] + 1.5 * search_radius )
     domain_size_x = domain_end_x - domain_origin_x
     domain_size_y = domain_end_y - domain_origin_y
 
@@ -209,6 +209,7 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Periodic channel example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -291,7 +292,7 @@ if __name__ == "__main__":
     # setup parameters
     compute_domain_size( openchannel_setup )
 
-    print( openchannel_setup )
+    pprint( openchannel_setup )
     # write simulation params
     write_simulation_params( openchannel_setup )
 
