@@ -293,14 +293,18 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOuletBoundaryCondi
 
 template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer,
-          typename OpenBoundaryPointer >
+          typename OpenBoundaryPointer,
+          typename TimerMeasurement >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyGhostParticles( FluidPointer& fluid,
                                                                              OpenBoundaryPointer& sendingBuffer,
                                                                              OpenBoundaryPointer& receivingBuffer,
-                                                                             VectorType shift )
+                                                                             VectorType shift,
+                                                                             TimerMeasurement& timeMeasurement )
 {
-   sendingBuffer->zone.updateParticlesInZone( fluid->particles );
+   timeMeasurement.start( "periodic-fluid-updateZone" );
+   sendingBuffer->zone.updateParticlesInZone( fluid->particles, timeMeasurement );
+   timeMeasurement.stop( "periodic-fluid-updateZone" );
 
    const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
@@ -331,15 +335,19 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyGhostParticles( Flu
 template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer,
           typename OpenBoundaryPointer,
+          typename TimerMeasurement,
           typename BCType,
           std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostParticles( FluidPointer& fluid,
                                                                                      OpenBoundaryPointer& sendingBuffer,
                                                                                      OpenBoundaryPointer& receivingBuffer,
-                                                                                     VectorType shift )
+                                                                                     VectorType shift,
+                                                                                     TimerMeasurement& timeMeasurement )
 {
-   sendingBuffer->zone.updateParticlesInZone( fluid->particles );
+   timeMeasurement.start( "periodic-boundary-updateZone" );
+   sendingBuffer->zone.updateParticlesInZone( fluid->particles, timeMeasurement );
+   timeMeasurement.stop( "periodic-boundary-updateZone" );
 
    const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
@@ -370,15 +378,19 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostPartic
 template< typename SPHConfig, typename ModelConfig >
 template< typename FluidPointer,
           typename OpenBoundaryPointer,
+          typename TimerMeasurement,
           typename BCType,
           std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostParticles( FluidPointer& fluid,
                                                                                      OpenBoundaryPointer& sendingBuffer,
                                                                                      OpenBoundaryPointer& receivingBuffer,
-                                                                                     VectorType shift )
+                                                                                     VectorType shift,
+                                                                                     TimerMeasurement& timeMeasurement )
 {
+   timeMeasurement.start( "periodic-boundary-updateZone" );
    sendingBuffer->zone.updateParticlesInZone( fluid->particles );
+   timeMeasurement.stop( "periodic-boundary-updateZone" );
 
    const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
@@ -410,29 +422,31 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostPartic
 }
 
 template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyPeriodicBoundary( FluidPointer& fluid,
                                                                                 OpenBoundaryPointer& periodicBoundary1,
                                                                                 OpenBoundaryPointer& periodicBoundary2,
                                                                                 OpenBoundaryConfig& periodicBoundary1Params,
-                                                                                OpenBoundaryConfig& periodicBoundary2Params)
+                                                                                OpenBoundaryConfig& periodicBoundary2Params,
+                                                                                TimerMeasurement& timeMeasurement )
 {
    const VectorType shiftFromPatch1ToPatch2 = periodicBoundary1Params.shift;
-   copyGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2 );
+   copyGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2, timeMeasurement );
 }
 
 template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyPeriodicBoundaryOnBoundary( FluidPointer& fluid,
                                                                                           OpenBoundaryPointer& periodicBoundary1,
                                                                                           OpenBoundaryPointer& periodicBoundary2,
                                                                                           OpenBoundaryConfig& periodicBoundary1Params,
-                                                                                          OpenBoundaryConfig& periodicBoundary2Params)
+                                                                                          OpenBoundaryConfig& periodicBoundary2Params,
+                                                                                          TimerMeasurement& timeMeasurement )
 {
    const VectorType shiftFromPatch1ToPatch2 = periodicBoundary1Params.shift;
-   copyBoundaryGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2 );
+   copyBoundaryGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2, timeMeasurement );
 }
 
 template< typename SPHConfig, typename ModelConfig >

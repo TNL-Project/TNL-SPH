@@ -248,7 +248,8 @@ if __name__ == "__main__":
         "periodicityLeft_orientation_y" : 0.,
         "periodicityLeft_layers" : args.n_boundary_layers + 1,
         "periodicityLeft_height" : args.channel_height - args.dp,
-        "periodicityLeft_width" : args.n_boundary_layers * args.dp,
+         #"periodicityLeft_width" : args.n_boundary_layers * args.dp,
+        "periodicityLeft_width" : 1.2 * 2 * args.h_coef * args.dp,
         "periodicityLeft_velocity_x" : args.v_init,
         "periodicityLeft_velocity_y" : 0.,
         "periodicityLeft_reference_point_z" : 0. - 1. * args.n_boundary_layers * args.dp, #TODO: Make this more clear
@@ -262,7 +263,8 @@ if __name__ == "__main__":
         "periodicityRight_orientation_y" : 0.,
         "periodicityRight_layers" : args.n_boundary_layers + 1,
         "periodicityRight_height" : args.channel_height - args.dp,
-        "periodicityRight_width" : args.n_boundary_layers * args.dp,
+         #"periodicityRight_width" : args.n_boundary_layers * args.dp,
+        "periodicityRight_width" :  1.2 * 2 * args.h_coef * args.dp,
         "periodicityRight_velocity_x" : args.v_init,
         "periodicityRight_velocity_y" : 0.,
         "periodicityRight_reference_point_z" : args.channel_length - ( -1. ) * args.n_boundary_layers * args.dp, #TODO: Make this more clear

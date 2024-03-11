@@ -61,7 +61,18 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
                                                    searchRadius,
                                                    gridSize,
                                                    domainOrigin );
+
       }
+      //DEBUG
+      timeMeasurement.addTimer( "periodic-fluid" );
+      timeMeasurement.addTimer( "periodic-fluid-interaction" );
+      timeMeasurement.addTimer( "periodic-fluid-updateZone" );
+      timeMeasurement.addTimer( "periodic-boundary" );
+      timeMeasurement.addTimer( "periodic-boundary-interaction" );
+      timeMeasurement.addTimer( "periodic-boundary-updateZone" );
+      timeMeasurement.addTimer( "zone-reset" );
+      timeMeasurement.addTimer( "zone-collect" );
+      timeMeasurement.addTimer( "zone-build" );
    }
 
    // init model parameters
@@ -180,9 +191,15 @@ void
 SPHMultiset_CFD< Model >::performNeighborSearchForObject( ParticleSetPointer& objectPointer )
 {
    objectPointer->particles->resetListWithIndices();
+   timeMeasurement.start( "periodic-search-cidx" );
    objectPointer->particles->computeParticleCellIndices();
+   timeMeasurement.stop( "periodic-search-cidx" );
+   timeMeasurement.start( "periodic-search-sort" );
    objectPointer->sortParticles();
+   timeMeasurement.stop( "periodic-search-sort" );
+   timeMeasurement.start( "periodic-search-tocells" );
    objectPointer->particles->particlesToCells();
+   timeMeasurement.stop( "periodic-search-tocells" );
 }
 
 template< typename Model >
@@ -214,23 +231,35 @@ SPHMultiset_CFD< Model >::applyPeriodicBCEnforce()
 {
    for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
       int pairedPeriodicBuffer = periodicBoundaryPatches[ i ]->config.pairedPeriodicBuffer - 1;
-      openBoundaryModel.applyPeriodicBoundary( fluid,
-                                               periodicBoundaryPatches[ i ]->fluidPeriodicPatch,
-                                               periodicBoundaryPatches[ pairedPeriodicBuffer ]->fluidPeriodicPatch,
-                                               periodicBoundaryPatches[ i ]->config,
-                                               periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
-      openBoundaryModel.applyPeriodicBoundaryOnBoundary( boundary,
-                                                         periodicBoundaryPatches[ i ]->boundaryPeriodicPatch,
-                                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->boundaryPeriodicPatch,
-                                                         periodicBoundaryPatches[ i ]->config,
-                                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
+      timeMeasurement.start( "periodic-fluid" );
+      //openBoundaryModel.applyPeriodicBoundary( fluid,
+      //                                         periodicBoundaryPatches[ i ]->fluidPeriodicPatch,
+      //                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->fluidPeriodicPatch,
+      //                                         periodicBoundaryPatches[ i ]->config,
+      //                                         periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
+      //                                         //timeMeasurement );
+      periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
+      timeMeasurement.stop( "periodic-fluid" );
+      timeMeasurement.start( "periodic-boundary" );
+      //openBoundaryModel.applyPeriodicBoundaryOnBoundary( boundary,
+      //                                                   periodicBoundaryPatches[ i ]->boundaryPeriodicPatch,
+      //                                                   periodicBoundaryPatches[ pairedPeriodicBuffer ]->boundaryPeriodicPatch,
+      //                                                   periodicBoundaryPatches[ i ]->config,
+      //                                                   periodicBoundaryPatches[ pairedPeriodicBuffer ]->config );
+      //                                                   //timeMeasurement );
+      periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->zone.updateParticlesInZone( boundary->particles );
+      timeMeasurement.stop( "periodic-boundary" );
    }
 
-   //sort the buffer after updating the periodicity zones
-   for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
-      performNeighborSearchForObject( periodicBoundaryPatches[ i ]->fluidPeriodicPatch );
-      performNeighborSearchForObject( periodicBoundaryPatches[ i ]->boundaryPeriodicPatch );
-   }
+   ////sort the buffer after updating the periodicity zones
+   //for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
+   //   timeMeasurement.start( "periodic-fluid-nbsearch" );
+   //   performNeighborSearchForObject( periodicBoundaryPatches[ i ]->fluidPeriodicPatch );
+   //   timeMeasurement.stop( "periodic-fluid-nbsearch" );
+   //   timeMeasurement.start( "periodic-boundary-nbsearch" );
+   //   performNeighborSearchForObject( periodicBoundaryPatches[ i ]->boundaryPeriodicPatch );
+   //   timeMeasurement.stop( "periodic-boundary-nbsearch" );
+   //}
 }
 
 template< typename Model >
@@ -264,11 +293,17 @@ SPHMultiset_CFD< Model >::interact()
    //Interact between fluid and open boundary patches
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
-         periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
-         model.interactionWithOpenBoundary( fluid, periodicBoundaryPatches[ i ]->fluidPeriodicPatch, modelParams );
-         periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->zone.updateParticlesInZone( fluid->particles ); //fuck this out
-         model.interactionWithBoundaryPatches( fluid, periodicBoundaryPatches[ i ]->boundaryPeriodicPatch, modelParams );
-         model.updateSolidBoundaryOpenBoundary( boundary, periodicBoundaryPatches[ i ]->fluidPeriodicPatch, modelParams );
+
+         //periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
+         timeMeasurement.start( "periodic-fluid-interaction" );
+         model.interactWithPeriodicBoundary(
+               fluid, boundary, periodicBoundaryPatches[ i ]->fluidPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
+         timeMeasurement.stop( "periodic-fluid-interaction" );
+         timeMeasurement.start( "periodic-boundary-interaction" );
+         //periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->zone.updateParticlesInZone( boundary->particles );
+         //model.updateSolidBoundaryPeriodicBoundary(
+         //      fluid, boundary, periodicBoundaryPatches[ i ]->boundaryPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
+         timeMeasurement.stop( "periodic-boundary-interaction" );
       }
    }
 

@@ -409,12 +409,14 @@ OpenBoundaryConditionsBuffers< SPHConfig >::periodicityParticleTransfer( FluidPo
    const VectorType bufferPosition = periodicBuffer->parameters.position;
    const VectorType bufferOrientation = periodicBuffer->parameters.orientation;
 
+   //std::cout << "-> Buffer pos: " << bufferPosition << ", orientation: " << bufferOrientation << ", number of zone particles: " << numberOfZoneParticles << std::endl;
    auto moveParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       const GlobalIndexType p = zoneParticleIndices_view[ i ];
       const VectorType r = view_r_fluid[ p ];
 
       const VectorType r_relative = bufferPosition - r;
+      //printf( " {{ r = [%f, %f], rr = [%f, %f] }}", r[0], r[1], r_relative[0], r_relative[1] );
 
       if( ( r_relative, bufferOrientation ) > 0.f )
          view_r_fluid[ p ] += posShift;
