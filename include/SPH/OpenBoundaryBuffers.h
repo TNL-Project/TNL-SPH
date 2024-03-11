@@ -144,6 +144,40 @@ class PeriodicBoundary
    OpenBoundaryBoundaryPointer boundaryPeriodicPatch;
 };
 
+template< typename ParticlesType, typename OpenBoundaryConfigType >
+class PeriodicBoundaryMultiset
+{
+   public:
+   using DeviceType = typename SPHCaseConfig::DeviceType;
+   using RealType = typename ParticlesType::RealType;
+   using VectorType = typename ParticlesType::PointType;
+   using GlobalIndexType = typename ParticlesType::GlobalIndexType;
+   using IndexVectorType = typename ParticlesType::PointType;
+
+   using ParticleZoneType = ParticleZone< typename ParticlesType::Config >;
+
+   void
+   initialize( TNL::Config::ParameterContainer& parameters,
+               std::string prefix,
+               GlobalIndexType numberOfParticlesPerCell,
+               RealType searchRadius,
+               IndexVectorType gridSize,
+               VectorType domainOrigin )
+   {
+      config.init( parameters, prefix );
+
+      //initialize the zone
+      fluidZone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+      fluidZone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, gridSize, domainOrigin, searchRadius );
+      boundaryZone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+      boundaryZone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, gridSize, domainOrigin, searchRadius );
+   }
+
+   OpenBoundaryConfigType config;
+   ParticleZoneType fluidZone;
+   ParticleZoneType boundaryZone;
+};
+
 
 } // SPH
 } // TNL

@@ -47,6 +47,12 @@ class OpenBoundaryConfig
    VectorType zoneSecondPoint = 0. ;
 
    void
+   init( TNL::Config::ParameterContainer& parameters, std::string prefix )
+   {
+
+   }
+
+   void
    writeProlog( TNL::Logger& logger ) const noexcept
    {
       logger.writeParameter( "Patch orientation:", orientation );
