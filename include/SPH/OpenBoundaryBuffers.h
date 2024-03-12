@@ -148,7 +148,7 @@ template< typename ParticlesType, typename OpenBoundaryConfigType >
 class PeriodicBoundaryMultiset
 {
    public:
-   using DeviceType = typename SPHCaseConfig::DeviceType;
+   using DeviceType = typename ParticlesType::DeviceType;
    using RealType = typename ParticlesType::RealType;
    using VectorType = typename ParticlesType::PointType;
    using GlobalIndexType = typename ParticlesType::GlobalIndexType;
