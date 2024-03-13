@@ -120,13 +120,34 @@ class BIOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
       const VectorType bufferAreaDiagonal = secondPointOfBufferArea - firstPointOfBufferArea;
       const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
       //TODO: Make this in some better way, only the first scope should be kept
-      if( orienation[ 0 ] >= 0. ){
-         this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-         this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+      //if( orienation[ 0 ] >= 0. ){
+      //   this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+      //   this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+      //}
+      //if( orienation[ 0 ] <= 0. ){
+      //   this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+      //   this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+      //}
+      //TODO: Try this for y oriented buffer
+      if( orienation[ 0 ] != 0 ) {
+         if( orienation[ 0 ] >= 0. ){
+            this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+            this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+         }
+         if( orienation[ 0 ] <= 0. ){
+            this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+            this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+         }
       }
-      if( orienation[ 0 ] <= 0. ){
-         this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-         this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+      if( orienation[ 0 ] == 0 ) {
+         if( orienation[ 1 ] >= 0. ){
+            this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+            this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+         }
+         if( orienation[ 1 ] <= 0. ){
+            this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
+            this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+         }
       }
 
       //identify buffer type
