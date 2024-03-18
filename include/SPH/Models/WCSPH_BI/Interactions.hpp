@@ -147,7 +147,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid,
             view_a[ p ] += a_i;
             view_gamma[ p ] += gamma_i;
          };
-         Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
+         Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, periodicParticleLoop );
       }
    }
 }
@@ -214,7 +214,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
          const GlobalIndexType numberOfZoneParticles = boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles();
          const VectorType shift = boundary->periodicPatches[ i ]->config.shift;
 
-         auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+         auto periodicParticleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
             const GlobalIndexType p = zoneParticleIndices_view[ i ];
             const VectorType r_i = view_points_bound[ p ] + shift;
@@ -226,7 +226,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
             view_rho_bound[ p ] += rho_i;
             view_gamma_bound[ p ] += gamma_i;
          };
-         Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoopBoundary );
+         Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, periodicParticleLoopBoundary );
       }
    }
 }
