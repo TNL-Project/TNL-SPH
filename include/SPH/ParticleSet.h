@@ -7,6 +7,9 @@
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
 
+#include "OpenBoundaryConfig.h"
+#include "PeriodicBoundaryBuffers.h"
+
 #if HAVE_MPI
 #include "DistributedSPHSynchronizer.h"
 #include "shared/utils.h"
@@ -35,6 +38,10 @@ class ParticleSet
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
    using VectorType = typename SPHTraitsType::VectorType;
 
+   using OpenBoundaryConfig = OpenBoundaryConfig< SPHCaseConfig >;
+   using PeriodicBoundary = PeriodicBoundary< ParticleSystem, OpenBoundaryConfig >;
+   using PeriodicBoundaryPointer = typename Pointers::SharedPointer< PeriodicBoundary, DeviceType >;
+
    ParticleSet() : particles(), variables(), integratorVariables() {}
 
    ParticleSet( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
@@ -62,6 +69,29 @@ class ParticleSet
       this->lastActiveParticle = numberOfParticles - 1;
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
+   }
+
+   void
+   initializePeriodicity( TNL::Config::ParameterContainer& parameters )
+   {
+      //TODO: I don't like the compute domain properties here, this class should not take parameters as arg.
+      const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
+      const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+      const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+      const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+
+      const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
+      std::cout << "Number of periodic patches: " << numberOfPeriodicPatches << std::endl;
+      periodicPatches.resize( numberOfPeriodicPatches );
+      for( int i = 0; i < numberOfPeriodicPatches; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         periodicPatches[ i ]->initialize( parameters,
+                                           prefix,
+                                           searchRadius,
+                                           gridSize,
+                                           domainOrigin );
+                                           //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
+      }
    }
 
    const GlobalIndexType
@@ -151,6 +181,14 @@ class ParticleSet
             particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
    }
 
+   void
+   enforcePeriodicPatches()
+   {
+      for( long unsigned int i = 0; i < std::size( periodicPatches ); i++ ){
+         periodicPatches[ i ]->particleZone.updateParticlesInZone( particles );
+      }
+   }
+
    template< typename ReaderType >
    void
    readParticlesAndVariables( const std::string& inputFileName )
@@ -216,6 +254,8 @@ class ParticleSet
    ParticlePointerType particles;
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;
+
+   std::vector< PeriodicBoundaryPointer > periodicPatches;
 
 #ifdef HAVE_MPI
    using SimulationSubdomainInfo = DistributedParticleSetInfo< typename ParticleSystem::Config >;

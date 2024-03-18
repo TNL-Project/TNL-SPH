@@ -59,6 +59,8 @@ class NewtonViscousLaw
    Xi( const VectorType& r_ik,  const VectorType& v_ik, const VectorType& n_k, const ParamsType& params )
    {
       const VectorType t_k = { -1.f, 0.f };
+      //const VectorType t_k = { 0.f, -1.f };
+      //const VectorType t_k = { 0.f, -1.f };
       //if( n_k[ 1 ] > 0.5f )
       //   t_k = { -n_k[ 1 ], n_k[ 0 ] };
       //else if( n_k[ 1 ] < -0.5f )

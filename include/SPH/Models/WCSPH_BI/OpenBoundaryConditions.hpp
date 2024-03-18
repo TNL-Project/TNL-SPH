@@ -394,27 +394,24 @@ OpenBoundaryConditionsBuffers< SPHConfig >::applyPeriodicBoundaryOnBoundary( Bou
 }
 
 template< typename SPHConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename FluidPointer, typename PeriodicBoundaryPatch >
 void
 OpenBoundaryConditionsBuffers< SPHConfig >::periodicityParticleTransfer( FluidPointer& fluid,
-                                                                         OpenBoundaryPointer& periodicBuffer,
-                                                                         OpenBoundaryConfig& periodicBoundaryParams )
+                                                                         PeriodicBoundaryPatch& periodicPatch )
 {
-   const auto zoneParticleIndices_view = periodicBuffer->zone.getParticlesInZone().getConstView();
-   const GlobalIndexType numberOfZoneParticles = periodicBuffer->zone.getNumberOfParticles();
+   const auto zoneParticleIndices_view = periodicPatch->particleZone.getParticlesInZone().getConstView();
+   const GlobalIndexType numberOfZoneParticles = periodicPatch->particleZone.getNumberOfParticles();
 
    auto view_r_fluid = fluid->particles->getPoints().getView();
 
-   const VectorType posShift = periodicBoundaryParams.shift;
-   const VectorType bufferPosition = periodicBuffer->parameters.position;
-   const VectorType bufferOrientation = periodicBuffer->parameters.orientation;
+   const VectorType posShift = periodicPatch->config.shift;
+   const VectorType bufferPosition = periodicPatch->config.position;
+   const VectorType bufferOrientation = periodicPatch->config.orientation;
 
-   //std::cout << "-> Buffer pos: " << bufferPosition << ", orientation: " << bufferOrientation << ", number of zone particles: " << numberOfZoneParticles << std::endl;
    auto moveParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       const GlobalIndexType p = zoneParticleIndices_view[ i ];
       const VectorType r = view_r_fluid[ p ];
-
       const VectorType r_relative = bufferPosition - r;
       //printf( " {{ r = [%f, %f], rr = [%f, %f] }}", r[0], r[1], r_relative[0], r_relative[1] );
 

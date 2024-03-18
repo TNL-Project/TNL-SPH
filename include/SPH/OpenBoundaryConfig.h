@@ -49,7 +49,17 @@ class OpenBoundaryConfig
    void
    init( TNL::Config::ParameterContainer& parameters, std::string prefix )
    {
+      identifier = parameters.getParameter< std::string >( prefix + "identifier" );
+      orientation = parameters.getXyz< VectorType >( prefix + "orientation" );
+      position = parameters.getXyz< VectorType >( prefix + "position-1" );
+      bufferWidth = parameters.getXyz< VectorType >( prefix + "bufferWidth" );
+      //bufferHeight =
+      pairedPeriodicBuffer = parameters.getParameter< int >( prefix + "paired-periodic-buffer" );
+      shift = parameters.getXyz< VectorType >( prefix + "shiftVector" );
+      numberOfParticlesPerCell = parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" );
 
+      //TODO: Check what is the shape of the buffer, following lines are valid for planar buffer
+      computeZonePoints( parameters, prefix );
    }
 
    void
@@ -62,6 +72,38 @@ class OpenBoundaryConfig
       logger.writeParameter( "Zone second point:", zoneSecondPoint );
    }
 
+   private:
+
+   void
+   computeZonePoints( TNL::Config::ParameterContainer& parameters, std::string prefix )
+   {
+      const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+      const VectorType firstPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-1" );
+      const VectorType secondPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-2" );
+      const VectorType bufferAreaDiagonal = secondPointOfBufferArea - firstPointOfBufferArea;
+      const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
+      //TODO: Ugly, ugly code:
+      if( orientation[ 0 ] != 0 ) {
+         if( orientation[ 0 ] >= 0. ){
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+         }
+         if( orientation[ 0 ] <= 0. ){
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+         }
+      }
+      if( orientation[ 0 ] == 0 ) {
+         if( orientation[ 1 ] >= 0. ){
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+         }
+         if( orientation[ 1 ] <= 0. ){
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+         }
+      }
+   }
 
 
 };

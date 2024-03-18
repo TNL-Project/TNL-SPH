@@ -48,22 +48,10 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    }
 
    // init periodic boundary conditions
-   const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {//TODO: I dont like this.
-      periodicBoundaryPatches.resize( numberOfPeriodicPatches );
-      for( int i = 0; i < numberOfPeriodicPatches; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         periodicBoundaryPatches[ i ]->config.init( parameters, prefix );
-         periodicBoundaryPatches[ i ]->initialize( parameters,
-                                                   prefix,
-                                                   parameters.getParameter< int >( prefix + "numberOfParticles" ),
-                                                   parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
-                                                   searchRadius,
-                                                   gridSize,
-                                                   domainOrigin );
+      fluid->initializePeriodicity( parameters );
+      boundary->initializePeriodicity( parameters );
 
-      }
-      //DEBUG
       timeMeasurement.addTimer( "periodic-fluid", false );
       timeMeasurement.addTimer( "periodic-fluid-interaction", false );
       timeMeasurement.addTimer( "periodic-fluid-updateZone", false );
@@ -229,40 +217,23 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::applyPeriodicBCEnforce()
 {
-   for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
-      int pairedPeriodicBuffer = periodicBoundaryPatches[ i ]->config.pairedPeriodicBuffer - 1;
-      timeMeasurement.start( "periodic-fluid" );
-      periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
-      if( i == 1 ) {
-         //std::cout << "Number of particles in zone: " << periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.getNumberOfParticles() << std::endl;
-         //std::cout << "Number of cells in zone: " << periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.getNumberOfCells() << std::endl;
-      }
-      timeMeasurement.stop( "periodic-fluid" );
-
-      timeMeasurement.start( "periodic-boundary" );
-      periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->zone.updateParticlesInZone( boundary->particles );
-      timeMeasurement.stop( "periodic-boundary" );
-   }
-
-   ////sort the buffer after updating the periodicity zones
-   //for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
-   //   timeMeasurement.start( "periodic-fluid-nbsearch" );
-   //   performNeighborSearchForObject( periodicBoundaryPatches[ i ]->fluidPeriodicPatch );
-   //   timeMeasurement.stop( "periodic-fluid-nbsearch" );
-   //   timeMeasurement.start( "periodic-boundary-nbsearch" );
-   //   performNeighborSearchForObject( periodicBoundaryPatches[ i ]->boundaryPeriodicPatch );
-   //   timeMeasurement.stop( "periodic-boundary-nbsearch" );
-   //}
+   timeMeasurement.start( "periodic-fluid" );
+   fluid->enforcePeriodicPatches();
+   timeMeasurement.stop( "periodic-fluid" );
+   timeMeasurement.start( "periodic-boundary" );
+   boundary->enforcePeriodicPatches();
+   timeMeasurement.stop( "periodic-boundary" );
 }
 
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::applyPeriodicBCTransfer()
 {
-   for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
+   const long unsigned int numberOfPeriodicPatches = std::size( fluid->periodicPatches );
+   //std::cout << "Number of periodic patches:" << numberOfPeriodicPatches << std::endl;
+   for( long unsigned int i = 0; i < numberOfPeriodicPatches; i++ ){
       openBoundaryModel.periodicityParticleTransfer( fluid,
-                                                     periodicBoundaryPatches[ i ]->fluidPeriodicPatch,
-                                                     periodicBoundaryPatches[ i ]->config );
+                                                     fluid->periodicPatches[ i ] );
    }
 }
 
@@ -283,21 +254,21 @@ SPHMultiset_CFD< Model >::interact()
       }
    }
 
-   //Interact between fluid and open boundary patches
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
-      for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
+   ////Interact between fluid and open boundary patches
+   //if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
+   //   for( long unsigned int i = 0; i < std::size( periodicBoundaryPatches ); i++ ){
 
-         //periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
-         timeMeasurement.start( "periodic-fluid-interaction" );
-         model.interactWithPeriodicBoundary(
-               fluid, boundary, periodicBoundaryPatches[ i ]->fluidPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
-         timeMeasurement.stop( "periodic-fluid-interaction" );
-         timeMeasurement.start( "periodic-boundary-interaction" );
-         model.updateSolidBoundaryPeriodicBoundary(
-               fluid, boundary, periodicBoundaryPatches[ i ]->boundaryPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
-         timeMeasurement.stop( "periodic-boundary-interaction" );
-      }
-   }
+   //      //periodicBoundaryPatches[ i ]->fluidPeriodicPatch->zone.updateParticlesInZone( fluid->particles );
+   //      timeMeasurement.start( "periodic-fluid-interaction" );
+   //      model.interactWithPeriodicBoundary(
+   //            fluid, boundary, periodicBoundaryPatches[ i ]->fluidPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
+   //      timeMeasurement.stop( "periodic-fluid-interaction" );
+   //      timeMeasurement.start( "periodic-boundary-interaction" );
+   //      model.updateSolidBoundaryPeriodicBoundary(
+   //            fluid, boundary, periodicBoundaryPatches[ i ]->boundaryPeriodicPatch, modelParams, periodicBoundaryPatches[ i ]->config.shift );
+   //      timeMeasurement.stop( "periodic-boundary-interaction" );
+   //   }
+   //}
 
    //Finalize the interaction
    model.finalizeInteraction( fluid, boundary, modelParams );
@@ -334,19 +305,6 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
                                                "_" + openBoundaryPatch->parameters.identifier + ".vtk";
          openBoundaryPatch->template writeParticlesAndVariables< Writer >( outputFileNameOpenBound, writeParticleCellIndex );
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
-      }
-   }
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
-      for( auto& periodicBoundaryPatch : periodicBoundaryPatches ){
-         std::string outputFileNamePeriodicBound = outputDirecotry + "/particles" + std::to_string( step ) +\
-                                                   "_" + periodicBoundaryPatch->fluidPeriodicPatch->parameters.identifier + ".vtk";
-         periodicBoundaryPatch->fluidPeriodicPatch->template writeParticlesAndVariables< Writer >( outputFileNamePeriodicBound, writeParticleCellIndex );
-         logger.writeParameter( "Saved:", outputFileNamePeriodicBound );
-
-         std::string outputFileNamePeriodicBound_bound = outputDirecotry + "/particles" + std::to_string( step ) +\
-                                                         "_" + periodicBoundaryPatch->boundaryPeriodicPatch->parameters.identifier + "_boundary.vtk";
-         periodicBoundaryPatch->boundaryPeriodicPatch->template writeParticlesAndVariables< Writer >( outputFileNamePeriodicBound_bound, writeParticleCellIndex );
-         logger.writeParameter( "Saved:", outputFileNamePeriodicBound_bound );
       }
    }
 
@@ -396,12 +354,14 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
       }
    }
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
-      for( long unsigned int i = 0; i < periodicBoundaryPatches.size(); i++ )
+      const long unsigned int numberOfPeriodicPatches = std::size( fluid->periodicPatches );
+      for( long unsigned int i = 0; i < numberOfPeriodicPatches; i++ )
       {
-         logger.writeHeader( "Open boundary buffer" + std::to_string( i + 1 ) + "." );
-         periodicBoundaryPatches[ i ]->fluidPeriodicPatch->writeProlog( logger );
-         logger.writeSeparator();
-         periodicBoundaryPatches[ i ]->config.writeProlog( logger );
+         logger.writeHeader( "Periodic boundary patch " + std::to_string( i + 1 ) + "." );
+         fluid->periodicPatches[ i ]->writeProlog( logger );
+         //periodicBoundaryPatches[ i ]->fluidPeriodicPatch->writeProlog( logger );
+         //logger.writeSeparator();
+         //periodicBoundaryPatches[ i ]->config.writeProlog( logger );
       }
    }
 
@@ -461,17 +421,17 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
          }
       }
    }
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
-      for( long unsigned int i = 0; i < periodicBoundaryPatches.size(); i++ )
-      {
-         logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " fluid particles:",
-                                periodicBoundaryPatches[ i ]->fluidPeriodicPatch->getNumberOfParticles() );
-         logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " boundary particles:",
-                                periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->getNumberOfParticles() );
-         if( verbose == "full" ){
-         }
-      }
-   }
+   //if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
+   //   for( long unsigned int i = 0; i < periodicBoundaryPatches.size(); i++ )
+   //   {
+   //      logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " fluid particles:",
+   //                             periodicBoundaryPatches[ i ]->fluidPeriodicPatch->getNumberOfParticles() );
+   //      logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " boundary particles:",
+   //                             periodicBoundaryPatches[ i ]->boundaryPeriodicPatch->getNumberOfParticles() );
+   //      if( verbose == "full" ){
+   //      }
+   //   }
+   //}
    logger.writeSeparator();
 }
 

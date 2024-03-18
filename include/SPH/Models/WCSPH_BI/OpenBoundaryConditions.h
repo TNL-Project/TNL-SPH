@@ -122,11 +122,10 @@ public:
                                OpenBoundaryPointer& receivingBuffer,
                                VectorType shift );
 
-   template< typename FluidPointer, typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename PeriodicBoundaryPatch >
    void
    periodicityParticleTransfer( FluidPointer& fluid,
-                                OpenBoundaryPointer& periodicBuffer,
-                                OpenBoundaryConfig& periodicBoundaryParams );
+                                PeriodicBoundaryPatch& periodicPatch );
 
 };
 
