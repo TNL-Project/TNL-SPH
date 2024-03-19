@@ -143,8 +143,10 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
    //update number of particles TODO: Do this in elegant way.
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ){
       for( auto& openBoundaryPatch : openBoundaryPatches ){
-         fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles() - openBoundaryPatch->numberOfFluidParticlesToRemove );
-         fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() - openBoundaryPatch->numberOfFluidParticlesToRemove );
+         fluid->particles->setNumberOfParticles(
+               fluid->particles->getNumberOfParticles() - openBoundaryPatch->numberOfFluidParticlesToRemove );
+         fluid->particles->setLastActiveParticle(
+               fluid->particles->getLastActiveParticle() - openBoundaryPatch->numberOfFluidParticlesToRemove );
          fluid->setLastActiveParticle( fluid->getLastActiveParticle() - openBoundaryPatch->numberOfFluidParticlesToRemove );
          openBoundaryPatch->numberOfFluidParticlesToRemove = 0;
       }
@@ -391,11 +393,13 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
       }
    }
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
-      for( long unsigned int i = 0; i < periodicBoundaryPatches.size(); i++ ){
-         logger.writeParameter( "Number of fluid particles in periodic patch " + std::to_string( i + 1 ) + ": ",
-                                fluid->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
-         logger.writeParameter( "Number of boundary particles in periodic patch " + std::to_string( i + 1 ) + " :",
-                                fluid->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
+      if( verbose == "full" ){
+         for( long unsigned int i = 0; i < fluid->periodicPatches.size(); i++ )
+            logger.writeParameter( "Number of fluid particles in periodic patch " + std::to_string( i + 1 ) + ": ",
+                                   fluid->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
+         for( long unsigned int i = 0; i < boundary->periodicPatches.size(); i++ )
+            logger.writeParameter( "Number of boundary particles in periodic patch " + std::to_string( i + 1 ) + " :",
+                                   boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
       }
    }
    logger.writeSeparator();

@@ -215,7 +215,7 @@ public:
              typename BCType = typename ModelConfig::BCType,
              typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
-   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    template< typename FluidPointer,
              typename BoundaryPointer,
@@ -224,40 +224,7 @@ public:
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
-   // experiment
-   template< typename FluidPointer, typename BoudaryPointer, typename OpenBoundaryPointer >
-   void
-   interactWithPeriodicBoundary( FluidPointer& fluid,
-                                 BoudaryPointer& boundary,
-                                 OpenBoundaryPointer& openBoundary,
-                                 ModelParams& modelParams,
-                                 const VectorType shift );
-
-   template< typename OpenBoundaryPointer,
-             typename BoudaryPointer,
-             typename FluidPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
-   void
-   updateSolidBoundaryPeriodicBoundary( FluidPointer& fluidPointer,
-                                        BoudaryPointer& boundary,
-                                        OpenBoundaryPointer& openBoundary,
-                                        ModelParams& modelParams,
-                                        const VectorType shift );
-
-   template< typename OpenBoundaryPointer,
-             typename BoudaryPointer,
-             typename FluidPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
-   void
-   updateSolidBoundaryPeriodicBoundary( FluidPointer& fluidPointer,
-                                        BoudaryPointer& boundary,
-                                        OpenBoundaryPointer& openBoundary,
-                                        ModelParams& modelParams,
-                                        const VectorType shift );
-
-}; // SPH
+};
 
 } // SPH
 } // TNL

@@ -92,61 +92,11 @@ public:
    /**
     * Functions to realize periodic boundary conditions.
     */
-   template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
-   void
-   applyPeriodicBoundary( FluidPointer& fluid,
-                          OpenBoundaryPointer& periodicBoundary1,
-                          OpenBoundaryPointer& periodicBoundary2,
-                          OpenBoundaryConfig& periodicBoundary1Params,
-                          OpenBoundaryConfig& periodicBoundary2Params,
-                          TimerMeasurement& timeMeasurement );
 
-   template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
-   void
-   applyPeriodicBoundaryOnBoundary( FluidPointer& fluid,
-                                    OpenBoundaryPointer& periodicBoundary1,
-                                    OpenBoundaryPointer& periodicBoundary2,
-                                    OpenBoundaryConfig& periodicBoundary1Params,
-                                    OpenBoundaryConfig& periodicBoundary2Params,
-                                    TimerMeasurement& timeMeasurement );
-
-   template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
-   void
-   copyGhostParticles( FluidPointer& fluid,
-                       OpenBoundaryPointer& sendingBuffer,
-                       OpenBoundaryPointer& receivingBuffer,
-                       VectorType shift,
-                       TimerMeasurement& timeMeasurement );
-
-   template< typename FluidPointer,
-             typename OpenBoundaryPointer,
-             typename TimerMeasurement,
-             typename BCType = typename ModelConfig::BCType,
-             std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
-   void
-   copyBoundaryGhostParticles( FluidPointer& fluid,
-                               OpenBoundaryPointer& sendingBuffer,
-                               OpenBoundaryPointer& receivingBuffer,
-                               VectorType shift,
-                               TimerMeasurement& timeMeasurement );
-
-   template< typename FluidPointer,
-             typename OpenBoundaryPointer,
-             typename TimerMeasurement,
-             typename BCType = typename ModelConfig::BCType,
-             std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
-   void
-   copyBoundaryGhostParticles( FluidPointer& fluid,
-                               OpenBoundaryPointer& sendingBuffer,
-                               OpenBoundaryPointer& receivingBuffer,
-                               VectorType shift,
-                               TimerMeasurement& timeMeasurement );
-
-   template< typename FluidPointer, typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename PeriodicBoundaryPatch >
    void
    periodicityParticleTransfer( FluidPointer& fluid,
-                                OpenBoundaryPointer& periodicBuffer,
-                                OpenBoundaryConfig& periodicBoundaryParams );
+                                PeriodicBoundaryPatch& periodicPatch );
 
 };
 

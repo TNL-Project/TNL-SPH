@@ -110,25 +110,6 @@ public:
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
-   // experiment
-   template< typename FluidPointer, typename BoudaryPointer, typename OpenBoundaryPointer >
-   void
-   interactWithPeriodicBoundary( FluidPointer& fluid,
-                                 BoudaryPointer& boundary,
-                                 OpenBoundaryPointer& openBoundary,
-                                 ModelParams& modelParams,
-                                 const VectorType shift );
-
-   template< typename OpenBoundaryPointer,
-             typename BoudaryPointer,
-             typename FluidPointer >
-   void
-   updateSolidBoundaryPeriodicBoundary( FluidPointer& fluidPointer,
-                                        BoudaryPointer& boundary,
-                                        OpenBoundaryPointer& openBoundary,
-                                        ModelParams& modelParams,
-                                        const VectorType shift );
-
 };
 
 } // SPH

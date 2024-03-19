@@ -103,52 +103,6 @@ class BIOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
    void
    init( TNL::Config::ParameterContainer& parameters, std::string prefix )
    {
-      //this->identifier = parameters.getParameter< std::string >( prefix + "identifier" );
-      //this->orientation = parameters.getXyz< VectorType >( prefix + "orientation" );
-      //this->position = parameters.getXyz< VectorType >( prefix + "position-1" );
-      //this->bufferWidth = parameters.getXyz< VectorType >( prefix + "bufferWidth" );
-
-      ////this->bufferHeight = parameters.getXyz< VectorType >( "bufferWidth" );
-      //this->pairedPeriodicBuffer = parameters.getParameter< int >( prefix + "paired-periodic-buffer" );
-      //this->shift = parameters.getXyz< VectorType >( prefix + "shiftVector" );
-      //this->numberOfParticlesPerCell = parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" );
-
-      //const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-      //const VectorType firstPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-1" );
-      //const VectorType secondPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-2" );
-      //const VectorType orienation = this->orientation;
-      //const VectorType bufferAreaDiagonal = secondPointOfBufferArea - firstPointOfBufferArea;
-      //const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
-      //TODO: Make this in some better way, only the first scope should be kept
-      //if( orienation[ 0 ] >= 0. ){
-      //   this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-      //   this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      //}
-      //if( orienation[ 0 ] <= 0. ){
-      //   this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      //   this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
-      //}
-      //TODO: Try this for y oriented buffer
-      //if( orienation[ 0 ] != 0 ) {
-      //   if( orienation[ 0 ] >= 0. ){
-      //      this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-      //      this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      //   }
-      //   if( orienation[ 0 ] <= 0. ){
-      //      this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      //      this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
-      //   }
-      //}
-      //if( orienation[ 0 ] == 0 ) {
-      //   if( orienation[ 1 ] >= 0. ){
-      //      this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-      //      this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      //   }
-      //   if( orienation[ 1 ] <= 0. ){
-      //      this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      //      this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
-      //   }
-      //}
       Base::init( parameters, prefix );
 
       //identify buffer type

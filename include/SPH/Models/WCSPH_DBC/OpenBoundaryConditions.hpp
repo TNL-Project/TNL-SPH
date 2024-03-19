@@ -292,184 +292,24 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOuletBoundaryCondi
 }
 
 template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer,
-          typename OpenBoundaryPointer,
-          typename TimerMeasurement >
-void
-OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyGhostParticles( FluidPointer& fluid,
-                                                                             OpenBoundaryPointer& sendingBuffer,
-                                                                             OpenBoundaryPointer& receivingBuffer,
-                                                                             VectorType shift,
-                                                                             TimerMeasurement& timeMeasurement )
-{
-   timeMeasurement.start( "periodic-fluid-updateZone" );
-   sendingBuffer->zone.updateParticlesInZone( fluid->particles, timeMeasurement );
-   timeMeasurement.stop( "periodic-fluid-updateZone" );
-
-   const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
-   const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
-
-   auto view_r = fluid->particles->getPoints().getView();
-   auto view_v = fluid->variables->v.getView();
-   auto view_rho = fluid->variables->rho.getView();
-
-   auto view_r_recBuffer = receivingBuffer->particles->getPoints().getView();
-   auto view_v_recBuffer = receivingBuffer->variables->v.getView();
-   auto view_rho_recBuffer = receivingBuffer->variables->rho.getView();
-
-   auto copyParticles = [=] __cuda_callable__ ( int i ) mutable
-   {
-      const GlobalIndexType p = zoneParticleIndices_view[ i ];
-
-      view_r_recBuffer[ i ] = view_r[ p ] + shift;
-      view_v_recBuffer[ i ] = view_v[ p ];
-      view_rho_recBuffer[ i ] = view_rho[ p ];
-   };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyParticles );
-
-   receivingBuffer->setLastActiveParticle( numberOfZoneParticles - 1 );
-   receivingBuffer->particles->setLastActiveParticle( numberOfZoneParticles - 1 );
-   receivingBuffer->particles->setNumberOfParticles( numberOfZoneParticles );
-}
-
-template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer,
-          typename OpenBoundaryPointer,
-          typename TimerMeasurement,
-          typename BCType,
-          std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
-void
-OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostParticles( FluidPointer& fluid,
-                                                                                     OpenBoundaryPointer& sendingBuffer,
-                                                                                     OpenBoundaryPointer& receivingBuffer,
-                                                                                     VectorType shift,
-                                                                                     TimerMeasurement& timeMeasurement )
-{
-   timeMeasurement.start( "periodic-boundary-updateZone" );
-   sendingBuffer->zone.updateParticlesInZone( fluid->particles, timeMeasurement );
-   timeMeasurement.stop( "periodic-boundary-updateZone" );
-
-   const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
-   const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
-
-   auto view_r = fluid->particles->getPoints().getView();
-   auto view_v = fluid->variables->v.getView();
-   auto view_rho = fluid->variables->rho.getView();
-
-   auto view_r_recBuffer = receivingBuffer->particles->getPoints().getView();
-   auto view_v_recBuffer = receivingBuffer->variables->v.getView();
-   auto view_rho_recBuffer = receivingBuffer->variables->rho.getView();
-
-   auto copyParticles = [=] __cuda_callable__ ( int i ) mutable
-   {
-      const GlobalIndexType p = zoneParticleIndices_view[ i ];
-
-      view_r_recBuffer[ i ] = view_r[ p ] + shift;
-      view_v_recBuffer[ i ] = view_v[ p ];
-      view_rho_recBuffer[ i ] = view_rho[ p ];
-   };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyParticles );
-
-   receivingBuffer->setLastActiveParticle( numberOfZoneParticles - 1 );
-   receivingBuffer->particles->setLastActiveParticle( numberOfZoneParticles - 1 );
-   receivingBuffer->particles->setNumberOfParticles( numberOfZoneParticles );
-}
-
-template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer,
-          typename OpenBoundaryPointer,
-          typename TimerMeasurement,
-          typename BCType,
-          std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
-void
-OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::copyBoundaryGhostParticles( FluidPointer& fluid,
-                                                                                     OpenBoundaryPointer& sendingBuffer,
-                                                                                     OpenBoundaryPointer& receivingBuffer,
-                                                                                     VectorType shift,
-                                                                                     TimerMeasurement& timeMeasurement )
-{
-   timeMeasurement.start( "periodic-boundary-updateZone" );
-   sendingBuffer->zone.updateParticlesInZone( fluid->particles );
-   timeMeasurement.stop( "periodic-boundary-updateZone" );
-
-   const auto zoneParticleIndices_view = sendingBuffer->zone.getParticlesInZone().getConstView();
-   const GlobalIndexType numberOfZoneParticles = sendingBuffer->zone.getNumberOfParticles();
-
-   auto view_r = fluid->particles->getPoints().getView();
-   auto view_v = fluid->variables->v.getView();
-   auto view_rho = fluid->variables->rho.getView();
-   auto view_gn = fluid->variables->ghostNodes.getView();
-
-   auto view_r_recBuffer = receivingBuffer->particles->getPoints().getView();
-   auto view_v_recBuffer = receivingBuffer->variables->v.getView();
-   auto view_rho_recBuffer = receivingBuffer->variables->rho.getView();
-   auto view_gn_recBuffer = receivingBuffer->variables->ghostNodes.getView();
-
-   auto copyParticles = [=] __cuda_callable__ ( int i ) mutable
-   {
-      const GlobalIndexType p = zoneParticleIndices_view[ i ];
-
-      view_r_recBuffer[ i ] = view_r[ p ] + shift;
-      view_v_recBuffer[ i ] = view_v[ p ];
-      view_rho_recBuffer[ i ] = view_rho[ p ];
-      view_gn_recBuffer[ i ] = view_gn[ p ];
-   };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyParticles );
-
-   receivingBuffer->setLastActiveParticle( numberOfZoneParticles - 1 );
-   receivingBuffer->particles->setLastActiveParticle( numberOfZoneParticles - 1 );
-   receivingBuffer->particles->setNumberOfParticles( numberOfZoneParticles );
-}
-
-template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
-void
-OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyPeriodicBoundary( FluidPointer& fluid,
-                                                                                OpenBoundaryPointer& periodicBoundary1,
-                                                                                OpenBoundaryPointer& periodicBoundary2,
-                                                                                OpenBoundaryConfig& periodicBoundary1Params,
-                                                                                OpenBoundaryConfig& periodicBoundary2Params,
-                                                                                TimerMeasurement& timeMeasurement )
-{
-   const VectorType shiftFromPatch1ToPatch2 = periodicBoundary1Params.shift;
-   copyGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2, timeMeasurement );
-}
-
-template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer, typename TimerMeasurement >
-void
-OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyPeriodicBoundaryOnBoundary( FluidPointer& fluid,
-                                                                                          OpenBoundaryPointer& periodicBoundary1,
-                                                                                          OpenBoundaryPointer& periodicBoundary2,
-                                                                                          OpenBoundaryConfig& periodicBoundary1Params,
-                                                                                          OpenBoundaryConfig& periodicBoundary2Params,
-                                                                                          TimerMeasurement& timeMeasurement )
-{
-   const VectorType shiftFromPatch1ToPatch2 = periodicBoundary1Params.shift;
-   copyBoundaryGhostParticles( fluid, periodicBoundary1, periodicBoundary2, shiftFromPatch1ToPatch2, timeMeasurement );
-}
-
-template< typename SPHConfig, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoundaryPointer >
+template< typename FluidPointer, typename PeriodicBoundaryPatch >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::periodicityParticleTransfer( FluidPointer& fluid,
-                                                                                      OpenBoundaryPointer& periodicBuffer,
-                                                                                      OpenBoundaryConfig& periodicBoundaryParams )
+                                                                                      PeriodicBoundaryPatch& periodicPatch )
 {
-   const auto zoneParticleIndices_view = periodicBuffer->zone.getParticlesInZone().getConstView();
-   const GlobalIndexType numberOfZoneParticles = periodicBuffer->zone.getNumberOfParticles();
+   const auto zoneParticleIndices_view = periodicPatch->particleZone.getParticlesInZone().getConstView();
+   const GlobalIndexType numberOfZoneParticles = periodicPatch->particleZone.getNumberOfParticles();
 
    auto view_r_fluid = fluid->particles->getPoints().getView();
 
-   const VectorType posShift = periodicBoundaryParams.shift;
-   const VectorType bufferPosition = periodicBuffer->parameters.position;
-   const VectorType bufferOrientation = periodicBuffer->parameters.orientation;
+   const VectorType posShift = periodicPatch->config.shift;
+   const VectorType bufferPosition = periodicPatch->config.position;
+   const VectorType bufferOrientation = periodicPatch->config.orientation;
 
    auto moveParticles = [=] __cuda_callable__ ( int i ) mutable
    {
       const GlobalIndexType p = zoneParticleIndices_view[ i ];
       const VectorType r = view_r_fluid[ p ];
-
       const VectorType r_relative = bufferPosition - r;
 
       if( ( r_relative, bufferOrientation ) > 0.f )
