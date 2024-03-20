@@ -24,24 +24,25 @@ configSetupOpenBoundaryModelPatch( TNL::Config::ConfigDescription& config, std::
    // parameters for model-dependent open boundary conditions
    config.addEntry< std::string >( prefix + "type", "Type of open boundary patch.", "none" );
    config.addEntry< std::string >( prefix + "rho_bc", "Define type of open boundary condition for density.", "undefine" );
-      config.addEntryEnum( "fixed" );
-      config.addEntryEnum( "extrapolated" );
-      config.addEntryEnum( "do-nothing" );
+   config.addEntryEnum( "fixed" );
+   config.addEntryEnum( "extrapolated" );
+   config.addEntryEnum( "do-nothing" );
    config.addEntry< RealType >( prefix + "density", "Open boundary value for density.", 0 );
    config.addEntry< std::string >( prefix + "v_bc", "Define type of open boundary condition for velocity.", "undefine" );
-      config.addEntryEnum( "fixed" );
-      config.addEntryEnum( "extrapolated" );
-      config.addEntryEnum( "do-nothing" );
+   config.addEntryEnum( "fixed" );
+   config.addEntryEnum( "extrapolated" );
+   config.addEntryEnum( "do-nothing" );
    config.addEntry< RealType >( prefix + "velocity-x", "Open boundary value for density.", 0 );
    config.addEntry< RealType >( prefix + "velocity-y", "Open boundary value for density.", 0 );
    config.addEntry< RealType >( prefix + "velocity-z", "Open boundary value for density.", 0 );
-   config.addEntry< RealType >( prefix + "extrapolationDetTreshold", "Velocity treshold required in case of extrapolation.", 0 );
+   config.addEntry< RealType >(
+      prefix + "extrapolationDetTreshold", "Velocity treshold required in case of extrapolation.", 0 );
 }
 
 template< typename SPHConfig >
 class BIOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
 {
-   public:
+public:
    using Base = OpenBoundaryConfig< SPHConfig >;
    using RealType = typename Base::RealType;
    using VectorType = typename Base::VectorType;
@@ -105,7 +106,6 @@ class BIOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
       this->v_bc = parameters.getParameter< std::string >( prefix + "v_bc" );
       velocity = parameters.getXyz< VectorType >( prefix + "velocity" );
       this->extrapolationDetTreshold = parameters.getParameter< RealType >( prefix + "extrapolationDetTreshold" );
-
    }
 
    void
@@ -114,7 +114,7 @@ class BIOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
       Base::writeProlog( logger );
       logger.writeSeparator();
       std::string openBoundaryPatchType;
-      if( type == WCSPH_BCTypes::OpenBoundaryConditionsType::PeriodicBoundary ){
+      if( type == WCSPH_BCTypes::OpenBoundaryConditionsType::PeriodicBoundary ) {
          openBoundaryPatchType = "periodic boundary";
          logger.writeParameter( "Open boundary patch type: ", openBoundaryPatchType );
          logger.writeParameter( "Paired periodic boundary patch index: ", this->pairedPeriodicBuffer );
@@ -130,10 +130,9 @@ class BIOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
       logger.writeParameter( "Prescribed boundary density:", density );
       logger.writeParameter( "Velocity boundary conditon:", v_bc );
       logger.writeParameter( "Prescribed boundary velocity:", velocity );
-
    }
 };
 
-} // SPH
-} // TNL
+}  //namespace SPH
+}  //namespace TNL
 
