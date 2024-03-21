@@ -226,14 +226,13 @@ class ParticleSet
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronzier >
+   template< typename Synchronzier, typename GhostBoundaryPatches >
    void
-   synchronizeObject( Synchronzier& synchronizer )
+   synchronizeObject( Synchronzier& synchronizer, GhostBoundaryPatches& ghostBoundaryPatches )
    {
-      variables->synchronizeVariables( synchronizer, subdomainInfo );
-      integratorVariables->synchronizeVariables( synchronizer, subdomainInfo );
-      synchronizer.template synchronizeArray< typename ParticleSystem::PointArrayType >(
-            particles->getPoints(), particles->getPointsSwap(), subdomainInfo, 1 );
+      particles->synchronize( synchronizer, ghostBoundaryPatches );
+      variables->synchronize( synchronizer, ghostBoundaryPatches );
+      integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
    }
 #endif
 
