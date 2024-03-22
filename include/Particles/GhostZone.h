@@ -134,6 +134,12 @@ public:
    template< typename ParticlesPointer >
    void updateParticlesInZone( const ParticlesPointer& particles );
 
+   /**
+    * Collect particles contained in the zone
+    */
+   template< typename ParticlesPointer, typename TimeMeasurement >
+   void updateParticlesInZone( const ParticlesPointer& particles, TimeMeasurement& timeMeasurement );
+
    void
    writeProlog( TNL::Logger& logger ) const noexcept;
 

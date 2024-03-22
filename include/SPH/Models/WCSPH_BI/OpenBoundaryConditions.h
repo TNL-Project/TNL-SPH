@@ -13,7 +13,7 @@
 #include "../../SPHTraits.h"
 
 #ifdef HAVE_MPI
-#include "../../shared/utils.h"
+   #include "../../shared/utils.h"
 #endif
 
 namespace TNL {
@@ -23,7 +23,6 @@ template< typename SPHConfig >
 class OpenBoundaryConditionsBuffers
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -36,24 +35,21 @@ public:
    /**
     * New set of functions to realize open boundary conditions.
     */
-   template< typename FluidPointer,
-             typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    applyOpenBoundary( RealType dt,
                       FluidPointer& fluid,
                       OpenBoundaryPointer& openBoundary,
                       OpenBoundaryConfig& openBoundaryParams );
 
-   template< typename FluidPointer,
-             typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    applyInletBoundaryCondition( RealType dt,
                                 FluidPointer& fluid,
                                 OpenBoundaryPointer& openBoundary,
                                 OpenBoundaryConfig& openBoundaryParams );
 
-   template< typename FluidPointer,
-             typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    applyOuletBoundaryCondition( RealType dt,
                                 FluidPointer& fluid,
@@ -85,38 +81,18 @@ public:
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   convertFluidToBuffer( FluidPointer& fluid,
-                         OpenBoundaryPointer& openBoundary,
-                         const GlobalIndexType fluidToBufferCount );
+   convertFluidToBuffer( FluidPointer& fluid, OpenBoundaryPointer& openBoundary, const GlobalIndexType fluidToBufferCount );
 
    /**
     * Functions to realize periodic boundary conditions.
     */
-   template< typename FluidPointer, typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename PeriodicBoundaryPatch >
    void
-   applyPeriodicBoundary( FluidPointer& fluid,
-                          OpenBoundaryPointer& periodicBoundary1,
-                          OpenBoundaryPointer& periodicBoundary2,
-                          OpenBoundaryConfig& periodicBoundary1Params,
-                          OpenBoundaryConfig& periodicBoundary2Params );
-
-   template< typename FluidPointer, typename OpenBoundaryPointer >
-   void
-   copyGhostParticles( FluidPointer& fluid,
-                       OpenBoundaryPointer& sendingBuffer,
-                       OpenBoundaryPointer& receivingBuffer,
-                       VectorType shift );
-
-   template< typename FluidPointer, typename OpenBoundaryPointer >
-   void
-   periodicityParticleTransfer( FluidPointer& fluid,
-                                OpenBoundaryPointer& periodicBuffer,
-                                OpenBoundaryConfig& periodicBoundaryParams );
-
+   periodicityParticleTransfer( FluidPointer& fluid, PeriodicBoundaryPatch& periodicPatch );
 };
 
-} // SPH
-} // TNL
+}  //namespace SPH
+}  //namespace TNL
 
 #include "OpenBoundaryConditions.hpp"
 

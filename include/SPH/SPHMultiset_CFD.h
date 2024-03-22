@@ -47,9 +47,10 @@ public:
    using Boundary = Boundary< ParticlesType, SPHConfig, BoundaryVariables, IntegrationSchemeVariablesType >;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
    using OpenBoundaryVariables = typename Model::OpenBoundaryVariables;
-   using OpenBoundary = OpenBoundary< ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType >;
-   using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
    using OpenBoundaryConfigType = typename Model::OpenBoundaryConfig;
+   using OpenBoundary = OpenBoundary<
+      ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
+   using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
    using OpenBoundaryModel = typename Model::OpenBoundaryModel;
 
    //Reader
@@ -153,7 +154,6 @@ public:
    FluidPointer fluid;
    BoundaryPointer boundary;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
-   std::vector< OpenBoundaryConfigType > openBoundaryPatchesConfigs;
 
    Model model;
    ModelParams modelParams;

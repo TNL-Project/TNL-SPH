@@ -40,13 +40,6 @@ def generate_channel_boundary_particles( setup ):
     box_height_n = round( setup[ "channel_height" ] / dp )
 
     # bottom wall
-    #for layer in range( n_boundary_layers ):
-    #    for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
-    #        box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
-    #        box_ry.append( 0. - layer * dp )
-    #        ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
-    #        ghost_ry.append( 0. + dp * ( layer + 1 ) )
-
     for layer in range( n_boundary_layers ):
         for x in range( box_length_n + ( n_boundary_layers ) * 2 + 1):
             box_rx.append( ( x - ( n_boundary_layers ) ) * dp )
@@ -55,19 +48,12 @@ def generate_channel_boundary_particles( setup ):
             ghost_ry.append( 0. + dp * ( layer + 1 ) )
 
     # top wall
-    #for layer in range( n_boundary_layers ):
-    #    for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1 ):
-    #        box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
-    #        box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
-    #        ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
-    #        ghost_ry.append( 0. + dp * ( layer + 1 ) )
-
     for layer in range( n_boundary_layers ):
         for x in range( box_length_n + ( n_boundary_layers ) * 2 + 1 ):
             box_rx.append( ( x - ( n_boundary_layers ) ) * dp )
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
             ghost_rx.append( ( x - ( n_boundary_layers ) ) * dp )
-            ghost_ry.append( 0. + dp * ( layer + 1 ) )
+            ghost_ry.append( setup[ "channel_height" ] - dp * ( layer + 1 ) )
 
     boundary_n = len( box_rx )
     boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!

@@ -18,35 +18,10 @@ configSetupOpenBoundaryModelPatch( TNL::Config::ConfigDescription& config, std::
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   config.addDelimiter( "Open boundary patch delimiter." );
-   config.addEntry< int >( prefix + "numberOfParticles", "The initial number of fluid particles.", 0. );
-   config.addEntry< int >( prefix + "numberOfAllocatedParticles", "The allocated number of fluid particles.", 0. );
-   config.addEntry< std::string >( prefix + "particles", "Input fluid particles file path." );
-   config.addEntry< std::string >( prefix + "identifier", "Identifier of the open boundary patch.", "empty" );
-   config.addEntry< RealType >( prefix + "orientation-x", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "orientation-y", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "orientation-z", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-1-x", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-1-y", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-1-z", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-2-x", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-2-y", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-2-z", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferWidth-x", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferWidth-y", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferWidth-z", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferHeight-x", "Height of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferHeight-y", "Height of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferHeight-z", "Height of the open boundary buffer.", 0 );
-   config.addEntry< int >( prefix + "numberOfParticlesPerCell", "Maximum allowed number of particles per grid cell.", 0 );
+   // setup base open boundary confit
+   conigSetupOpenBoundaryPatch< SPHConfig >( config, prefix );
 
-   // parameters for periodic boundary conditions
-   config.addEntry< int >( prefix + "paired-periodic-buffer", "Index of paired periodic boundary buffer.", -1 );
-   config.addEntry< RealType >( prefix + "shiftVector-x", "Shift vector within the periodic boundary conditions.", 0 );
-   config.addEntry< RealType >( prefix + "shiftVector-y", "Shift vector within the periodic boundary conditions.", 0 );
-   config.addEntry< RealType >( prefix + "shiftVector-z", "Shift vector within the periodic boundary conditions.", 0 );
-
-   // parameters for open boundary conditions
+   // parameters for model-dependent open boundary conditions
    config.addEntry< std::string >( prefix + "type", "Type of open boundary patch.", "none" );
    config.addEntry< std::string >( prefix + "rho_bc", "Define type of open boundary condition for density.", "undefine" );
       config.addEntryEnum( "fixed" );
@@ -102,31 +77,7 @@ class DBCOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
    void
    init( TNL::Config::ParameterContainer& parameters, std::string prefix )
    {
-      this->identifier = parameters.getParameter< std::string >( prefix + "identifier" );
-      this->orientation = parameters.getXyz< VectorType >( prefix + "orientation" );
-      this->position = parameters.getXyz< VectorType >( prefix + "position-1" );
-      this->bufferWidth = parameters.getXyz< VectorType >( prefix + "bufferWidth" );
-
-      //this->bufferHeight = parameters.getXyz< VectorType >( "bufferWidth" );
-      this->pairedPeriodicBuffer = parameters.getParameter< int >( prefix + "paired-periodic-buffer" );
-      this->shift = parameters.getXyz< VectorType >( prefix + "shiftVector" );
-      this->numberOfParticlesPerCell = parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" );
-
-      const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-      const VectorType firstPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-1" );
-      const VectorType secondPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-2" );
-      const VectorType orienation = this->orientation;
-      const VectorType bufferAreaDiagonal = secondPointOfBufferArea - firstPointOfBufferArea;
-      const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
-      //TODO: Make this in some better way, only the first scope should be kept
-      if( orienation[ 0 ] >= 0. ){
-         this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-         this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-      }
-      if( orienation[ 0 ] <= 0. ){
-         this->zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + this->bufferWidth * orienation;
-         this->zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
-      }
+      Base::init( parameters, prefix );
 
       //identify buffer type
       const std::string openBoundaryPatchType = parameters.getParameter< std::string >( prefix + "type" );
@@ -155,9 +106,6 @@ class DBCOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
       velocity = parameters.getXyz< VectorType >( prefix + "velocity" );
       this->extrapolationDetTreshold = parameters.getParameter< RealType >( prefix + "extrapolationDetTreshold" );
 
-
-      //this->zoneFirstPoint = 0;
-      //this->zoneSecondPoint = 0.;
    }
 
    void

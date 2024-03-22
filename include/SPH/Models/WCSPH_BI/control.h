@@ -45,8 +45,11 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
    config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
 
-   for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ )
-   {
+   for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
+      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+   }
+   for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
    }
@@ -59,7 +62,6 @@ template< typename SPHDefs >
 class WCSPH_BIConfig
 {
 public:
-
    using SPHConfig = typename SPHDefs::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
@@ -70,6 +72,7 @@ public:
    {
       h = parameters.getParameter< RealType >( "h" );
       dp = parameters.getParameter< RealType >( "dp" );
+      searchRadius = parameters.getParameter< RealType >( "searchRadius" );
       mass = parameters.getParameter< RealType >( "mass" );
       boundaryElementSize = parameters.getParameter< RealType >( "boundaryElementSize" );
       delta = parameters.getParameter< RealType >( "delta" );
@@ -90,6 +93,8 @@ public:
    RealType dp = 0.f;
    //h - smoothing length [m]
    RealType h = 0.f;
+   //searchRadius - radius of kernel support [m]
+   RealType searchRadius = 0.f;
    //mass - particle mass [kg]
    RealType mass = 0.f;
    //boundaryElementSize - size of boundary element [m]
@@ -108,6 +113,9 @@ public:
    RealType alpha = 0.02f;
    //dynamicViscosity - value of dynamic viscosity [Pa/s];
    RealType dynamicViscosity = 0.f;
+
+   //Viscosity model for boundary interaction
+   using BoundaryViscousTerm = typename SPHDefs::BoundaryViscousTerm;
 
    // Define equation of state and its constants.
    using EOS = typename SPHDefs::EOS;
@@ -137,53 +145,63 @@ public:
 
    //eps - constant to prevent zero in denominator [-].
    RealType eps = 0.001f;
-
-
 };
 
 template< typename ModelParams >
-void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
+void
+writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 {
    logger.writeHeader( "TNL::SPH::WCSPH_BI (delta-WCSPH) model parameters" );
    logger.writeParameter( "Resolution parameters", "" );
    logger.writeParameter( "Initial particle distance (dp):", modelParams.dp, 1 );
    logger.writeParameter( "Smoothing length (h):", modelParams.h, 1 );
    logger.writeParameter( "Spatial resolution (dp/h):", modelParams.dp / modelParams.h, 1 );
+   logger.writeParameter( "Search radius (searchRadius):", modelParams.searchRadius, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Size of boundary elements (boundaryElementSize):", modelParams.boundaryElementSize, 1 );
    logger.writeParameter( "Model parameters", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
+                                 DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
+                                 ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Viscous term:", "TNL::SPH::ArtificialViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::PhysicalViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
+                                 ViscousTerms::PhysicalViscosity< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::EOS,
+                                 EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Equation of state:", "TNL::SPH::TaitWeaklyCompressibleEOS", 1 );
       logger.writeParameter( "Coefficient of EOS (coefB): ", modelParams.coefB );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v< typename ModelParams::EOS,
+                                 EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
    std::string boundaryConditionsTypes;
-   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
+   if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
       boundaryConditionsTypes = "TNL::SPH::WCSPH_BI::BI_numeric";
    logger.writeParameter( "Boundary condition type", boundaryConditionsTypes );
    logger.writeParameter( "Time integration", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::IntegrationScheme, IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
+                                 IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::VerletScheme", 1 );
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::VariableTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
       logger.writeParameter( "Minimal time step (dtMin):", modelParams.dtMin, 1 );
@@ -192,6 +210,6 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "External bulk force:", modelParams.gravity );
 }
 
-} //namespace SPH
-} //namespace TNL
+}  //namespace SPH
+}  //namespace TNL
 

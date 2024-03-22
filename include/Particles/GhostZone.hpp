@@ -216,6 +216,22 @@ ParticleZone< ParticleConfig >::updateParticlesInZone( const ParticlesPointer& p
 }
 
 template< typename ParticleConfig >
+template< typename ParticlesPointer, typename TimeMeasurement >
+void
+ParticleZone< ParticleConfig >::updateParticlesInZone( const ParticlesPointer& particles, TimeMeasurement& timeMeasurement )
+{
+   timeMeasurement.start( "zone-reset" );
+   this->resetParticles();
+   timeMeasurement.stop( "zone-reset" );
+   timeMeasurement.start( "zone-collect" );
+   this->collectNumbersOfParticlesInCells( particles );
+   timeMeasurement.stop( "zone-collect" );
+   timeMeasurement.start( "zone-build" );
+   this->buildParticleList( particles );
+   timeMeasurement.stop( "zone-build" );
+}
+
+template< typename ParticleConfig >
 void
 ParticleZone< ParticleConfig >::writeProlog( TNL::Logger& logger ) const noexcept
 {

@@ -89,6 +89,10 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
    //sph.exec();
 
+   // Define custom time measures:
+   sph.timeMeasurement.addTimer( "enforce-periodic-bc" );
+   sph.timeMeasurement.addTimer( "transfer-periodic-bc" );
+
    // Library model:
 
    while( sph.timeStepping.runTheSimulation() )
@@ -100,7 +104,9 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Search...", "Done." );
 
       // enforce open boundary particles
+      sph.timeMeasurement.start( "enforce-periodic-bc" );
       sph.applyPeriodicBCEnforce();
+      sph.timeMeasurement.stop( "enforce-periodic-bc" );
       sph.writeLog( log, "Apply periodic BC...", "Done." );
 
       // perform interaction with given model
@@ -116,7 +122,9 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Integrate...", "Done." );
 
       // transform particles inside periodic boundary conditions
+      sph.timeMeasurement.start( "transfer-periodic-bc" );
       sph.applyPeriodicBCTransfer();
+      sph.timeMeasurement.stop( "transfer-periodic-bc" );
       sph.writeLog( log, "Transfer periodic BC...", "Done." );
 
       // output particle data

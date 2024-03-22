@@ -11,7 +11,7 @@ namespace SPH {
 template< typename SPHState >
 class FluidVariables
 {
-   public:
+public:
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -59,10 +59,16 @@ class FluidVariables
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device,
+                      view_map.getArrayData(),
+                      view_map.getArrayData() + numberOfParticles,
+                      view_rho.getArrayData() + firstActiveParticle,
+                      view_rho_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrust::device,
+                      view_map.getArrayData(),
+                      view_map.getArrayData() + numberOfParticles,
+                      view_v.getArrayData() + firstActiveParticle,
+                      view_v_swap.getArrayData() + firstActiveParticle );
 
       rho.swap( rho_swap );
       v.swap( v_swap );
@@ -86,15 +92,15 @@ class FluidVariables
    {
       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
-      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 ); //TODO: Obvious.
+      writer.template writeVector< VectorArrayType, RealType >(
+         v, "Velocity", numberOfParticles, firstActiveParticle, 3 );  //TODO: Obvious.
    }
-
 };
 
 template< typename SPHState >
 class OpenBoundaryVariables : public FluidVariables< SPHState >
 {
-   public:
+public:
    using BaseType = FluidVariables< SPHState >;
    using SPHTraitsType = typename BaseType::SPHTraitsType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -148,8 +154,11 @@ public:
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_n.getArrayData() + firstActiveParticle, view_n_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrustDevice,
+                      view_map.getArrayData(),
+                      view_map.getArrayData() + numberOfParticles,
+                      view_n.getArrayData() + firstActiveParticle,
+                      view_n_swap.getArrayData() + firstActiveParticle );
 
       n.swap( n_swap );
    }
@@ -161,15 +170,16 @@ public:
       Base::readVariables( reader );
       //FIXME
       if constexpr( SPHConfig::spaceDimension == 2 )
-         //reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" );
+         //reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n,
+         //"Normals" );
          reader.template readParticleVariable2D< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         //reader.template readParticleVariable< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" );
+         //reader.template readParticleVariable< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals"
+         //);
          reader.template readParticleVariable< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
    }
 };
 
-
-} // SPH
-} // TNL
+}  //namespace SPH
+}  //namespace TNL
 

@@ -22,7 +22,7 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 2;
 
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1 > >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
 
@@ -39,7 +39,6 @@ class SPHConfig
 
    static constexpr int spaceDimension = 2;
    static constexpr int numberOfBoundaryBuffers = 0;
-   static constexpr int numberOfPeriodicBuffers = 0;
 };
 
 #include <SPH/Models/EquationOfState.h>
@@ -92,5 +91,7 @@ using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
  * Include type of SPH simulation.
  */
 #include <SPH/SPHMultiset_CFD.h>
-using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
+#include <SPH/DistributedSPHMultiset_CFD.h>
+using LocalSimulation = TNL::SPH::SPHMultiset_CFD< Model >;
+using Simulation = TNL::SPH::DistributedSPHMultiset_CFD< Model >;
 

@@ -232,7 +232,8 @@ public:
          {
             val.template interpolate< KernelFunction >( fluid, boundary, modelParams );
             std::string outputFileNameInterpolation = outputDirecotry + "/" + key +
-                                                      std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
+                                                      //std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
+                                                      std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
             val.save( outputFileNameInterpolation );
             logger.writeParameter( "Saved:", outputFileNameInterpolation );
             if( verbose == "full" )

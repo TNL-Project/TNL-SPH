@@ -19,7 +19,7 @@
 namespace TNL {
 namespace SPH {
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 class OpenBoundaryConditionsBuffers
 {
 public:
@@ -92,27 +92,11 @@ public:
    /**
     * Functions to realize periodic boundary conditions.
     */
-   template< typename FluidPointer, typename OpenBoundaryPointer >
-   void
-   applyPeriodicBoundary( FluidPointer& fluid,
-                          OpenBoundaryPointer& periodicBoundary1,
-                          OpenBoundaryPointer& periodicBoundary2,
-                          OpenBoundaryConfig& periodicBoundary1Params,
-                          OpenBoundaryConfig& periodicBoundary2Params );
 
-
-   template< typename FluidPointer, typename OpenBoundaryPointer >
-   void
-   copyGhostParticles( FluidPointer& fluid,
-                       OpenBoundaryPointer& sendingBuffer,
-                       OpenBoundaryPointer& receivingBuffer,
-                       VectorType shift );
-
-   template< typename FluidPointer, typename OpenBoundaryPointer >
+   template< typename FluidPointer, typename PeriodicBoundaryPatch >
    void
    periodicityParticleTransfer( FluidPointer& fluid,
-                                OpenBoundaryPointer& periodicBuffer,
-                                OpenBoundaryConfig& periodicBoundaryParams );
+                                PeriodicBoundaryPatch& periodicPatch );
 
 };
 

@@ -41,16 +41,24 @@ def generate_channel_boundary_particles( setup ):
 
     # bottom wall
     for layer in range( n_boundary_layers ):
-        for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #FIXME: Im currently no able to do periodicity with boundary set, so the wall is artificialy extended
+        #       which is dane by setting n_boundary_layers fixed to 3
+        #       for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
+        #for x in range( box_length_n + ( 3 - 1 ) * 2 + 1):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( 0. - layer * dp )
             normal_x.append( 0. )
             normal_y.append( 1. )
 
     # top wall
     for layer in range( n_boundary_layers ):
-        for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1 ):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #FIXME: Im currently no able to do periodicity with boundary set, so the wall is artificialy extended
+        #       which is dane by setting n_boundary_layers fixed to 3
+        #       for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
+        #for x in range( box_length_n + ( 3 - 1 ) * 2 + 1):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
             normal_x.append( 0. )
             normal_y.append( -1. )
@@ -105,10 +113,10 @@ def compute_domain_size( setup ):
     # Resize domain by one layer of cells
     # For BI, we use overlap 2 * search_radius just to be sure we have the additional layer of empty cells
     eps = 1.005
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] -  2 * search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - 2 * search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + 2 * search_radius )
-    domain_end_y = eps * ( setup[ "domain_end_y" ] + 2 * search_radius )
+    domain_origin_x = eps * ( setup[ "domain_origin_x" ] -  1.5 * search_radius )
+    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - 1.5 * search_radius )
+    domain_end_x = eps * ( setup[ "domain_end_x" ] + 1.5 * search_radius )
+    domain_end_y = eps * ( setup[ "domain_end_y" ] + 1.5 * search_radius )
     domain_size_x = domain_end_x - domain_origin_x
     domain_size_y = domain_end_y - domain_origin_y
 
@@ -201,6 +209,7 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Periodic channel example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -240,7 +249,8 @@ if __name__ == "__main__":
         "periodicityLeft_orientation_y" : 0.,
         "periodicityLeft_layers" : args.n_boundary_layers + 1,
         "periodicityLeft_height" : args.channel_height - args.dp,
-        "periodicityLeft_width" : args.n_boundary_layers * args.dp,
+         #"periodicityLeft_width" : args.n_boundary_layers * args.dp,
+        "periodicityLeft_width" : 1.2 * 2 * args.h_coef * args.dp,
         "periodicityLeft_velocity_x" : args.v_init,
         "periodicityLeft_velocity_y" : 0.,
         "periodicityLeft_reference_point_z" : 0. - 1. * args.n_boundary_layers * args.dp, #TODO: Make this more clear
@@ -254,7 +264,8 @@ if __name__ == "__main__":
         "periodicityRight_orientation_y" : 0.,
         "periodicityRight_layers" : args.n_boundary_layers + 1,
         "periodicityRight_height" : args.channel_height - args.dp,
-        "periodicityRight_width" : args.n_boundary_layers * args.dp,
+         #"periodicityRight_width" : args.n_boundary_layers * args.dp,
+        "periodicityRight_width" :  1.2 * 2 * args.h_coef * args.dp,
         "periodicityRight_velocity_x" : args.v_init,
         "periodicityRight_velocity_y" : 0.,
         "periodicityRight_reference_point_z" : args.channel_length - ( -1. ) * args.n_boundary_layers * args.dp, #TODO: Make this more clear
@@ -281,7 +292,7 @@ if __name__ == "__main__":
     # setup parameters
     compute_domain_size( openchannel_setup )
 
-    print( openchannel_setup )
+    pprint( openchannel_setup )
     # write simulation params
     write_simulation_params( openchannel_setup )
 

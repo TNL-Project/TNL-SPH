@@ -23,7 +23,6 @@ template< typename Particles, typename ModelConfig >
 class WCSPH_BI
 {
 public:
-
    using Model = WCSPH_BI< Particles, ModelConfig >;
    using ModelParams = WCSPH_BIConfig< ModelConfig >;
    using ParticlesType = Particles;
@@ -40,14 +39,15 @@ public:
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
    using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
 
-	using FluidVariables = FluidVariables< SPHConfig >;
-	using BoundaryVariables = BoundaryVariables< ModelConfig >;
+   using FluidVariables = FluidVariables< SPHConfig >;
+   using BoundaryVariables = BoundaryVariables< ModelConfig >;
    using OpenBoundaryVariables = OpenBoundaryVariables< SPHConfig >;
    using IntegrationSchemeType = typename ModelConfig::IntegrationScheme;
    using IntegrationSchemeVariables = typename IntegrationSchemeType::IntegrationSchemeVariablesType;
    using KernelFunction = typename ModelConfig::KernelFunction;
    using DiffusiveTerm = typename ModelConfig::DiffusiveTerm;
    using ViscousTerm = typename ModelConfig::ViscousTerm;
+   using BoundaryViscousTerm = typename ModelConfig::BoundaryViscousTerm;
    using EOS = typename ModelConfig::EOS;
 
    using OpenBoundaryConfig = BIOpenBoundaryConfig< SPHConfig >;
@@ -56,7 +56,7 @@ public:
    /**
     * Constructor.
     */
-   WCSPH_BI( ) = default;
+   WCSPH_BI() = default;
 
    /**
     * Print model identifier.
@@ -87,25 +87,32 @@ public:
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
-   template< typename FluidPointer, typename BoundaryPointer, typename OpenBoudaryPointer >
+   template< typename OpenBoundaryPointer, typename BoudaryPointer >
    void
-   interactionWithOpenBoundary( FluidPointer& fluid,
-                                BoundaryPointer& boundary,
-                                OpenBoudaryPointer& openBoundary,
-                                ModelParams& modelParams );
+   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary,
+                                    OpenBoundaryPointer& openBoundaryPointer,
+                                    ModelParams& modelParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
    template< typename FluidPointer, typename BoundaryPointer >
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
-
 };
 
-} // SPH
-} // TNL
+}  //namespace SPH
+}  //namespace TNL
 
 #include "Interactions.hpp"
 

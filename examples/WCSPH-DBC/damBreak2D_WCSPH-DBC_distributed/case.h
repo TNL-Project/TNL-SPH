@@ -50,7 +50,7 @@ int main( int argc, char* argv[] )
        const int logWidth = cliParams.getParameter< int >( "log-width" );
        TNL::Logger consoleLogger( logWidth, std::cout );
        //TNL::MHFEM::writeProlog< Problem >( consoleLogger, false );
-       TNL::SPH::writeProlog< Simulation >( consoleLogger, false );
+       TNL::SPH::writeProlog< Simulation>( consoleLogger, false );
        return EXIT_SUCCESS;
    }
 
@@ -87,11 +87,6 @@ int main( int argc, char* argv[] )
    //sph.writeProlog( parameters );
    //sph.exec();
    //sph.writeEpilog( parameters );
-   //sph.exec();
-
-   sph.timeMeasurement.addTimer( "extrapolate-openbc" );
-   sph.timeMeasurement.addTimer( "apply-openbc" );
-
 
    // Library model:
 
@@ -102,12 +97,6 @@ int main( int argc, char* argv[] )
       sph.performNeighborSearch( log );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
-
-      // extrapolate open boundary
-      sph.timeMeasurement.start( "extrapolate-openbc" );
-      sph.extrapolateOpenBC();
-      sph.timeMeasurement.stop( "extrapolate-openbc" );
-      sph.writeLog( log, "Extrapolate open BC...", "Done." );
 
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
@@ -121,12 +110,6 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
-      // apply open boundary condition
-      sph.timeMeasurement.start( "apply-openbc" );
-      sph.applyOpenBC();
-      sph.timeMeasurement.stop( "apply-openbc" );
-      sph.writeLog( log, "Update open BC...", "Done." );
-
       // output particle data
       if( sph.timeStepping.checkOutputTimer( "save_results" ) )
       {
@@ -135,14 +118,19 @@ int main( int argc, char* argv[] )
           * This is not necessary since we do this localy, if pressure is needed.
           * It's useful for output anyway.
           */
-         //sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-         //sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+         sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+         sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
 
          sph.save( log );
-         sph.writeLog( log, "Save results...", "Done." );
       }
 
-      //update time step
+      // check timers and if measurement or interpolation should be performed, is performed
+      sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
+
+      // check timers and if snapshot should be done, is done
+      //sph.save( log );
+
+      // update time step
       sph.timeStepping.updateTimeStep();
    }
 

@@ -41,19 +41,21 @@ def generate_channel_boundary_particles( setup ):
 
     # bottom wall
     for layer in range( n_boundary_layers ):
-        for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( 0. - layer * dp )
-            ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+            ghost_rx.append( ( x + 1 ) * dp )
             ghost_ry.append( 0. + dp * ( layer + 1 ) )
 
     # top wall
     for layer in range( n_boundary_layers ):
-        for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1 ):
-            box_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
+        #for x in range( box_length_n + ( n_boundary_layers - 1 ) * 2 + 1 ):
+        for x in range( box_length_n - 1 ):
+            box_rx.append( ( x + 1 ) * dp )
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
-            ghost_rx.append( ( x - ( n_boundary_layers - 1 ) ) * dp )
-            ghost_ry.append( 0. + dp * ( layer + 1 ) )
+            ghost_rx.append( ( x + 1 ) * dp )
+            ghost_ry.append( setup[ "channel_height" ] - dp * ( layer + 1 ) )
 
     boundary_n = len( box_rx )
     boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
@@ -103,11 +105,11 @@ def compute_domain_size( setup ):
     search_radius = setup[ "search_radius" ]
 
     # Resize domain by one layer of cells
-    eps = 1.005
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
-    domain_end_y = eps * ( setup[ "domain_end_y" ] + search_radius )
+    eps = 1.01
+    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - 2 * search_radius )
+    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - 2 * search_radius )
+    domain_end_x = eps * ( setup[ "domain_end_x" ] + 2 * search_radius )
+    domain_end_y = eps * ( setup[ "domain_end_y" ] + 2 * search_radius )
     domain_size_x = domain_end_x - domain_origin_x
     domain_size_y = domain_end_y - domain_origin_y
 
@@ -200,6 +202,7 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Periodic channel example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -234,11 +237,11 @@ if __name__ == "__main__":
         "channel_height" : args.channel_height,
         # left periodic boundary condition
         "periodicityLeft_position_x" : 0.,
-        "periodicityLeft_position_y" : 0. + args.dp,
+        "periodicityLeft_position_y" : 0. - args.dp * args.n_boundary_layers,
         "periodicityLeft_orientation_x" : 1.,
         "periodicityLeft_orientation_y" : 0.,
         "periodicityLeft_layers" : args.n_boundary_layers + 1,
-        "periodicityLeft_height" : args.channel_height - args.dp,
+        "periodicityLeft_height" : args.channel_height + 2 * args.dp * args.n_boundary_layers,
         "periodicityLeft_width" : args.n_boundary_layers * args.dp,
         "periodicityLeft_velocity_x" : args.v_init,
         "periodicityLeft_velocity_y" : 0.,
@@ -248,11 +251,11 @@ if __name__ == "__main__":
         "periodicityLeft_shift_vector_y" : 0.,
         # right periodic condition
         "periodicityRight_position_x" : args.channel_length,
-        "periodicityRight_position_y" : 0. + args.dp,
+        "periodicityRight_position_y" : 0. - args.dp * args.n_boundary_layers,
         "periodicityRight_orientation_x" : -1.,
         "periodicityRight_orientation_y" : 0.,
         "periodicityRight_layers" : args.n_boundary_layers + 1,
-        "periodicityRight_height" : args.channel_height - args.dp,
+        "periodicityRight_height" : args.channel_height + 2 * args.dp * args.n_boundary_layers,
         "periodicityRight_width" : args.n_boundary_layers * args.dp,
         "periodicityRight_velocity_x" : args.v_init,
         "periodicityRight_velocity_y" : 0.,
@@ -280,7 +283,7 @@ if __name__ == "__main__":
     # setup parameters
     compute_domain_size( openchannel_setup )
 
-    print( openchannel_setup )
+    pprint( openchannel_setup )
     # write simulation params
     write_simulation_params( openchannel_setup )
 

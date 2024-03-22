@@ -38,7 +38,8 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfBoundaryBuffers = 2;
+   static constexpr int numberOfBoundaryBuffers = 0;
+   static constexpr int numberOfPeriodicBuffers = 2;
 };
 
 #include <SPH/Models/EquationOfState.h>
@@ -66,7 +67,7 @@ class SPHParams
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
+   using BCType = TNL::SPH::WCSPH_BCTypes::MDBC;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
@@ -78,13 +79,13 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  * Include type of particle system.
  */
 #include <Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_DBC/Interactions.h>
-using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHDefs >;
+using Model = TNL::SPH::WCSPH_DBC< ParticlesType, SPHDefs >;
 
 /**
  * Include type of SPH simulation.

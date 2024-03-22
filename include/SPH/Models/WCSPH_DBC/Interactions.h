@@ -51,7 +51,7 @@ public:
    using EOS = typename ModelConfig::EOS;
 
    using OpenBoundaryConfig = DBCOpenBoundaryConfig< SPHConfig >;
-   using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig >;
+   using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >;
 
    /**
     * Constructor.
@@ -66,10 +66,6 @@ public:
    {
       return "TNL::SPH::WCSPH_DBC";
    }
-
-   /**
-    * Fluid - fluid interaction function.
-    */
 
    /**
     * Compute pressure from density.
@@ -97,6 +93,13 @@ public:
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
+   template< typename OpenBoundaryPointer,
+             typename BoudaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   void
+   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
+
    /**
     * Function to realize boundary conditions for solid wall.
     * Realized by Modified Dynamic Boundary Conditions (MDBC) - English et. al. 2021
@@ -107,6 +110,13 @@ public:
              typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+
+   template< typename OpenBoundaryPointer,
+             typename BoudaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
 
    /**
     * Function to realize boundary conditions for solid wall.
@@ -128,12 +138,9 @@ public:
    interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
    //TODO: Experiment:
-   template< typename FluidPointer, typename BoundaryPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   interactionWithOpenBoundary( FluidPointer& fluid,
-                                BoundaryPointer& boundary,
-                                OpenBoudaryPointer& openBoundary,
-                                ModelParams& modelParams );
+   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& boundaryPatch, ModelParams& modelParams );
 
    /**
     * Functions to extrapolate data on open boundary buffers in 2D.
@@ -203,9 +210,19 @@ public:
    void
    initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
 
-   template< typename FluidPointer, typename BoundaryPointer >
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
-   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
+
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
 };
 
@@ -215,7 +232,7 @@ public:
 #include "Interactions.hpp"
 #include "BoundaryConditions/DBC.h"
 #include "BoundaryConditions/MDBC.h"
-#include "OpenBoundaryConditionsInteractions.h"
+//#include "OpenBoundaryConditionsInteractions.h"
 
 #include "OpenBoundaryConditionsDataExtrapolation.h"
 
