@@ -51,6 +51,10 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
     config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
 
+    // distributed simulation parameters
+    config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
+    config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
+
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
     config.addEntry< int >( "interpolation-planes-count", "Input boundary particles file path.", 0 );
@@ -61,7 +65,7 @@ configSetup( TNL::Config::ConfigDescription& config,
 void
 configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::ConfigDescription& config )
 {
-   std::string subdomainKey = "subdomain-" + std::to_string( subdomain_x ) + "-" + std::to_string( subdomain_y ) "-";
+   std::string subdomainKey = "subdomain-" + std::to_string( subdomain_x ) + "-" + std::to_string( subdomain_y ) + "-";
    config.addRequiredEntry< std::string >( subdomainKey + "fluid-particles", "Input fluid particles file path." );
    config.addRequiredEntry< std::string >( subdomainKey + "boundary-particles", "Input boundary particles file path." );
    config.addEntry< int >( subdomainKey + "fluid_n", "The initial number of fluid particles.", 0 );

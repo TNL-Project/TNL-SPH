@@ -6,6 +6,21 @@
 namespace TNL {
 namespace SPH {
 
+namespace distributed {
+
+//TODO: In 3D, IndexVectorType has tree components. But domain decomposition is always only 2D. Just use simple
+//      static vector.
+Containers::StaticVector< 2, int >
+restoreSubdomainCoordinatesFromRank( int rank, Containers::StaticVector< 2, int > numberOfSubdomains )
+{
+   Containers::StaticVector< 2, int >subdomainCoordinates = 0.;
+   subdomainCoordinates[ 1 ] = std::ceil( rank / numberOfSubdomains.x() );
+   subdomainCoordinates[ 0 ] = rank - std::ceil( rank / numberOfSubdomains.y() );
+   return subdomainCoordinates;
+}
+
+} // namepsace distribtued
+
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
@@ -110,8 +125,9 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
 
    int rank = TNL::MPI::GetRank();
    int nproc = TNL::MPI::GetSize();
-   IndexVectorType subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank()
-   std::string subdomainKey = "subdomain-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-" + std::to_string( subdomainCoordinates[ 1 ] ) "-";
+   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
+   std::string subdomainKey = "subdomain-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
    //NOTE: Only 2D decomposition is allowed
 
    // compute domain properetis
@@ -141,8 +157,9 @@ SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterCo
 {
    int rank = TNL::MPI::GetRank();
    int nproc = TNL::MPI::GetSize();
-   IndexVectorType subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank()
-   std::string subdomainKey = "subdomain-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-" + std::to_string( subdomainCoordinates[ 1 ] ) "-";
+   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
+   std::string subdomainKey = "subdomain-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
    //NOTE: Only 2D decomposition is allowed
 
    // read particle data
@@ -153,6 +170,7 @@ SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterCo
    boundary->template readParticlesAndVariables< SimulationReaderType >(
       parameters.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
 
+   const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {  //TODO: I dont like this.
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = subdomainKey + "buffer-" + std::to_string( i + 1 ) + "-";

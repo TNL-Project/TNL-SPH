@@ -92,7 +92,8 @@ using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
  * Include type of SPH simulation.
  */
 #include <SPH/SPHMultiset_CFD.h>
-#include <SPH/DistributedSPHMultiset_CFD.h>
+//#include <SPH/DistributedSPHMultiset_CFD.h>
 using LocalSimulation = TNL::SPH::SPHMultiset_CFD< Model >;
-using Simulation = TNL::SPH::DistributedSPHMultiset_CFD< Model >;
+//using Simulation = TNL::SPH::DistributedSPHMultiset_CFD< Model >;
+using Simulation = LocalSimulation;
 

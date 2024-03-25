@@ -334,6 +334,10 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
 
+    config_file = config_file.replace( 'placeholderNumberOfSubdomains', str( setup[ "subdomains_x" ] * setup[ "subdomains_y" ]  ) )
+    config_file = config_file.replace( 'placeholderSubdomains-x', str( setup[ "subdomains_x" ] ) )
+    config_file = config_file.replace( 'placeholderSubdomains-y', str( setup[ "subdomains_y" ] ) )
+
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 

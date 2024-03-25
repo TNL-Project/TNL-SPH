@@ -256,10 +256,6 @@ class ParticleSet
 
    std::vector< PeriodicBoundaryPointer > periodicPatches;
 
-#ifdef HAVE_MPI
-   using SimulationSubdomainInfo = DistributedParticleSetInfo< typename ParticleSystem::Config >;
-   SimulationSubdomainInfo subdomainInfo;
-#endif
 
 };
 

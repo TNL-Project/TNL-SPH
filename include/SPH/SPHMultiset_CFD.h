@@ -65,6 +65,12 @@ public:
    void
    init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
+   //TODO: Temp
+   void
+   initDistributed( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+   void
+   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
