@@ -61,6 +61,36 @@ class PhysicalViscosity
    }
 };
 
+template< typename SPHCaseConfig >
+class CombinedViscosity
+{
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     ParamsType( SPHState sphState )
+     : h( sphState.h ),
+       coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
+       preventZero( sphState.h * sphState.h * sphState.eps ),
+       kinematicViscosity( sphState.dynamicViscosity / sphState.rho0 ) {}
+
+     const RealType h;
+     const RealType coefAV;
+     const RealType kinematicViscosity;
+     const RealType preventZero;
+   };
+
+   __cuda_callable__
+   static RealType
+   Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv, const ParamsType& params )
+   {
+      const RealType mu = params.h * drdv / ( drs * drs + params.preventZero );
+      return ( drdv < 0.f ) ? ( params.coefAV * mu / ( rhoI + rhoJ ) + mu * params.kinematicViscosity) : ( params.kinematicViscosity * mu );
+   }
+};
+
 } // ViscousTerms
 } // SPH
 } // TNL
