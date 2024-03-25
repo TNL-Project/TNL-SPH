@@ -9,6 +9,14 @@
 
 int main( int argc, char* argv[] )
 {
+
+   TNL::MPI::ScopedInitializer mpi( argc, argv );
+
+//test;
+#ifdef HAVE_MPI
+   std::cout << "Running with MPI." << std::endl;
+#endif
+
    // get CLI parameters
    TNL::Config::ParameterContainer cliParams;
    TNL::Config::ConfigDescription cliConfig;

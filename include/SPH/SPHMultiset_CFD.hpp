@@ -31,6 +31,10 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
                          searchRadius,
                          gridSize,
                          domainOrigin );
+#ifdef HAVE_MPI
+   fluid->particles->setDistributedGridParameters();
+   boundary->particles->setDistributedGridParameters();
+#endif
 
    // init open boundary patches
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -95,6 +99,67 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    }
 
    logger.writeHeader( "SPH simulation successfully initialized." );
+}
+
+//TODO: MOve the distributed fanctions to domain specific with a given prefix
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   logger.writeHeader( "Distributed SPH simulation initialization." );
+
+   int rank = TNL::MPI::GetRank();
+   int nproc = TNL::MPI::GetSize();
+   IndexVectorType subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank()
+   std::string subdomainKey = "subdomain-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-" + std::to_string( subdomainCoordinates[ 1 ] ) "-";
+   //NOTE: Only 2D decomposition is allowed
+
+   // compute domain properetis
+   const VectorType subdomainOrigin = parameters.getXyz< VectorType >( subdomainKey + "orixin" );
+   const VectorType subdomainSize = parameters.getXyz< VectorType >(  subdomainKey + "size" );
+   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+   const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
+
+   // init fluid
+   fluid->initialize( parameters.getParameter< int >( subdomainKey + "fluid_n" ),
+                      parameters.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+                      searchRadius,
+                      subdomainGridSize,
+                      subdomainOrigin );
+   // init boundary
+   boundary->initialize( parameters.getParameter< int >( subdomainKey + "boundary_n" ),
+                         parameters.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+                         searchRadius,
+                         subdomainGridSize,
+                         subdomainOrigin );
+}
+
+//TODO: MOve the distributed fanctions to domain specific with a given prefix
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   int rank = TNL::MPI::GetRank();
+   int nproc = TNL::MPI::GetSize();
+   IndexVectorType subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank()
+   std::string subdomainKey = "subdomain-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-" + std::to_string( subdomainCoordinates[ 1 ] ) "-";
+   //NOTE: Only 2D decomposition is allowed
+
+   // read particle data
+   logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
+   fluid->template readParticlesAndVariables< SimulationReaderType >(
+      parameters.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
+   logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
+   boundary->template readParticlesAndVariables< SimulationReaderType >(
+      parameters.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
+
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {  //TODO: I dont like this.
+      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+         std::string prefix = subdomainKey + "buffer-" + std::to_string( i + 1 ) + "-";
+         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+            parameters.getParameter< std::string >( prefix + "particles" ) );
+      }
+   }
 }
 
 template< typename Model >
