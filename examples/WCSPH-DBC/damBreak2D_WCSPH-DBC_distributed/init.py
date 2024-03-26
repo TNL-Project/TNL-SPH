@@ -347,24 +347,28 @@ def write_distributed_domain_params( setup ):
 
     # write paramerters to new created config file related to decomposition
     with open( 'sources/config-distributed-domain.ini', "w") as file:
-        file.write( f'# Distributed subdomains global informations\n' )
-        file.write( f'number-of-subdomains = { setup[ f"number_of_subdomains" ]}\n' )
-        file.write( f'subdomains-x = { subdomains_x }\n' )
-        file.write( f'subdomains-y = { subdomains_y }\n' )
-        file.write( f'domainOrigin-x = { setup[ "domain_origin_x" ]:.5}\n' )
-        file.write( f'domainOrigin-y = { setup[ "domain_origin_y" ]:.5}\n' )
-        file.write( f'domainSize-x = { setup[ "domain_size_x" ]:.5}\n' )
-        file.write( f'domainSize-y = { setup[ "domain_size_y" ]:.5}\n' )
+        #file.write( f'# Distributed subdomains global informations\n' )
+        #file.write( f'number-of-subdomains = { setup[ f"number_of_subdomains" ]}\n' )
+        #file.write( f'subdomains-x = { subdomains_x }\n' )
+        #file.write( f'subdomains-y = { subdomains_y }\n' )
+        #file.write( f'domainOrigin-x = { setup[ "domain_origin_x" ]:.5}\n' )
+        #file.write( f'domainOrigin-y = { setup[ "domain_origin_y" ]:.5}\n' )
+        #file.write( f'domainSize-x = { setup[ "domain_size_x" ]:.5}\n' )
+        #file.write( f'domainSize-y = { setup[ "domain_size_y" ]:.5}\n' )
 
-        file.write( f'\n' )
+        #file.write( f'\n' )
         file.write( f'# Subdomains informations\n' );
         for subdomain_x in range( subdomains_x ):
             for subdomain_y in range( subdomains_y ):
                 key_prefix = f"subdomain-x-{subdomain_x}-y-{subdomain_y}-"
-                file.write( f'subdomain-x = { subdomain_x }\n' )
-                file.write( f'subdomain-y = { subdomain_y }\n' )
+                #file.write( f'subdomain-x = { subdomain_x }\n' )
+                #file.write( f'subdomain-y = { subdomain_y }\n' )
+                file.write( f"{key_prefix}fluid-particles = sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-fluid.vtk\n" )
+                file.write( f"{key_prefix}boundary-particles = sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-boundary.vtk\n" )
                 file.write( f'{key_prefix}fluid_n = { setup[ f"{key_prefix}fluid_n" ] }\n' )
                 file.write( f'{key_prefix}boundary_n = { setup[ f"{key_prefix}box_n" ] }\n' )
+                file.write( f'{key_prefix}fluid_n_allocated = { 2*setup[ f"{key_prefix}fluid_n" ] }\n' )
+                file.write( f'{key_prefix}boundary_n_allocated = { 2*setup[ f"{key_prefix}box_n" ] }\n' )
                 subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
                 subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
                 file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.2f}\n" )
@@ -378,7 +382,6 @@ def write_distributed_domain_params( setup ):
                 file.write( f"{key_prefix}size-x = { subdomain_size_x:.2f}\n" )
                 file.write( f"{key_prefix}size-y = { subdomain_size_y:.2f}\n" )
                 file.write( f'\n' )
-
 
 def configure_and_write_measuretool_parameters():
     # write parameters to config file

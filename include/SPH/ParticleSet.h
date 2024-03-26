@@ -15,6 +15,8 @@
 #include "shared/utils.h"
 #endif
 
+#include <Particles/DistributedParticles.h>
+
 namespace TNL {
 namespace SPH {
 
@@ -41,6 +43,11 @@ class ParticleSet
    using OpenBoundaryConfig = OpenBoundaryConfig< SPHCaseConfig >;
    using PeriodicBoundary = PeriodicBoundary< ParticleSystem, OpenBoundaryConfig >;
    using PeriodicBoundaryPointer = typename Pointers::SharedPointer< PeriodicBoundary, DeviceType >;
+
+#ifdef  HAVE_MPI
+   using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
+   using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
+#endif
 
    ParticleSet() : particles(), variables(), integratorVariables() {}
 
@@ -251,6 +258,9 @@ class ParticleSet
 
    //Properties of physical object
    ParticlePointerType particles;
+#ifdef HAVE_MPI
+   DistributedParticlesPointerType distributedParticles;
+#endif
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;
 

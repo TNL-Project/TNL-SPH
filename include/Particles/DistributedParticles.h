@@ -1,5 +1,7 @@
 #include "GhostZone.h"
 #include <TNL/Meshes/Grid.h>
+#include <TNL/Meshes/DistributedMeshes/DistributedGrid.h>
+#include <TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
 
 namespace TNL {
 namespace ParticleSystem {
@@ -17,8 +19,8 @@ public:
    using IndexVectorType = typename ParticleSystem::IndexVectorType;
    using IndexArrayType = typename ParticleSystem::IndexArrayType;
    using ParticleZone = ParticleZone< typename ParticleSystem::Config >;
-   using GridType = TNL::Meshes::Grid< typename ParticleSystem::Config::spaceDimension, RealType, DeviceType, GlobalIndexType >;
-   using DistributedGridType = DistributedMesh< GridType >;
+   using GridType = TNL::Meshes::Grid< ParticleSystem::Config::spaceDimension, RealType, DeviceType, GlobalIndexType >;
+   using DistributedGridType = TNL::Meshes::DistributedMeshes::DistributedMesh< GridType >;
 
    //initialize
    void
@@ -60,7 +62,9 @@ public:
    void
    setDistributedGridParameters( const IndexVectorType& globalGridSize,
                                  const PointType& globalGridOrigin,
-                                 const IndexVectorType& domainDecomposition )
+                                 const IndexVectorType& domainDecomposition,
+                                 const RealType& searchRadius,
+                                 const IndexVectorType& localGridSize )
    {
       //TODO: Grid should be pobably pointer...
 
@@ -68,13 +72,17 @@ public:
       int rank = TNL::MPI::GetRank();
       int nproc = TNL::MPI::GetSize();
 
-      PointType globalOrigin;
-      PointType globalProportions;
+      //PointType globalOrigin;
+      //PointType globalProportions;
       GridType globalGrid;
 
       //globalGrid.setDimensions( size, size );
       globalGrid.setDimensions( globalGridSize );
-      globalGrid.setDomain( globalOrigin, globalGridSize );
+      globalGrid.setDomain( globalGridOrigin, globalGridSize );
+
+      //TODO: This is necessar I guess
+      const PointType spaceStepsVector = searchRadius;
+      globalGrid.setSpaceSteps( spaceStepsVector );
 
       //distributedGrid = new DistributedGridType();
       //distributedGrid->setDomainDecomposition( typename DistributedGridType::CoordinatesType( 3, 3 ) );
@@ -83,8 +91,12 @@ public:
       distributedGrid.setGlobalGrid( globalGrid );
 
       typename DistributedGridType::SubdomainOverlapsType lowerOverlap, upperOverlap;
-      SubdomainOverlapsGetter< GridType >::getOverlaps( distributedGrid, lowerOverlap, upperOverlap, 1 );
+      //getOverlaps takes pointer to consatnt function
+      Meshes::DistributedMeshes::SubdomainOverlapsGetter< GridType >::getOverlaps( &distributedGrid, lowerOverlap, upperOverlap, 1 );
       distributedGrid.setOverlaps( lowerOverlap, upperOverlap );
+
+      //TODO: BAD BAD PRACTICE
+      //distributedGrid.getLocalMesh().setDimensions( localGridSize );
    }
 
    //initialize innerOverlpas
@@ -166,6 +178,21 @@ public:
          Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyIndices );
          this->numberOfParticlesInOverlaps += numberOfZoneParticles;
       }
+   }
+
+   void
+   writeProlog( TNL::Logger& logger ) //const noexcept
+   {
+      logger.writeParameter( "Distributed particles:", "" );
+      distributedGrid.writeProlog( logger );
+
+      //debug info from local subdomains
+      logger.writeParameter( "Lower overlap:", distributedGrid.getLowerOverlap() );
+      logger.writeParameter( "Upper overlap:", distributedGrid.getUpperOverlap() );
+      GridType localGrid = distributedGrid.getLocalMesh();
+      logger.writeParameter( "Local grid origin:", localGrid.getOrigin() );
+      logger.writeParameter( "Local grid size:", localGrid.getDimensions() );
+      logger.writeParameter( "Local grid space steps:", localGrid.getSpaceSteps() );
    }
 
 protected:

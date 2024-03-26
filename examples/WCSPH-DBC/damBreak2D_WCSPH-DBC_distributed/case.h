@@ -84,10 +84,31 @@ int main( int argc, char* argv[] )
        return EXIT_FAILURE;
    }
 
+   //TNL::Logger log( 100, std::cout );
+   //Simulation sph;
+   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   //sph.init( parameters, log );
+   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   //if( TNL::MPI::GetRank() == 0 )
+   //   sph.writeProlog( log );
+
+   //DEBUG:
    TNL::Logger log( 100, std::cout );
    Simulation sph;
-   sph.init( parameters, log );
-   sph.writeProlog( log );
+   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+   if( TNL::MPI::GetRank() == 0 )
+      sph.init( parameters, log );
+   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   if( TNL::MPI::GetRank() == 1 )
+      sph.init( parameters, log );
+   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   if( TNL::MPI::GetRank() == 2 )
+      sph.init( parameters, log );
+   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+   if( TNL::MPI::GetRank() == 0 )
+      sph.writeProlog( log );
 
    // Solver model:
 
@@ -97,6 +118,7 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
 
    // Library model:
+   return 0;
 
    while( sph.timeStepping.runTheSimulation() )
    {

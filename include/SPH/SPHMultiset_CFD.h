@@ -67,9 +67,13 @@ public:
 
    //TODO: Temp
    void
-   initDistributed( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+   initDistributed( TNL::Config::ParameterContainer& parameters,
+                    TNL::Config::ParameterContainer& parametersDistributed,
+                    TNL::Logger& logger );
    void
-   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
+                                 TNL::Config::ParameterContainer& parametersDistributed,
+                                 TNL::Logger& logger );
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -175,6 +179,14 @@ public:
    std::string outputDirecotry;
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
+
+   //TEMP: And btw the names are AWFUL
+#ifdef HAVE_MPI
+   MPI::Comm communicator = MPI_COMM_WORLD;
+   TNL::Config::ConfigDescription configDistributed;
+   TNL::Config::ParameterContainer parametersDistributed;
+#endif
+
 };
 
 } // SPH

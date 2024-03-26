@@ -47,7 +47,7 @@ public:
       //Array arrayLoaded( array.getSize() );
       Array arrayLoaded(  reader.getNumberOfPoints()  );
       std::vector< Type > temporary = std::get< std::vector< Type > >( reader.readPointData( name ) );
-      std::cout << " Loaded " << name << " size: " << temporary.size() << std::endl;
+      //std::cout << " Loaded " << name << " size: " << temporary.size() << std::endl;
 
 
       using HostArray = typename Array::
