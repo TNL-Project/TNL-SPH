@@ -64,10 +64,11 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    initDistributed( parameters, this->parametersDistributed, logger );
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
 
-   logger.writeSeparator();
-   logger.writeParameter( "Local fluid object:" , "" );
-   fluid->writeProlog( logger );
-   logger.writeSeparator();
+   //logger.writeSeparator();
+   //logger.writeParameter( "Local fluid object:" , "" );
+   //fluid->writeProlog( logger );
+   //logger.writeSeparator();
+
 
    //TODO: Hide this inisde distributed utils
    int rank = TNL::MPI::GetRank();
@@ -204,7 +205,7 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
 
    logger.writeParameter( "Initializing subdomain origin:", subdomainOrigin );
    logger.writeParameter( "Initializing subdomain size:", subdomainSize );
-   logger.writeParameter( "Initializing subdomain grid size:", subdomainSize );
+   logger.writeParameter( "Initializing subdomain grid size:", subdomainGridSize );
 
    // init fluid
    fluid->initialize( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
