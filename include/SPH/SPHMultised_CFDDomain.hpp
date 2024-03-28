@@ -29,6 +29,7 @@ SPHMultiset_CFDDomain< Model >::init( TNL::Config::ParameterContainer& parameter
                          domainOrigin );
 
    // initialize overlap sets
+   // FIXME: Distributed cannot depend on compile parameter.
    if constexpr( Model::ModelConfigType::Distributed == true || Model::ModelConfigType::Subdomains == true )
    {
       int overlapCellsCount = 0;

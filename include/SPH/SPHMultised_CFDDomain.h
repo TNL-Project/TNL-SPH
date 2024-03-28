@@ -47,7 +47,7 @@ class SPHMultiset_CFDDomain
    void
    interact();
 
-//protected:
+protected:
 
    FluidPointer fluid;
    FluidPointer fluidOverlap;

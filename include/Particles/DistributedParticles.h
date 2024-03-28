@@ -100,6 +100,9 @@ public:
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXp ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
       }
+
+      //NOTE: Next I should initialize the linearized fields. However using 1D decomposition, I can iterate directly
+      //      over the particle zones.
    }
 
 
