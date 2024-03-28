@@ -2,9 +2,13 @@
 #include <TNL/Meshes/Grid.h>
 #include <TNL/Meshes/DistributedMeshes/DistributedGrid.h>
 #include <TNL/Meshes/DistributedMeshes/SubdomainOverlapsGetter.h>
+#include <TNL/Meshes/DistributedMeshes/Directions.h>
+#include <cmath>
 
 namespace TNL {
 namespace ParticleSystem {
+
+using namespace TNL::Meshes::DistributedMeshes;
 
 template< typename ParticleSystem >
 class DistributedParticleSystem
@@ -18,7 +22,8 @@ public:
    using PointType = typename ParticleSystem::PointType;
    using IndexVectorType = typename ParticleSystem::IndexVectorType;
    using IndexArrayType = typename ParticleSystem::IndexArrayType;
-   using ParticleZone = ParticleZone< typename ParticleSystem::Config >;
+   using ParticleZoneType = ParticleZone< typename ParticleSystem::Config >;
+   using ParticleZonePointerType = typename Pointers::SharedPointer< ParticleZoneType >;
    using GridType = TNL::Meshes::Grid< ParticleSystem::Config::spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using DistributedGridType = TNL::Meshes::DistributedMeshes::DistributedMesh< GridType >;
 
@@ -59,12 +64,53 @@ public:
       return this->distributedGrid;
    }
 
+   //TODO: 1D and 2D decompositions should be separated, currently we asume only 1D
+   //initialize innerOverlpas
+   void
+   initializeInnerOverlaps( const int numberOfParticlesPerCell = 15 )
+   {
+      //Count:
+      int numberOfActiveNeighbros = 0;
+      if( distributedGrid.isThereNeighbor( { -1, 0 } ) )
+         numberOfActiveNeighbros++;
+      if( distributedGrid.isThereNeighbor( { 1, 0 } ) )
+         numberOfActiveNeighbros++;
+      //innerOverlaps.resize( numberOfActiveNeighbros );
+      innerOverlaps.resize( 2 );
+      //TODO: For 1D decomposition, lets start with fixed number of inner overlaps and for the corner domains
+      //      simply let one of them empty.
+
+      const IndexVectorType localGridSize = distributedGrid.getLocalMesh().getDimensions();
+      const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
+      const PointType localGridStepSize = distributedGrid.getLocalMesh().getSpaceSteps();
+      const RealType searchRadius = localGridStepSize[ 0 ]; //FIXME
+      const IndexVectorType yUnitVect = { 0, 1 }; //FIXME I dont like this
+      const IndexVectorType xUnitVect = { 1, 0 }; //FIXME I dont like this
+
+      //Initialize the zones:
+      if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
+         const PointType zoneLowerPoint = localGridOrigin;
+         const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect;
+         innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+         innerOverlaps[ ZzYzXm ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
+      }
+      if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
+         const PointType zoneLowerPoint = localGridOrigin + searchRadius * ( localGridSize, xUnitVect ) * xUnitVect;
+         const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect;
+         innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+         innerOverlaps[ ZzYzXp ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
+      }
+   }
+
+
    void
    setDistributedGridParameters( const IndexVectorType& globalGridSize,
                                  const PointType& globalGridOrigin,
                                  const IndexVectorType& domainDecomposition,
                                  const RealType& searchRadius,
-                                 const IndexVectorType& localGridSize )
+                                 const IndexVectorType& localGridSize,
+                                 const PointType& localGridOrigin,
+                                 const PointType& subdomainSize )
    {
       //TODO: Grid should be pobably pointer...
 
@@ -90,21 +136,48 @@ public:
       distributedGrid.setDomainDecomposition( domainDecomposition );
       distributedGrid.setGlobalGrid( globalGrid );
 
+      //distributedGrid.localSize = localGridSize;
+      //distributedGrid.localBegin = localGridSize;
       typename DistributedGridType::SubdomainOverlapsType lowerOverlap, upperOverlap;
       //getOverlaps takes pointer to consatnt function
       Meshes::DistributedMeshes::SubdomainOverlapsGetter< GridType >::getOverlaps( &distributedGrid, lowerOverlap, upperOverlap, 1 );
+
       distributedGrid.setOverlaps( lowerOverlap, upperOverlap );
 
-      //TODO: BAD BAD PRACTICE
-      //distributedGrid.getLocalMesh().setDimensions( localGridSize );
+      //NOTE: BAD BAD PRACTICE, setOverlaps manually with custom domain:
+      distributedGrid.localGrid.setOrigin( localGridOrigin );
+      distributedGrid.localGrid.setDimensions( localGridSize );
+      //std::cout << "Setting localGridSize: " << localGridSize << " localGridDim: " << distributedGrid.localGrid.getDimensions() << std::endl;
+      distributedGrid.localGrid.setSpaceSteps( distributedGrid.globalGrid.getSpaceSteps() );
+      distributedGrid.localGrid.setLocalBegin( this->distributedGrid.getLowerOverlap() );
+      distributedGrid.localGrid.setLocalEnd( distributedGrid.localGrid.getDimensions() - this->distributedGrid.getUpperOverlap() );
+
+      using CoordinatesType = typename DistributedGridType::CoordinatesType;
+      CoordinatesType interiorBegin = this->distributedGrid.lowerOverlap;
+      CoordinatesType interiorEnd = distributedGrid.localGrid.getDimensions() - this->distributedGrid.upperOverlap;
+      const int* neighbors = distributedGrid.getNeighbors();
+      if( neighbors[ ZzYzXm ] == -1 )
+         interiorBegin[ 0 ] += 1;
+      if( neighbors[ ZzYzXp ] == -1 )
+         interiorEnd[ 0 ] -= 1;
+      if( ZzYmXz < distributedGrid.getNeighborsCount() && neighbors[ ZzYmXz ] == -1 )
+         interiorBegin[ 1 ] += 1;
+      if( ZzYpXz < distributedGrid.getNeighborsCount() && neighbors[ ZzYpXz ] == -1 )
+         interiorEnd[ 1 ] -= 1;
+      if( ZmYzXz < distributedGrid.getNeighborsCount() && neighbors[ ZmYzXz ] == -1 )
+         interiorBegin[ 2 ] += 1;
+      if( ZpYzXz < distributedGrid.getNeighborsCount() && neighbors[ ZpYzXz ] == -1 )
+         interiorEnd[ 2 ] -= 1;
+      distributedGrid.localGrid.setInteriorBegin( interiorBegin );
+      distributedGrid.localGrid.setInteriorEnd( interiorEnd );
+
+      distributedGrid.localSize = localGridSize;
+      //distributedGrid.localBegin();
+
+      //Initialize inner particle zones to collect particles
+      initializeInnerOverlaps();
    }
 
-   //initialize innerOverlpas
-   void
-   initializeInnerOverlaps( const GlobalIndexType& gridSize, const PointType& gridOrigin )
-   {
-
-   }
 
    //collect particles to innerOverlaps
    void
@@ -190,16 +263,32 @@ public:
       logger.writeParameter( "Lower overlap:", distributedGrid.getLowerOverlap() );
       logger.writeParameter( "Upper overlap:", distributedGrid.getUpperOverlap() );
       GridType localGrid = distributedGrid.getLocalMesh();
-      logger.writeParameter( "Local grid origin:", localGrid.getOrigin() );
-      logger.writeParameter( "Local grid size:", localGrid.getDimensions() );
-      logger.writeParameter( "Local grid space steps:", localGrid.getSpaceSteps() );
+      logger.writeParameter( "Local grid origin:", distributedGrid.localGrid.getOrigin() );
+      logger.writeParameter( "Local grid end:", distributedGrid.localGrid.getOrigin() + distributedGrid.localGrid.getSpaceSteps() * distributedGrid.localGrid.getDimensions() );
+      logger.writeParameter( "Local grid dimensions:", distributedGrid.localGrid.getDimensions() );
+      logger.writeParameter( "Local grid space steps:", distributedGrid.localGrid.getSpaceSteps() );
+      logger.writeParameter( "Local grid size:", distributedGrid.localGrid.getSpaceSteps() * distributedGrid.localGrid.getDimensions() );
+      logger.writeParameter( "Local grid interior begin:", distributedGrid.localGrid.getInteriorBegin() );
+      logger.writeParameter( "Local grid interior end:", distributedGrid.localGrid.getInteriorEnd() );
+      logger.writeParameter( "Total neighbors count:", distributedGrid.getNeighborsCount() );
+      //2D
+      logger.writeParameter( "Is there neighbor in ZzYzXm:", distributedGrid.isThereNeighbor( { -1, 0 } ) );
+      logger.writeParameter( "Is there neighbor in ZzYzXp:", distributedGrid.isThereNeighbor( { 1, 0 } ) );
+      //zones
+      for( int i = 0; i < innerOverlaps.getSize(); i++ )
+         innerOverlaps[ i ].writeProlog( logger );
+
+
+
    }
 
 protected:
 
    ParticleSystem localParticles;
    DistributedGridType distributedGrid;
-   Containers::Array< GlobalIndexType, Devices::Host, int > innerOverlaps;
+   //Containers::Array< GlobalIndexType, Devices::Host, int > innerOverlaps; //TODO: What was this idee?
+
+   Containers::Array< ParticleZoneType, Devices::Host, int > innerOverlaps; //TODO: What was this idee?
 
    GlobalIndexType numberOfParticlesInOverlaps;
    IndexArrayType innerOverlapsLinearized;

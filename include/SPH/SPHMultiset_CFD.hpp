@@ -78,10 +78,17 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    // compute domain properetis
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
+   //const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
+   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
 
    //SET DISTRIBUTED PARITLE SYSTEMS:
-   fluid->distributedParticles->setDistributedGridParameters( gridSize, domainOrigin, numberOfSubdomains, searchRadius, subdomainGridSize );
+   fluid->distributedParticles->setDistributedGridParameters( gridSize,
+                                                              domainOrigin,
+                                                              numberOfSubdomains,
+                                                              searchRadius,
+                                                              subdomainGridSize,
+                                                              subdomainOrigin,
+                                                              subdomainSize );
    fluid->distributedParticles->writeProlog( logger );
    //fluid->particles->setDistributedGridParameters();
    //boundary->particles->setDistributedGridParameters();
@@ -201,7 +208,8 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
+   //const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
+   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
 
    logger.writeParameter( "Initializing subdomain origin:", subdomainOrigin );
    logger.writeParameter( "Initializing subdomain size:", subdomainSize );
