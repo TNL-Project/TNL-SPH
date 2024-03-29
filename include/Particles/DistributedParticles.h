@@ -36,6 +36,7 @@ public:
                PointType gridOrigin,
                IndexVectorType domainDecomposition )
    {
+
       //set local particle system
       this->localParticles->setSize( numberOfAllocatedParticles );
       this->localParticles->setSearchRadius( searchRadius );
@@ -63,6 +64,25 @@ public:
    {
       return this->distributedGrid;
    }
+
+   [[nodiscard]] const Containers::Array< ParticleZoneType, Devices::Host, int >&
+   getInnerOverlaps() const
+   {
+      return this->innerOverlaps;
+   }
+
+   //[[nodiscard]] const MPI::Comm&
+   //getCommunicator() const
+   //{
+   //   return communicator;
+   //}
+
+   [[nodiscard]] MPI::Comm&
+   getCommunicator()
+   {
+      return communicator;
+   }
+
 
    //TODO: 1D and 2D decompositions should be separated, currently we asume only 1D
    //initialize innerOverlpas
@@ -113,8 +133,10 @@ public:
                                  const RealType& searchRadius,
                                  const IndexVectorType& localGridSize,
                                  const PointType& localGridOrigin,
-                                 const PointType& subdomainSize )
+                                 const PointType& subdomainSize,
+                                 MPI::Comm& comm )
    {
+      this->communicator = comm;
       //TODO: Grid should be pobably pointer...
 
       //int size = 10;
@@ -295,6 +317,8 @@ protected:
 
    GlobalIndexType numberOfParticlesInOverlaps;
    IndexArrayType innerOverlapsLinearized;
+
+   MPI::Comm communicator = MPI_COMM_WORLD;
 
 
 };

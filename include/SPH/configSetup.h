@@ -61,6 +61,9 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< int >( "interpolation-planes-count", "Input boundary particles file path.", 0 );
     config.addEntry< int >( "pressure-sensors-count", "Input boundary particles file path.", 0 );
     config.addEntry< int >( "water-level-sensors-count", "Input boundary particles file path.", 0 );
+
+    //TODO: Move this to suiteble place, it is used also for open zones
+    config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
 }
 
 void

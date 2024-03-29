@@ -16,8 +16,18 @@ restoreSubdomainCoordinatesFromRank( int rank, Containers::StaticVector< 2, int 
    Containers::StaticVector< 2, int > subdomainCoordinates = 0.;
    subdomainCoordinates[ 1 ] = std::floor( rank / numberOfSubdomains[ 0 ] );
    subdomainCoordinates[ 0 ] = rank - std::floor( rank / numberOfSubdomains[ 0 ] );
-
    return subdomainCoordinates;
+}
+
+std::string
+getSubdomainKey( int rank, Containers::StaticVector< 2, int > numberOfSubdomains )
+{
+   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank(
+         rank, numberOfSubdomains );
+   //NOTE: Only 2D decomposition is allowed
+   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomainCoordinates[ 0 ] ) +
+                              "-y-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
+   return subdomainKey;
 }
 
 } // namepsace distribtued
@@ -63,6 +73,8 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 #ifdef HAVE_MPI
    initDistributed( parameters, this->parametersDistributed, logger );
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
+   initOverlaps( parameters, this->parametersDistributed, logger );
+   //TODO: iniitalize synchronizer
 
    //logger.writeSeparator();
    //logger.writeParameter( "Local fluid object:" , "" );
@@ -88,8 +100,11 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
                                                               searchRadius,
                                                               subdomainGridSize,
                                                               subdomainOrigin,
-                                                              subdomainSize );
+                                                              subdomainSize,
+                                                              this->communicator );
    fluid->distributedParticles->writeProlog( logger );
+   //FIXME: Temp, test
+   fluid->synchronizer.setCommunicator( this->communicator );
    //fluid->particles->setDistributedGridParameters();
    //boundary->particles->setDistributedGridParameters();
 
@@ -221,12 +236,68 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                       searchRadius,
                       subdomainGridSize,
                       subdomainOrigin );
+
    // init boundary
    boundary->initialize( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
                          parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
                          searchRadius,
                          subdomainGridSize,
                          subdomainOrigin );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& parameters,
+                                        TNL::Config::ParameterContainer& parametersDistributed,
+                                        TNL::Logger& logger )
+{
+
+   //TODO: This whole header can be hidden to distributed utils
+   int rank = TNL::MPI::GetRank();
+   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+   const std::string subdomainKey = distributed::getSubdomainKey( TNL::MPI::GetRank(), numberOfSubdomains );
+
+   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
+   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
+   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
+
+   int overlapCellsCount = 0;
+   IndexVectorType resizedSubdomainGridSize = 0;
+   VectorType resizedSubdomainGridOrigin = 0.f;
+
+   //TODO: Consider whether the overlap is in all dimensions
+   if constexpr( Model::SPHConfig::spaceDimension == 2 ) {
+      overlapCellsCount = ( subdomainGridSize[ 0 ] + subdomainGridSize[ 1 ] + 4 ) * 2;
+
+      //TODO: Maybe modify directly
+      resizedSubdomainGridSize = { subdomainGridSize[ 0 ] + 2, subdomainGridSize[ 1 ] + 2 };
+      resizedSubdomainGridOrigin = { subdomainOrigin[ 0 ] - searchRadius,  subdomainOrigin[ 1 ] - searchRadius };
+   }
+   else if constexpr( Model::SPHConfig::spaceDimension == 3 ) {
+      const int xy = ( subdomainGridSize[ 0 ] + 2 ) * ( subdomainGridSize[ 1 ] + 2 );
+      const int xz = ( subdomainGridSize[ 0 ] + 2 ) * ( subdomainGridSize[ 2 ] );
+      const int yz = ( subdomainGridSize[ 1 ] ) * ( subdomainGridSize[ 2 ] );
+      overlapCellsCount = 2 * xy + 2 * xz + 2 * yz;
+
+      resizedSubdomainGridSize = { subdomainGridSize[ 0 ] + 2, subdomainGridSize[ 1 ] + 2, subdomainGridSize[ 2 ] + 2 };
+      resizedSubdomainGridOrigin = { subdomainOrigin[ 0 ] - searchRadius,
+                                     subdomainOrigin[ 1 ] - searchRadius,
+                                     subdomainOrigin[ 2 ] - searchRadius };
+   }
+   int numberOfParticlesPerCell = parameters.getParameter< int >( "numberOfParticlesPerCell" );
+
+   fluidOverlap->initialize( 0,
+                             numberOfParticlesPerCell * overlapCellsCount,
+                             searchRadius,
+                             resizedSubdomainGridSize,
+                             resizedSubdomainGridOrigin );
+
+   boundaryOverlap->initialize( 0,
+                                numberOfParticlesPerCell * overlapCellsCount,
+                                searchRadius,
+                                resizedSubdomainGridSize,
+                                resizedSubdomainGridOrigin );
 }
 
 //TODO: Move the distributed fanctions to domain specific with a given prefix
@@ -414,6 +485,21 @@ SPHMultiset_CFD< Model >::measure( TNL::Logger& logger )
 {
    simulationMonitor.template measure< SPHKernelFunction, EOS >( fluid, boundary, modelParams, timeStepping, logger, verbose );
 }
+
+#ifdef HAVE_MPI
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
+{
+   //NOTE: Much better syntax would be
+   //synchronize( flud, fluidOverlap, synchronizer );
+
+   fluid->synchronizeObject( fluidOverlap );
+
+}
+
+#endif
 
 template< typename Model >
 void

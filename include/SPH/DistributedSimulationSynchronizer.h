@@ -63,54 +63,54 @@ public:
 
    }
 
-   template< typename GhostBoundaryPatches >
-   void
-   setDistributedGrid( const DistributedGridType* distributedGrid,
-                       GhostBoundaryPatches& ghostBoundaryPatches )
-   {
-      isSet = true;
+   //:template< typename GhostBoundaryPatches >
+   //:void
+   //:setDistributedGrid( const DistributedGridType* distributedGrid,
+   //:                    GhostBoundaryPatches& ghostBoundaryPatches )
+   //:{
+   //:   isSet = true;
 
-      this->distributedGrid = distributedGrid;
+   //:   this->distributedGrid = distributedGrid;
 
-      const SubdomainOverlapsType& lowerOverlap = this->distributedGrid->getLowerOverlap();
-      const SubdomainOverlapsType& upperOverlap = this->distributedGrid->getUpperOverlap();
+   //:   const SubdomainOverlapsType& lowerOverlap = this->distributedGrid->getLowerOverlap();
+   //:   const SubdomainOverlapsType& upperOverlap = this->distributedGrid->getUpperOverlap();
 
-      const CoordinatesType& localBegin = this->distributedGrid->getLocalMesh().getLocalBegin();
-      const CoordinatesType& localSize = this->distributedGrid->getLocalSize();
+   //:   const CoordinatesType& localBegin = this->distributedGrid->getLocalMesh().getLocalBegin();
+   //:   const CoordinatesType& localSize = this->distributedGrid->getLocalSize();
 
-      const int* neighbors = distributedGrid->getNeighbors();
+   //:   const int* neighbors = distributedGrid->getNeighbors();
 
-      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-         Index sendSize = 1;  // send and receive  areas have the same size
+   //:   for( int i = 0; i < this->getNeighborsCount(); i++ ) {
+   //:      Index sendSize = 1;  // send and receive  areas have the same size
 
-         auto directions = Directions::template getXYZ< getMeshDimension() >( i );
+   //:      auto directions = Directions::template getXYZ< getMeshDimension() >( i );
 
-         sendDimensions[ i ] = localSize;  // send and receive areas have the same dimensions
-         sendBegin[ i ] = localBegin;
-         recieveBegin[ i ] = localBegin;
+   //:      sendDimensions[ i ] = localSize;  // send and receive areas have the same dimensions
+   //:      sendBegin[ i ] = localBegin;
+   //:      recieveBegin[ i ] = localBegin;
 
-         for( int j = 0; j < this->getMeshDimension(); j++ ) {
-            if( directions[ j ] == -1 ) {
-               sendDimensions[ i ][ j ] = lowerOverlap[ j ];
-               recieveBegin[ i ][ j ] = 0;
-            }
+   //:      for( int j = 0; j < this->getMeshDimension(); j++ ) {
+   //:         if( directions[ j ] == -1 ) {
+   //:            sendDimensions[ i ][ j ] = lowerOverlap[ j ];
+   //:            recieveBegin[ i ][ j ] = 0;
+   //:         }
 
-            if( directions[ j ] == 1 ) {
-               sendDimensions[ i ][ j ] = upperOverlap[ j ];
-               sendBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ] - upperOverlap[ j ];
-               recieveBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ];
-            }
+   //:         if( directions[ j ] == 1 ) {
+   //:            sendDimensions[ i ][ j ] = upperOverlap[ j ];
+   //:            sendBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ] - upperOverlap[ j ];
+   //:            recieveBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ];
+   //:         }
 
-            sendSize *= sendDimensions[ i ][ j ];
-         }
+   //:         sendSize *= sendDimensions[ i ][ j ];
+   //:      }
 
-         sendSizes[ i ] = sendSize;
-      }
+   //:      sendSizes[ i ] = sendSize;
+   //:   }
 
-      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-         innerGhostZones[ i ].updateCells( sendBegin[ i ], sendDimensions[ i ] );
-      }
-   }
+   //:   for( int i = 0; i < this->getNeighborsCount(); i++ ) {
+   //:      innerGhostZones[ i ].updateCells( sendBegin[ i ], sendDimensions[ i ] );
+   //:   }
+   //:}
 
    void
    synchronizeOverlapSizes()
@@ -130,11 +130,11 @@ public:
       for( int i = 0; i < this->getNeighborsCount(); i++ ) {
          if( neighbors[ i ] != -1 ) {
             requests[ requestsCount++ ] = MPI::Isend( sendSizes[ i ], 1, neighbors[ i ], 0, communicator );
-            requests[ requestsCount++ ] = MPI::Rrecv( receivedSizes[ i ], 1, neighbors[ i ], 0, communicator );
+            requests[ requestsCount++ ] = MPI::Rrecv( recievedSizes[ i ], 1, neighbors[ i ], 0, communicator );
          }
          else if( sendSizes[ i ] != 0 ) {
             requests[ requestsCount++ ] = MPI::Isend( sendSizes[ i ], 1, neighbors[ i ], 1, communicator );
-            requests[ requestsCount++ ] = MPI::Rrecv( receivedSizes[ i ], 1, neighbors[ i ], 1, communicator );
+            requests[ requestsCount++ ] = MPI::Rrecv( recievedSizes[ i ], 1, neighbors[ i ], 1, communicator );
          }
       }
 
@@ -223,7 +223,7 @@ public:
             const Index p = zoneParticleIndices_view[ i ];
              sendBufferView[ j ] = array_view[ p ];
          };
-         Algorithms::parallelFor< Device >( 0, receivedSizes[ i ], copy );
+         Algorithms::parallelFor< Device >( 0, recievedSizes[ i ], copy );
       }
 
    }
@@ -232,17 +232,17 @@ private:
    std::vector< ParticleZone > innerGhostZones;
 
    Containers::StaticArray< getNeighborsCount(), int > sendSizes;
-   Containers::StaticArray< getNeighborsCount(), int > receivedSizes;
+   Containers::StaticArray< getNeighborsCount(), int > recievedSizes;
 
    Containers::Array< std::uint8_t, Device, Index > sendBuffers[ getNeighborsCount() ];
    Containers::Array< std::uint8_t, Device, Index > recieveBuffers[ getNeighborsCount() ];
 
    PeriodicBoundariesCopyDirection periodicBoundariesCopyDirection = BoundaryToOverlap;
 
-   CoordinatesType sendDimensions[ getNeighborsCount() ];
-   CoordinatesType recieveDimensions[ getNeighborsCount() ];
-   CoordinatesType sendBegin[ getNeighborsCount() ];
-   CoordinatesType recieveBegin[ getNeighborsCount() ];
+   CoordinatesType sendDimensions[ getNeighborsCount() ]; //TODO: Not necessary
+   CoordinatesType recieveDimensions[ getNeighborsCount() ]; //TODO: Not necessary
+   CoordinatesType sendBegin[ getNeighborsCount() ]; //TODO: Not necessary
+   CoordinatesType recieveBegin[ getNeighborsCount() ]; //TODO: Not necessary
 
    const DistributedSimulationType* distributedSimulation;
    bool isSet;

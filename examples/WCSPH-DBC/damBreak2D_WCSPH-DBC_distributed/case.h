@@ -118,15 +118,18 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
 
    // Library model:
-   return 0;
+   //return 0;
 
-   while( sph.timeStepping.runTheSimulation() )
+   //while( sph.timeStepping.runTheSimulation() )
+   while( sph.timeStepping.getStep() < 1 )
    {
       // search for neighbros
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
+
+      sph.synchronizeDistributedSimulation();
 
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
@@ -151,7 +154,7 @@ int main( int argc, char* argv[] )
          sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
          sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
 
-         sph.save( log );
+         //sph.save( log );
       }
 
       // check timers and if measurement or interpolation should be performed, is performed

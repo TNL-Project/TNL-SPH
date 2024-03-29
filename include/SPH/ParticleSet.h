@@ -16,6 +16,7 @@
 #endif
 
 #include <Particles/DistributedParticles.h>
+#include <Particles/DistributedParticlesSynchronizer.h>
 
 namespace TNL {
 namespace SPH {
@@ -47,6 +48,8 @@ class ParticleSet
 #ifdef  HAVE_MPI
    using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
    using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
+   using DistributedGridType = typename DistributedParticlesType::DistributedGridType;
+   using Synchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< ParticleSystem, DistributedGridType >;
 #endif
 
    ParticleSet() : particles(), variables(), integratorVariables() {}
@@ -233,13 +236,18 @@ class ParticleSet
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronzier, typename GhostBoundaryPatches >
+   template< typename OverlapSetPointer >
    void
-   synchronizeObject( Synchronzier& synchronizer, GhostBoundaryPatches& ghostBoundaryPatches )
+   synchronizeObject( OverlapSetPointer& overlapSet )
    {
-      particles->synchronize( synchronizer, ghostBoundaryPatches );
-      variables->synchronize( synchronizer, ghostBoundaryPatches );
-      integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
+      //OLD:
+      //particles->synchronize( synchronizer, ghostBoundaryPatches );
+      //variables->synchronize( synchronizer, ghostBoundaryPatches );
+      //integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
+
+      //NEW:
+      this->synchronizer.synchronizeOverlapSizes( distributedParticles );
+      //synchronizer.synchronize( particles->getPoints(), overlapSet->getPoints(), distributedParticles->getInnerOverlaps() );
    }
 #endif
 
@@ -260,6 +268,7 @@ class ParticleSet
    ParticlePointerType particles;
 #ifdef HAVE_MPI
    DistributedParticlesPointerType distributedParticles;
+   Synchronizer synchronizer;
 #endif
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;

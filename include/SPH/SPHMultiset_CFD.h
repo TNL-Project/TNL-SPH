@@ -70,6 +70,11 @@ public:
    initDistributed( TNL::Config::ParameterContainer& parameters,
                     TNL::Config::ParameterContainer& parametersDistributed,
                     TNL::Logger& logger );
+
+   void
+   initOverlaps( TNL::Config::ParameterContainer& parameters,
+                 TNL::Config::ParameterContainer& parametersDistributed,
+                 TNL::Logger& logger );
    void
    readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
                                  TNL::Config::ParameterContainer& parametersDistributed,
@@ -139,6 +144,13 @@ public:
    void
    measure( TNL::Logger& logger );
 
+#ifdef HAVE_MPI
+
+   void
+   synchronizeDistributedSimulation();
+
+#endif
+
    /**
     * \brief Save all particle object to vtk files. Automatically saves all
     * available fileds.
@@ -164,6 +176,11 @@ public:
    FluidPointer fluid;
    BoundaryPointer boundary;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
+
+#ifdef HAVE_MPI
+   FluidPointer fluidOverlap;
+   BoundaryPointer boundaryOverlap;
+#endif
 
    Model model;
    ModelParams modelParams;
