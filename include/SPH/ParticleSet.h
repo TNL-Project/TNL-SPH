@@ -246,6 +246,7 @@ class ParticleSet
       //integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
 
       //NEW:
+      this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles );
       //synchronizer.synchronize( particles->getPoints(), overlapSet->getPoints(), distributedParticles->getInnerOverlaps() );
    }

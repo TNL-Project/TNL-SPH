@@ -100,7 +100,7 @@ public:
       //TODO: For 1D decomposition, lets start with fixed number of inner overlaps and for the corner domains
       //      simply let one of them empty.
 
-      const IndexVectorType localGridSize = distributedGrid.getLocalMesh().getDimensions();
+      const IndexVectorType localGridDimensions = distributedGrid.getLocalMesh().getDimensions();
       const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
       const PointType localGridStepSize = distributedGrid.getLocalMesh().getSpaceSteps();
       const RealType searchRadius = localGridStepSize[ 0 ]; //FIXME
@@ -109,16 +109,24 @@ public:
 
       //Initialize the zones:
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
-         const PointType zoneLowerPoint = localGridOrigin;
-         const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect;
+         //const PointType zoneLowerPoint = localGridOrigin;
+         //const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect + ( searchRadius / 4 ) * xUnitVect; //FIXME: Search + searchRadius/2 is due to fucked up zone initialization
+         //innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+         //innerOverlaps[ ZzYzXm ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
+         const PointType zoneOriginIdx = { 0, 0 };
+         const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
          innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         innerOverlaps[ ZzYzXm ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
+         innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
       }
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
-         const PointType zoneLowerPoint = localGridOrigin + searchRadius * ( localGridSize, xUnitVect ) * xUnitVect;
-         const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect;
+         //const PointType zoneLowerPoint = localGridOrigin + searchRadius * ( localGridSize, xUnitVect ) * xUnitVect;
+         //const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect - ( searchRadius / 4 ) * xUnitVect; //FIXME: Search + searchRadius/2 is due to fucked up zone initialization
+         //innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+         //innerOverlaps[ ZzYzXp ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
+         const PointType zoneOriginIdx = { localGridDimensions[ 0 ], 0 };
+         const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         innerOverlaps[ ZzYzXp ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
+         innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
       }
 
       //NOTE: Next I should initialize the linearized fields. However using 1D decomposition, I can iterate directly
@@ -205,14 +213,27 @@ public:
 
 
    //collect particles to innerOverlaps
+   template< typename ParticlePointer >
    void
-   collectParticlesInInnerOverlaps()
+   collectParticlesInInnerOverlaps( ParticlePointer& particles )
    {
-      const int* neighbors = this->distributedGrid->getNeighbors();
-      for( int i = 0; i < this->distributedGrid->getNeighborsCount(); i++ ) {
-         //TODO: We shoud limit ourselves only to filled zones to save the call time
-         innerOverlaps[ i ].updateParticlesInZone();
-      }
+      //NOTE: This was original idea, but the overlap size is much smaller.
+      //const int* neighbors = this->getDistributedGrid().getNeighbors();
+      //for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
+      //   //TODO: We shoud limit ourselves only to filled zones to save the call time
+      //   if( neighbors[ i ] != -1 )
+      //      innerOverlaps[ i ].updateParticlesInZone( particles );
+      //}
+
+      //for( int i = 0; i < this->innerOverlaps.getSize(); i++ )
+      //   innerOverlaps[ i ].updateParticlesInZone( particles );
+      //   //std::cout << " **************************** i: " << i << " **** " << innerOverlaps[ i ].getNumberOfParticles() << " cells: " << innerOverlaps[ i ].getCellsInZone() << std::endl;
+
+      //TODO: Temp test
+      if( distributedGrid.isThereNeighbor( { -1, 0 } ) )
+         innerOverlaps[ 0 ].updateParticlesInZone( particles );
+      if( distributedGrid.isThereNeighbor( { 1, 0 } ) )
+         innerOverlaps[ 1 ].updateParticlesInZone( particles );
    }
 
    void

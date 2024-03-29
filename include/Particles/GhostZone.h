@@ -50,7 +50,7 @@ public:
     * Assign cells from point and direction for grid-base orthogonal zones
     */
    void
-   assignCells( IndexVectorType startingPoint, IndexVectorType size, IndexVectorType gridSize );
+   assignCells( IndexVectorType firstPointIdx, IndexVectorType zoneSizeInCells, IndexVectorType gridSize );
 
    /**
     * Assign cells from point and direction for grid-base orthogonal zones

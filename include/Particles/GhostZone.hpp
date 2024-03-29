@@ -5,30 +5,33 @@ namespace ParticleSystem {
 
 template< typename ParticleConfig >
 void
-ParticleZone< ParticleConfig >::assignCells( IndexVectorType startingPoint, IndexVectorType size, IndexVectorType gridSize )
+ParticleZone< ParticleConfig >::assignCells( IndexVectorType firstPointIdx,
+                                             IndexVectorType zoneSizeInCells,
+                                             IndexVectorType gridSize )
 {
+   if constexpr( ParticleConfig::spaceDimension == 2 )
+      this->numberOfCellsInZone = zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
+   if constexpr( ParticleConfig::spaceDimension == 3 )
+      this->numberOfCellsInZone = zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ] * zoneSizeInCells[ 2 ];
+
+   cellsInZone.resize( this->numberOfCellsInZone );
+   numberOfParticlesInCell.resize( this->numberOfCellsInZone );
+   particlesInZone.resize( numberOfCellsInZone * numberOfParticlesPerCell );
+
    auto cellsInZone_view = this->cellsInZone.getView();
 
-   if constexpr( ParticleConfig::spaceDimension == 2 )
-   {
-      auto init = [=] __cuda_callable__ ( const GlobalIndexType i ) mutable
+   if constexpr( ParticleConfig::spaceDimension == 2 ) {
+      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
       {
-         cellsInZone_view[ i ] = CellIndexer::EvaluateCellIndex( startingPoint[ 0 ] + size[ 0 ] * i, startingPoint[ 1 ] + size[ 1 ] * i, gridSize );
+         const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ];
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
       };
-      Algorithms::parallelFor< DeviceType >( 0, this->numberOfCellsInZone, init );
+      const IndexVectorType begin = { 0, 0 };
+      Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
-
-   //if constexpr( ParticleConfig::spaceDimension == 3 )
-   //{
-   //   auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
-   //   {
-   //      cellsInZone_view = CellIndexer::EvaluateCellIndex( startingPoint[ 0 ] + i[ 0 ], startingPoint[ 1 ] + i[ 1 ], startingPoint[ 2 ] + i[ 2 ], gridSize );
-   //   };
-   //   IndexVectorType begin{ 0, 0, 0 };
-   //   Algorithms::parallelFor< DeviceType >( begin, size, init );
-   //}
 }
 
+//TODO: Merge both assign functions together
 template< typename ParticleConfig >
 void
 ParticleZone< ParticleConfig >::assignCells( const PointType firstPoint,
@@ -53,8 +56,7 @@ ParticleZone< ParticleConfig >::assignCells( const PointType firstPoint,
 
    auto cellsInZone_view = this->cellsInZone.getView();
 
-   if constexpr( ParticleConfig::spaceDimension == 2 )
-   {
+   if constexpr( ParticleConfig::spaceDimension == 2 ) {
       auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
       {
          const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ];
