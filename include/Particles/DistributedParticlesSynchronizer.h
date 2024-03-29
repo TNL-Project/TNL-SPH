@@ -147,9 +147,7 @@ public:
 
       // async send and receive
       std::unique_ptr< MPI_Request[] > requests{ new MPI_Request[ 2 * this->getNeighborsCount() ] };
-      //RequestsVector requests; //TODO: Initialize this to fixed size.
       //const MPI::Comm& communicator = distributedParticles->getCommunicator();
-      // MPI::Comm& communicator = distributedParticles->getCommunicator();
       int requestsCount = 0;
 
       // send everything, recieve everything
@@ -157,16 +155,6 @@ public:
          if( neighbors[ i ] != -1 ) {
             requests[ requestsCount++ ] = MPI::Isend( &sendSizes[ i ], 1, neighbors[ i ], 0, communicator );
             requests[ requestsCount++ ] = MPI::Irecv( &receivedSizes[ i ], 1, neighbors[ i ], 0, communicator );
-
-            //requests.push_back( MPI::Isend( &sendSizes[ i ], 1, neighbors[ i ], 0, communicator ) );
-            //requests.push_back( MPI::Irecv( &receivedSizes[ i ], 1, neighbors[ i ], 0, communicator ) );
-
-            //requests.push_back( MPI::Isend( reinterpret_cast< RealType* >( sendSizes[ i ] ), 1, neighbors[ i ], 0, communicator ) );
-            //requests.push_back( MPI::Irecv( reinterpret_cast< RealType* >( receivedSizes[ i ] ), 1, neighbors[ i ], 0, communicator ) );
-            //int numberTest = 1;
-            //int numberTestRecv = 0;
-            //requests.push_back( MPI::Isend( &numberTest, 1, 0, 0, communicator ) );
-            //requests.push_back( MPI::Irecv( &numberTestRecv, 1, 0, 0, communicator ) );
          }
          //TODO: What is purpose of this part? Periodicity?
          //else if( sendSizes[ i ] != 0 ) {
