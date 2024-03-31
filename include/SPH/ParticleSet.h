@@ -48,8 +48,7 @@ class ParticleSet
 #ifdef  HAVE_MPI
    using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
    using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
-   using DistributedGridType = typename DistributedParticlesType::DistributedGridType;
-   using Synchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< ParticleSystem, DistributedGridType >;
+   using Synchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< DistributedParticlesType >;
 #endif
 
    ParticleSet() : particles(), variables(), integratorVariables() {}
@@ -248,6 +247,7 @@ class ParticleSet
       //NEW:
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles );
+      //this->synchronizer.synchronize( particles->getPoints(), overlapSet->getPoints(), distributedParticles );
       //synchronizer.synchronize( particles->getPoints(), overlapSet->getPoints(), distributedParticles->getInnerOverlaps() );
    }
 #endif
