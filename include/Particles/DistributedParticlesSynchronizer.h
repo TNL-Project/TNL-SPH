@@ -91,68 +91,6 @@ public:
       this->communicator = comm;
    }
 
-   void
-   collectParticlesToSend()
-   {
-      // --> update cells in zone
-
-
-      //1. get local grid -> from the local grid, extract neighbors
-      //2. separate cells which are crutical for given neighbor
-
-      // --> collect particles in zone cells
-
-   }
-
-   //template< typename GhostBoundaryPatches >
-   //void
-   //setDistributedGrid( const DistributedGridType* distributedGrid,
-   //                    GhostBoundaryPatches& ghostBoundaryPatches )
-   //{
-   //   isSet = true;
-
-   //   this->distributedGrid = distributedGrid;
-
-   //   const SubdomainOverlapsType& lowerOverlap = this->distributedGrid->getLowerOverlap();
-   //   const SubdomainOverlapsType& upperOverlap = this->distributedGrid->getUpperOverlap();
-
-   //   const CoordinatesType& localBegin = this->distributedGrid->getLocalMesh().getLocalBegin();
-   //   const CoordinatesType& localSize = this->distributedGrid->getLocalSize();
-
-   //   const int* neighbors = distributedGrid->getNeighbors();
-
-   //   for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-   //      Index sendSize = 1;  // send and receive  areas have the same size
-
-   //      auto directions = Directions::template getXYZ< getMeshDimension() >( i );
-
-   //      sendDimensions[ i ] = localSize;  // send and receive areas have the same dimensions
-   //      sendBegin[ i ] = localBegin;
-   //      recieveBegin[ i ] = localBegin;
-
-   //      for( int j = 0; j < this->getMeshDimension(); j++ ) {
-   //         if( directions[ j ] == -1 ) {
-   //            sendDimensions[ i ][ j ] = lowerOverlap[ j ];
-   //            recieveBegin[ i ][ j ] = 0;
-   //         }
-
-   //         if( directions[ j ] == 1 ) {
-   //            sendDimensions[ i ][ j ] = upperOverlap[ j ];
-   //            sendBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ] - upperOverlap[ j ];
-   //            recieveBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ];
-   //         }
-
-   //         sendSize *= sendDimensions[ i ][ j ];
-   //      }
-
-   //      sendSizes[ i ] = sendSize;
-   //   }
-
-   //   for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-   //      innerGhostZones[ i ].updateCells( sendBegin[ i ], sendDimensions[ i ] );
-   //   }
-   //}
-
    template< typename DistributedParticlesPointer >
    void
    synchronizeOverlapSizes( const DistributedParticlesPointer& distributedParticles )
@@ -259,7 +197,7 @@ public:
                          DistributedParticlesPointer& distributedParticles )
    {
       auto requests = synchronizeByteArrayAsyncWorker( sendArray, recvArray, bytesPerValue, distributedParticles );
-      //MPI::Waitall( requests.data(), requests.size() );
+      MPI::Waitall( requests.data(), requests.size() );
    }
 
    template< typename DistributedParticlesPointer >
@@ -289,7 +227,7 @@ public:
          if( neighbors[ j ] != -1 ) {
             requests.push_back( MPI::Irecv( recvArray.getData() + bytesPerValue * recvNeighborOffsets[ j ],
                                             bytesPerValue * recvSizes[ j ],
-                                            j,
+                                            neighbors[ j ],
                                             0,
                                             communicator ) );
          }
@@ -297,7 +235,6 @@ public:
 
       //TODO: Here, I modified the size of the binded ByteArrayView
       ByteArrayView sendBuffersView;
-      //sendBuffersView.bind( sendBuffers.getData(), bytesPerValue * ghostNeighborOffsets[ nproc ] );
       sendBuffersView.bind( sendBuffers.getData(), bytesPerValue * sendBuffers.getSize() );
 
       const auto innerOverlapsView = distributedParticles->getInnerOverlaps().getConstView();
@@ -308,8 +245,7 @@ public:
          if( neighbors[ i ] != -1 ) {
             const GlobalIndexType offset = sendNeighborOffsets[ i ];
 
-            //const auto ghostZoneView = innerOverlapsView[ i ].getParticlesInZone().getConstView();
-            const auto ghostZoneView = innerOverlapsView[ i ].getParticlesInZone().getConstView( 0, sendSizes[ i ] );
+            const auto ghostZoneView = innerOverlapsView[ i ].getParticlesInZone().getConstView();
             auto copy_kernel = [ sendBuffersView, sendArrayView, ghostZoneView, bytesPerValue ] __cuda_callable__(
                                   GlobalIndexType k, GlobalIndexType offset ) mutable
             {
@@ -324,7 +260,7 @@ public:
             // issue async send operation
             requests.push_back( MPI::Isend( sendBuffersView.getData() + bytesPerValue * sendNeighborOffsets[ i ],
                                             bytesPerValue * sendSizes[ i ],
-                                            i,
+                                            neighbors[ i ],
                                             0,
                                             communicator ) );
          }

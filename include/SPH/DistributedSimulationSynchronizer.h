@@ -51,68 +51,6 @@ public:
    }
 
    void
-   collectParticlesToSend()
-   {
-      // --> update cells in zone
-
-
-      //1. get local grid -> from the local grid, extract neighbors
-      //2. separate cells which are crutical for given neighbor
-
-      // --> collect particles in zone cells
-
-   }
-
-   //:template< typename GhostBoundaryPatches >
-   //:void
-   //:setDistributedGrid( const DistributedGridType* distributedGrid,
-   //:                    GhostBoundaryPatches& ghostBoundaryPatches )
-   //:{
-   //:   isSet = true;
-
-   //:   this->distributedGrid = distributedGrid;
-
-   //:   const SubdomainOverlapsType& lowerOverlap = this->distributedGrid->getLowerOverlap();
-   //:   const SubdomainOverlapsType& upperOverlap = this->distributedGrid->getUpperOverlap();
-
-   //:   const CoordinatesType& localBegin = this->distributedGrid->getLocalMesh().getLocalBegin();
-   //:   const CoordinatesType& localSize = this->distributedGrid->getLocalSize();
-
-   //:   const int* neighbors = distributedGrid->getNeighbors();
-
-   //:   for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-   //:      Index sendSize = 1;  // send and receive  areas have the same size
-
-   //:      auto directions = Directions::template getXYZ< getMeshDimension() >( i );
-
-   //:      sendDimensions[ i ] = localSize;  // send and receive areas have the same dimensions
-   //:      sendBegin[ i ] = localBegin;
-   //:      recieveBegin[ i ] = localBegin;
-
-   //:      for( int j = 0; j < this->getMeshDimension(); j++ ) {
-   //:         if( directions[ j ] == -1 ) {
-   //:            sendDimensions[ i ][ j ] = lowerOverlap[ j ];
-   //:            recieveBegin[ i ][ j ] = 0;
-   //:         }
-
-   //:         if( directions[ j ] == 1 ) {
-   //:            sendDimensions[ i ][ j ] = upperOverlap[ j ];
-   //:            sendBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ] - upperOverlap[ j ];
-   //:            recieveBegin[ i ][ j ] = localBegin[ j ] + localSize[ j ];
-   //:         }
-
-   //:         sendSize *= sendDimensions[ i ][ j ];
-   //:      }
-
-   //:      sendSizes[ i ] = sendSize;
-   //:   }
-
-   //:   for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-   //:      innerGhostZones[ i ].updateCells( sendBegin[ i ], sendDimensions[ i ] );
-   //:   }
-   //:}
-
-   void
    synchronizeOverlapSizes()
    {
       TNL_ASSERT_TRUE( isSet, "Synchronizer is not set, but used to synchronize" );
