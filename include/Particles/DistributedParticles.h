@@ -123,7 +123,7 @@ public:
          //const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect - ( searchRadius / 4 ) * xUnitVect; //FIXME: Search + searchRadius/2 is due to fucked up zone initialization
          //innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          //innerOverlaps[ ZzYzXp ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
-         const PointType zoneOriginIdx = { localGridDimensions[ 0 ], 0 };
+         const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help?
          const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
@@ -218,22 +218,22 @@ public:
    collectParticlesInInnerOverlaps( ParticlePointer& particles )
    {
       //NOTE: This was original idea, but the overlap size is much smaller.
-      //const int* neighbors = this->getDistributedGrid().getNeighbors();
-      //for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
-      //   //TODO: We shoud limit ourselves only to filled zones to save the call time
-      //   if( neighbors[ i ] != -1 )
-      //      innerOverlaps[ i ].updateParticlesInZone( particles );
-      //}
+      const int* neighbors = this->getDistributedGrid().getNeighbors();
+      for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
+         //TODO: We shoud limit ourselves only to filled zones to save the call time
+         if( neighbors[ i ] != -1 )
+            innerOverlaps[ i ].updateParticlesInZone( particles );
+      }
 
       //for( int i = 0; i < this->innerOverlaps.getSize(); i++ )
       //   innerOverlaps[ i ].updateParticlesInZone( particles );
       //   //std::cout << " **************************** i: " << i << " **** " << innerOverlaps[ i ].getNumberOfParticles() << " cells: " << innerOverlaps[ i ].getCellsInZone() << std::endl;
 
-      //TODO: Temp test
-      if( distributedGrid.isThereNeighbor( { -1, 0 } ) )
-         innerOverlaps[ 0 ].updateParticlesInZone( particles );
-      if( distributedGrid.isThereNeighbor( { 1, 0 } ) )
-         innerOverlaps[ 1 ].updateParticlesInZone( particles );
+      ////TODO: Temp test
+      //if( distributedGrid.isThereNeighbor( { -1, 0 } ) )
+      //   innerOverlaps[ 0 ].updateParticlesInZone( particles );
+      //if( distributedGrid.isThereNeighbor( { 1, 0 } ) )
+      //   innerOverlaps[ 1 ].updateParticlesInZone( particles );
    }
 
    void

@@ -131,6 +131,17 @@ int main( int argc, char* argv[] )
 
       sph.synchronizeDistributedSimulation();
 
+      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      //if( TNL::MPI::GetRank() == 0 )
+      //   sph.synchronizeDistributedSimulation();
+      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      //if( TNL::MPI::GetRank() == 1 )
+      //   sph.synchronizeDistributedSimulation();
+      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      //if( TNL::MPI::GetRank() == 2 )
+      //   sph.synchronizeDistributedSimulation();
+      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
       sph.interact();

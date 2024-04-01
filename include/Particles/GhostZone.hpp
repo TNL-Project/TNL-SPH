@@ -125,6 +125,13 @@ ParticleZone< ParticleConfig >::setNumberOfParticlesPerCell( const GlobalIndexTy
 }
 
 template< typename ParticleConfig >
+const typename ParticleZone< ParticleConfig >::GlobalIndexType
+ParticleZone< ParticleConfig >::getNumberOfParticlesPerCell() const
+{
+   return this->numberOfParticlesPerCell;
+}
+
+template< typename ParticleConfig >
 void
 ParticleZone< ParticleConfig >::resetParticles()
 {

@@ -104,6 +104,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
                                                               this->communicator );
    fluid->distributedParticles->writeProlog( logger );
    //FIXME: Temp, test
+   fluid->synchronizer.initialize( fluid->distributedParticles );
    fluid->synchronizer.setCommunicator( this->communicator );
    //fluid->particles->setDistributedGridParameters();
    //boundary->particles->setDistributedGridParameters();

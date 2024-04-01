@@ -68,6 +68,22 @@ public:
       setDistributedGrid( distributedGrid );
    }
 
+   void
+   initialize( const DistributedParticlesPointerType& distributedParticles )
+   {
+      //this->distributedParticles = std::make_shared< DistributedParticlesPointerType >( distributedParticles );
+
+      const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
+      const auto innerOverlapsView = distributedParticles->getInnerOverlaps().getConstView();
+      int bufferSize = 0;
+      for( int i = 0; i < this->getNeighborsCount(); i++ )
+         if( neighbors[ i ] != -1 )
+             bufferSize += innerOverlapsView[ i ].getNumberOfCells() * innerOverlapsView[ i ].getNumberOfParticlesPerCell();
+
+      this->sendBuffers.setSize( bufferSize * Particles::getParticleDimension() );
+   }
+
+
    //TODO: Temp, test
    void
    setCommunicator( MPI::Comm& comm )
@@ -196,139 +212,34 @@ public:
    }
 
 
-   template< typename DistributedParticlesPointer, typename ArrayType >
    void
-   synchronize( ArrayType& sendFunction,
-                ArrayType& receiveFunction,
-                DistributedParticlesPointer& distributedParticles)
+   updateOffsets( DistributedParticlesPointerType& distributedParticles )
    {
-      using ValueType = typename ArrayType::ValueType;
+      //TODO: collect particles in overlaps HERE
+      //distributedParticles->collectParticlesInInnerOverlaps( particles )
 
-      TNL_ASSERT_TRUE( isSet, "Synchronizer is not set, but used to synchronize" );
-      if( ! distributedParticles->getDistributedGrid().isDistributed() )
-         return;
+      //TODO: fill
+      //ghostNeighbosOffsets
+      //ghostNeihbors
 
-      // allocate buffers (setSize does nothing if the array size is already correct)
-      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-         sendBuffers[ i ].setSize( sendSizes[ i ] * sizeof( RealType ) );
-         recieveBuffers[ i ].setSize( sendSizes[ i ] * sizeof( RealType ) );
-      }
-
-      //TODO: Synchronizer should probabaly store pointer to distributed parricles
-      const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
-      const auto innerOverlaps_view = distributedParticles->getInnerOverlaps().getConstView();
-
-      // fill send buffers
-      auto array_view = sendFunction.getView();
-
-      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-         //const auto zoneParticleIndices_view = ghostBoundaryPatches[ i ]->zone.getParticlesInZone().getConstView();
-         //const GlobalIndexType numberOfZoneParticles = ghostBoundaryPatches[ i ]->zone.getNumberOfParticles();
-         const auto zoneParticleIndices_view = innerOverlaps_view[ i ].getParticlesInZone().getConstView();
-         const GlobalIndexType numberOfZoneParticles = innerOverlaps_view[ i ].getNumberOfParticles();
-         auto sendBufferView = this->sendBuffers[ i ].getView();
-
-         if( numberOfZoneParticles == 0 )
-            continue;
-
-         //FIXME: Use receive array for linearization of sending field
-         //auto recieveArray_view = receiveFunction.getView();
-         //auto copyVariables = [=] __cuda_callable__ ( int j ) mutable
-         //{
-         //   const Index p = zoneParticleIndices_view[ j ];
-         //   recieveArray_view[ j ] = array_view[ p ];
-         //};
-         //Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyVariables );
-         //sendBufferView.bind( reinterpret_cast< std::uint8_t* >( recieveArray_view.getData() ), sizeof( ValueType ) * numberOfZoneParticles );
-
-         //auto copyVariables = [=] __cuda_callable__ ( int j ) mutable
-         //{
-         //   const Index p = zoneParticleIndices_view[ j ];
-         //   recieveArray_view[ j ] = array_view[ p ];
-         //};
-         //Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyVariables );
-
-         //auto moveParticles = [ = ] __cuda_callable__( int k ) mutable
-         //{
-         //   const Index p = zoneParticleIndices_view[ k ];
-         //   //sendBufferView[ k ] = static_cast< uint8_t >( array_view[ p ].getData() );
-         //   //sendBufferView[ k ] = reinterpret_cast< uint8_t >( array_view[ p ].getData() );
-         //};
-         //Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, moveParticles );
-
-
-      }
-
-
-
-      /*
-      // async send and receive
-      std::unique_ptr< MPI_Request[] > requests{ new MPI_Request[ 4 * this->getNeighborsCount() ] };
-      const MPI::Comm& communicator = distributedParticles->getCommunicator();
-      int requestsCount = 0;
-
-      // send everything, recieve everything
-      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-         if( neighbors[ i ] != -1 ) {
-            requests[ requestsCount++ ] = MPI::Isend( reinterpret_cast< RealType* >( sendBuffers[ i ].getData() ),
-                                                      sendSizes[ i ],
-                                                      neighbors[ i ],
-                                                      0,
-                                                      communicator );
-            requests[ requestsCount++ ] = MPI::Irecv( reinterpret_cast< RealType* >( recieveBuffers[ i ].getData() ),
-                                                      sendSizes[ i ],
-                                                      neighbors[ i ],
-                                                      0,
-                                                      communicator );
-         }
-         //TODO: Periodic boundaries should be resolved
-         //else if( sendSizes[ i ] != 0 ) {
-         //   requests[ requestsCount++ ] = MPI::Isend( reinterpret_cast< RealType* >( sendBuffers[ i ].getData() ),
-         //                                             sendSizes[ i ],
-         //                                             periodicNeighbors[ i ],
-         //                                             1,
-         //                                             communicator );
-         //   requests[ requestsCount++ ] = MPI::Irecv( reinterpret_cast< RealType* >( recieveBuffers[ i ].getData() ),
-         //                                             sendSizes[ i ],
-         //                                             periodicNeighbors[ i ],
-         //                                             1,
-         //                                             communicator );
-         //}
-      }
-
-      // wait until send is done
-      MPI::Waitall( requests.get(), requestsCount );
-      */
-
-      /*
-      // copy data from receive buffers
-      auto receiveArray_view = receiveFunction.getView();
-      int offset = 0; //FIXME: RESOLVE OFFSETS
-
-      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
-         const auto recieveBuffers_view = recieveBuffers[ i ].getConstView();
-
-         auto copy = [=]  __cuda_callable__ ( Index j )
-         {
-             receiveArray_view[ j + offset ] = recieveBuffers_view[ j ];
-         };
-         Algorithms::parallelFor< Device >( 0, recvSizes[ i ], copy );
-      }
-      */
+      //TODO: Neighbors needs to be initialized
 
    }
 
-   template< typename Array >
+   template< typename Array, typename DistributedParticlesPointer >
    void
-   synchronize( Array& sendArray, Array& recvArray )
+   synchronize( Array& sendArray, Array& recvArray, DistributedParticlesPointer& distributedParticles )
    {
       // wrapped only because nvcc is fucked up and does not like __cuda_callable__ lambdas in enable_if methods
-      synchronizeArray( sendArray, recvArray );
+      synchronizeArray( sendArray, recvArray, distributedParticles );
    }
 
-   template< typename Array >
+   template< typename Array, typename DistributedParticlesPointer >
    void
-   synchronizeArray( Array& sendArray, Array& recvArray, int valuesPerElement = 1 )
+   synchronizeArray( Array& sendArray,
+                     Array& recvArray,
+                     DistributedParticlesPointer& distributedParticles,
+                     int valuesPerElement = 1 )
    {
       static_assert( std::is_same_v< typename Array::DeviceType, DeviceType >, "mismatched DeviceType of the array" );
       using ValueType = typename Array::ValueType;
@@ -337,22 +248,29 @@ public:
       ByteArrayView recvView;
       sendView.bind( reinterpret_cast< std::uint8_t* >( sendArray.getData() ), sizeof( ValueType ) * sendArray.getSize() );
       recvView.bind( reinterpret_cast< std::uint8_t* >( recvArray.getData() ), sizeof( ValueType ) * recvArray.getSize() );
-      synchronizeByteArray( sendView, recvView, sizeof( ValueType ) * valuesPerElement );
+      synchronizeByteArray( sendView, recvView, sizeof( ValueType ) * valuesPerElement, distributedParticles );
    }
 
+   template< typename DistributedParticlesPointer >
    void
-   synchronizeByteArray( ByteArrayView sendArray, ByteArrayView recvArray, int bytesPerValue )
+   synchronizeByteArray( ByteArrayView sendArray,
+                         ByteArrayView recvArray,
+                         int bytesPerValue,
+                         DistributedParticlesPointer& distributedParticles )
    {
-      auto requests = synchronizeByteArrayAsyncWorker( sendArray, recvArray, bytesPerValue );
-      MPI::Waitall( requests.data(), requests.size() );
+      auto requests = synchronizeByteArrayAsyncWorker( sendArray, recvArray, bytesPerValue, distributedParticles );
+      //MPI::Waitall( requests.data(), requests.size() );
    }
 
+   template< typename DistributedParticlesPointer >
    [[nodiscard]] RequestsVector
-   synchronizeByteArrayAsyncWorker( ByteArrayView sendArray, ByteArrayView recvArray, int bytesPerValue )
+   synchronizeByteArrayAsyncWorker( ByteArrayView sendArray,
+                                    ByteArrayView recvArray,
+                                    int bytesPerValue,
+                                    DistributedParticlesPointer& distributedParticles )
    {
-      //TODO: Bring back this test.
-      //if( sendArray.getSize() != bytesPerValue * ghostOffsets[ ghostOffsets.getSize() - 1 ] )
-      //   throw std::invalid_argument( "synchronizeByteArrayAsyncWorker: the array does not have the expected size" );
+      if( sendArray.getSize() < bytesPerValue * this->sendBufferElementSize )
+         throw std::invalid_argument( "synchronizeByteArrayAsyncWorker: the array does not have the expected size" );
 
       const int rank = communicator.rank();
       const int nproc = communicator.size();
@@ -361,7 +279,7 @@ public:
       // allocate send buffers (setSize does nothing if the array size is already correct)
       // sendBuffers.setSize( bytesPerValue * ghostNeighborOffsets[ nproc ] );
 
-      const int* neighbors = this->distributedParticles->getDistributedGrid().getNeighbors();
+      const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
 
       // buffer for asynchronous communication requests
       RequestsVector requests;
@@ -382,21 +300,22 @@ public:
       //sendBuffersView.bind( sendBuffers.getData(), bytesPerValue * ghostNeighborOffsets[ nproc ] );
       sendBuffersView.bind( sendBuffers.getData(), bytesPerValue * sendBuffers.getSize() );
 
+      const auto innerOverlapsView = distributedParticles->getInnerOverlaps().getConstView();
       const auto sendArrayView = sendArray.getConstView();
       //TODO: The kernel could be probabaly defined here as in Distributed Mesh Synchronizer
-
 
       for( int i = 0; i < this->getNeighborsCount(); i++ ) {
          if( neighbors[ i ] != -1 ) {
             const GlobalIndexType offset = sendNeighborOffsets[ i ];
 
-            const auto innerOverlapsView = distributedParticles->getInnerOverlaps()[ i ].getParticlesInZone().getConstView();
-            auto copy_kernel = [ sendBuffersView, sendArrayView, innerOverlapsView, bytesPerValue ] __cuda_callable__(
+            //const auto ghostZoneView = innerOverlapsView[ i ].getParticlesInZone().getConstView();
+            const auto ghostZoneView = innerOverlapsView[ i ].getParticlesInZone().getConstView( 0, sendSizes[ i ] );
+            auto copy_kernel = [ sendBuffersView, sendArrayView, ghostZoneView, bytesPerValue ] __cuda_callable__(
                                   GlobalIndexType k, GlobalIndexType offset ) mutable
             {
                for( int i = 0; i < bytesPerValue; i++ )
                   sendBuffersView[ i + bytesPerValue * ( offset + k ) ] =
-                     sendArrayView[ i + bytesPerValue * innerOverlapsView[ k ] ];
+                     sendArrayView[ i + bytesPerValue * ghostZoneView[ k ] ];
             };
 
             // copy data to send buffers
@@ -444,9 +363,8 @@ private:
     * starting at index ghostNeighborOffsets[i] (inclusive) and ending at index
     * ghostNeighborOffsets[i+1] (exclusive).
     */
+   GlobalIndexType sendBufferElementSize = 0;
    Containers::Array< std::uint8_t, DeviceType, GlobalIndexType > sendBuffers;
-
-   Containers::Array< std::uint8_t, DeviceType, GlobalIndexType > recvBuffers;
 
    Containers::StaticArray< getNeighborsCount(), int > sendSizes;
    Containers::StaticArray< getNeighborsCount(), int > recvSizes;
@@ -457,7 +375,7 @@ private:
    //Containers::Array< int, TNL::Devices::Host > sendNeighborOffsets;
    //Containers::Array< int, TNL::Devices::Host > recvNeighborOffsets;
 
-   const DistributedParticlesPointerType distributedParticles;
+   //const DistributedParticlesPointerType distributedParticles;
 
 
 };

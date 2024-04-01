@@ -108,6 +108,9 @@ public:
    void
    setNumberOfParticlesPerCell( const GlobalIndexType numberOfParticlesPerCell );
 
+   const GlobalIndexType
+   getNumberOfParticlesPerCell() const;
+
    void
    resetParticles();
 
