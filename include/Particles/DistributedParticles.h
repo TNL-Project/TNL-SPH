@@ -137,11 +137,10 @@ public:
    void
    setDistributedGridParameters( const IndexVectorType& globalGridSize,
                                  const PointType& globalGridOrigin,
-                                 const IndexVectorType& domainDecomposition,
-                                 const RealType& searchRadius,
                                  const IndexVectorType& localGridSize,
                                  const PointType& localGridOrigin,
-                                 const PointType& subdomainSize,
+                                 const RealType& searchRadius,
+                                 const IndexVectorType& domainDecomposition,
                                  MPI::Comm& comm )
    {
       this->communicator = comm;

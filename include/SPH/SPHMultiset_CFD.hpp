@@ -3,34 +3,10 @@
 #include "SPH/TimeMeasurement.h"
 #include <string>
 
+#include "distributedUtils.h"
+
 namespace TNL {
 namespace SPH {
-
-namespace distributed {
-
-//TODO: In 3D, IndexVectorType has tree components. But domain decomposition is always only 2D. Just use simple
-//      static vector.
-Containers::StaticVector< 2, int >
-restoreSubdomainCoordinatesFromRank( int rank, Containers::StaticVector< 2, int > numberOfSubdomains )
-{
-   Containers::StaticVector< 2, int > subdomainCoordinates = 0.;
-   subdomainCoordinates[ 1 ] = std::floor( rank / numberOfSubdomains[ 0 ] );
-   subdomainCoordinates[ 0 ] = rank - std::floor( rank / numberOfSubdomains[ 0 ] );
-   return subdomainCoordinates;
-}
-
-std::string
-getSubdomainKey( int rank, Containers::StaticVector< 2, int > numberOfSubdomains )
-{
-   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank(
-         rank, numberOfSubdomains );
-   //NOTE: Only 2D decomposition is allowed
-   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomainCoordinates[ 0 ] ) +
-                              "-y-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
-   return subdomainKey;
-}
-
-} // namepsace distribtued
 
 template< typename Model >
 void
@@ -40,6 +16,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
 //FIXME: This can't be here.
 #ifdef HAVE_MPI
+   // build config for distributed domain
    logger.writeParameter( "Configuration of distributed simulation:", "" );
    Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
    logger.writeParameter( "Number of subdomains:", numberOfSubdomains );
@@ -47,70 +24,55 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
 
+   // loadn and parse config for distributed domain
    std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
-   if( configDistributedPath != "" ) {
-      logger.writeParameter( "Parsing distributed simulation config.", "" );
-      try {
-          this->parametersDistributed = TNL::Config::parseINIConfigFile( configDistributedPath, configDistributed );
-      }
-      catch ( const std::exception& e ) {
-          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to the following error:\n" << e.what() << std::endl;
-      }
-      catch (...) {
-          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to an unknown C++ exception." << std::endl;
-          throw;
-      }
-      logger.writeParameter( "Parsing distributed simulation config.", "Done." );
-   }
+   parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger );
 #endif
 
-   // compute domain properetis
+   // compute global domain properetis
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
 #ifdef HAVE_MPI
+   int rank = TNL::MPI::GetRank();
+   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
+   const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
+
+   // compute subdomain domain properetis
+   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
+   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
+   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
+
    initDistributed( parameters, this->parametersDistributed, logger );
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
    initOverlaps( parameters, this->parametersDistributed, logger );
-   //TODO: iniitalize synchronizer
 
-   //logger.writeSeparator();
-   //logger.writeParameter( "Local fluid object:" , "" );
-   //fluid->writeProlog( logger );
-   //logger.writeSeparator();
-
-
-   //TODO: Hide this inisde distributed utils
-   int rank = TNL::MPI::GetRank();
-   int nproc = TNL::MPI::GetSize();
-   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
-   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-y-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
-   // compute domain properetis
-   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   //const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
-   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
-
-   //SET DISTRIBUTED PARITLE SYSTEMS:
+   // set distributed particle system: FIXME: All this lines are ugly
    fluid->distributedParticles->setDistributedGridParameters( gridSize,
                                                               domainOrigin,
-                                                              numberOfSubdomains,
-                                                              searchRadius,
                                                               subdomainGridSize,
                                                               subdomainOrigin,
-                                                              subdomainSize,
+                                                              searchRadius,
+                                                              numberOfSubdomains,
                                                               this->communicator );
    fluid->distributedParticles->writeProlog( logger );
-   //FIXME: Temp, test
    fluid->synchronizer.initialize( fluid->distributedParticles );
    fluid->synchronizer.setCommunicator( this->communicator );
-   //fluid->particles->setDistributedGridParameters();
-   //boundary->particles->setDistributedGridParameters();
+
+   boundary->distributedParticles->setDistributedGridParameters( gridSize,
+                                                              domainOrigin,
+                                                              subdomainGridSize,
+                                                              subdomainOrigin,
+                                                              searchRadius,
+                                                              numberOfSubdomains,
+                                                              this->communicator );
+   boundary->distributedParticles->writeProlog( logger );
+   boundary->synchronizer.initialize( boundary->distributedParticles );
+   boundary->synchronizer.setCommunicator( this->communicator );
 
 #else
-
    // init fluid
    fluid->initialize( parameters.getParameter< int >( "numberOfParticles" ),
                       parameters.getParameter< int >( "numberOfAllocatedParticles" ),
@@ -165,8 +127,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    particlesFormat = parameters.getParameter< std::string >( "particles-format" );
 
 #ifdef HAVE_MPI
-   //fluid->particles->setDistributedGridParameters();
-   //boundary->particles->setDistributedGridParameters();
+
 #else
 
    // read particle data
@@ -207,13 +168,10 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
 {
    logger.writeHeader( "Distributed SPH simulation initialization." );
 
-   //TODO: This whole header can be hidden to distributed utils
    int rank = TNL::MPI::GetRank();
-   int nproc = TNL::MPI::GetSize();
    Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
    Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
-   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-y-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
-   //NOTE: Only 2D decomposition is allowed
+   const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
 
    //debug, ugly with MPI, sync somehow
    logger.writeParameter( "Initializing rank: ", rank );
@@ -224,7 +182,6 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   //const IndexVectorType subdomainGridSize = TNL::ceil( ( subdomainSize - subdomainOrigin ) / searchRadius );
    const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
 
    logger.writeParameter( "Initializing subdomain origin:", subdomainOrigin );
@@ -309,11 +266,9 @@ SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterCo
                                                         TNL::Logger& logger )
 {
    int rank = TNL::MPI::GetRank();
-   int nproc = TNL::MPI::GetSize();
    Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
    Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
-   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-y-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
-   //NOTE: Only 2D decomposition is allowed
+   const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
 
    // read particle data
    logger.writeParameter( "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );

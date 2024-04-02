@@ -105,6 +105,28 @@ void writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
     }
 }
 
+void
+parseDistributedConfig( const std::string& configDistributedPath,
+                        TNL::Config::ParameterContainer& parametersDistributed,
+                        TNL::Config::ConfigDescription& configDistributed,
+                        TNL::Logger& logger )
+{
+   if( configDistributedPath != "" ) {
+      logger.writeParameter( "Parsing distributed simulation config.", "" );
+      try {
+          parametersDistributed = TNL::Config::parseINIConfigFile( configDistributedPath, configDistributed );
+      }
+      catch ( const std::exception& e ) {
+          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to the following error:\n" << e.what() << std::endl;
+      }
+      catch (...) {
+          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to an unknown C++ exception." << std::endl;
+          throw;
+      }
+      logger.writeParameter( "Parsing distributed simulation config.", "Done." );
+   }
+}
+
 
 } // SPH
 } // TNL

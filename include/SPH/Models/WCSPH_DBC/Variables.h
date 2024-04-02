@@ -119,21 +119,14 @@ class FluidVariables
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronizer, typename SimulationSubdomainInfo >
+   template< typename Synchronizer, typename FluidVariablesPointer, typename DistributedParticlesPointer >
    void
-   synchronizeVariables( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   synchronizeVariables( Synchronizer& synchronizer,
+                         FluidVariablesPointer& overlapVariables,
+                         DistributedParticlesPointer& distributedParticles )
    {
-      synchronizer.template synchronizeArray< ScalarArrayType >( rho, rho_swap, subdomainInfo, 1 );
-      synchronizer.template synchronizeArray< VectorArrayType >( v, v_swap, subdomainInfo, 1 );
-   }
-
-   void
-   centerVariablesInMemory( const GlobalIndexType firstActiveParticle,
-                            const GlobalIndexType shiftInMemory,
-                            const GlobalIndexType numberOfParticles )
-   {
-      utils::shiftArray( rho, rho_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
-      utils::shiftArray( v, v_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
+      synchronizer.synchronize( rho, overlapVariables->rho, distributedParticles );
+      synchronizer.synchronize( v, overlapVariables->v, distributedParticles );
    }
 #endif
 

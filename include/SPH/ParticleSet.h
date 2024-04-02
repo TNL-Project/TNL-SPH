@@ -248,6 +248,7 @@ class ParticleSet
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles );
       this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
+      this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
       //synchronizer.synchronize( particles->getPoints(), overlapSet->getPoints(), distributedParticles->getInnerOverlaps() );
    }
 #endif
