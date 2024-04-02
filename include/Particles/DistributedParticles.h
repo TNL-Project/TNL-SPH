@@ -27,6 +27,12 @@ public:
    using GridType = TNL::Meshes::Grid< ParticleSystem::Config::spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using DistributedGridType = TNL::Meshes::DistributedMeshes::DistributedMesh< GridType >;
 
+   [[nodiscard]] static constexpr int
+   getNeighborsCount()
+   {
+      return DistributedGridType::getNeighborsCount();
+   }
+
    //initialize
    void
    initialize( unsigned int numberOfParticles,
@@ -101,11 +107,11 @@ public:
       //      simply let one of them empty.
 
       const IndexVectorType localGridDimensions = distributedGrid.getLocalMesh().getDimensions();
-      const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
+      //const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
       const PointType localGridStepSize = distributedGrid.getLocalMesh().getSpaceSteps();
       const RealType searchRadius = localGridStepSize[ 0 ]; //FIXME
-      const IndexVectorType yUnitVect = { 0, 1 }; //FIXME I dont like this
-      const IndexVectorType xUnitVect = { 1, 0 }; //FIXME I dont like this
+      //const IndexVectorType yUnitVect = { 0, 1 }; //FIXME I dont like this
+      //const IndexVectorType xUnitVect = { 1, 0 }; //FIXME I dont like this
 
       //Initialize the zones:
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
@@ -255,6 +261,18 @@ public:
 
    }
 
+   void
+   collectParticlesToTransfer()
+   {
+      const int* neighbors = this->getDistributedGrid().getNeighbors();
+      for( int i = 0; i < this->getNeighborsCount(); i++ ){
+         if( neighbors[ i ] != -1 ){
+
+         }
+      }
+
+   }
+
    //linearize indicse inside innerOverlaps
    void
    linearize()
@@ -264,6 +282,7 @@ public:
       // 2 3 4
       const int* neighbors = this->distributedGrid->getNeighbors();
 
+      /*
       //add up to segments
       //TODO: Add condition that currently only 2D distribution is allowd
       //TODO: Rewrite this in terms of dimension marks
@@ -279,22 +298,25 @@ public:
       //add 6, 2 to 0
       mergeTwoOverlaps( 0, 6 );
       mergeTwoOverlaps( 0, 6 );
+      */
 
       //copy all to innerOverlapsLinearized
       for( int i = 0; i < this->distributedGrid->getNeighborsCount(); i++ ) {
-         const auto zoneParticleIndices_view = innerOverlaps.getParticlesInZone().getConstView();
-         const int numberOfZoneParticles = innerOverlaps[ i ].getNumberOfParticles();
-         if( numberOfZoneParticles == 0 )
-            continue;
-         auto innerOverlapsLinearized_view = innerOverlapsLinearized.getView();
-         const int offset = this->numberOfParticlesInOverlaps;
+         if( neighbors[ i ] != -1 ){
+            const auto zoneParticleIndices_view = innerOverlaps.getParticlesInZone().getConstView();
+            const int numberOfZoneParticles = innerOverlaps[ i ].getNumberOfParticles();
+            if( numberOfZoneParticles == 0 )
+               continue;
+            auto innerOverlapsLinearized_view = innerOverlapsLinearized.getView();
+            const int offset = this->numberOfParticlesInOverlaps;
 
-         auto copyIndices = [=] __cuda_callable__ ( int i ) mutable
-         {
-            innerOverlapsLinearized_view[ offset + i ] = zoneParticleIndices_view[ i ];
-         };
-         Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyIndices );
-         this->numberOfParticlesInOverlaps += numberOfZoneParticles;
+            auto copyIndices = [=] __cuda_callable__ ( int i ) mutable
+            {
+               innerOverlapsLinearized_view[ offset + i ] = zoneParticleIndices_view[ i ];
+            };
+            Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, copyIndices );
+            this->numberOfParticlesInOverlaps += numberOfZoneParticles;
+         }
       }
    }
 
@@ -307,7 +329,6 @@ public:
       //debug info from local subdomains
       logger.writeParameter( "Lower overlap:", distributedGrid.getLowerOverlap() );
       logger.writeParameter( "Upper overlap:", distributedGrid.getUpperOverlap() );
-      GridType localGrid = distributedGrid.getLocalMesh();
       logger.writeParameter( "Local grid origin:", distributedGrid.localGrid.getOrigin() );
       logger.writeParameter( "Local grid end:", distributedGrid.localGrid.getOrigin() + distributedGrid.localGrid.getSpaceSteps() * distributedGrid.localGrid.getDimensions() );
       logger.writeParameter( "Local grid dimensions:", distributedGrid.localGrid.getDimensions() );
@@ -336,6 +357,8 @@ protected:
    Containers::Array< ParticleZoneType, Devices::Host, int > innerOverlaps; //TODO: What was this idee?
 
    GlobalIndexType numberOfParticlesInOverlaps;
+
+   Containers::StaticArray< DistributedGridType::getNeighborsCount(), int > innerOverlapsOffests;
    IndexArrayType innerOverlapsLinearized;
 
    MPI::Comm communicator = MPI_COMM_WORLD;
