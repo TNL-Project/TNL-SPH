@@ -160,6 +160,11 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
    }
+   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig> > ){
+      logger.writeParameter( "Viscous term:", "TNL::SPH::CombinedViscosity", 1 );
+      logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
+      logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
+   }
    if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > ){
       logger.writeParameter( "Equation of state:", "TNL::SPH::TaitWeaklyCompressibleEOS", 1 );
       logger.writeParameter( "Coefficient of EOS (coefB): ", modelParams.coefB );
