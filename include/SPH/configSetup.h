@@ -58,25 +58,6 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< int >( "water-level-sensors-count", "Input boundary particles file path.", 0 );
 }
 
-void
-configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::ConfigDescription& config )
-{
-   std::string subdomainKey = "subdomain-" + std::to_string( subdomain_x ) + "-" + std::to_string( subdomain_y ) "-";
-   config.addRequiredEntry< std::string >( subdomainKey + "fluid-particles", "Input fluid particles file path." );
-   config.addRequiredEntry< std::string >( subdomainKey + "boundary-particles", "Input boundary particles file path." );
-   config.addEntry< int >( subdomainKey + "fluid_n", "The initial number of fluid particles.", 0 );
-   config.addEntry< int >( subdomainKey + "fluid_n_allocated", "The allocated number of fluid particles.", 0 );
-   config.addEntry< int >( subdomainKey + "boundary_n", "The initial number of fluid particles.", 0 );
-   config.addEntry< int >( subdomainKey + "boundary_n_allocated", "The allocated number of fluid particles.", 0 );
-   config.addEntry< double >( subdomainKey + "origin-x", "The origin of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "origin-y", "The origin of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "origin-z", "The origin of domain in z direction.", 0. );
-   config.addEntry< double >( subdomainKey + "size-x", "The size of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "size-y", "The size of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "size-z", "The size of domain in y direction.", 0. );
-}
-
-
 template< typename Simulation >
 void writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
 {
