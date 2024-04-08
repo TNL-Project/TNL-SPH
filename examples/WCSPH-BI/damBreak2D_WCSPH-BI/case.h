@@ -89,9 +89,32 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
 
    // Library model:
-
    while( sph.timeStepping.runTheSimulation() )
    {
+      //integrate predictor step
+      sph.timeMeasurement.start( "integrate" );
+      sph.integrator->integratePredictorStep( sph.fluid, sph.boundary, sph.timeStepping );
+      sph.timeMeasurement.stop( "integrate" );
+      sph.writeLog( log, "Integrate - predictor step...", "Done." );
+
+      // search for neighbros
+      sph.timeMeasurement.start( "search" );
+      sph.performNeighborSearch( log );
+      sph.timeMeasurement.stop( "search" );
+      sph.writeLog( log, "Search...", "Done." );
+
+      // perform interaction with given model
+      sph.timeMeasurement.start( "interact" );
+      sph.interact(); //TODO: After the predictor step, there is apparently no reason to update BC
+      sph.timeMeasurement.stop( "interact" );
+      sph.writeLog( log, "Interact...", "Done." );
+
+      //integrate
+      sph.timeMeasurement.start( "integrate" );
+      sph.integrator->integrateCorrectorStep( sph.fluid, sph.boundary, sph.timeStepping );
+      sph.timeMeasurement.stop( "integrate" );
+      sph.writeLog( log, "Integrate - corrector step...", "Done." );
+
       // search for neighbros
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log );
@@ -103,12 +126,6 @@ int main( int argc, char* argv[] )
       sph.interact();
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
-
-      //integrate
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate...", "Done." );
 
       // output particle data
       if( sph.timeStepping.checkOutputTimer( "save_results" ) )
@@ -126,9 +143,6 @@ int main( int argc, char* argv[] )
 
       // check timers and if measurement or interpolation should be performed, is performed
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
-
-      // check timers and if snapshot should be done, is done
-      //sph.save( log );
 
       // update time step
       sph.timeStepping.updateTimeStep();
