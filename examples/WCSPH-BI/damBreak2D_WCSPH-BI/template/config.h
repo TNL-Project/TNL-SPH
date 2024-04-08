@@ -48,7 +48,8 @@ class SPHConfig
 #include <SPH/Models/BoundaryViscousTerms.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
-#include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
+//#include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -71,7 +72,8 @@ public:
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BI_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
-   using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
+   //using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
+   using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
 };
 
 using SPHDefs = SPHParams< Device >;
