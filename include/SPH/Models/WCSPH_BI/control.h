@@ -126,6 +126,9 @@ public:
    //rho0 - referential density of the fluid [kg/m^3]
    RealType rho0 = 0.f;
 
+   //Define model for density filtering
+   using DensityFilter = typename SPHDefs::DensityFilter;
+
    //Define type of boundary conditions.
    using BCType = typename SPHDefs::BCType;
 
@@ -177,7 +180,7 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    {
       logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
-   
+
    }
    if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig> > ){
       logger.writeParameter( "Viscous term:", "TNL::SPH::CombinedViscosity", 1 );
@@ -195,6 +198,10 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
+   if constexpr( std::is_same_v< typename ModelParams::DensityFilter,
+                                 DensityFilters::ShepardFilter< typename ModelParams::SPHConfig,
+                                                                typename ModelParams::KernelFunction > > )
+      logger.writeParameter( "Density filter:", "TNL::SPH::DensityFilters::ShepardFilter", 1 );
    std::string boundaryConditionsTypes;
    if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
       boundaryConditionsTypes = "TNL::SPH::WCSPH_BI::BI_numeric";
@@ -203,6 +210,9 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
                                  IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::VerletScheme", 1 );
+   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
+                                 IntegrationSchemes::SymplecticVerletScheme< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::SymplecticVerletScheme", 1 );
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );

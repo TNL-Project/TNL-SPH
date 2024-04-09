@@ -49,6 +49,7 @@ public:
    using ViscousTerm = typename ModelConfig::ViscousTerm;
    using BoundaryViscousTerm = typename ModelConfig::BoundaryViscousTerm;
    using EOS = typename ModelConfig::EOS;
+   using DensityFilter = typename ModelConfig::DensityFilter;
 
    using OpenBoundaryConfig = BIOpenBoundaryConfig< SPHConfig >;
    using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig >;
@@ -75,6 +76,10 @@ public:
              typename PhysicalObjectPointer >
    void
    computePressureFromDensity( PhysicalObjectPointer& physicalObject, ModelParams& modelParams );
+
+   template< typename FluidPointer >
+   void
+   filterDensity( FluidPointer& fluid, ModelParams& modelParams );
 
    /**
     * Function to realize fluid-fluid and fluid-boundary interaction.
