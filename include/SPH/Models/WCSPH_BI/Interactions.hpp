@@ -318,7 +318,8 @@ void
 WCSPH_BI< Particles, ModelConfig >::filterDensity( FluidPointer& fluid, ModelParams& modelParams )
 {
    //TODO: This requires ParticleType template due to neighbor loop. I don't like this.
-   DensityFilter::template filterDensity< ParticlesType >( fluid, modelParams );
+   DensityFilter::template filterDensityOverlaps< ParticlesType >( fluid, modelParams );
+   //DensityFilter::template filterDensity< ParticlesType >( fluid, modelParams );
 }
 
 template< typename Particles, typename ModelConfig >
