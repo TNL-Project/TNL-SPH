@@ -5,6 +5,7 @@
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 
