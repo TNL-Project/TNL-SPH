@@ -67,7 +67,6 @@ class ShepardFilter
          TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
 
          if( gamma_i > 0.01f ){
-            //view_rho[ i ] = ( rho_i / gamma_i > rho0 ) ? ( rho_i / gamma_i ) : rho0;
             view_rho[ i ] = rho_i / gamma_i;
          }
          else
@@ -130,33 +129,33 @@ class ShepardFilter
             const GlobalIndexType numberOfZoneParticles = fluid->periodicPatches[ i ]->particleZone.getNumberOfParticles();
             const VectorType shift = fluid->periodicPatches[ i ]->config.shift;
 
-            auto periodicParticleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+            auto periodicParticleLoop = [=] __cuda_callable__ ( LocalIndexType j ) mutable
             {
-               const GlobalIndexType p = zoneParticleIndices_view[ i ];
-               const VectorType r_i = view_points[ i ];
+               const GlobalIndexType p = zoneParticleIndices_view[ j ];
                const VectorType r_i = view_points[ p ] + shift;
                RealType rho_i = 0.f;
                RealType gamma_i = 0.f;
-               TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
+               TNL::ParticleSystem::NeighborsLoop::exec( p, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
 
-               view_rho[ i ] += rho_i;
-               view_gamma[ i ] += gamma_i;
+               view_rho[ p ] += rho_i;
+               view_gamma[ p ] += gamma_i;
             };
             Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, periodicParticleLoop );
          }
       }
 
       // finalize interaction
-      auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+      auto finalizeParticleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
       {
          const RealType gamma_i = view_gamma[ i ];
+         const RealType rho_i = view_rho[ i ];
          if( gamma_i > 0.01f )
             view_rho[ i ] = view_rho[ i ] / gamma_i;
          else
             view_rho[ i ] = rho0;
       };
       TNL::Algorithms::parallelFor< DeviceType >(
-            fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+            fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, finalizeParticleLoop );
    }
 
 };
