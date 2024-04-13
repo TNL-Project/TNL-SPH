@@ -241,6 +241,30 @@ public:
       //   innerOverlaps[ 1 ].updateParticlesInZone( particles );
    }
 
+   //THe system is currently still fucked up, so it works on extranela, not he local partocles.
+   template< typename ParticlePointer >
+   void
+   removeParitclesOutOfDomain( ParticlePointer& particles )
+   {
+
+      auto points_view = particles->getPoints().getView();
+      auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
+      {
+         if( particles->isInsideDomain( points_view[ i ] ) ){
+            return 0;
+         }
+         else {
+            points_view[ i ] = FLT_MAX;
+            return 1;
+         }
+      }
+      const numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( localParticles->getFirstActiveParticle(),
+                                                                          localParticles->getLastActiveParticle(),
+                                                                          checkFluidParticles,
+                                                                          TNL::Plus() );
+
+   }
+
    void
    mergeTwoOverlaps( const GlobalIndexType& recvOverlapIdx, const GlobalIndexType& sendOverlapIdx )
    {
@@ -261,17 +285,33 @@ public:
 
    }
 
-   void
-   collectParticlesToTransfer()
-   {
-      const int* neighbors = this->getDistributedGrid().getNeighbors();
-      for( int i = 0; i < this->getNeighborsCount(); i++ ){
-         if( neighbors[ i ] != -1 ){
+   ////TODO: This is desinged currently only for 1D decomposition
+   //void
+   //collectParticlesToTransfer()
+   //{
+   //   //2D version
+   //   //const int* neighbors = this->getDistributedGrid().getNeighbors();
+   //   //for( int i = 0; i < this->getNeighborsCount(); i++ ){
+   //   //   if( neighbors[ i ] != -1 ){
 
-         }
-      }
+   //   //      auto particlesInZone_view = innerOverlaps[ i ].getParticlesInZone().getView();
+   //   //      //compa
 
-   }
+
+   //   //   }
+   //   //}
+
+   //   //1D version
+   //   if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
+
+   //      auto particlesInZone_view = innerOverlaps[ ZzYzXm ].getParticlesInZone().getView();
+
+   //   }
+   //   if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
+   //
+   //   }
+
+   //}
 
    //linearize indicse inside innerOverlaps
    void

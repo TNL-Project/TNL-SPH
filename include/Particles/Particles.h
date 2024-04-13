@@ -46,6 +46,7 @@ public:
      points( sizeAllocated ),
      points_swap( sizeAllocated ),
      sortPermutations( sizeAllocated ),
+     particleMark( sizeAllocated ),
      radius( radius ) { }
 
    /**
@@ -148,6 +149,8 @@ protected:
    PointArrayType points_swap; //avoid a inplace sort
    IndexArrayTypePointer sortPermutations;
    //IndexArrayType sortPermutations;
+
+   IndexArrayType mark;
 
 };
 

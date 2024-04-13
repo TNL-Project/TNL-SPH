@@ -219,6 +219,39 @@ public:
    computeParticleCellIndices();
 
    /**
+    * \brief Test if is particle with given index located inside domain
+    *
+    * \param index of particle to test
+    *
+    * \return True or False based on the presence of particles in given domain.
+    */
+   const bool
+   isInsideDomain( const GlobalIndexType& index ) const;
+
+   /**
+    * \brief Test if is particle with given index located inside domain
+    *
+    * \param position of particle to test
+    *
+    * \return True or False based on the presence of particles in given domain.
+    */
+   const bool
+   isInsideDomain( const PointType& point ) const;
+
+   /**
+    * \brief Execute function \e f in parallel for all particles
+    *
+    * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
+    * particle to be processed. The particle set itself is not passed to the function `f`, it is the user's
+    * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
+    * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+    */
+   template< typename Device2 = DeviceType, typename Func >
+   void
+   forAll( Func f ) const;
+
+
+   /**
     * Sort particles by its cell index.
     */
    void
