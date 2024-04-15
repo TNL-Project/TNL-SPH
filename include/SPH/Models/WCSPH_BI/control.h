@@ -36,6 +36,7 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
    config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
    config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
+   config.addEntry< float >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
    config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
    config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
    config.addEntry< RealType >( "dtInit", "Initial time step.", 0 );
@@ -79,6 +80,7 @@ public:
       delta = parameters.getParameter< RealType >( "delta" );
       alpha = parameters.getParameter< RealType >( "alpha" );
       dynamicViscosity = parameters.getParameter< RealType >( "dynamicViscosity" );
+      scaleBVTCoef = parameters.getParameter< RealType >( "scaleBVTCoef" );
       speedOfSound = parameters.getParameter< RealType >( "speedOfSound" );
       rho0 = parameters.getParameter< RealType >( "rho0" );
       dtInit = parameters.getParameter< RealType >( "dtInit" );
@@ -117,6 +119,8 @@ public:
 
    //Viscosity model for boundary interaction
    using BoundaryViscousTerm = typename SPHDefs::BoundaryViscousTerm;
+   // scaleBVTCoef - coefficient used to tune BVT effect to physical behavior [-]
+   RealType scaleBVTCoef = 1.f;
 
    // Define equation of state and its constants.
    using EOS = typename SPHDefs::EOS;
@@ -183,10 +187,15 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
 
    }
-   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig> > ){
       logger.writeParameter( "Viscous term:", "TNL::SPH::CombinedViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
+   }
+   if constexpr( std::is_same_v< typename ModelParams::BoundaryViscousTerm,
+                                 BoundaryViscousTerms::NewtonViscousLaw< typename ModelParams::SPHConfig> > ){
+      logger.writeParameter( "Boundary viscous term:", "TNL::SPH::NewtonViscousLaw", 1 );
+      logger.writeParameter( "BVT scale coefficient:", modelParams.scaleBVTCoef, 1 );
    }
    if constexpr( std::is_same_v< typename ModelParams::EOS,
                                  EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
