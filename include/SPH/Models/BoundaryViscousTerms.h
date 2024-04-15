@@ -47,10 +47,12 @@ class NewtonViscousLaw
      ParamsType( SPHState sphState )
      : searchRadius( sphState.searchRadius ),
        dynamicViscosity( sphState.dynamicViscosity ),
+       scaleBVTCoef( sphState.scaleBVTCoef ),
        m( sphState.mass ) {}
 
      const RealType searchRadius;
      const RealType dynamicViscosity;
+     const RealType scaleBVTCoef;
      const RealType m;
    };
 
@@ -58,18 +60,13 @@ class NewtonViscousLaw
    static VectorType
    Xi( const VectorType& r_ik,  const VectorType& v_ik, const VectorType& n_k, const ParamsType& params )
    {
+      //FIXME: Normal has to be defined as particle filed passed by initial boundary conditoo
       const VectorType t_k = { -1.f, 0.f };
-      //const VectorType t_k = { 0.f, -1.f };
-      //const VectorType t_k = { 0.f, -1.f };
-      //if( n_k[ 1 ] > 0.5f )
-      //   t_k = { -n_k[ 1 ], n_k[ 0 ] };
-      //else if( n_k[ 1 ] < -0.5f )
-      //   t_k = { n_k[ 1 ], -n_k[ 0 ] };
 
       const RealType intersection = 2 * sqrt( pow( params.searchRadius, 2 ) - pow( ( n_k, r_ik ), 2 ) );
       const RealType normalDerivative = ( -1.0f ) * ( v_ik, t_k ) / ( n_k, r_ik );
 
-      return ( params.dynamicViscosity * intersection * normalDerivative / params.m ) * t_k;
+      return ( params.scaleBVTCoef * params.dynamicViscosity * intersection * normalDerivative / params.m ) * t_k;
    }
 };
 
