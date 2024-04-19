@@ -46,7 +46,7 @@ public:
      points( sizeAllocated ),
      points_swap( sizeAllocated ),
      sortPermutations( sizeAllocated ),
-     particleMark( sizeAllocated ),
+     mark( sizeAllocated ),
      radius( radius ) { }
 
    /**

@@ -147,9 +147,21 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    // compute subdomain properetis
-   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
+   // FIXME: Make the domain bigger.
+   const GlobalIndexType numberOfOverlapsLayers = 1;
+   const VectorType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
+   const IndexVectorType increaseLocalGridSizeDueToOverlaps = 3 * numberOfOverlapsLayers;
+
+   // subdomain + ghost properties
+   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" ) - shiftOriginDueToOverlaps;
+   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" ) + increaseLocalGridSizeDueToOverlaps;
+   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius ) ;
+
+   // subdomain interior properties
+   const VectorType subdomainInteriorOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
+   const VectorType subdomainInteriorSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
+   const IndexVectorType subdomainInteriorGridDimensions = TNL::ceil( subdomainSize / searchRadius ) ;
+
 
    //debug, ugly with MPI, sync somehow
    logger.writeParameter( "Initializing rank: ", rank );
@@ -158,6 +170,14 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    logger.writeParameter( "Initializing subdomain origin:", subdomainOrigin );
    logger.writeParameter( "Initializing subdomain size:", subdomainSize );
    logger.writeParameter( "Initializing subdomain grid size:", subdomainGridSize );
+   logger.writeParameter( "Initializing subdomain interior origin:", subdomainInteriorOrigin );
+   logger.writeParameter( "Initializing subdomain interior size:", subdomainInteriorSize );
+   logger.writeParameter( "Initializing subdomain interior grid size:", subdomainInteriorGridDimensions );
+
+   //domain resize:
+   logger.writeParameter( "--> NumberOfOverlaps:", numberOfOverlapsLayers );
+   logger.writeParameter( "--> shiftOriginDueToOverlaps:", shiftOriginDueToOverlaps );
+   logger.writeParameter( "--> increaseLocalGridSizeDueToOverlaps:", increaseLocalGridSizeDueToOverlaps );
 
    // init fluid
    fluid->initialize( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
@@ -165,6 +185,8 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                       searchRadius,
                       subdomainGridSize,
                       subdomainOrigin );
+   fluid->particles->setGridInteriorDimension( subdomainInteriorGridDimensions );
+   fluid->particles->setGridInteriorOrigin( subdomainInteriorOrigin );
 
    // init boundary
    boundary->initialize( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
@@ -172,29 +194,35 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                          searchRadius,
                          subdomainGridSize,
                          subdomainOrigin );
+   boundary->particles->setGridInteriorDimension( subdomainInteriorGridDimensions );
+   boundary->particles->setGridInteriorOrigin( subdomainInteriorOrigin );
 
    // set distributed particle system: FIXME: All this lines are ugly
-   fluid->distributedParticles->setDistributedGridParameters( gridSize,
-                                                              domainOrigin,
-                                                              subdomainGridSize,
-                                                              subdomainOrigin,
-                                                              searchRadius,
-                                                              numberOfSubdomains,
-                                                              this->communicator );
-   fluid->distributedParticles->writeProlog( logger );
-   fluid->synchronizer.initialize( fluid->distributedParticles );
-   fluid->synchronizer.setCommunicator( this->communicator );
+  fluid->distributedParticles->setDistributedGridParameters( gridSize,
+                                                             domainOrigin,
+                                                             //subdomainGridSize,
+                                                             //subdomainOrigin,
+                                                             subdomainInteriorGridDimensions,
+                                                             subdomainInteriorOrigin,
+                                                             searchRadius,
+                                                             numberOfSubdomains,
+                                                             this->communicator );
+  fluid->distributedParticles->writeProlog( logger );
+  fluid->synchronizer.initialize( fluid->distributedParticles );
+  fluid->synchronizer.setCommunicator( this->communicator );
 
    boundary->distributedParticles->setDistributedGridParameters( gridSize,
                                                               domainOrigin,
-                                                              subdomainGridSize,
-                                                              subdomainOrigin,
+                                                              //subdomainGridSize,
+                                                              //subdomainOrigin,
+                                                              subdomainInteriorGridDimensions,
+                                                              subdomainInteriorOrigin,
                                                               searchRadius,
                                                               numberOfSubdomains,
                                                               this->communicator );
-   boundary->distributedParticles->writeProlog( logger );
-   boundary->synchronizer.initialize( boundary->distributedParticles );
-   boundary->synchronizer.setCommunicator( this->communicator );
+  boundary->distributedParticles->writeProlog( logger );
+  boundary->synchronizer.initialize( boundary->distributedParticles );
+  boundary->synchronizer.setCommunicator( this->communicator );
 }
 
 template< typename Model >
@@ -442,7 +470,7 @@ void
 SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
 {
    //NOTE: Much better syntax would be
-   //synchronize( flud, fluidOverlap, synchronizer );
+   //synchronize( flud, fluidOverlap, s ynchronizer );
 
    fluid->synchronizeObject( fluidOverlap );
 

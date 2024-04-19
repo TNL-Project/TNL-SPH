@@ -71,6 +71,37 @@ ParticlesLinkedList< ParticleConfig, DeviceType >::setGridOrigin( PointType grid
    gridOrigin = gridBegin;
 }
 
+//TODO: Following lines need to be think through, added due to overlaps
+template < typename ParticleConfig, typename DeviceType >
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PointType
+ParticlesLinkedList< ParticleConfig, DeviceType >::getGridInteriorOrigin() const
+{
+   return gridInteriorOrigin;
+}
+
+//TODO: Following lines need to be think through, added due to overlaps
+template < typename ParticleConfig, typename DeviceType >
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
+ParticlesLinkedList< ParticleConfig, DeviceType >::getGridInteriorDimension() const
+{
+   return gridInteriorDimension;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+ParticlesLinkedList< ParticleConfig, DeviceType >::setGridInteriorOrigin( PointType gridInteriorOrigin )
+{
+   this->gridInteriorOrigin = gridInteriorOrigin;
+}
+
+//TODO: Following lines need to be think through, added due to overlaps
+template < typename ParticleConfig, typename DeviceType >
+void
+ParticlesLinkedList< ParticleConfig, DeviceType >::setGridInteriorDimension( IndexVectorType gridInteriorDimension )
+{
+   this->gridInteriorDimension = gridInteriorDimension;
+}
+
 template< typename ParticleConfig, typename Device >
 const typename ParticlesLinkedList< ParticleConfig, Device >::PairIndexArrayType&
 ParticlesLinkedList< ParticleConfig, Device >::getCellFirstLastParticleList() const
@@ -131,6 +162,31 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
    CellIndexer::ComputeParticleCellIndex(
          view, view_points, firstActiveParticle, lastActiveParticle, gridDimension, gridOrigin, this->radius );
 }
+
+template < typename ParticleConfig, typename Device >
+__cuda_callable__
+bool
+ParticlesLinkedList< ParticleConfig, Device >::isInsideDomain( const PointType& point )
+{
+   if( ( point > this->gridInteriorOrigin ) && ( point < ( this->gridInteriorOrigin + this->searchRadius * gridInteriorDimension ) ) )
+      return true;
+   return false;
+}
+
+template < typename ParticleConfig, typename Device >
+const typename ParticlesLinkedList< ParticleConfig, Device >::GlobalIndexType
+ParticlesLinkedList< ParticleConfig, Device >::getNumberOfParticlesToRemove() const
+{
+   return numberOfParticlesToRemove;
+}
+
+template < typename ParticleConfig, typename Device >
+void
+ParticlesLinkedList< ParticleConfig, Device >::setNumberOfParticlesToRemove( GlobalIndexType removeCount )
+{
+   this->numberOfParticlesToRemove = removeCount;
+}
+
 
 template < typename ParticleConfig, typename Device >
 void

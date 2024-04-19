@@ -130,6 +130,7 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Search...", "Done." );
 
       sph.synchronizeDistributedSimulation();
+      //return 0;
 
       //TNL::MPI::Barrier( sph.communicator ); //To have clear output
       //if( TNL::MPI::GetRank() == 0 )

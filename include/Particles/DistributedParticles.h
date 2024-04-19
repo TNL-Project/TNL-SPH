@@ -115,22 +115,17 @@ public:
 
       //Initialize the zones:
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
-         //const PointType zoneLowerPoint = localGridOrigin;
-         //const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect + ( searchRadius / 4 ) * xUnitVect; //FIXME: Search + searchRadius/2 is due to fucked up zone initialization
-         //innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         //innerOverlaps[ ZzYzXm ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
          const PointType zoneOriginIdx = { 0, 0 };
          const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
+         //const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] };
          innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
       }
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
-         //const PointType zoneLowerPoint = localGridOrigin + searchRadius * ( localGridSize, xUnitVect ) * xUnitVect;
-         //const PointType zoneUpperPoint = zoneLowerPoint + searchRadius * ( localGridSize, yUnitVect ) * yUnitVect - ( searchRadius / 4 ) * xUnitVect; //FIXME: Search + searchRadius/2 is due to fucked up zone initialization
-         //innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         //innerOverlaps[ ZzYzXp ].assignCells( zoneLowerPoint, zoneUpperPoint, localGridSize, localGridOrigin, searchRadius );
          const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help?
          const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
+         //const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 2, 0 }; //FIXME: Does -1 help?
+         //const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] };
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
       }
@@ -156,8 +151,6 @@ public:
       int rank = TNL::MPI::GetRank();
       int nproc = TNL::MPI::GetSize();
 
-      //PointType globalOrigin;
-      //PointType globalProportions;
       GridType globalGrid;
 
       //globalGrid.setDimensions( size, size );
@@ -183,6 +176,11 @@ public:
       distributedGrid.setOverlaps( lowerOverlap, upperOverlap );
 
       //NOTE: BAD BAD PRACTICE, setOverlaps manually with custom domain:
+      // Update subdomain size including overlaps
+      const GlobalIndexType numberOfOverlapsLayers = 1;
+      const PointType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
+      const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
+
       distributedGrid.localGrid.setOrigin( localGridOrigin );
       distributedGrid.localGrid.setDimensions( localGridSize );
       //std::cout << "Setting localGridSize: " << localGridSize << " localGridDim: " << distributedGrid.localGrid.getDimensions() << std::endl;
@@ -257,12 +255,12 @@ public:
             points_view[ i ] = FLT_MAX;
             return 1;
          }
-      }
-      const numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( localParticles->getFirstActiveParticle(),
-                                                                          localParticles->getLastActiveParticle(),
-                                                                          checkFluidParticles,
-                                                                          TNL::Plus() );
-
+      };
+      const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( localParticles->getFirstActiveParticle(),
+                                                                                          localParticles->getLastActiveParticle(),
+                                                                                          checkParticlePosition,
+                                                                                          TNL::Plus() );
+      particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove + numberOfParticlesToRemove );
    }
 
    void

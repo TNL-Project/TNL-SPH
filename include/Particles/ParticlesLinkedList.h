@@ -183,6 +183,19 @@ public:
    void
    setGridOrigin( PointType gridOrigin );
 
+   //TODO: Following lines need to be think through, added due to overlaps
+   const PointType
+   getGridInteriorOrigin() const;
+
+   const IndexVectorType
+   getGridInteriorDimension() const;
+
+   void
+   setGridInteriorOrigin( PointType gridInteriorOrigin );
+
+   void
+   setGridInteriorDimension( IndexVectorType gridInteriorDimension );
+
    /**
     * Get particle cell indices.
     */
@@ -225,8 +238,9 @@ public:
     *
     * \return True or False based on the presence of particles in given domain.
     */
-   const bool
-   isInsideDomain( const GlobalIndexType& index ) const;
+   __cuda_callable__
+   bool
+   isInsideDomain( const GlobalIndexType& index );
 
    /**
     * \brief Test if is particle with given index located inside domain
@@ -235,8 +249,19 @@ public:
     *
     * \return True or False based on the presence of particles in given domain.
     */
-   const bool
-   isInsideDomain( const PointType& point ) const;
+   __cuda_callable__
+   bool
+   isInsideDomain( const PointType& point );
+
+   /**
+    */
+   const GlobalIndexType
+   getNumberOfParticlesToRemove() const;
+
+   /**
+    */
+   void
+   setNumberOfParticlesToRemove( GlobalIndexType removeCount );
 
    /**
     * \brief Execute function \e f in parallel for all particles
@@ -296,6 +321,17 @@ protected:
    //related to search for neighbors
    CellIndexArrayType particleCellInidices;
    PairIndexArrayType firstLastCellParticle;
+
+   //number of particles to remove after sort
+   GlobalIndexType numberOfParticlesToRemove;
+
+   //number of additional cell layers to from domain overlap
+   GlobalIndexType overlapWidthInCells = 1;
+
+   //NOTE: This is probably not necersary and should be removedd
+   PointType gridInteriorOrigin;
+   IndexVectorType gridInteriorDimension;
+
 
 };
 
