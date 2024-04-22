@@ -133,7 +133,7 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
                 grid_sizes_x.append( math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
                 #grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
                 #grid_index_origins_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
-                grid_origins_x.append( search_radius * np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this.
+                grid_origins_x.append( setup[ "domain_origin_x" ] + search_radius * np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this, added domain origin
                 grid_index_origins_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this.
                 domain_sizes_x.append( setup[ "domain_size_x" ]  - grid_splits_x[ subdomain_x - 1 ] * search_radius )
             else:
@@ -395,6 +395,26 @@ def configure_and_write_measuretool_parameters():
     with open( 'sources/config-measuretool.ini', 'w' ) as file:
       file.write( config_file )
 
+def write_domain_background_grid( setup ):
+    import domainGrid
+    #TODO: Rename the DomainGrid function
+    search_radius = setup[ "search_radius" ]
+    grid_size_x = round( setup[ "domain_size_x" ] / search_radius )
+    grid_size_y = round( setup[ "domain_size_y" ] / search_radius )
+    grid_origin_x = setup[ "domain_origin_x" ]
+    grid_origin_y = setup[ "domain_origin_y" ]
+    grid_sectors = np.zeros( grid_size_x * grid_size_y )
+
+    domainGrid.DomainGrid( grid_size_x,
+                           grid_size_y,
+                           0,
+                           grid_origin_x,
+                           grid_origin_y,
+                           0,
+                           grid_sectors,
+                           search_radius,
+                           "sources/dambreak_grid.vtk" )
+
 if __name__ == "__main__":
     import sys
     import argparse
@@ -480,3 +500,6 @@ if __name__ == "__main__":
 
     # setup measuretool
     #configure_and_write_measuretool_parameters()
+
+    #write linked list background grid
+    write_domain_background_grid( dambreak_setup )

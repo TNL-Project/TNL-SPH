@@ -104,7 +104,7 @@ public:
       recvSizes = 0;
       sendNeighborOffsets = 0;
       recvNeighborOffsets = 0;
-      std::cout << "EMPTY: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+      std::cout << "RANK: " << communicator.rank() << " EMPTY: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
 
       const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
 
@@ -146,7 +146,7 @@ public:
             recvNeighborOffsets[ i ] += recvSizes[ j ];
          }
       }
-      std::cout << "FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+      std::cout << "RANKEND " << communicator.rank() << " FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
    }
 
 

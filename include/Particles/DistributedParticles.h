@@ -107,6 +107,9 @@ public:
       //      simply let one of them empty.
 
       const IndexVectorType localGridDimensions = distributedGrid.getLocalMesh().getDimensions();
+      const GlobalIndexType numberOfOverlapsLayers = 1;
+      const IndexVectorType increaseLocalGridSizeDueToOverlaps = numberOfOverlapsLayers;
+      const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + numberOfOverlapsLayers;
       //const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
       const PointType localGridStepSize = distributedGrid.getLocalMesh().getSpaceSteps();
       const RealType searchRadius = localGridStepSize[ 0 ]; //FIXME
@@ -116,18 +119,18 @@ public:
       //Initialize the zones:
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
          const PointType zoneOriginIdx = { 0, 0 };
-         const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
-         //const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] };
+         //const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] }; //TODO: Add 2 due to overlaps
+         const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 };
          innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
+         innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
       }
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
-         const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help?
-         const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
-         //const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 2, 0 }; //FIXME: Does -1 help?
-         //const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] };
+         //const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help?
+         //const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
+         const PointType zoneOriginIdx = { localGridDimensions[ 0 ], 0 }; //FIXME: Does -1 help? REMOVED.
+         const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 };
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensions );
+         innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
       }
 
       //NOTE: Next I should initialize the linearized fields. However using 1D decomposition, I can iterate directly

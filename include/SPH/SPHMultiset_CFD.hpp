@@ -150,12 +150,12 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    // FIXME: Make the domain bigger.
    const GlobalIndexType numberOfOverlapsLayers = 1;
    const VectorType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
-   const IndexVectorType increaseLocalGridSizeDueToOverlaps = 3 * numberOfOverlapsLayers;
+   const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" ) - shiftOriginDueToOverlaps;
-   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" ) + increaseLocalGridSizeDueToOverlaps;
-   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius ) ;
+   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" ) ;
+   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius ) + increaseLocalGridSizeDueToOverlaps;
 
    // subdomain interior properties
    const VectorType subdomainInteriorOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
