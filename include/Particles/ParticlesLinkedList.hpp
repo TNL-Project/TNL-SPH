@@ -166,11 +166,44 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 template < typename ParticleConfig, typename Device >
 __cuda_callable__
 bool
-ParticlesLinkedList< ParticleConfig, Device >::isInsideDomain( const PointType& point )
+ParticlesLinkedList< ParticleConfig, Device >::isInsideDomain( const PointType& point,
+                                                               const PointType& domainOrigin,
+                                                               const PointType& domainSize ) const
 {
-   if( ( point > this->gridInteriorOrigin ) && ( point < ( this->gridInteriorOrigin + this->searchRadius * gridInteriorDimension ) ) )
+   //if( ( point > domainOrigin ) && ( point < ( domainOrigin + domainSize ) ) )
+   if( ( point[ 0 ] > domainOrigin[ 0 ] ) && ( point[ 0 ] < ( domainOrigin[ 0 ] + domainSize[ 0 ] ) ) )
       return true;
    return false;
+}
+
+template < typename ParticleConfig, typename Device >
+void
+ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
+{
+   const PointType domainOrigin = this->gridInteriorOrigin;
+   const PointType domainSize = this->gridInteriorDimension * this->radius;
+   auto view_points = this->points.getView();
+   std::cout <<" <<remove>> RANK: " << TNL::MPI::GetRank() << "pos[0]: " << view_points.getElement( 0 ) << " pos[-1]: " << view_points.getElement( this->lastActiveParticle ) << std::endl;
+   auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
+   {
+      if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) ){
+         return 0;
+      }
+      else {
+         view_points[ i ] = FLT_MAX;
+         return 1;
+      }
+   };
+   const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( this->firstActiveParticle,
+                                                                                       this->lastActiveParticle + 1,
+                                                                                       checkParticlePosition,
+                                                                                       TNL::Plus() );
+   //const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( 0,
+   //                                                                                    this->numberOfParticles,
+   //                                                                                    checkParticlePosition,
+   //                                                                                    TNL::Plus() );
+   std::cout <<"RANK: " << TNL::MPI::GetRank() <<"(func: removeParitclesOutOfDomain): numberOfParticlesToRemove: " << numberOfParticlesToRemove << " particles.numberOfParticlesToRemove: " << this->getNumberOfParticlesToRemove() << " with lower limit: " << domainOrigin << " and upper limit: " << domainOrigin + domainSize << std::endl;
+   this->setNumberOfParticlesToRemove( this->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
 }
 
 template < typename ParticleConfig, typename Device >
@@ -187,6 +220,22 @@ ParticlesLinkedList< ParticleConfig, Device >::setNumberOfParticlesToRemove( Glo
    this->numberOfParticlesToRemove = removeCount;
 }
 
+//NOTE: Here, I could probably include f dependent on particle position: f( view_points[ i ] )
+template< typename ParticleConfig, typename Device >
+template< typename Device2, typename Func >
+void
+ParticlesLinkedList< ParticleConfig, Device >::forAll( Func f ) const
+{
+   const PointType domainOrigin = this->gridInteriorOrigin;
+   const PointType domainSize = this->gridInteriorDimension * this->radius;
+   const auto view_points = this->points.getConstView();
+   auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
+         f( i );
+   };
+   Algorithms::parallelFor< Device2 >( firstActiveParticle, lastActiveParticle + 1, wrapper );
+}
 
 template < typename ParticleConfig, typename Device >
 void

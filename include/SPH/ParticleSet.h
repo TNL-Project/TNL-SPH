@@ -244,12 +244,36 @@ class ParticleSet
       //variables->synchronize( synchronizer, ghostBoundaryPatches );
       //integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
 
+      auto view_points = this->particles->getPoints().getView();
+      std::cout <<" <<PRESYNCHRO>> RANK: " << TNL::MPI::GetRank() << "pos[0]: " << view_points.getElement( 0 ) << " pos[-1]: " << view_points.getElement( this->lastActiveParticle ) << std::endl;
+
       //NEW:
+      //this->distributedParticles->removeParitclesOutOfDomain( particles ); //TODO: This should be paritcles method
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
-      this->synchronizer.synchronizeOverlapSizes( distributedParticles );
-      //this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
-      //this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
-      //synchronizer.synchronize( particles->getPoints(), overlapSet->getPoints(), distributedParticles->getInnerOverlaps() );
+      this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
+      this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
+      this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
+      // update the number of particles inside subdomain
+
+      const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
+
+      std::cout << "RANK: " << TNL::MPI::GetRank() << " -- REEEEEEEEEEEEEEECCCCCCCCCCCCCCCCCCCVVVVVVVVVVVVVVVVVVVVV :" << numberOfRecvParticles << \
+         " numberOfParticle: " << particles->getNumberOfParticles() << \
+         " last active particle: " << particles->getLastActiveParticle() << \
+         " last active: " << this->getLastActiveParticle() << std::endl;
+
+      particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
+      particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
+      this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
+
+      std::cout << "RANK: " << TNL::MPI::GetRank() << " -- REEEEEEEEEEEEEEECCCCupdated :" << numberOfRecvParticles << \
+         " numberOfParticle: " << particles->getNumberOfParticles() << \
+         " last active particle: " << particles->getLastActiveParticle() << \
+         " last active: " << this->getLastActiveParticle() << std::endl;
+
+      auto view_points2 = this->particles->getPoints().getView();
+      std::cout <<" <<postsynchro>> RANK: " << TNL::MPI::GetRank() << "pos[0]: " << view_points2.getElement( 0 ) << " pos[-1]: " << view_points2.getElement( this->lastActiveParticle ) << std::endl;
+
    }
 #endif
 

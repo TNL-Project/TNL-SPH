@@ -149,6 +149,9 @@ public:
    void
    synchronizeDistributedSimulation();
 
+   void
+   resetOverlaps();
+
 #endif
 
    /**

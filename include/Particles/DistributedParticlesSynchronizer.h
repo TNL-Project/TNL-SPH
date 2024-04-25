@@ -91,9 +91,10 @@ public:
       this->communicator = comm;
    }
 
-   template< typename DistributedParticlesPointer >
+   template< typename DistributedParticlesPointer, typename ParticlesPointerType  >
    void
-   synchronizeOverlapSizes( const DistributedParticlesPointer& distributedParticles )
+   synchronizeOverlapSizes( const DistributedParticlesPointer& distributedParticles,
+                            const ParticlesPointerType& particles )
    {
       TNL_ASSERT_TRUE( isSet, "Synchronizer is not set, but used to synchronize" );
       if( ! distributedParticles->getDistributedGrid().isDistributed() )
@@ -140,13 +141,22 @@ public:
       //FIXME: It is not possible to perfrom scan on static vector. I should define sequential scan manually
       for( int i = 0; i < this->getNeighborsCount(); i++ ){
          sendNeighborOffsets[ i ] = 0;
-         recvNeighborOffsets[ i ] = 0;
+         //NOTE: This should be splited into two synchronizer approaches
+         //since we decided to put overlaps to the same sets, we should include index of last active ptcs
+         recvNeighborOffsets[ i ] = particles->getNumberOfParticles();
          for( int j = 0; j < i; j++ ) {
             sendNeighborOffsets[ i ] += sendSizes[ j ];
             recvNeighborOffsets[ i ] += recvSizes[ j ];
          }
       }
       std::cout << "RANKEND " << communicator.rank() << " FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+   }
+
+   GlobalIndexType
+   getNumberOfRecvParticles()
+   {
+      const GlobalIndexType ret = recvNeighborOffsets[ getNeighborsCount() - 1 ] - recvNeighborOffsets[ 0 ];
+      return ret;
    }
 
 
@@ -225,7 +235,9 @@ public:
       // issue all receive async operations
       for( int j = 0; j < this->getNeighborsCount(); j++ ) {
          if( neighbors[ j ] != -1 ) {
-            requests.push_back( MPI::Irecv( recvArray.getData() + bytesPerValue * recvNeighborOffsets[ j ],
+            //NOTE: This should be splited into two synchronizer approaches.
+            //      For now, we use single field with mark, but in case of overlap, recvArray should be placed here.
+            requests.push_back( MPI::Irecv( sendArray.getData() + bytesPerValue * recvNeighborOffsets[ j ],
                                             bytesPerValue * recvSizes[ j ],
                                             neighbors[ j ],
                                             0,

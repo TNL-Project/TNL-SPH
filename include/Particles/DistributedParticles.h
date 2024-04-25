@@ -249,7 +249,8 @@ public:
    {
 
       auto points_view = particles->getPoints().getView();
-      auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
+      //auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
+      auto checkParticlePosition = [ points_view, particles ] __cuda_callable__ ( int i ) mutable
       {
          if( particles->isInsideDomain( points_view[ i ] ) ){
             return 0;
@@ -259,11 +260,12 @@ public:
             return 1;
          }
       };
-      const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( localParticles->getFirstActiveParticle(),
-                                                                                          localParticles->getLastActiveParticle(),
+      const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( particles->getFirstActiveParticle(),
+                                                                                          particles->getLastActiveParticle(),
                                                                                           checkParticlePosition,
                                                                                           TNL::Plus() );
-      particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove + numberOfParticlesToRemove );
+      std::cout <<"RANK: " << TNL::MPI::GetRank() <<"(func: removeParitclesOutOfDomain): numberOfParticlesToRemove: " << numberOfParticlesToRemove << " particles.numberOfParticlesToRemove: " << particles->getNumberOfParticlesToRemove() << std::endl;
+      particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
    }
 
    void

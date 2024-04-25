@@ -221,7 +221,7 @@ def split_to_subdomains( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
                     lower_limit_x = grid_origins_x[ subdomain_x ]
                     upper_limit_x = grid_origins_x[ subdomain_x + 1 ]
                 elif subdomain_x == subdomains_x - 1:
-                    lower_limit_x = grid_origins_x[ subdomain_x ] - search_radius
+                    lower_limit_x = grid_origins_x[ subdomain_x ] #- search_radius
                     upper_limit_x =  setup[ "domain_size_x" ]
                 else:
                     lower_limit_x = grid_origins_x[ subdomain_x ]

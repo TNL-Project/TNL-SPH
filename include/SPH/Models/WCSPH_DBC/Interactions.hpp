@@ -1,6 +1,7 @@
 #include "Interactions.h"
 #include "TNL/Algorithms/parallelFor.h"
 #include <TNL/Algorithms/reduce.h>
+#include <execution>
 #include "details.h"
 
 namespace TNL {
@@ -109,8 +110,7 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid,
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   fluid->particles->forAll( particleLoop );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ){

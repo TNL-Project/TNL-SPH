@@ -353,6 +353,15 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
    writeLog( logger, "Search - sort ...", "Done." );
 
    //update number of particles TODO: Do this in elegant way.
+   std::cout << " ---> RANK: " << TNL::MPI::GetRank() << " number of particles to remove: " << fluid->particles->getNumberOfParticlesToRemove()  <<  " numberOfRecv from syncrhonizer: " << fluid->synchronizer.getNumberOfRecvParticles() << std::endl;
+   fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
+                                           - fluid->particles->getNumberOfParticlesToRemove() );
+   fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle()
+                                            - fluid->particles->getNumberOfParticlesToRemove() );
+   fluid->setLastActiveParticle( fluid->getLastActiveParticle() - fluid->particles->getNumberOfParticlesToRemove() );
+   fluid->particles->setNumberOfParticlesToRemove( 0 );
+
+   //update number of particles TODO: Do this in elegant way.
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
@@ -476,6 +485,14 @@ SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
 
 }
 
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::resetOverlaps()
+{
+   //TODO: This should be paritcles method
+   fluid->particles->removeParitclesOutOfDomain();
+}
+
 #endif
 
 template< typename Model >
@@ -486,12 +503,19 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
       writeInfo( logger );
 
    const int step = timeStepping.getStep();
-
+#ifdef HAVE_MPI
+   std::string outputFileNameFluid = outputDirecotry + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_fluid.vtk";
+#else
    std::string outputFileNameFluid = outputDirecotry + "/particles" + std::to_string( step ) + "_fluid.vtk";
+#endif
    fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameFluid );
 
+#ifdef HAVE_MPI
+   std::string outputFileNameBound = outputDirecotry + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_boundary.vtk";
+#else
    std::string outputFileNameBound = outputDirecotry + "/particles" + std::to_string( step ) + "_boundary.vtk";
+#endif
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameBound );
 

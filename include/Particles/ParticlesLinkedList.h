@@ -248,10 +248,18 @@ public:
     * \param position of particle to test
     *
     * \return True or False based on the presence of particles in given domain.
+    * TODO: Maybe should be private.
     */
+
    __cuda_callable__
    bool
-   isInsideDomain( const PointType& point );
+   isInsideDomain( const PointType& point, const PointType& domainOrigin, const PointType& domainSize ) const;
+
+   /**
+    * Start remove procedure for all particles out of interior region.
+    */
+   void
+   removeParitclesOutOfDomain();
 
    /**
     */
@@ -323,7 +331,7 @@ protected:
    PairIndexArrayType firstLastCellParticle;
 
    //number of particles to remove after sort
-   GlobalIndexType numberOfParticlesToRemove;
+   GlobalIndexType numberOfParticlesToRemove = 0;
 
    //number of additional cell layers to from domain overlap
    GlobalIndexType overlapWidthInCells = 1;
