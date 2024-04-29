@@ -93,7 +93,7 @@ public:
    //TODO: 1D and 2D decompositions should be separated, currently we asume only 1D
    //initialize innerOverlpas
    void
-   initializeInnerOverlaps( const int numberOfParticlesPerCell = 15 )
+   initializeInnerOverlaps( TNL::Logger& logger,  const int numberOfParticlesPerCell = 20 )
    {
       //Count:
       int numberOfActiveNeighbros = 0;
@@ -116,21 +116,43 @@ public:
       //const IndexVectorType yUnitVect = { 0, 1 }; //FIXME I dont like this
       //const IndexVectorType xUnitVect = { 1, 0 }; //FIXME I dont like this
 
+      logger.writeParameter( "Initialize overlaps", "" );
+
       //Initialize the zones:
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
          const PointType zoneOriginIdx = { 0, 0 };
-         //const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] }; //TODO: Add 2 due to overlaps
-         const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 };
+         const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 }; //TODO: Add 2 due to overlaps
+         std::cout << "[ZzYzXm] Zone origin: " << zoneOriginIdx << " zone dimension: " << zoneDimensions << std::endl;
          innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
+
+         // --- DEBUG ---
+         // get positions of overlaps with respect to the global grid
+         const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
+         const PointType globalGrdiOrigin = distributedGrid.getGlobalGrid().getOrigin();
+         const GlobalIndexType zoneOriginGlobalIdx_x = ( localGridOrigin[ 0 ] - globalGrdiOrigin[ 0 ] ) / searchRadius;
+         logger.writeParameter( "ZzYzXm overlap begin", zoneOriginGlobalIdx_x, 1 );
+         logger.writeParameter( "ZzYzXm overlap end", zoneOriginGlobalIdx_x + 1, 1 );
+         // -------------
+
       }
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
          //const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help?
          //const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
-         const PointType zoneOriginIdx = { localGridDimensions[ 0 ], 0 }; //FIXME: Does -1 help? REMOVED.
-         const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 };
+         const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help? REMOVED. Added -1
+         const PointType zoneDimensions = { 3, localGridDimensions[ 1 ] + 2 };
+         std::cout << "[ZzYzXp] Zone origin: " << zoneOriginIdx << " zone dimension: " << zoneDimensions << std::endl;
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
+
+         // --- DEBUG ---
+         // get positions of overlaps with respect to the global grid
+         const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
+         const PointType globalGrdiOrigin = distributedGrid.getGlobalGrid().getOrigin();
+         const GlobalIndexType zoneOriginGlobalIdx_x = ( ( localGridDimensions[ 0 ] -1 ) * searchRadius - globalGrdiOrigin[ 0 ] ) / searchRadius;
+         logger.writeParameter( "ZzYzXp overlap begin", zoneOriginGlobalIdx_x, 1 );
+         logger.writeParameter( "ZzYzXp overlap begin", zoneOriginGlobalIdx_x + 1, 1 );
+         // -------------
       }
 
       //NOTE: Next I should initialize the linearized fields. However using 1D decomposition, I can iterate directly
@@ -145,7 +167,8 @@ public:
                                  const PointType& localGridOrigin,
                                  const RealType& searchRadius,
                                  const IndexVectorType& domainDecomposition,
-                                 MPI::Comm& comm )
+                                 MPI::Comm& comm,
+                                 TNL::Logger& logger )
    {
       this->communicator = comm;
       //TODO: Grid should be pobably pointer...
@@ -178,11 +201,11 @@ public:
 
       distributedGrid.setOverlaps( lowerOverlap, upperOverlap );
 
-      //NOTE: BAD BAD PRACTICE, setOverlaps manually with custom domain:
-      // Update subdomain size including overlaps
-      const GlobalIndexType numberOfOverlapsLayers = 1;
-      const PointType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
-      const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
+      //rem: //NOTE: BAD BAD PRACTICE, setOverlaps manually with custom domain:
+      //rem: // Update subdomain size including overlaps
+      //rem: const GlobalIndexType numberOfOverlapsLayers = 1;
+      //rem: const PointType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
+      //rem: const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
 
       distributedGrid.localGrid.setOrigin( localGridOrigin );
       distributedGrid.localGrid.setDimensions( localGridSize );
@@ -214,7 +237,7 @@ public:
       //distributedGrid.localBegin();
 
       //Initialize inner particle zones to collect particles
-      initializeInnerOverlaps();
+      initializeInnerOverlaps( logger );
    }
 
 

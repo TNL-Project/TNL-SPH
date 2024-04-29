@@ -162,6 +162,10 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    const VectorType subdomainInteriorSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
    const IndexVectorType subdomainInteriorGridDimensions = TNL::ceil( subdomainSize / searchRadius ) ;
 
+   // --- DEBUG ---
+   // get positions of overlaps with respect to the global grid
+   // -------------
+
 
    //debug, ugly with MPI, sync somehow
    logger.writeParameter( "Initializing rank: ", rank );
@@ -187,6 +191,7 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                       subdomainOrigin );
    fluid->particles->setGridInteriorDimension( subdomainInteriorGridDimensions );
    fluid->particles->setGridInteriorOrigin( subdomainInteriorOrigin );
+   fluid->particles->interiorSize = subdomainInteriorSize; //FIXME Getter, Setter
 
    // init boundary
    boundary->initialize( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
@@ -196,6 +201,7 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                          subdomainOrigin );
    boundary->particles->setGridInteriorDimension( subdomainInteriorGridDimensions );
    boundary->particles->setGridInteriorOrigin( subdomainInteriorOrigin );
+   boundary->particles->interiorSize = subdomainInteriorSize;
 
    // set distributed particle system: FIXME: All this lines are ugly
   fluid->distributedParticles->setDistributedGridParameters( gridSize,
@@ -206,7 +212,8 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                                                              subdomainInteriorOrigin,
                                                              searchRadius,
                                                              numberOfSubdomains,
-                                                             this->communicator );
+                                                             this->communicator,
+                                                             logger );
   fluid->distributedParticles->writeProlog( logger );
   fluid->synchronizer.initialize( fluid->distributedParticles );
   fluid->synchronizer.setCommunicator( this->communicator );
@@ -219,7 +226,8 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                                                               subdomainInteriorOrigin,
                                                               searchRadius,
                                                               numberOfSubdomains,
-                                                              this->communicator );
+                                                              this->communicator,
+                                                              logger );
   boundary->distributedParticles->writeProlog( logger );
   boundary->synchronizer.initialize( boundary->distributedParticles );
   boundary->synchronizer.setCommunicator( this->communicator );
@@ -321,7 +329,10 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
          openBoundaryPatch->particles->resetListWithIndices();
    }
 
+#ifdef HAVE_MPI
+#else
    if( timeStepping.getStep() == 0 )
+#endif
       boundary->particles->resetListWithIndices();
    timeMeasurement.stop( "search_reset" );
    writeLog( logger, "Search - reset ...", "Done." );
@@ -334,7 +345,10 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
          openBoundaryPatch->particles->computeParticleCellIndices();
    }
 
+#ifdef HAVE_MPI
+#else
    if( timeStepping.getStep() == 0 )
+#endif
       boundary->particles->computeParticleCellIndices();
    timeMeasurement.stop( "search_cellIndices" );
    writeLog( logger, "Search - compute cell indices ...", "Done." );
@@ -347,19 +361,35 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
          openBoundaryPatch->sortParticles();
    }
 
+#ifdef HAVE_MPI
+#else
    if( timeStepping.getStep() == 0 )
+#endif
       boundary->sortParticles();
    timeMeasurement.stop( "search_sort" );
    writeLog( logger, "Search - sort ...", "Done." );
 
    //update number of particles TODO: Do this in elegant way.
-   std::cout << " ---> RANK: " << TNL::MPI::GetRank() << " number of particles to remove: " << fluid->particles->getNumberOfParticlesToRemove()  <<  " numberOfRecv from syncrhonizer: " << fluid->synchronizer.getNumberOfRecvParticles() << std::endl;
+   // --- DEBUG ---
+   logger.writeParameter( "Search - remove particles", "" );
+   logger.writeParameter( "fluid.particles.getNumberOfParticlesToRemove()",  fluid->particles->getNumberOfParticlesToRemove(), 1 );
+   logger.writeParameter( "fluid.synchronizer.getNumberOfRecvParticles()",  fluid->synchronizer.getNumberOfRecvParticles(), 1 );
+   // -------------
+
    fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
                                            - fluid->particles->getNumberOfParticlesToRemove() );
    fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle()
                                             - fluid->particles->getNumberOfParticlesToRemove() );
    fluid->setLastActiveParticle( fluid->getLastActiveParticle() - fluid->particles->getNumberOfParticlesToRemove() );
    fluid->particles->setNumberOfParticlesToRemove( 0 );
+
+   //update number of particles of boundary object
+   boundary->particles->setNumberOfParticles( boundary->particles->getNumberOfParticles()
+                                           - boundary->particles->getNumberOfParticlesToRemove() );
+   boundary->particles->setLastActiveParticle( boundary->particles->getLastActiveParticle()
+                                            - boundary->particles->getNumberOfParticlesToRemove() );
+   boundary->setLastActiveParticle( boundary->getLastActiveParticle() - boundary->particles->getNumberOfParticlesToRemove() );
+   boundary->particles->setNumberOfParticlesToRemove( 0 );
 
    //update number of particles TODO: Do this in elegant way.
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
@@ -383,7 +413,10 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
          openBoundaryPatch->particles->particlesToCells();
    }
 
+#ifdef HAVE_MPI
+#else
    if( timeStepping.getStep() == 0 )
+#endif
       boundary->particles->particlesToCells();
    timeMeasurement.stop( "search_toCells" );
    writeLog( logger, "Search - particles to cells ...", "Done." );
@@ -482,6 +515,7 @@ SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
    //synchronize( flud, fluidOverlap, s ynchronizer );
 
    fluid->synchronizeObject( fluidOverlap );
+   boundary->synchronizeObject( boundaryOverlap );
 
 }
 
@@ -491,6 +525,7 @@ SPHMultiset_CFD< Model >::resetOverlaps()
 {
    //TODO: This should be paritcles method
    fluid->particles->removeParitclesOutOfDomain();
+   boundary->particles->removeParitclesOutOfDomain();
 }
 
 #endif

@@ -255,6 +255,10 @@ public:
    bool
    isInsideDomain( const PointType& point, const PointType& domainOrigin, const PointType& domainSize ) const;
 
+   __cuda_callable__
+   bool
+   isInsideDomain( const PointType& point, const PointType& domainOrigin, const IndexVectorType& gridInteriorDimension, const RealType& searchRadius ) const;
+
    /**
     * Start remove procedure for all particles out of interior region.
     */
@@ -316,6 +320,8 @@ public:
 
    void
    writeProlog( TNL::Logger& logge ) const noexcept;
+
+   PointType interiorSize;
 
 protected:
 

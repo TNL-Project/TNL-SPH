@@ -323,10 +323,10 @@ def write_simulation_params( setup ):
       config_file = file.read()
 
     config_file = config_file.replace( 'placeholderSearchRadius', str( round( setup[ "search_radius" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-x', str( round( setup[ "domain_origin_x" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-y', str( round( setup[ "domain_origin_y" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-x', str( round( setup[ "domain_size_x" ], 5  ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-y', str( round( setup[ "domain_size_y" ], 5  ) ) )
+    config_file = config_file.replace( 'placeholderDomainOrigin-x', str( round( setup[ "domain_origin_x" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderDomainOrigin-y', str( round( setup[ "domain_origin_y" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderDomainSize-x', str( round( setup[ "domain_size_x" ], 7  ) ) )
+    config_file = config_file.replace( 'placeholderDomainSize-y', str( round( setup[ "domain_size_y" ], 7  ) ) )
 
     config_file = config_file.replace( 'placeholderInitParticleDistance', str( setup[ "dp" ] ) )
     config_file = config_file.replace( 'placeholderSmoothingLength', str( round( setup[ "smoothing_length" ], 7 ) ) )
@@ -376,16 +376,18 @@ def write_distributed_domain_params( setup ):
                 file.write( f'{key_prefix}boundary_n_allocated = { 2*setup[ f"{key_prefix}box_n" ] }\n' )
                 subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
                 subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.5f}\n" )
-                file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.5f}\n" )
+                #file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
+                #file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
+                file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
+                file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
                 #subdomain_grid_size_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
                 #subdomain_grid_size_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
                 #file.write( f"{key_prefix}girdSize-x = { subdomain_grid_size_x:.2f}\n" )
                 #file.write( f"{key_prefix}girdSize-y = { subdomain_grid_size_y:.2f}\n" )
                 subdomain_size_x = setup[ f"domain_sizes_x" ][ subdomain_x ]
                 subdomain_size_y = setup[ f"domain_sizes_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}size-x = { subdomain_size_x:.5f}\n" )
-                file.write( f"{key_prefix}size-y = { subdomain_size_y:.5f}\n" )
+                file.write( f"{key_prefix}size-x = { subdomain_size_x:.7f}\n" )
+                file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
                 file.write( f'\n' )
 
 def configure_and_write_measuretool_parameters():
@@ -423,11 +425,11 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("distribution parameters")
-    g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
+    g.add_argument("--subdomains-x", type=int, default=2, help="number of subdomains in x direction")
     g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.002, help="initial distance between particles")
-    g.add_argument("--h-coef", type=float, default=2**0.5, help="smoothing length coefitient")
+    g.add_argument("--h-coef", type=float, default=2, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--box-length", type=float, default=1.61, help="length of dam break box")
     g.add_argument("--box-height", type=float, default=0.8, help="height of dam break box")
@@ -453,7 +455,7 @@ if __name__ == "__main__":
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp ),
         "smoothing_length" : args.h_coef * args.dp,
-        "search_radius" :  2 * args.h_coef * args.dp,
+        "search_radius" :  round( 2 * args.h_coef * args.dp, 7 ),
         "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
         # geometric size
         "box_length" : args.box_length,

@@ -253,6 +253,7 @@ class ParticleSet
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
       this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
       this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
+      this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
       // update the number of particles inside subdomain
 
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
