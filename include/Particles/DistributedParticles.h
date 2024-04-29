@@ -139,8 +139,8 @@ public:
       if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
          //const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help?
          //const PointType zoneDimensions = { 1, localGridDimensions[ 1 ] };
-         const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 1, 0 }; //FIXME: Does -1 help? REMOVED. Added -1
-         const PointType zoneDimensions = { 3, localGridDimensions[ 1 ] + 2 };
+         const PointType zoneOriginIdx = { localGridDimensions[ 0 ] - 0, 0 }; //FIXME: Does -1 help? REMOVED. Added -1
+         const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 };
          std::cout << "[ZzYzXp] Zone origin: " << zoneOriginIdx << " zone dimension: " << zoneDimensions << std::endl;
          innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
          innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );

@@ -90,13 +90,15 @@ public:
       {
          auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
-            /**
-             * Due to rounding errors, there is difference between this form of expression and the actually used.
-             */
               view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
                                              TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
-            //view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] / searchRadius - gridOrigin[ 1 ] / searchRadius ) ) + \
-            //                               TNL::floor( ( view_points[ i ][ 0 ] / searchRadius - gridOrigin[ 0 ] / searchRadius ) ) * gridSize[ 1 ];
+            /**
+             * Due to rounding errors, there is difference between this form of expression and the actually used.
+
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] / searchRadius - gridOrigin[ 1 ] / searchRadius ) ) + \
+                                             TNL::floor( ( view_points[ i ][ 0 ] / searchRadius - gridOrigin[ 0 ] / searchRadius ) ) * gridSize[ 1 ];
+
+             */
          };
          Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
       }

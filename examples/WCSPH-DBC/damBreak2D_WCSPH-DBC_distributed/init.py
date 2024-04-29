@@ -429,7 +429,7 @@ if __name__ == "__main__":
     g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.002, help="initial distance between particles")
-    g.add_argument("--h-coef", type=float, default=2, help="smoothing length coefitient")
+    g.add_argument("--h-coef", type=float, default=2**0.5, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--box-length", type=float, default=1.61, help="length of dam break box")
     g.add_argument("--box-height", type=float, default=0.8, help="height of dam break box")

@@ -128,7 +128,7 @@ int main( int argc, char* argv[] )
    while( sph.timeStepping.runTheSimulation() )
    //while( sph.timeStepping.getStep() < 2 )
    {
-      sph.writeInfo( log );
+      //sph.writeInfo( log );
 
       // SingleSet: forgot overlaps
       //sph.resetOverlaps();
@@ -142,9 +142,53 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
 
+      //// output particle data
+      ////if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
+      //if( sph.timeStepping.getStep() < 1500 || sph.timeStepping.getStep() > 1700 ){
+      //   if( sph.timeStepping.checkOutputTimer( "save_results" ) )
+      //   {
+      //      /**
+      //       * Compute pressure from density.
+      //       * This is not necessary since we do this localy, if pressure is needed.
+      //       * It's useful for output anyway.
+      //       */
+      //      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+      //      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+
+      //      sph.save( log, true );
+      //   }
+      //}
+      //else{
+      //      std::cout << "=========================================================== STEP " << sph.timeStepping.getStep() << " =================== " << std::endl;
+      //      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+      //      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+
+      //      sph.save( log, true );
+      //}
+      ////if( sph.timeStepping.getStep() == 1316 )
+      ////   return 0;
+
+      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+
+      // SingleSet + Overlaps: collect particles, send them between processors
+      sph.synchronizeDistributedSimulation();
+      sph.writeLog( log, "Synchronize...", "Done." );
+      //return 0;
+
+      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+      // SingleSet: perform second search to assign received particles
+      sph.timeMeasurement.start( "search" );
+      sph.performNeighborSearch( log );
+      sph.timeMeasurement.stop( "search" );
+      sph.writeLog( log, "Search second...", "Done." );
+
+      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
       // output particle data
       //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      if( sph.timeStepping.getStep() < 1300 || sph.timeStepping.getStep() > 1330 ){
+      if( sph.timeStepping.getStep() < 700 || sph.timeStepping.getStep() > 1000 ){
          if( sph.timeStepping.checkOutputTimer( "save_results" ) )
          {
             /**
@@ -165,50 +209,6 @@ int main( int argc, char* argv[] )
 
             sph.save( log, true );
       }
-      //if( sph.timeStepping.getStep() == 1316 )
-      //   return 0;
-
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-
-      // SingleSet + Overlaps: collect particles, send them between processors
-      sph.synchronizeDistributedSimulation();
-      sph.writeLog( log, "Synchronize...", "Done." );
-      //return 0;
-
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-      // SingleSet: perform second search to assign received particles
-      sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log );
-      sph.timeMeasurement.stop( "search" );
-      sph.writeLog( log, "Search second...", "Done." );
-
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-      //: // output particle data
-      //: //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      //: if( sph.timeStepping.getStep() < 1300 || sph.timeStepping.getStep() > 1330 ){
-      //:    if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      //:    {
-      //:       /**
-      //:        * Compute pressure from density.
-      //:        * This is not necessary since we do this localy, if pressure is needed.
-      //:        * It's useful for output anyway.
-      //:        */
-      //:       sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      //:       sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-      //:       sph.save( log, true );
-      //:    }
-      //: }
-      //: else{
-      //:       std::cout << "=========================================================== STEP " << sph.timeStepping.getStep() << " =================== " << std::endl;
-      //:       sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      //:       sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-      //:       sph.save( log, true );
-      //: }
       //if( sph.timeStepping.getStep() == 1316 )
       //   return 0;
 

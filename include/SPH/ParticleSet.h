@@ -64,13 +64,19 @@ class ParticleSet
    initialize( unsigned int numberOfParticles,
                unsigned int numberOfAllocatedParticles,
                RealType searchRadius,
-               IndexVectorType gridSize,
-               VectorType gridOrigin )
+               IndexVectorType gridDimension,
+               VectorType gridOrigin,
+               GlobalIndexType numberOfOverlapsLayers = 1 )
    {
+      const VectorType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
+      const IndexVectorType resizeGridDimensionDueToOverlaps = 3 * numberOfOverlapsLayers; //FIXME: sqrt(2)*dp requires fact. 3
+      const VectorType gridOriginWithOverlap = gridOrigin - shiftOriginDueToOverlaps;
+      const IndexVectorType gridDimensionWithOverlap = gridDimension + resizeGridDimensionDueToOverlaps;
+
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridSize( gridSize );
-      this->particles->setGridOrigin( gridOrigin );
+      this->particles->setGridSize( gridDimensionWithOverlap );
+      this->particles->setGridOrigin( gridOriginWithOverlap );
       this->particles->setNumberOfParticles( numberOfParticles );
       this->particles->setFirstActiveParticle( 0 );
       this->particles->setLastActiveParticle( numberOfParticles - 1 );
@@ -78,6 +84,10 @@ class ParticleSet
       this->lastActiveParticle = numberOfParticles - 1;
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
+
+      this->particles->setGridInteriorDimension( gridDimension );
+      this->particles->setGridInteriorOrigin( gridOrigin );
+      // ..this->particles->setGridInterirSize( ... );
    }
 
    void
@@ -239,42 +249,17 @@ class ParticleSet
    void
    synchronizeObject( OverlapSetPointer& overlapSet )
    {
-      //OLD:
-      //particles->synchronize( synchronizer, ghostBoundaryPatches );
-      //variables->synchronize( synchronizer, ghostBoundaryPatches );
-      //integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
-
-      auto view_points = this->particles->getPoints().getView();
-      std::cout <<" <<PRESYNCHRO>> RANK: " << TNL::MPI::GetRank() << "pos[0]: " << view_points.getElement( 0 ) << " pos[-1]: " << view_points.getElement( this->lastActiveParticle ) << std::endl;
-
-      //NEW:
-      //this->distributedParticles->removeParitclesOutOfDomain( particles ); //TODO: This should be paritcles method
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
       this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
       this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
       this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
+
       // update the number of particles inside subdomain
-
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
-
-      std::cout << "RANK: " << TNL::MPI::GetRank() << " -- REEEEEEEEEEEEEEECCCCCCCCCCCCCCCCCCCVVVVVVVVVVVVVVVVVVVVV :" << numberOfRecvParticles << \
-         " numberOfParticle: " << particles->getNumberOfParticles() << \
-         " last active particle: " << particles->getLastActiveParticle() << \
-         " last active: " << this->getLastActiveParticle() << std::endl;
-
       particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
       particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
       this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
-
-      std::cout << "RANK: " << TNL::MPI::GetRank() << " -- REEEEEEEEEEEEEEECCCCupdated :" << numberOfRecvParticles << \
-         " numberOfParticle: " << particles->getNumberOfParticles() << \
-         " last active particle: " << particles->getLastActiveParticle() << \
-         " last active: " << this->getLastActiveParticle() << std::endl;
-
-      auto view_points2 = this->particles->getPoints().getView();
-      std::cout <<" <<postsynchro>> RANK: " << TNL::MPI::GetRank() << "pos[0]: " << view_points2.getElement( 0 ) << " pos[-1]: " << view_points2.getElement( this->lastActiveParticle ) << std::endl;
-
    }
 #endif
 
