@@ -188,7 +188,7 @@ int main( int argc, char* argv[] )
 
       // output particle data
       //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      if( sph.timeStepping.getStep() < 700 || sph.timeStepping.getStep() > 1000 ){
+      if( sph.timeStepping.getStep() < 200 || sph.timeStepping.getStep() > 500 ){
          if( sph.timeStepping.checkOutputTimer( "save_results" ) )
          {
             /**
