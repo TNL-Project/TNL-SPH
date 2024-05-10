@@ -10,6 +10,7 @@
 #include <string_view>
 #include <thrust/sort.h>
 #include <thrust/gather.h>
+#include <type_traits>
 
 #include "ParticlesTraits.h"
 #include "GenerateCellIndex.h"
@@ -176,12 +177,44 @@ public:
    getGridOrigin() const;
 
    /**
+    * \brief Returns dimensions of the implicit linked list grid.
+    *
+    * \return Coordinate vector with number of edges along each axis.
+    */
+   const IndexVectorType
+   getGlobalGridSize() const;
+
+   /**
+    * \brief Set dimensions of the implicit linked list grid.
+    *
+    * \param gridSize grid dimensions given in a form of coordinate vector.
+    */
+   void
+   setGlobalGridSize( IndexVectorType gridSize );
+
+   /**
     * \brief Set origin of the implicit linked list grid.
     *
     * \param the origin of the grid.
     */
    void
    setGridOrigin( PointType gridOrigin );
+
+   /**
+    * \brief Returns origin of the implicit global linked list grid.
+    *
+    * \return the origin of the grid.
+    */
+   const PointType
+   getGlobalGridOrigin() const;
+
+   /**
+    * \brief Set origin of the implicit linked list grid.
+    *
+    * \param the origin of the grid.
+    */
+   void
+   setGlobalGridOrigin( PointType gridOrigin );
 
    //TODO: Following lines need to be think through, added due to overlaps
    const PointType
@@ -226,8 +259,20 @@ public:
    getCellFirstLastParticleList();
 
    /**
-    * Get cell index of given partile.
+    * Get cell index of given partile - with enabled domain decomposition.
     */
+   template< typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
+             //std::enable_if_t< UseWithDomainDecomposition::value >* = nullptr >
+             std::enable_if_t< UseWithDomainDecomposition::value, bool > Enabled = true >
+   void
+   computeParticleCellIndices();
+
+   /**
+    * Get cell index of given partile - without enabled domain decomposition.
+    */
+   template< typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
+             //std::enable_if_t< !UseWithDomainDecomposition::value >* = nullptr >
+             std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled = true >
    void
    computeParticleCellIndices();
 
@@ -342,9 +387,17 @@ protected:
    //number of additional cell layers to from domain overlap
    GlobalIndexType overlapWidthInCells = 1;
 
+   //Indexing
+   PointType globalGridOrigin;
+   IndexVectorType globalGridDimension;
+
    //NOTE: This is probably not necersary and should be removedd
    PointType gridInteriorOrigin;
    IndexVectorType gridInteriorDimension;
+
+   //GlobalIndexType numberOfOverlapLayers;
+   //PointType gridOriginWithOverlap;
+   //IndexVectorType gridDimensionWithOverlap;
 
 
 };

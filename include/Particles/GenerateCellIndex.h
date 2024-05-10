@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ParticlesTraits.h"
+#include <cfloat>
+#include <cstdint>
 
 using namespace TNL;
 using namespace TNL::ParticleSystem;
@@ -43,6 +45,9 @@ public:
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using PointType = typename ParticleTraitsType::PointType;
 
+   //using FixedPointType = int32_t;
+   //constexpr int fractionalBits = 16;
+
    static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize )
    {
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
@@ -76,6 +81,7 @@ public:
                                          const PointType gridOrigin,
                                          const RealType searchRadius  )
    {
+
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
       {
          auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
@@ -90,15 +96,8 @@ public:
       {
          auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
-              view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
-                                             TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
-            /**
-             * Due to rounding errors, there is difference between this form of expression and the actually used.
-
-            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] / searchRadius - gridOrigin[ 1 ] / searchRadius ) ) + \
-                                             TNL::floor( ( view_points[ i ][ 0 ] / searchRadius - gridOrigin[ 0 ] / searchRadius ) ) * gridSize[ 1 ];
-
-             */
+            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
+                                           TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
          };
          Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
       }
@@ -133,13 +132,26 @@ public:
                       const IndexVectorType& gridDimension,
                       const RealType& searchRadius )
    {
+
+      const float dist = 1 / ( double ) searchRadius;
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
          return TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) + \
                 TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridDimension[ 0 ];
 
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
+         /**
+          * Due to rounding errors, there is difference between this form of expression and the actually used.
+
          return TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
                 TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridDimension[ 1 ];
+         */
+
+         return TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) * dist ) + \
+                TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) * dist ) * gridDimension[ 1 ];
+         /**
+         return TNL::floor( r[ 1 ] / searchRadius - gridOrigin[ 1 ]  / searchRadius ) + \
+                TNL::floor( r[ 0 ] / searchRadius - gridOrigin[ 0 ]  / searchRadius ) * gridDimension[ 1 ];
+         */
    }
 
 };

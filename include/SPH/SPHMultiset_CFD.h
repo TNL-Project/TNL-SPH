@@ -147,7 +147,7 @@ public:
 #ifdef HAVE_MPI
 
    void
-   synchronizeDistributedSimulation();
+   synchronizeDistributedSimulation( bool writePoints = false );
 
    void
    resetOverlaps();

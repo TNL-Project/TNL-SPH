@@ -144,7 +144,7 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
@@ -161,23 +161,34 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    logger.writeParameter( "Initializing subdomain grid size:", subdomainGridDimension );
 
    // init fluid
+   logger.writeParameter( "initDistributed:", "fluid->initialize" );
    fluid->initialize( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
                       parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
                       searchRadius,
                       subdomainGridDimension,
-                      subdomainOrigin );
+                      subdomainOrigin,
+                      domainGridDimension,
+                      domainOrigin,
+                      logger );
    fluid->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
+   logger.writeParameter( "subdomainSize:", subdomainSize );
+   logger.writeParameter( "subdomainSize - multiplied:", searchRadius * subdomainGridDimension );
+   logger.writeSeparator();
 
    // init boundary
+   logger.writeParameter( "initDistributed:", "boundary->initialize" );
    boundary->initialize( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
                          parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
                          searchRadius,
                          subdomainGridDimension,
-                         subdomainOrigin );
+                         subdomainOrigin,
+                         domainGridDimension,
+                         domainOrigin,
+                         logger );
    boundary->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
 
    // set distributed particle system: FIXME: All this lines are ugly
-  fluid->distributedParticles->setDistributedGridParameters( gridSize,
+  fluid->distributedParticles->setDistributedGridParameters( domainGridDimension,
                                                              domainOrigin,
                                                              subdomainGridDimension,
                                                              subdomainOrigin,
@@ -189,7 +200,7 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
   fluid->synchronizer.initialize( fluid->distributedParticles );
   fluid->synchronizer.setCommunicator( this->communicator );
 
-  boundary->distributedParticles->setDistributedGridParameters( gridSize,
+  boundary->distributedParticles->setDistributedGridParameters( domainGridDimension,
                                                                 domainOrigin,
                                                                 subdomainGridDimension,
                                                                 subdomainOrigin,
@@ -214,9 +225,15 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
    Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
    const std::string subdomainKey = distributed::getSubdomainKey( TNL::MPI::GetRank(), numberOfSubdomains );
 
+   // global domain properties
+   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
+   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+
+   // subdomain properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
 
    int overlapCellsCount = 0;
@@ -248,13 +265,19 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
                              numberOfParticlesPerCell * overlapCellsCount,
                              searchRadius,
                              resizedSubdomainGridSize,
-                             resizedSubdomainGridOrigin );
+                             resizedSubdomainGridOrigin,
+                             domainGridDimension,
+                             domainOrigin,
+                             logger );
 
    boundaryOverlap->initialize( 0,
                                 numberOfParticlesPerCell * overlapCellsCount,
                                 searchRadius,
                                 resizedSubdomainGridSize,
-                                resizedSubdomainGridOrigin );
+                                resizedSubdomainGridOrigin,
+                                domainGridDimension,
+                                domainOrigin,
+                                logger );
 }
 
 //TODO: Move the distributed fanctions to domain specific with a given prefix
@@ -478,13 +501,13 @@ SPHMultiset_CFD< Model >::measure( TNL::Logger& logger )
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
+SPHMultiset_CFD< Model >::synchronizeDistributedSimulation( bool writePoints )
 {
    //NOTE: Much better syntax would be
    //synchronize( flud, fluidOverlap, s ynchronizer );
 
-   fluid->synchronizeObject( fluidOverlap );
-   boundary->synchronizeObject( boundaryOverlap );
+   fluid->synchronizeObject( fluidOverlap, writePoints );
+   boundary->synchronizeObject( boundaryOverlap, writePoints );
 
 }
 

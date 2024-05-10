@@ -93,7 +93,7 @@ public:
    //TODO: 1D and 2D decompositions should be separated, currently we asume only 1D
    //initialize innerOverlpas
    void
-   initializeInnerOverlaps( TNL::Logger& logger,  const int numberOfParticlesPerCell = 20 )
+   initializeInnerOverlaps( TNL::Logger& logger,  const int numberOfParticlesPerCell = 25 )
    {
       //Count:
       int numberOfActiveNeighbros = 0;
@@ -108,8 +108,9 @@ public:
 
       const IndexVectorType localGridDimensions = distributedGrid.getLocalMesh().getDimensions();
       const GlobalIndexType numberOfOverlapsLayers = 1;
-      const IndexVectorType increaseLocalGridSizeDueToOverlaps = numberOfOverlapsLayers;
-      const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + numberOfOverlapsLayers;
+      const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
+      //const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + numberOfOverlapsLayers;
+      const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + increaseLocalGridSizeDueToOverlaps;
       //const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
       const PointType localGridStepSize = distributedGrid.getLocalMesh().getSpaceSteps();
       const RealType searchRadius = localGridStepSize[ 0 ]; //FIXME
@@ -130,9 +131,19 @@ public:
          // get positions of overlaps with respect to the global grid
          const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
          const PointType globalGrdiOrigin = distributedGrid.getGlobalGrid().getOrigin();
-         const GlobalIndexType zoneOriginGlobalIdx_x = ( localGridOrigin[ 0 ] - globalGrdiOrigin[ 0 ] ) / searchRadius;
+         //const GlobalIndexType zoneOriginGlobalIdx_x = ( localGridOrigin[ 0 ] - globalGrdiOrigin[ 0 ] ) / searchRadius;
+         //const GlobalIndexType zoneOriginGlobalIdx_x = TNL::ceil(( globalGrdiOrigin[ 0 ] + localGridOrigin[ 0 ]  ) / searchRadius );
+         const GlobalIndexType zoneOriginGlobalIdx_x = TNL::ceil(( localGridOrigin[ 0 ]  ) / searchRadius );
+         logger.writeParameter( "Subdomain end",   globalGrdiOrigin[ 0 ] + ( localGridDimensions[ 0 ] - 0 ) * searchRadius  );
+         logger.writeParameter( "Subdomain size", ( localGridDimensions[ 0 ] - 0 ) * searchRadius );
+         logger.writeParameter( "localGridDimension,", localGridDimensions );
+         logger.writeParameter( "localGridDimensionsWithOverlap,", localGridDimensionsWithOverlap );
+         logger.writeParameter( "searchRadius", searchRadius, 1 );
+         logger.writeParameter( "Local grid origin", localGridOrigin, 1 );
+         logger.writeParameter( "Global grid origin", globalGrdiOrigin, 1 );
          logger.writeParameter( "ZzYzXm overlap begin", zoneOriginGlobalIdx_x, 1 );
-         logger.writeParameter( "ZzYzXm overlap end", zoneOriginGlobalIdx_x + 1, 1 );
+         logger.writeParameter( "ZzYzXm overlap begin", zoneOriginGlobalIdx_x + 1, 1 );
+         logger.writeSeparator();
          // -------------
 
       }
@@ -149,9 +160,18 @@ public:
          // get positions of overlaps with respect to the global grid
          const PointType localGridOrigin = distributedGrid.getLocalMesh().getOrigin();
          const PointType globalGrdiOrigin = distributedGrid.getGlobalGrid().getOrigin();
-         const GlobalIndexType zoneOriginGlobalIdx_x = ( ( localGridDimensions[ 0 ] -1 ) * searchRadius - globalGrdiOrigin[ 0 ] ) / searchRadius;
+         //const GlobalIndexType zoneOriginGlobalIdx_x = ( ( localGridDimensions[ 0 ] - 0 ) * searchRadius - globalGrdiOrigin[ 0 ] ) / searchRadius;
+         const GlobalIndexType zoneOriginGlobalIdx_x = TNL::ceil( ( globalGrdiOrigin[ 0 ] + ( localGridDimensions[ 0 ] - 0 ) * searchRadius  ) / searchRadius );
+         logger.writeParameter( "Subdomain end",   globalGrdiOrigin[ 0 ] + ( localGridDimensions[ 0 ] - 0 ) * searchRadius  );
+         logger.writeParameter( "Subdomain size", ( localGridDimensions[ 0 ] - 0 ) * searchRadius );
+         logger.writeParameter( "localGridDimension,", localGridDimensions );
+         logger.writeParameter( "localGridDimensionsWithOverlap,", localGridDimensionsWithOverlap );
+         logger.writeParameter( "searchRadius", searchRadius, 1 );
+         logger.writeParameter( "Local grid origin", localGridOrigin, 1 );
+         logger.writeParameter( "Global grid origin", globalGrdiOrigin, 1 );
          logger.writeParameter( "ZzYzXp overlap begin", zoneOriginGlobalIdx_x, 1 );
          logger.writeParameter( "ZzYzXp overlap begin", zoneOriginGlobalIdx_x + 1, 1 );
+         logger.writeSeparator();
          // -------------
       }
 
@@ -236,6 +256,17 @@ public:
       distributedGrid.localSize = localGridSize;
       //distributedGrid.localBegin();
 
+      logger.writeSeparator();
+      logger.writeParameter( "setDistributedGridWithParameters:", "" );
+      logger.writeParameter( "localGridOrigin:", localGridOrigin );
+      logger.writeParameter( "localGridSize:", localGridSize );
+      logger.writeParameter( "spaceStepsVector:", distributedGrid.globalGrid.getSpaceSteps() );
+      logger.writeParameter( "interiorBegin:", interiorBegin );
+      logger.writeParameter( "interiorEnd:", interiorEnd );
+      logger.writeParameter( "lowerOverlap:", lowerOverlap );
+      logger.writeParameter( "upperOverlap:", upperOverlap );
+      logger.writeSeparator();
+
       //Initialize inner particle zones to collect particles
       initializeInnerOverlaps( logger );
    }
@@ -263,6 +294,49 @@ public:
       //   innerOverlaps[ 0 ].updateParticlesInZone( particles );
       //if( distributedGrid.isThereNeighbor( { 1, 0 } ) )
       //   innerOverlaps[ 1 ].updateParticlesInZone( particles );
+   }
+
+   //collect particles to innerOverlaps
+   template< typename ParticlePointer >
+   void
+   DEBUG_printParticlesInOverlap( ParticlePointer& particles )
+   {
+      auto points_view = particles->getPoints().getConstView();
+      auto cellIndex_view = particles->getParticleCellIndices().getConstView();
+
+      using CellIndexer = typename ParticleSystem::CellIndexer;
+
+      //NOTE: This was original idea, but the overlap size is much smaller.
+      const int* neighbors = this->getDistributedGrid().getNeighbors();
+      for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
+         //TODO: We shoud limit ourselves only to filled zones to save the call time
+         if( neighbors[ i ] != -1 ){
+            const auto ghostZoneView = innerOverlaps[ i ].getParticlesInZone().getConstView();
+            const GlobalIndexType numberOfParticlesInZone = innerOverlaps[ i ].getNumberOfParticles();
+
+            const RealType searchRadius = particles->getSearchRadius();
+            const PointType gridOrigin = particles->getGridOrigin();
+            const PointType gridDimension = particles->getGridSize();
+
+            const float scaleFactor = 1.f ;
+
+            auto init = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
+            {
+               const GlobalIndexType p = ghostZoneView[ i ];
+               //printf( "[ %f, %f, (%d), (%d), <%f>, <%f>, {%f} ]",
+               printf( "[ %.12f, %f, (%d), (%d), <%f>, <%f>, {%.12f} ]",
+                     points_view[ p ][ 0 ],
+                     points_view[ p ][ 1 ],
+                     cellIndex_view[ p ],
+                     CellIndexer::EvaluateCellIndex( points_view[ p ], gridOrigin, gridDimension, searchRadius ),
+                     ( points_view[ p ][ 0 ] * scaleFactor - gridOrigin[ 0 ] * scaleFactor ) / ( searchRadius * scaleFactor ) ,
+                     TNL::floor( ( points_view[ p ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ),
+                     points_view[ p ][ 0 ] - gridOrigin[ 0 ] );
+            };
+            Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesInZone, init );
+         }
+
+      }
    }
 
    //THe system is currently still fucked up, so it works on extranela, not he local partocles.

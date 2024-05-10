@@ -112,8 +112,7 @@ int main( int argc, char* argv[] )
       sph.init( parameters, log );
    TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
-   if( TNL::MPI::GetRank() == 0 )
-      sph.writeProlog( log );
+   sph.writeProlog( log );
 
    // Solver model:
 
@@ -128,7 +127,7 @@ int main( int argc, char* argv[] )
    while( sph.timeStepping.runTheSimulation() )
    //while( sph.timeStepping.getStep() < 2 )
    {
-      //sph.writeInfo( log );
+      sph.writeInfo( log );
 
       // SingleSet: forgot overlaps
       //sph.resetOverlaps();
@@ -142,29 +141,29 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
 
-      //// output particle data
-      ////if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      //if( sph.timeStepping.getStep() < 1500 || sph.timeStepping.getStep() > 1700 ){
-      //   if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      //   {
-      //      /**
-      //       * Compute pressure from density.
-      //       * This is not necessary since we do this localy, if pressure is needed.
-      //       * It's useful for output anyway.
-      //       */
-      //      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      //      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+      // output particle data
+      //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
+      //:if( sph.timeStepping.getStep() < 3090 || sph.timeStepping.getStep() > 4010 ){
+      //:   if( sph.timeStepping.checkOutputTimer( "save_results" ) )
+      //:   {
+      //:      /**
+      //:       * Compute pressure from density.
+      //:       * This is not necessary since we do this localy, if pressure is needed.
+      //:       * It's useful for output anyway.
+      //:       */
+      //:      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+      //:      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
 
-      //      sph.save( log, true );
-      //   }
-      //}
-      //else{
-      //      std::cout << "=========================================================== STEP " << sph.timeStepping.getStep() << " =================== " << std::endl;
-      //      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      //      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+      //:      sph.save( log, true );
+      //:   }
+      //:}
+      //:else{
+      //:      std::cout << "=========================================================== STEP " << sph.timeStepping.getStep() << " =================== " << std::endl;
+      //:      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+      //:      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
 
-      //      sph.save( log, true );
-      //}
+      //:      sph.save( log, true );
+      //:}
       ////if( sph.timeStepping.getStep() == 1316 )
       ////   return 0;
 
@@ -172,7 +171,20 @@ int main( int argc, char* argv[] )
 
 
       // SingleSet + Overlaps: collect particles, send them between processors
-      sph.synchronizeDistributedSimulation();
+      //if( sph.timeStepping.getStep() == 1707 && TNL::MPI::GetRank() == 1 )
+      if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 1 )
+         sph.fluid->distributedParticles->DEBUG_printParticlesInOverlap( sph.fluid->particles );
+
+      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+
+      //if( sph.timeStepping.getStep() == 1707 && TNL::MPI::GetRank() == 0 ){
+      if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 0 ){
+         std::cout << "+++++++++++++++++++++++++++++++++++++++++-+-+-+-+-+-+- WE HERE ada+s-d+a-+-+-+-+-+-+--+---------------------------------242" << std::endl;
+         sph.synchronizeDistributedSimulation( true );
+      }
+      else
+         sph.synchronizeDistributedSimulation();
       sph.writeLog( log, "Synchronize...", "Done." );
       //return 0;
 
@@ -188,7 +200,8 @@ int main( int argc, char* argv[] )
 
       // output particle data
       //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      if( sph.timeStepping.getStep() < 200 || sph.timeStepping.getStep() > 500 ){
+      //if( sph.timeStepping.getStep() <  || sph.timeStepping.getStep() > 1480 ){
+      if( sph.timeStepping.getStep() < 0 || sph.timeStepping.getStep() > 10 ){
          if( sph.timeStepping.checkOutputTimer( "save_results" ) )
          {
             /**

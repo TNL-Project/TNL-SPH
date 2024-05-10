@@ -50,6 +50,20 @@ ParticlesLinkedList< ParticleConfig, DeviceType >::setGridSize( IndexVectorType 
 }
 
 template < typename ParticleConfig, typename DeviceType >
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
+ParticlesLinkedList< ParticleConfig, DeviceType >::getGlobalGridSize() const
+{
+   return globalGridDimension;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+ParticlesLinkedList< ParticleConfig, DeviceType >::setGlobalGridSize( IndexVectorType gridSize )
+{
+   globalGridDimension = gridSize;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 void
 ParticlesLinkedList< ParticleConfig, DeviceType >::setSize( const GlobalIndexType& size )
 {
@@ -69,6 +83,20 @@ void
 ParticlesLinkedList< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
 {
    gridOrigin = gridBegin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PointType
+ParticlesLinkedList< ParticleConfig, DeviceType >::getGlobalGridOrigin() const
+{
+   return globalGridOrigin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+ParticlesLinkedList< ParticleConfig, DeviceType >::setGlobalGridOrigin( PointType gridBegin )
+{
+   globalGridOrigin = gridBegin;
 }
 
 //TODO: Following lines need to be think through, added due to overlaps
@@ -151,6 +179,7 @@ ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndex( GlobalIndex
 }
 
 template < typename ParticleConfig, typename Device >
+template< typename UseWithDomainDecomposition, std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled >
 void
 ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 {
@@ -159,9 +188,46 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
    auto view = this->particleCellInidices.getView();
    auto view_points = this->points.getView();
 
+   const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOrigin - globalGridOrigin ) / this->radius );
+   std::cout << "gridOriginGlobalCoords: " << gridOriginGlobalCoords << ", globalGridOrigin: " << globalGridOrigin << ", gridOriginWithOverlap: " << gridOrigin << std::endl;
    CellIndexer::ComputeParticleCellIndex(
          view, view_points, firstActiveParticle, lastActiveParticle, gridDimension, gridOrigin, this->radius );
 }
+
+template< typename ParticleConfig, typename Device >
+template< typename UseWithDomainDecomposition, std::enable_if_t< UseWithDomainDecomposition::value, bool > Enabled >
+void
+ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
+{
+   auto view_particeCellIndices = this->particleCellInidices.getView();
+   const auto view_points = this->points.getConstView();
+   const RealType searchRadius = this->radius;
+   //TODO: Allow to capture protected members so we can use globalGridOrigin and globalGridDimension directly
+   //FIXME: Global grid origin should be shifted aswell with search radius
+   //const PointType shifOriginDueToOverlaps = this->radius;
+   const PointType globalGridOrigin = this->globalGridOrigin;
+   //const IndexVectorType globalGridDimension = this->globalGridDimension;
+   //FIXME: Resolve the mess with gridOrigin/gridDimension and gridOriginWithOverlap/gridDimensionWithOverlap
+   const PointType gridOriginWithOverlap_ = gridOrigin;
+   const IndexVectorType gridDimensionWithOverlap_ = gridDimension;
+   const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOriginWithOverlap_ - globalGridOrigin ) / searchRadius );
+
+   auto indexParticles = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
+   {
+      const PointType point = view_points[ i ];
+      if( view_points[ i ][ 0 ] == FLT_MAX || view_points[ i ][ 1 ] == FLT_MAX ){
+         view_particeCellIndices[ i ] = INT_MAX;
+      }
+      else{
+         const IndexVectorType cellGlobalCoords = TNL::floor( ( point - globalGridOrigin ) / searchRadius );
+         const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoords;
+         view_particeCellIndices[ i ] = CellIndexer::EvaluateCellIndex( cellCoords, gridDimensionWithOverlap_ );
+      }
+
+   };
+   Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, indexParticles );
+}
+
 
 template < typename ParticleConfig, typename Device >
 __cuda_callable__
@@ -344,96 +410,6 @@ ParticlesLinkedList< ParticleConfig, Device >::particlesToCells()
    view_firstLastCellParticle.setElement( view_particleCellIndex.getElement( lastActiveParticle ),
          { ( view_particleCellIndex.getElement( lastActiveParticle ) != view_particleCellIndex.getElement( lastActiveParticle - 1 ) ) ? lastActiveParticle : lastActiveCellContains[ 0 ], lastActiveParticle } );
 
-}
-
-//move to detail
-template< typename ParticleConfig, typename Device >
-typename ParticlesLinkedList< ParticleConfig, Device >::PairIndexType
-ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInColumnOfCells( const GlobalIndexType& gridColumn )
-{
-   //static_assert( std::is_same< CellIndexer::, DeviceType >::value, "mismatched DeviceType of the array" );
-
-   const GlobalIndexType indexOfFirstColumnCell = CellIndexer::EvaluateCellIndex( gridColumn, 1, gridDimension );
-   const GlobalIndexType indexOfLastColumnCell = CellIndexer::EvaluateCellIndex(
-         gridColumn, gridDimension[ 1 ] - 1, gridDimension );
-   const auto view_firstLastCellParticle = firstLastCellParticle.getConstView( indexOfFirstColumnCell, indexOfLastColumnCell );
-
-   auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
-   auto reduction_vect = [=] __cuda_callable__ ( const PairIndexType& a, const PairIndexType& b ) -> PairIndexType
-   { return { min( a[ 0 ], b[ 0 ] ), max( a[ 1 ], ( b[ 1 ] < INT_MAX ) ? b[ 1 ] : -1 ) }; };
-
-   PairIndexType identity = { INT_MAX , INT_MIN };
-   PairIndexType firstLastParticle = Algorithms::reduce< Devices::Cuda >(
-         0, view_firstLastCellParticle.getSize(), fetch_vect, reduction_vect, identity );
-
-   return firstLastParticle;
-}
-
-//move to detail
-template< typename ParticleConfig, typename Device >
-typename ParticlesLinkedList< ParticleConfig, Device >::PairIndexType
-ParticlesLinkedList< ParticleConfig, Device >::getFirstLastParticleInBlockOfCells( const GlobalIndexType& gridBlock )
-{
-   PairIndexType firstLastParticle;
-
-   //for( int j = 1; j < gridDimension[ 1 ]; j++ )
-   for( int j = gridDimension[ 1 ]; j > 0; j-- )
-   {
-      const GlobalIndexType indexOfFirstColumnCell = CellIndexer::EvaluateCellIndex( gridBlock, j, 1, gridDimension );
-      const GlobalIndexType indexOfLastColumnCell = CellIndexer::EvaluateCellIndex(
-            gridBlock, j, gridDimension[ 1 ] - 1, gridDimension );
-      const auto view_firstLastCellParticle = firstLastCellParticle.getConstView( indexOfFirstColumnCell, indexOfLastColumnCell );
-
-      auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
-      auto reduction_vect = [=] __cuda_callable__ ( const PairIndexType& a, const PairIndexType& b ) -> PairIndexType
-      { return { min( a[ 0 ], b[ 0 ] ), max( a[ 1 ], ( b[ 1 ] < INT_MAX ) ? b[ 1 ] : -1 ) }; };
-
-      PairIndexType identity = { INT_MAX , INT_MIN };
-      PairIndexType firstLastParticleLocal = Algorithms::reduce< Devices::Cuda >(
-            0, view_firstLastCellParticle.getSize(), fetch_vect, reduction_vect, identity );
-
-      //if( firstLastParticleLocal[ 0 ] < INT_MAX ){
-      //   firstLastParticle[ 0 ] = firstLastParticleLocal[ 0 ];
-      //   std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for first element): " << firstLastParticle << std::endl;
-      //   break;
-      //}
-      if( firstLastParticleLocal[ 0 ] < INT_MAX ){
-         firstLastParticle[ 1 ] = firstLastParticleLocal[ 1 ];
-         //std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for first element): " << firstLastParticle << std::endl;
-         break;
-      }
-   }
-
-   //for( int j = gridDimension[ 1 ]; j > 1; j-- )
-   for( int j = 1; j < gridDimension[ 1 ]; j++ )
-   {
-      const GlobalIndexType indexOfFirstColumnCell = CellIndexer::EvaluateCellIndex( gridBlock, j, 1, gridDimension );
-      const GlobalIndexType indexOfLastColumnCell = CellIndexer::EvaluateCellIndex(
-            gridBlock, j, gridDimension[ 1 ] - 1, gridDimension );
-      const auto view_firstLastCellParticle = firstLastCellParticle.getConstView( indexOfFirstColumnCell, indexOfLastColumnCell );
-
-      auto fetch_vect = [=] __cuda_callable__ ( int i ) -> PairIndexType  { return view_firstLastCellParticle[ i ]; };
-      auto reduction_vect = [=] __cuda_callable__ ( const PairIndexType& a, const PairIndexType& b ) -> PairIndexType
-      { return { min( a[ 0 ], b[ 0 ] ), max( a[ 1 ], ( b[ 1 ] < INT_MAX ) ? b[ 1 ] : -1 ) }; };
-
-      PairIndexType identity = { INT_MAX , INT_MIN };
-      PairIndexType firstLastParticleLocal = Algorithms::reduce< Devices::Cuda >(
-            0, view_firstLastCellParticle.getSize(), fetch_vect, reduction_vect, identity );
-
-      //if( firstLastParticleLocal[ 1 ] > -1 ){
-      //   firstLastParticle[ 1 ] = firstLastParticleLocal[ 1 ];
-      //   std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for second element): " << firstLastParticle << std::endl;
-      //   break;
-      //}
-      if( firstLastParticleLocal[ 1 ] > -1 ){
-         firstLastParticle[ 0 ] = firstLastParticleLocal[ 0 ];
-         //std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (loop for second element): " << firstLastParticle << std::endl;
-         break;
-      }
-   }
-
-   //std::cout << "[ Particles::getFirstLastParticleInBlockOfCells ] [ Rank: " << TNL::MPI::GetRank() << " ] firstLastParticle (to return): " << firstLastParticle << std::endl;
-   return firstLastParticle;
 }
 
 template < typename ParticleConfig, typename DeviceType >
