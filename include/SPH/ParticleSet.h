@@ -89,7 +89,6 @@ class ParticleSet
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
       this->particles->setGlobalGridSize( globalGridDimension );
-      //this->particles->setGlobalGridOrigin( globalGridOrigin );
       this->particles->setGlobalGridOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
       this->particles->setGridInteriorDimension( gridDimension );
       this->particles->setGridInteriorOrigin( gridOrigin );
@@ -273,40 +272,8 @@ class ParticleSet
       this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
       this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
 
-
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
-
-      if( writePoints == true ){
-         const RealType searchRadius = particles->getSearchRadius();
-         const VectorType gridOrigin = particles->getGridOrigin();
-         const VectorType gridDimension = particles->getGridSize();
-         using CellIndexer = typename ParticleSystem::CellIndexer;
-
-         const float scaleFactor = 1.f ;
-         //const int scaleFactor = static_cast< int >( 1.f / searchRadius );
-
-         auto points_view = particles->getPoints().getView();
-         auto cellIndex_view = particles->getParticleCellIndices().getConstView();
-
-         auto init = [=] __cuda_callable__( GlobalIndexType i ) mutable
-         {
-            //printf( "[ %f, %f, (%d) ]", points_view[ i ][ 0 ], points_view[ i ][ 1 ], CellIndexer::EvaluateCellIndex( points_view[ i ], gridOrigin, gridDimension, searchRadius ) );
-            printf( "[ %f / %.12f, %f, (%d), (%d), <%f>, <%f>, {%f / %.12f} ]",
-                     points_view[ i ][ 0 ], points_view[ i ][ 0 ],
-                     points_view[ i ][ 1 ],
-                     cellIndex_view[ i ],
-                     CellIndexer::EvaluateCellIndex( points_view[ i ], gridOrigin, gridDimension, searchRadius ),
-                     ( points_view[ i ][ 0 ] * scaleFactor - gridOrigin[ 0 ] * scaleFactor ) / ( searchRadius * scaleFactor ) ,
-                     TNL::floor( ( double )( points_view[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ),
-                     points_view[ i ][ 0 ] - gridOrigin[ 0 ], points_view[ i ][ 0 ] - gridOrigin[ 0 ] );
-         };
-         Algorithms::parallelFor< DeviceType >( particles->getLastActiveParticle() + 1,
-                                                particles->getLastActiveParticle() + numberOfRecvParticles + 1,
-                                                init );
-
-      }
-
       particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
       particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
       this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );

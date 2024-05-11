@@ -191,45 +191,27 @@ public:
                                  TNL::Logger& logger )
    {
       this->communicator = comm;
-      //TODO: Grid should be pobably pointer...
 
-      //int size = 10;
-      int rank = TNL::MPI::GetRank();
-      int nproc = TNL::MPI::GetSize();
-
+      //TODO: Pass as globalGrid
       GridType globalGrid;
-
-      //globalGrid.setDimensions( size, size );
       globalGrid.setDimensions( globalGridSize );
       globalGrid.setDomain( globalGridOrigin, globalGridSize );
-
-      //TODO: This is necessar I guess
       const PointType spaceStepsVector = searchRadius;
       globalGrid.setSpaceSteps( spaceStepsVector );
 
-      //distributedGrid = new DistributedGridType();
-      //distributedGrid->setDomainDecomposition( typename DistributedGridType::CoordinatesType( 3, 3 ) );
 
       distributedGrid.setDomainDecomposition( domainDecomposition );
       distributedGrid.setGlobalGrid( globalGrid );
 
-      //distributedGrid.localSize = localGridSize;
-      //distributedGrid.localBegin = localGridSize;
       typename DistributedGridType::SubdomainOverlapsType lowerOverlap, upperOverlap;
-      //getOverlaps takes pointer to consatnt function
       Meshes::DistributedMeshes::SubdomainOverlapsGetter< GridType >::getOverlaps( &distributedGrid, lowerOverlap, upperOverlap, 1 );
 
       distributedGrid.setOverlaps( lowerOverlap, upperOverlap );
 
-      //rem: //NOTE: BAD BAD PRACTICE, setOverlaps manually with custom domain:
-      //rem: // Update subdomain size including overlaps
-      //rem: const GlobalIndexType numberOfOverlapsLayers = 1;
-      //rem: const PointType shiftOriginDueToOverlaps = searchRadius * numberOfOverlapsLayers;
-      //rem: const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
 
+      // Since the global is not distributed unifromly, we need to update parameters of local grid
       distributedGrid.localGrid.setOrigin( localGridOrigin );
       distributedGrid.localGrid.setDimensions( localGridSize );
-      //std::cout << "Setting localGridSize: " << localGridSize << " localGridDim: " << distributedGrid.localGrid.getDimensions() << std::endl;
       distributedGrid.localGrid.setSpaceSteps( distributedGrid.globalGrid.getSpaceSteps() );
       distributedGrid.localGrid.setLocalBegin( this->distributedGrid.getLowerOverlap() );
       distributedGrid.localGrid.setLocalEnd( distributedGrid.localGrid.getDimensions() - this->distributedGrid.getUpperOverlap() );
@@ -253,8 +235,7 @@ public:
       distributedGrid.localGrid.setInteriorBegin( interiorBegin );
       distributedGrid.localGrid.setInteriorEnd( interiorEnd );
 
-      distributedGrid.localSize = localGridSize;
-      //distributedGrid.localBegin();
+      //distributedGrid.localSize = localGridSize;
 
       logger.writeSeparator();
       logger.writeParameter( "setDistributedGridWithParameters:", "" );

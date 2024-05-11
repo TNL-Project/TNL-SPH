@@ -65,20 +65,34 @@ public:
    void
    init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
-   //TODO: Temp
+   // protected
+   void
+   initParticleSets( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+   // protected
+   void
+   readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+
+#ifdef HAVE_MPI
+   // protected
    void
    initDistributed( TNL::Config::ParameterContainer& parameters,
                     TNL::Config::ParameterContainer& parametersDistributed,
                     TNL::Logger& logger );
 
-   void
-   initOverlaps( TNL::Config::ParameterContainer& parameters,
-                 TNL::Config::ParameterContainer& parametersDistributed,
-                 TNL::Logger& logger );
+   // protected
    void
    readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
                                  TNL::Config::ParameterContainer& parametersDistributed,
                                  TNL::Logger& logger );
+#endif
+
+   // protected
+   void
+   initOverlaps( TNL::Config::ParameterContainer& parameters,
+                 TNL::Config::ParameterContainer& parametersDistributed,
+                 TNL::Logger& logger );
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.

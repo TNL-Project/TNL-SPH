@@ -14,7 +14,6 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 {
    logger.writeHeader( "SPH simulation initialization." );
 
-//FIXME: This can't be here.
 #ifdef HAVE_MPI
    // build config for distributed domain
    logger.writeParameter( "Configuration of distributed simulation:", "" );
@@ -23,55 +22,21 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
-
-   // loadn and parse config for distributed domain
+   // load and parse config for distributed domain
    std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
    parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger );
-#endif
 
-
-#ifdef HAVE_MPI
+   // initialize particle sets and overlaps
    initDistributed( parameters, this->parametersDistributed, logger );
    initOverlaps( parameters, this->parametersDistributed, logger );
 #else
-   // compute global domain properetis
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
-
-   // init fluid
-   fluid->initialize( parameters.getParameter< int >( "numberOfParticles" ),
-                      parameters.getParameter< int >( "numberOfAllocatedParticles" ),
-                      searchRadius,
-                      gridSize,
-                      domainOrigin );
-
-   // init boundary
-   boundary->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
-                         parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
-                         searchRadius,
-                         gridSize,
-                         domainOrigin );
-
-   // init open boundary patches
-   const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {  //TODO: I dont like this.
-      openBoundaryPatches.resize( numberOfBoundaryPatches );
-      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         openBoundaryPatches[ i ]->config.init( parameters, prefix );
-         openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
-                                               parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
-                                               searchRadius,
-                                               gridSize,
-                                               domainOrigin );
-      }
-   }
+   // initialize particle sets
+   initParticleSets( parameters, logger );
 #endif
 
    // init periodic boundary conditions
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {  //TODO: I dont like this.
+   //TODO: I don't like that open boundary buffer are selected in compile time.
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       fluid->initializePeriodicity( parameters );
       boundary->initializePeriodicity( parameters );
 
@@ -96,23 +61,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 #ifdef HAVE_MPI
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
 #else
-
-   // read particle data
-   logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
-   fluid->template readParticlesAndVariables< SimulationReaderType >(
-      parameters.getParameter< std::string >( "fluid-particles" ) );
-   logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
-   boundary->template readParticlesAndVariables< SimulationReaderType >(
-      parameters.getParameter< std::string >( "boundary-particles" ) );
-
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {  //TODO: I dont like this.
-      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
-            parameters.getParameter< std::string >( prefix + "particles" ) );
-      }
-   }
-
+   readParticlesFiles( parameters, logger );
 #endif
 
    // initialize the measuretool
@@ -126,7 +75,47 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    logger.writeHeader( "SPH simulation successfully initialized." );
 }
 
-//TODO: MOve the distributed fanctions to domain specific with a given prefix
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   // get global domain properetis
+   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
+   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+
+   // init fluid
+   fluid->initialize( parameters.getParameter< int >( "numberOfParticles" ),
+                      parameters.getParameter< int >( "numberOfAllocatedParticles" ),
+                      searchRadius,
+                      gridSize,
+                      domainOrigin );
+
+   // init boundary
+   boundary->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
+                         parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
+                         searchRadius,
+                         gridSize,
+                         domainOrigin );
+
+   // init open boundary patches
+   const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
+   //TODO: I don't like that open boundary buffer are selected in compile time.
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      openBoundaryPatches.resize( numberOfBoundaryPatches );
+      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         openBoundaryPatches[ i ]->config.init( parameters, prefix );
+         openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
+                                               parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+                                               searchRadius,
+                                               gridSize,
+                                               domainOrigin );
+      }
+   }
+}
+
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& parameters,
@@ -280,7 +269,29 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
                                 logger );
 }
 
-//TODO: Move the distributed fanctions to domain specific with a given prefix
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
+   fluid->template readParticlesAndVariables< SimulationReaderType >(
+      parameters.getParameter< std::string >( "fluid-particles" ) );
+   logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
+   boundary->template readParticlesAndVariables< SimulationReaderType >(
+      parameters.getParameter< std::string >( "boundary-particles" ) );
+
+   // init open boundary patches
+   const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
+   //TODO: I don't like that open boundary buffer are selected in compile time.
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+            parameters.getParameter< std::string >( prefix + "particles" ) );
+      }
+   }
+}
+
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,

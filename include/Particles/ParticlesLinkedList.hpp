@@ -262,19 +262,11 @@ void
 ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
 {
    const PointType domainOrigin = this->gridInteriorOrigin;
-   //NOTE: arithmetics?
    //const PointType domainSize = this->gridInteriorDimension * this->radius;
    const PointType domainSize = this->interiorSize;
-
-   //NOTE: this is related to the comparison based on the grid index
-   //const IndexVectorType gridInteriorDimension = this->gridInteriorDimension;
-   //const RealType searchRadius = this->radius;
-
    auto view_points = this->points.getView();
    auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
    {
-      //NOTE: comparison based on the grid index
-      //if( this->isInsideDomain( view_points[ i ], domainOrigin, gridInteriorDimension, searchRadius ) ){
       if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) ){
          return 0;
       }
@@ -311,19 +303,11 @@ void
 ParticlesLinkedList< ParticleConfig, Device >::forAll( Func f ) const
 {
    const PointType domainOrigin = this->gridInteriorOrigin;
-   //NOTE: arithmetics?
    //const PointType domainSize = this->gridInteriorDimension * this->radius;
    const PointType domainSize = this->interiorSize;
-
-   //NOTE: this is related to the comparison based on the grid index
-   //const IndexVectorType gridInteriorDimension = this->gridInteriorDimension;
-   //const RealType searchRadius = this->radius;
-
    const auto view_points = this->points.getConstView();
    auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
    {
-      //NOTE: comparison based on the grid index
-      //if( this->isInsideDomain( view_points[ i ], domainOrigin, gridInteriorDimension, searchRadius ) ){
       if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
          f( i );
    };
