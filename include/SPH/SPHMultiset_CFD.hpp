@@ -134,6 +134,7 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const GlobalIndexType numberOfOverlapLayers = 1;
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
@@ -181,10 +182,10 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                                                              domainOrigin,
                                                              subdomainGridDimension,
                                                              subdomainOrigin,
+                                                             numberOfOverlapLayers,
                                                              searchRadius,
                                                              numberOfSubdomains,
-                                                             this->communicator,
-                                                             logger );
+                                                             this->communicator );
   fluid->distributedParticles->writeProlog( logger );
   fluid->synchronizer.initialize( fluid->distributedParticles );
   fluid->synchronizer.setCommunicator( this->communicator );
@@ -193,10 +194,10 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
                                                                 domainOrigin,
                                                                 subdomainGridDimension,
                                                                 subdomainOrigin,
+                                                                numberOfOverlapLayers,
                                                                 searchRadius,
                                                                 numberOfSubdomains,
-                                                                this->communicator,
-                                                                logger );
+                                                                this->communicator );
   boundary->distributedParticles->writeProlog( logger );
   boundary->synchronizer.initialize( boundary->distributedParticles );
   boundary->synchronizer.setCommunicator( this->communicator );

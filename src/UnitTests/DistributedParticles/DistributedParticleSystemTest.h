@@ -10,6 +10,7 @@
 #include <Particles/ParticlesLinkedList.h>
 #include <Particles/DistributedParticles.h>
 #include <Particles/DistributedParticlesSynchronizer.h>
+#include <type_traits>
 
 
 using namespace TNL;
@@ -28,6 +29,7 @@ class Particles2DConfig
 
    static constexpr int spaceDimension = 2;
 
+   using UseWithDomainDecomposition = std::true_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, Particles2DConfig, std::index_sequence< 1, 0 > >;
 };
@@ -71,11 +73,11 @@ struct SubdomainsParametersX3Y1
 
    const PointType subdomain1Origin = { -searchRadius, -searchRadius };
    const PointType subdomain2Origin = { 2 * searchRadius, 2 * searchRadius };
-   const PointType subdomain3Origin = { 5 * searchRadius, 5 * searchRadius };
+   const PointType subdomain3Origin = { 7 * searchRadius, 7 * searchRadius };
    Containers::StaticVector< 3, PointType > gridOrigin = { subdomain1Origin, subdomain2Origin, subdomain3Origin };
    const IndexVectorType subdomain1Dimension = { 3, 3 };
-   const IndexVectorType subdomain2Dimension = { 3, 3 };
-   const IndexVectorType subdomain3Dimension = { 3, 3 };
+   const IndexVectorType subdomain2Dimension = { 5, 5 };
+   const IndexVectorType subdomain3Dimension = { 4, 4 };
    Containers::StaticVector< 3, IndexVectorType > gridDimension = { subdomain1Dimension,
                                                                     subdomain2Dimension,
                                                                     subdomain3Dimension };
@@ -128,6 +130,8 @@ bool assignPoints2D( ParticlePointer& particles )
   return true;
 }
 
+
+
 TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
 {
    using Device = TNL::Devices::Host;
@@ -148,12 +152,6 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
    Synchronizer synchronizer;
    MPI::Comm communicator = MPI_COMM_WORLD;
 
-   //ParticlesPointer particles( setup.numberOfParticles,
-   //                            setup.numberOfAllocatedParticles,
-   //                            setup.searchRadius,
-   //                            setup.numberOfGridCells );
-   //particles->setGridSize( setup.gridSize );
-   //particles->setGridOrigin( setup.gridOrigin );
    const int rank = TNL::MPI::GetRank();
 
    // setup particles
@@ -166,10 +164,13 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
    particles->setLastActiveParticle( subdomainsSetup.numberOfParticles[ rank ] - 1 );
 
    // setup distributed particles
+   std::ofstream logFile( "testLog" );
+   TNL::Logger logger( 0, logFile );
    distributedParticles->setDistributedGridParameters( subdomainsSetup.gridDimension[ rank ] + subdomainsSetup.overlapSize,
                                                        subdomainsSetup.gridOrigin[ rank ] - subdomainsSetup.overlapWidth,
                                                        subdomainsSetup.gridDimension[ rank ],
                                                        subdomainsSetup.gridOrigin[ rank ],
+                                                       1,
                                                        subdomainsSetup.searchRadius,
                                                        subdomainsSetup.subdomains,
                                                        communicator );
@@ -180,6 +181,30 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
    //test number of points
    EXPECT_EQ( particles->getNumberOfParticles(), 20 );
    EXPECT_EQ( particles->getNumberOfAllocatedParticles(), 30 );
+
+   using Grid = typename DistributedParticles::GridType;
+   using Point = typename Grid::PointType;
+   using CoordinatesType = typename Grid::CoordinatesType;
+
+   Grid localGrid = distributedParticles->getDistributedGrid().getLocalMesh();
+   if( rank == 0 ){
+      Point s1_localGridOrigin = { -0.5, -0.5 };
+      EXPECT_EQ( localGrid.getOrigin(), s1_localGridOrigin );
+      CoordinatesType s1_localGridDimension = { 3, 3 };
+      EXPECT_EQ( localGrid.getDimensions(), s1_localGridDimension );
+   }
+   if( rank == 1 ){
+      Point s1_localGridOrigin = { 1.0, 1.0 };
+      EXPECT_EQ( localGrid.getOrigin(), s1_localGridOrigin );
+      CoordinatesType s1_localGridDimension = { 5, 5 };
+      EXPECT_EQ( localGrid.getDimensions(), s1_localGridDimension );
+   }
+   if( rank == 2 ){
+      Point s1_localGridOrigin = { 3.5, 3.5 };
+      EXPECT_EQ( localGrid.getOrigin(), s1_localGridOrigin );
+      CoordinatesType s1_localGridDimension = { 4, 4 };
+      EXPECT_EQ( localGrid.getDimensions(), s1_localGridDimension );
+   }
 
 }
 
