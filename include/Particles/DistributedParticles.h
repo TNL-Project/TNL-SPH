@@ -212,16 +212,6 @@ public:
          if( neighbors[ i ] != -1 )
             innerOverlaps[ i ].updateParticlesInZone( particles );
       }
-
-      //for( int i = 0; i < this->innerOverlaps.getSize(); i++ )
-      //   innerOverlaps[ i ].updateParticlesInZone( particles );
-      //   //std::cout << " **************************** i: " << i << " **** " << innerOverlaps[ i ].getNumberOfParticles() << " cells: " << innerOverlaps[ i ].getCellsInZone() << std::endl;
-
-      ////TODO: Temp test
-      //if( distributedGrid.isThereNeighbor( { -1, 0 } ) )
-      //   innerOverlaps[ 0 ].updateParticlesInZone( particles );
-      //if( distributedGrid.isThereNeighbor( { 1, 0 } ) )
-      //   innerOverlaps[ 1 ].updateParticlesInZone( particles );
    }
 
    //collect particles to innerOverlaps

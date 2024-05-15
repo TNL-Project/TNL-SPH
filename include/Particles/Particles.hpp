@@ -5,7 +5,7 @@ namespace ParticleSystem {
 
 template< typename ParticleConfig, typename DeviceType >
 constexpr int
-Particles< ParticleConfig, DeviceType>::getParticleDimension()
+Particles< ParticleConfig, DeviceType>::getParticlesDimension()
 {
    return spaceDimension;
 }
@@ -13,14 +13,6 @@ Particles< ParticleConfig, DeviceType>::getParticleDimension()
 template< typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
-Particles< ParticleConfig, DeviceType>::getNumberOfParticles()
-{
-   return numberOfParticles;
-}
-
-template< typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
 Particles< ParticleConfig, DeviceType>::getNumberOfParticles() const
 {
    return numberOfParticles;

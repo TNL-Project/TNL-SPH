@@ -14,7 +14,8 @@ namespace TNL {
 namespace ParticleSystem {
 
 template < typename ParticleConfig, typename DeviceType >
-class Particles{
+class Particles
+{
 public:
 
    using Device = DeviceType;
@@ -52,13 +53,14 @@ public:
    /**
     * Get dimension of particle system.
     */
+   [[nodiscard]]
    static constexpr int
-   getParticleDimension();
+   getParticlesDimension();
 
    /**
     * Get search radius.
     */
-   __cuda_callable__
+   [[nodiscard]] __cuda_callable__
    const RealType
    getSearchRadius() const;
 
@@ -68,12 +70,8 @@ public:
    /**
     * Get number of particles in particle system.
     */
-   __cuda_callable__
+   [[nodiscard]] __cuda_callable__
    GlobalIndexType
-   getNumberOfParticles();
-
-   __cuda_callable__
-   const GlobalIndexType
    getNumberOfParticles() const;
 
    __cuda_callable__
