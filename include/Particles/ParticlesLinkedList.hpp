@@ -187,9 +187,6 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 
    auto view = this->particleCellInidices.getView();
    auto view_points = this->points.getView();
-
-   const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOrigin - globalGridOrigin ) / this->radius );
-   std::cout << "gridOriginGlobalCoords: " << gridOriginGlobalCoords << ", globalGridOrigin: " << globalGridOrigin << ", gridOriginWithOverlap: " << gridOrigin << std::endl;
    CellIndexer::ComputeParticleCellIndex(
          view, view_points, firstActiveParticle, lastActiveParticle, gridDimension, gridOrigin, this->radius );
 }
@@ -303,8 +300,8 @@ void
 ParticlesLinkedList< ParticleConfig, Device >::forAll( Func f ) const
 {
    const PointType domainOrigin = this->gridInteriorOrigin;
-   //const PointType domainSize = this->gridInteriorDimension * this->radius;
-   const PointType domainSize = this->interiorSize;
+   const PointType domainSize = this->gridInteriorDimension * this->radius;
+   //const PointType domainSize = this->interiorSize;
    const auto view_points = this->points.getConstView();
    auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
    {

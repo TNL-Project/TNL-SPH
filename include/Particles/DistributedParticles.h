@@ -100,19 +100,18 @@ public:
       const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + increaseLocalGridSizeDueToOverlaps;
       const GlobalIndexType zoneWidth = 1 + numberOfOverlapsLayers;
 
-      //: // initialize the zones:
-      //: if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
-      //:    const PointType zoneOriginIdx = { 0, 0 };
-      //:    const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 }; //TODO: Add 2 due to overlaps
-      //:    innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      //:    innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
-      //: }
-      //: if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
-      //:    const PointType zoneOriginIdx = { localGridDimensions[ 0 ], 0 };
-      //:    const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 }; //TODO: Add 2 due to overlaps
-      //:    innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      //:    innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
-      //: }
+      //if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
+      //   const PointType zoneOriginIdx = { 0, 0 };
+      //   const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 }; //TODO: Add 2 due to overlaps
+      //   innerOverlaps[ ZzYzXm ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+      //   innerOverlaps[ ZzYzXm ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
+      //}
+      //if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXp ) ) ){
+      //   const PointType zoneOriginIdx = { localGridDimensions[ 0 ], 0 };
+      //   const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 }; //TODO: Add 2 due to overlaps
+      //   innerOverlaps[ ZzYzXp ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+      //   innerOverlaps[ ZzYzXp ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
+      //}
 
       const int* neighbors = this->getDistributedGrid().getNeighbors();
       for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
@@ -139,8 +138,6 @@ public:
             innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
          }
       }
-
-
    }
 
    void

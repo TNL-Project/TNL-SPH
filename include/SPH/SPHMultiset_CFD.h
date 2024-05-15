@@ -77,9 +77,9 @@ public:
 #ifdef HAVE_MPI
    // protected
    void
-   initDistributed( TNL::Config::ParameterContainer& parameters,
-                    TNL::Config::ParameterContainer& parametersDistributed,
-                    TNL::Logger& logger );
+   initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
+                                TNL::Config::ParameterContainer& parametersDistributed,
+                                TNL::Logger& logger );
 
    // protected
    void

@@ -26,8 +26,8 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
    parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger );
 
-   // initialize particle sets and overlaps
-   initDistributed( parameters, this->parametersDistributed, logger );
+   // initialize distributed particle sets and overlaps
+   initDistributedParticleSets( parameters, this->parametersDistributed, logger );
    initOverlaps( parameters, this->parametersDistributed, logger );
 #else
    // initialize particle sets
@@ -116,65 +116,57 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
    }
 }
 
+#ifdef HAVE_MPI
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& parameters,
-                                           TNL::Config::ParameterContainer& parametersDistributed,
-                                           TNL::Logger& logger )
+SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
+                                                       TNL::Config::ParameterContainer& parametersDistributed,
+                                                       TNL::Logger& logger )
 {
    logger.writeHeader( "SPH simulation initialization." );
-
    int rank = TNL::MPI::GetRank();
    Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
    Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
    const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
+   logger.writeParameter( "Initializing rank: ", rank );
+   logger.writeParameter( "Initializing subdomain: ", subdomainCoordinates );
+   logger.writeParameter( "Subdomain key: ", subdomainKey );
+   logger.writeSeparator();
 
    // global domain properties
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
-   const GlobalIndexType numberOfOverlapLayers = 1;
+   const GlobalIndexType numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >( subdomainKey + "size" ) ;
    const IndexVectorType subdomainGridDimension = TNL::ceil( subdomainSize / searchRadius );
 
-   //debug, ugly with MPI, sync somehow
-   logger.writeParameter( "Initializing rank: ", rank );
-   logger.writeParameter( "Initializing subdomain: ", subdomainCoordinates );
-   logger.writeParameter( "Subdomain key: ", subdomainKey );
-   logger.writeParameter( "Initializing subdomain origin:", subdomainOrigin );
-   logger.writeParameter( "Initializing subdomain size:", subdomainSize );
-   logger.writeParameter( "Initializing subdomain size multiplied:", searchRadius * subdomainGridDimension );
-   logger.writeParameter( "Initializing subdomain grid size:", subdomainGridDimension );
-
    // init fluid
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
-   fluid->initialize( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
-                      parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
-                      searchRadius,
-                      subdomainGridDimension,
-                      subdomainOrigin,
-                      domainGridDimension,
-                      domainOrigin,
-                      logger );
+   fluid->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
+                                   parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+                                   searchRadius,
+                                   subdomainGridDimension,
+                                   subdomainOrigin,
+                                   domainGridDimension,
+                                   domainOrigin,
+                                   logger );
    fluid->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
-   logger.writeParameter( "subdomainSize:", subdomainSize );
-   logger.writeParameter( "subdomainSize - multiplied:", searchRadius * subdomainGridDimension );
-   logger.writeSeparator();
 
    // init boundary
    logger.writeParameter( "initDistributed:", "boundary->initialize" );
-   boundary->initialize( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
-                         parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
-                         searchRadius,
-                         subdomainGridDimension,
-                         subdomainOrigin,
-                         domainGridDimension,
-                         domainOrigin,
-                         logger );
+   boundary->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
+                                      parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+                                      searchRadius,
+                                      subdomainGridDimension,
+                                      subdomainOrigin,
+                                      domainGridDimension,
+                                      domainOrigin,
+                                      logger );
    boundary->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
 
    // set distributed particle system: FIXME: All this lines are ugly
@@ -202,7 +194,9 @@ SPHMultiset_CFD< Model >::initDistributed( TNL::Config::ParameterContainer& para
   boundary->synchronizer.initialize( boundary->distributedParticles );
   boundary->synchronizer.setCommunicator( this->communicator );
 }
+#endif
 
+#ifdef HAVE_MPI
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& parameters,
@@ -251,7 +245,7 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
    }
    int numberOfParticlesPerCell = parameters.getParameter< int >( "numberOfParticlesPerCell" );
 
-   fluidOverlap->initialize( 0,
+   fluidOverlap->initializeAsDistributed( 0,
                              numberOfParticlesPerCell * overlapCellsCount,
                              searchRadius,
                              resizedSubdomainGridSize,
@@ -260,7 +254,7 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
                              domainOrigin,
                              logger );
 
-   boundaryOverlap->initialize( 0,
+   boundaryOverlap->initializeAsDistributed( 0,
                                 numberOfParticlesPerCell * overlapCellsCount,
                                 searchRadius,
                                 resizedSubdomainGridSize,
@@ -269,6 +263,7 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
                                 domainOrigin,
                                 logger );
 }
+#endif
 
 template< typename Model >
 void
@@ -293,6 +288,7 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    }
 }
 
+#ifdef HAVE_MPI
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
@@ -320,6 +316,7 @@ SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterCo
       }
    }
 }
+#endif
 
 template< typename Model >
 void
@@ -373,12 +370,14 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
    timeMeasurement.stop( "search_sort" );
    writeLog( logger, "Search - sort ...", "Done." );
 
+#ifdef HAVE_MPI
    //update number of particles TODO: Do this in elegant way.
    // --- DEBUG ---
    logger.writeParameter( "Search - remove particles", "" );
    logger.writeParameter( "fluid.particles.getNumberOfParticlesToRemove()",  fluid->particles->getNumberOfParticlesToRemove(), 1 );
    logger.writeParameter( "fluid.synchronizer.getNumberOfRecvParticles()",  fluid->synchronizer.getNumberOfRecvParticles(), 1 );
    // -------------
+#endif
 
    fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
                                            - fluid->particles->getNumberOfParticlesToRemove() );

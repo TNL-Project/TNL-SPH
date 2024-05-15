@@ -65,11 +65,35 @@ class ParticleSet
                unsigned int numberOfAllocatedParticles,
                RealType searchRadius,
                IndexVectorType gridDimension,
-               VectorType gridOrigin,
-               IndexVectorType globalGridDimension,
-               VectorType globalGridOrigin,
-               TNL::Logger& logger,
-               GlobalIndexType numberOfOverlapsLayers = 1 )
+               VectorType gridOrigin )
+   {
+      this->particles->setSize( numberOfAllocatedParticles );
+      this->particles->setSearchRadius( searchRadius );
+      this->particles->setGridSize( gridDimension );
+      this->particles->setGridOrigin( gridOrigin );
+      this->particles->setNumberOfParticles( numberOfParticles );
+      this->particles->setFirstActiveParticle( 0 );
+      this->particles->setLastActiveParticle( numberOfParticles - 1 );
+      this->firstActiveParticle = 0;
+      this->lastActiveParticle = numberOfParticles - 1;
+      this->variables->setSize( numberOfAllocatedParticles );
+      this->integratorVariables->setSize( numberOfAllocatedParticles );
+      // initialize grid origin
+      this->particles->setGridInteriorDimension( gridDimension );
+      this->particles->setGridInteriorOrigin( gridOrigin );
+   }
+
+#ifdef HAVE_MPI
+   void
+   initializeAsDistributed( unsigned int numberOfParticles,
+                            unsigned int numberOfAllocatedParticles,
+                            RealType searchRadius,
+                            IndexVectorType gridDimension,
+                            VectorType gridOrigin,
+                            IndexVectorType globalGridDimension,
+                            VectorType globalGridOrigin,
+                            TNL::Logger& logger,
+                            GlobalIndexType numberOfOverlapsLayers = 1 )
    {
       const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
       const IndexVectorType resizeGridDimensionDueToOverlaps = 2 * numberOfOverlapsLayers; //FIXME: sqrt(2)*dp requires fact. 3
@@ -106,6 +130,7 @@ class ParticleSet
       logger.writeParameter( "gridEnd:", gridOrigin + searchRadius * gridDimension );
       logger.writeParameter( "gridEndWithOverlaps: ", gridOriginWithOverlap + searchRadius * gridDimensionWithOverlap );
    }
+#endif
 
    void
    initializePeriodicity( TNL::Config::ParameterContainer& parameters )

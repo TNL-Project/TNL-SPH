@@ -435,7 +435,7 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("distribution parameters")
-    g.add_argument("--subdomains-x", type=int, default=2, help="number of subdomains in x direction")
+    g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
     g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.002, help="initial distance between particles")

@@ -278,6 +278,10 @@ int main( int argc, char* argv[] )
       // update time step
       sph.timeStepping.updateTimeStep();
 
+      if( sph.timeStepping.getStep() == 26170 )
+         sph.verbose = "full";
+
+
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
       std::cout << "============================================++++++++++++++++++++++++++++++++++++============================" << std::endl;
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
