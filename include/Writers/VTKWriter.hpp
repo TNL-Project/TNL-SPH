@@ -139,7 +139,9 @@ VTKWriter< ParticleSystem >::writePoints( const ParticleSystem& particles )
    pointsCount = particles.getNumberOfParticles();
    str << "POINTS " << pointsCount << " " << getType< typename ParticleSystem::RealType >() << std::endl;
    for( std::uint64_t i = 0; i < pointsCount; i++ ) {
-      const auto& point = particles.getPoint( i );
+      //const auto& point = particles.getPoint( i );
+      //const auto& point = points_view[ i ];
+      const auto& point = particles.getPoints().getElement( i );
       for( int j = 0; j < point.getSize(); j++ )
          writeValue( format, str, point[ j ] );
       // VTK needs zeros for unused dimensions
@@ -166,8 +168,8 @@ VTKWriter< ParticleSystem >::writePointsTemp( const ParticleSystem& particles )
 
       pointsCount = particles.getNumberOfParticles();
       str << "POINTS " << pointsCount << " " << getType< typename ParticleSystem::RealType >() << std::endl;
-      //for( std::uint64_t i = 0; i < pointsCount; i++ ) {
-      for( int i = particles.getFirstActiveParticle(); i < particles.getLastActiveParticle() + 1; i++ ) {
+      for( std::uint64_t i = 0; i < pointsCount; i++ ) {
+      //for( int i = particles.getFirstActiveParticle(); i < particles.getLastActiveParticle() + 1; i++ ) {
          const auto& point = hostBuffer.getElement( i );
          for( int j = 0; j < point.getSize(); j++ )
             writeValue( format, str, point[ j ] );

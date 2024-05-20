@@ -21,7 +21,6 @@ public:
    using Config = ParticleConfig;
    using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
 
-
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
    using LocalIndexType = typename ParticleTraitsType::LocalIndexType;
    using RealType = typename ParticleTraitsType::RealType;
@@ -31,6 +30,8 @@ public:
    using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType;
    using PointArrayType = typename ParticleTraitsType::PointArrayType;
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, Device >; //TODO: Do I need this?
+
+   static constexpr int spaceDimension = Config::spaceDimension;
 
    /**
     * Constructors.
@@ -112,6 +113,14 @@ public:
    setGridOrigin( const PointType& origin );
 
    /**
+    * \brief Returns origin of the implicit linked list grid including overlap.
+    *
+    * \return the origin of the grid.
+    */
+   [[nodiscard]] const PointType
+   getGridOriginWithOverlap() const;
+
+   /**
     * \brief Returns dimensions of the implicit linked list grid.
     *
     * \return Coordinate vector with number of edges along each axis.
@@ -124,8 +133,16 @@ public:
     *
     * \param gridSize grid dimensions given in a form of coordinate vector.
     */
-   void
+   virtual void
    setGridDimensions( const IndexVectorType& dimensions );
+
+   /**
+    * \brief Returns dimensions of the implicit linked list grid including overlap.
+    *
+    * \return Coordinate vector with number of edges along each axis.
+    */
+   [[nodiscard]] const IndexVectorType
+   getGridDimensionsWithOverlap() const;
 
    /**
     * Get particle (i.e. point) positions.

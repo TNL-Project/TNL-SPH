@@ -36,8 +36,8 @@ public:
    using CellIndexer = typename ParticleSystem::CellIndexer;
 
    NeighborsLoopParams( ParticlesPointerType& particles )
-   : numberOfParticles( particles->getLastActiveParticle() + 1 ),
-     gridSize( particles->getGridSize() ),
+   : numberOfParticles( particles->getNumberOfParticles() ),
+     gridSize( particles->getGridDimensions() ),
      gridOrigin( particles->getGridOrigin() ),
      searchRadius( particles->getSearchRadius() ),
      view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
@@ -81,7 +81,7 @@ public:
    /**
     * Constructors.
     */
-   ParticlesLinkedList() : particleCellInidices( 0 ), firstActiveParticle( 0 ) {}
+   ParticlesLinkedList() : particleCellInidices( 0 ), firstLastCellParticle( 0 ) {}
 
    static std::string
    writeModelType()
@@ -97,6 +97,9 @@ public:
     */
    void
    setSize( const GlobalIndexType& size );
+
+   void
+   setGridDimensions( const IndexVectorType& dimensions );
 
    /**
     * Get particle cell indices.
@@ -156,6 +159,12 @@ public:
     */
    void
    removeParitclesOutOfDomain();
+
+   /**
+    * Run all procedures required to perform neighbor search.
+    */
+   void
+   searchForNeighbors();
 
    void
    writeProlog( TNL::Logger& logge ) const noexcept;

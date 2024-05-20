@@ -69,18 +69,18 @@ class ParticleSet
    {
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridSize( gridDimension );
+      this->particles->setGridDimensions( gridDimension );
       this->particles->setGridOrigin( gridOrigin );
       this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setFirstActiveParticle( 0 );
-      this->particles->setLastActiveParticle( numberOfParticles - 1 );
+      //removed: this->particles->setFirstActiveParticle( 0 );
+      //removed: this->particles->setLastActiveParticle( numberOfParticles - 1 );
       this->firstActiveParticle = 0;
       this->lastActiveParticle = numberOfParticles - 1;
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
-      // initialize grid origin
-      this->particles->setGridInteriorDimension( gridDimension );
-      this->particles->setGridInteriorOrigin( gridOrigin );
+      //removed: // initialize grid origin
+      //removed: this->particles->setGridInteriorDimension( gridDimension );
+      //removed: this->particles->setGridInteriorOrigin( gridOrigin );
    }
 
 #ifdef HAVE_MPI
@@ -236,10 +236,8 @@ class ParticleSet
    void sortParticles()
    {
       particles->sortParticles();
-      variables->sortVariables(
-            particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
-      integratorVariables->sortVariables(
-            particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
+      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
+      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
    }
 
    void
@@ -266,14 +264,13 @@ class ParticleSet
       std::ofstream outputFileFluid ( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( *particles );
-      variables->writeVariables( writer, particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
+      variables->writeVariables( writer, particles->getNumberOfParticles() );
 
       if( writeParticleCellIndex == true )
          writer.template writePointData< typename ParticleSystem::CellIndexArrayType >(
                particles->getParticleCellIndices(),
                "GridIndex",
                particles->getNumberOfParticles(),
-               particles->getFirstActiveParticle(),
                1 );
    }
 

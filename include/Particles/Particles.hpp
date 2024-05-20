@@ -22,7 +22,7 @@ Particles< ParticleConfig, DeviceType >::setSize( const GlobalIndexType& size )
 
 template< typename ParticleConfig, typename DeviceType >
 __cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
+const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
 Particles< ParticleConfig, DeviceType>::getNumberOfParticles() const
 {
    return numberOfParticles;
@@ -86,6 +86,14 @@ Particles< ParticleConfig, DeviceType >::setGridOrigin( const PointType& origin 
    gridOrigin = origin;
 }
 
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::PointType
+Particles< ParticleConfig, DeviceType >::getGridOriginWithOverlap() const
+{
+   const PointType originShift = this->overlapWidth * this->radius;
+   const PointType shiftedGridOrigin = gridOrigin - originShift ;
+   return shiftedGridOrigin;
+}
 
 template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
@@ -100,6 +108,15 @@ void
 Particles< ParticleConfig, DeviceType >::setGridDimensions( const IndexVectorType& dimensions )
 {
    gridDimension = dimensions;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
+Particles< ParticleConfig, DeviceType >::getGridDimensionsWithOverlap() const
+{
+   const IndexVectorType resizeGridDimensions = 2 * this->overlapWidth;
+   const IndexVectorType resizedGridDimensions = gridDimension + resizeGridDimensions;
+   return resizedGridDimensions;
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -130,33 +147,34 @@ Particles< ParticleConfig, DeviceType >::getPointsSwap()
    return points_swap;
 }
 
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-const typename Particles< ParticleConfig, DeviceType >::PointType&
-Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->points[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-typename Particles< ParticleConfig, DeviceType >::PointType&
-Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex)
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
-   return this->points[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename DeviceType >
-__cuda_callable__
-void
-Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, PointType point)
-{
-   this->points[ particleIndex ] = point;
-}
+//FIXME: I don't like this getPoint part, it is used only in VTK writer. Get this out.
+//template < typename ParticleConfig, typename DeviceType >
+//__cuda_callable__
+//const typename Particles< ParticleConfig, DeviceType >::PointType&
+//Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex) const
+//{
+//   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
+//   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
+//   return this->points[ particleIndex ];
+//}
+//
+//template < typename ParticleConfig, typename DeviceType >
+//__cuda_callable__
+//typename Particles< ParticleConfig, DeviceType >::PointType&
+//Particles< ParticleConfig, DeviceType >::getPoint(GlobalIndexType particleIndex)
+//{
+//   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
+//   TNL_ASSERT_LT( particleIndex, numberOfParticles, "invalid particle index" );
+//   return this->points[ particleIndex ];
+//}
+//
+//template < typename ParticleConfig, typename DeviceType >
+//__cuda_callable__
+//void
+//Particles<ParticleConfig, DeviceType>::setPoint(GlobalIndexType particleIndex, PointType point)
+//{
+//   this->points[ particleIndex ] = point;
+//}
 
 template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
@@ -191,8 +209,8 @@ template< typename Device2, typename Func >
 void
 Particles< ParticleConfig, Device >::forAll( Func f ) const
 {
-   const PointType domainOrigin = this->gridInteriorOrigin;
-   const PointType domainSize = this->gridInteriorDimension * this->radius;
+   const PointType domainOrigin = this->gridOrigin;
+   const PointType domainSize = this->gridDimension * this->radius;
    const auto view_points = this->points.getConstView();
    auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
    {

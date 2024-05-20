@@ -322,6 +322,7 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
 {
+
    //reset cell indices
    timeMeasurement.start( "search_reset" );
    fluid->particles->resetListWithIndices();
@@ -381,16 +382,12 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
 
    fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
                                            - fluid->particles->getNumberOfParticlesToRemove() );
-   fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle()
-                                            - fluid->particles->getNumberOfParticlesToRemove() );
    fluid->setLastActiveParticle( fluid->getLastActiveParticle() - fluid->particles->getNumberOfParticlesToRemove() );
    fluid->particles->setNumberOfParticlesToRemove( 0 );
 
    //update number of particles of boundary object
    boundary->particles->setNumberOfParticles( boundary->particles->getNumberOfParticles()
                                            - boundary->particles->getNumberOfParticlesToRemove() );
-   boundary->particles->setLastActiveParticle( boundary->particles->getLastActiveParticle()
-                                            - boundary->particles->getNumberOfParticlesToRemove() );
    boundary->setLastActiveParticle( boundary->getLastActiveParticle() - boundary->particles->getNumberOfParticlesToRemove() );
    boundary->particles->setNumberOfParticlesToRemove( 0 );
 
@@ -399,8 +396,6 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger )
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
                                                  - openBoundaryPatch->numberOfFluidParticlesToRemove );
-         fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle()
-                                                  - openBoundaryPatch->numberOfFluidParticlesToRemove );
          fluid->setLastActiveParticle( fluid->getLastActiveParticle() - openBoundaryPatch->numberOfFluidParticlesToRemove );
          openBoundaryPatch->numberOfFluidParticlesToRemove = 0;
       }
@@ -651,40 +646,10 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
                           "" );
    logger.writeCurrentTime( "Current time:" );
    logger.writeParameter( "Number of fluid particles:", fluid->getNumberOfParticles() );
-   if( verbose == "full" ) {
-      logger.writeParameter( "Fluid object - first active particle:", fluid->getFirstActiveParticle(), 1 );
-      logger.writeParameter( "Fluid particles - first active particle:", fluid->particles->getFirstActiveParticle(), 1 );
-      logger.writeParameter( "Fluid object - last active particle:", fluid->getLastActiveParticle(), 1 );
-      logger.writeParameter( "Fluid particles - last active particle:", fluid->particles->getLastActiveParticle(), 1 );
-   }
-   logger.writeParameter( "Number of boundary particles:", boundary->getNumberOfParticles() );
-   if( verbose == "full" ) {
-      logger.writeParameter( "Boundary object - first active particle:", boundary->getFirstActiveParticle(), 1 );
-      logger.writeParameter( "Boundary particles - first active particle:", boundary->particles->getFirstActiveParticle(), 1 );
-      logger.writeParameter( "Boundary object - last active particle:", boundary->getLastActiveParticle(), 1 );
-      logger.writeParameter( "Boundary particles - last active particle:", boundary->particles->getLastActiveParticle(), 1 );
-   }
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
-      for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ ) {
+      for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ )
          logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " particles:",
                                 openBoundaryPatches[ i ]->getNumberOfParticles() );
-         if( verbose == "full" ) {
-            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier + " object - first active particle:",
-                                   openBoundaryPatches[ i ]->getFirstActiveParticle(),
-                                   1 );
-            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier
-                                      + " particles - first active particle:",
-                                   openBoundaryPatches[ i ]->particles->getFirstActiveParticle(),
-                                   1 );
-            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier + " object - last active particle:",
-                                   openBoundaryPatches[ i ]->getLastActiveParticle(),
-                                   1 );
-            logger.writeParameter( "Patch " + openBoundaryPatches[ i ]->config.identifier
-                                      + " particles - last active particle:",
-                                   openBoundaryPatches[ i ]->particles->getLastActiveParticle(),
-                                   1 );
-         }
-      }
    }
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       if( verbose == "full" ) {
