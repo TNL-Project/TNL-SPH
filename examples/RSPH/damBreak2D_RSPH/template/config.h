@@ -2,7 +2,7 @@
 using Device = TNL::Devices::Cuda;
 
 #include <TNL/Containers/StaticVector.h>
-#include <Particles/GenerateCellIndex.h>
+#include <Particles/CellIndexer.h>
 
 template< typename Device >
 class ParticleSystemConfig

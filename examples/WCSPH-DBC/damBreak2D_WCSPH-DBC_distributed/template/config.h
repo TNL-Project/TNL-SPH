@@ -6,7 +6,7 @@ using Device = TNL::Devices::Cuda;
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include <Particles/GenerateCellIndex.h>
+#include <Particles/CellIndexer.h>
 #include <Particles/ParticlesTraits.h>
 
 template< typename Device >
