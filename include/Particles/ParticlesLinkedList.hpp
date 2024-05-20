@@ -4,41 +4,6 @@ namespace TNL {
 namespace ParticleSystem {
 
 template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::GlobalIndexType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getFirstActiveParticle() const
-{
-   return this->firstActiveParticle;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::GlobalIndexType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getLastActiveParticle() const
-{
-   return this->lastActiveParticle;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setFirstActiveParticle( GlobalIndexType firstActiveParticle )
-{
-   this->firstActiveParticle = firstActiveParticle;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setLastActiveParticle( GlobalIndexType lastActiveParticle )
-{
-   this->lastActiveParticle = lastActiveParticle;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getGridSize() const
-{
-   return gridDimension;
-}
-
-template < typename ParticleConfig, typename DeviceType >
 void
 ParticlesLinkedList< ParticleConfig, DeviceType >::setGridSize( IndexVectorType gridSize )
 {
@@ -50,84 +15,11 @@ ParticlesLinkedList< ParticleConfig, DeviceType >::setGridSize( IndexVectorType 
 }
 
 template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getGlobalGridSize() const
-{
-   return globalGridDimension;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setGlobalGridSize( IndexVectorType gridSize )
-{
-   globalGridDimension = gridSize;
-}
-
-template < typename ParticleConfig, typename DeviceType >
 void
 ParticlesLinkedList< ParticleConfig, DeviceType >::setSize( const GlobalIndexType& size )
 {
    BaseType::setSize( size );
    this->particleCellInidices.setSize( size );
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PointType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getGridOrigin() const
-{
-   return gridOrigin;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setGridOrigin( PointType gridBegin )
-{
-   gridOrigin = gridBegin;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PointType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getGlobalGridOrigin() const
-{
-   return globalGridOrigin;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setGlobalGridOrigin( PointType gridBegin )
-{
-   globalGridOrigin = gridBegin;
-}
-
-//TODO: Following lines need to be think through, added due to overlaps
-template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::PointType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getGridInteriorOrigin() const
-{
-   return gridInteriorOrigin;
-}
-
-//TODO: Following lines need to be think through, added due to overlaps
-template < typename ParticleConfig, typename DeviceType >
-const typename ParticlesLinkedList< ParticleConfig, DeviceType >::IndexVectorType
-ParticlesLinkedList< ParticleConfig, DeviceType >::getGridInteriorDimension() const
-{
-   return gridInteriorDimension;
-}
-
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setGridInteriorOrigin( PointType gridInteriorOrigin )
-{
-   this->gridInteriorOrigin = gridInteriorOrigin;
-}
-
-//TODO: Following lines need to be think through, added due to overlaps
-template < typename ParticleConfig, typename DeviceType >
-void
-ParticlesLinkedList< ParticleConfig, DeviceType >::setGridInteriorDimension( IndexVectorType gridInteriorDimension )
-{
-   this->gridInteriorDimension = gridInteriorDimension;
 }
 
 template< typename ParticleConfig, typename Device >
@@ -183,12 +75,18 @@ template< typename UseWithDomainDecomposition, std::enable_if_t< !UseWithDomainD
 void
 ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 {
-   GlobalIndexType _numberOfParticles = this->numberOfParticles;
+   const RealType searchRadius = this->radius;
+   const PointType gridOrigin = this->gridOrigin;
+   const IndexVectorType gridDimension = this->gridDimension;
+   auto view_particeCellIndices = this->particleCellInidices.getView();
+   const auto points_view = this->points.getConstView();
 
-   auto view = this->particleCellInidices.getView();
-   auto view_points = this->points.getView();
-   CellIndexer::ComputeParticleCellIndex(
-         view, view_points, firstActiveParticle, lastActiveParticle, gridDimension, gridOrigin, this->radius );
+   auto indexParticles = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      const IndexVectorType cellCoords = TNL::floor( ( points_view[ i ] - gridOrigin ) / searchRadius );
+      view_particeCellIndices[ i ] = CellIndexer::EvaluateCellIndex( cellCoords, gridDimension );
+   };
+   Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticles, indexParticles );
 }
 
 template< typename ParticleConfig, typename Device >
@@ -223,35 +121,6 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 
    };
    Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, indexParticles );
-}
-
-
-template < typename ParticleConfig, typename Device >
-__cuda_callable__
-bool
-ParticlesLinkedList< ParticleConfig, Device >::isInsideDomain( const PointType& point,
-                                                               const PointType& domainOrigin,
-                                                               const PointType& domainSize ) const
-{
-   //FIXME: These two lines produces different results
-   //if( ( point > domainOrigin ) && ( point < ( domainOrigin + domainSize ) ) )
-   if( ( point[ 0 ] >= domainOrigin[ 0 ] ) && ( point[ 0 ] < ( domainOrigin[ 0 ] + domainSize[ 0 ] ) ) ) // >=, <= vs >, <
-      return true;
-   return false;
-}
-
-template < typename ParticleConfig, typename Device >
-__cuda_callable__
-bool
-ParticlesLinkedList< ParticleConfig, Device >::isInsideDomain( const PointType& point,
-                                                               const PointType& domainOrigin,
-                                                               const IndexVectorType& gridInteriorDimension,
-                                                               const RealType& searchRadius ) const
-{
-   const GlobalIndexType innerCellXCoord = static_cast< GlobalIndexType >( TNL::floor( ( point[ 0 ] - domainOrigin[ 0 ] ) / searchRadius ) );
-   if( ( innerCellXCoord >= 0 ) && ( innerCellXCoord < gridInteriorDimension[ 0 ] ) )
-      return true;
-   return false;
 }
 
 template < typename ParticleConfig, typename Device >
@@ -291,24 +160,6 @@ void
 ParticlesLinkedList< ParticleConfig, Device >::setNumberOfParticlesToRemove( GlobalIndexType removeCount )
 {
    this->numberOfParticlesToRemove = removeCount;
-}
-
-//NOTE: Here, I could probably include f dependent on particle position: f( view_points[ i ] )
-template< typename ParticleConfig, typename Device >
-template< typename Device2, typename Func >
-void
-ParticlesLinkedList< ParticleConfig, Device >::forAll( Func f ) const
-{
-   const PointType domainOrigin = this->gridInteriorOrigin;
-   const PointType domainSize = this->gridInteriorDimension * this->radius;
-   //const PointType domainSize = this->interiorSize;
-   const auto view_points = this->points.getConstView();
-   auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
-   {
-      if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
-         f( i );
-   };
-   Algorithms::parallelFor< Device2 >( firstActiveParticle, lastActiveParticle + 1, wrapper );
 }
 
 template < typename ParticleConfig, typename Device >

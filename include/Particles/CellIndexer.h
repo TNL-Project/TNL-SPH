@@ -45,64 +45,6 @@ public:
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using PointType = typename ParticleTraitsType::PointType;
 
-   //using FixedPointType = int32_t;
-   //constexpr int fractionalBits = 16;
-
-   static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize )
-   {
-      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
-      {
-         auto f = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
-         {
-            cells[ i[ 1 ] * gridSize[ 0 ] + i[ 0 ] ] = i[ 1 ] * gridSize[ 0 ] + i[ 0 ];
-         };
-
-         IndexVectorType begin{ 0, 0 };
-         Algorithms::parallelFor< DeviceType >( begin, gridSize,  f );
-      }
-
-      if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
-      {
-         auto f = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
-         {
-            cells[ i[ 0 ] * gridSize[ 1 ] + i[ 1 ] ] = i[ 0 ] * gridSize[ 1 ] + i[ 1 ];
-         };
-
-         IndexVectorType begin{ 0, 0 };
-         Algorithms::parallelFor< DeviceType >( begin, gridSize,  f );
-      }
-   }
-
-   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices,
-                                         const PointsView view_points,
-                                         const GlobalIndexType firstActiveParticle,
-                                         const GlobalIndexType lastActiveParticle,
-                                         const IndexVectorType gridSize,
-                                         const PointType gridOrigin,
-                                         const RealType searchRadius  )
-   {
-
-      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
-      {
-         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-         {
-            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) + \
-                                           TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ];
-         };
-         Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
-      }
-
-      if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
-      {
-         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-         {
-            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
-                                           TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ];
-         };
-         Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
-      }
-   }
-
    __cuda_callable__
    static uint32_t
    EvaluateCellIndex( const GlobalIndexType& i, const GlobalIndexType& j, const IndexVectorType& gridSize )
@@ -132,28 +74,14 @@ public:
                       const IndexVectorType& gridDimension,
                       const RealType& searchRadius )
    {
-
-      const float dist = 1 / ( double ) searchRadius;
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1 > > )
          return TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) + \
                 TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridDimension[ 0 ];
 
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 1, 0 > > )
-         /**
-          * Due to rounding errors, there is difference between this form of expression and the actually used.
-
          return TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) + \
                 TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridDimension[ 1 ];
-         */
-
-         return TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) * dist ) + \
-                TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) * dist ) * gridDimension[ 1 ];
-         /**
-         return TNL::floor( r[ 1 ] / searchRadius - gridOrigin[ 1 ]  / searchRadius ) + \
-                TNL::floor( r[ 0 ] / searchRadius - gridOrigin[ 0 ]  / searchRadius ) * gridDimension[ 1 ];
-         */
    }
-
 };
 
 template< typename ParticleConfig, typename Permutation >
@@ -170,49 +98,6 @@ public:
    using RealType = typename ParticleTraitsType::RealType;
    using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
    using PointType = typename ParticleTraitsType::PointType;
-
-
-   static void ComputeCellIndex( CellIndexView cells, PointsView points, IndexVectorType gridSize  )
-   {
-      auto f = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, LocalIndexType k ) mutable
-      {
-         cells[ k * ( gridSize[ 0 ] * gridSize[ 1 ] ) + j * gridSize[ 0 ] + i ] = k * ( gridSize[ 0 ] * gridSize[ 1 ] ) + j * gridSize[ 0 ] + i;
-      };
-      IndexVectorType begin{ 0, 0, 0 };
-      Algorithms::parallelFor< DeviceType >( begin, gridSize, f );
-   }
-
-   static void ComputeParticleCellIndex( CellIndexView view_particeCellIndices,
-                                         const PointsView view_points,
-                                         const GlobalIndexType firstActiveParticle,
-                                         const GlobalIndexType lastActiveParticle,
-                                         const IndexVectorType gridSize,
-                                         const PointType gridOrigin,
-                                         const RealType searchRadius  )
-   {
-
-      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1, 2 > > )
-      {
-         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-         {
-            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) +
-                                           TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 0 ] +
-                                           TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) * gridSize[ 0 ] * gridSize[ 1 ];
-         };
-         Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
-      }
-
-      if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
-      {
-         auto f = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-         {
-            view_particeCellIndices[ i ] = TNL::floor( ( view_points[ i ][ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) +
-                                           TNL::floor( ( view_points[ i ][ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridSize[ 1 ] +
-                                           TNL::floor( ( view_points[ i ][ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridSize[ 1 ] * gridSize[ 2 ];
-         };
-         Algorithms::parallelFor< DeviceType >( firstActiveParticle, lastActiveParticle + 1, f );
-      }
-   }
 
    __cuda_callable__
    static uint32_t
@@ -234,6 +119,24 @@ public:
 
       if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
          return i[ 0 ] * gridSize[ 1 ] * gridSize[ 2 ] + i[ 1 ] * gridSize[ 1 ] + i[ 2 ];
+   }
+
+   __cuda_callable__
+   static uint32_t
+   EvaluateCellIndex( const PointType& r,
+                      const PointType& gridOrigin,
+                      const IndexVectorType& gridDimension,
+                      const RealType& searchRadius )
+   {
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 0, 1, 2 > > )
+         return TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) +
+                TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridDimension[ 0 ] +
+                TNL::floor( ( r[ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) * gridDimension[ 0 ] * gridDimension[ 1 ];
+
+      if constexpr( std::is_same_v< Permutation, std::index_sequence< 2, 1, 0 > > )
+         return TNL::floor( ( r[ 2 ] - gridOrigin[ 2 ] ) / searchRadius ) +
+                TNL::floor( ( r[ 1 ] - gridOrigin[ 1 ] ) / searchRadius ) * gridDimension[ 1 ] +
+                TNL::floor( ( r[ 0 ] - gridOrigin[ 0 ] ) / searchRadius ) * gridDimension[ 1 ] * gridDimension[ 2 ];
    }
 };
 

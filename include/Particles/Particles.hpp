@@ -11,6 +11,16 @@ Particles< ParticleConfig, DeviceType>::getParticlesDimension()
 }
 
 template< typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setSize( const GlobalIndexType& size )
+{
+   numberOfAllocatedParticles = size;
+   this->points.setSize( size );
+   this->points_swap.setSize( size );
+   this->sortPermutations->setSize( size ); //TODO: sort permulation should not be pointer.
+}
+
+template< typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
 Particles< ParticleConfig, DeviceType>::getNumberOfParticles() const
@@ -34,16 +44,6 @@ Particles< ParticleConfig, DeviceType >::setNumberOfParticles( const GlobalIndex
 }
 
 template< typename ParticleConfig, typename DeviceType >
-void
-Particles< ParticleConfig, DeviceType >::setSize( const GlobalIndexType& size )
-{
-   numberOfAllocatedParticles = size;
-   this->points.setSize( size );
-   this->points_swap.setSize( size );
-   this->sortPermutations->setSize( size ); //TODO: sort permulation should not be pointer.
-}
-
-template< typename ParticleConfig, typename DeviceType >
 __cuda_callable__
 const typename Particles< ParticleConfig, DeviceType >::RealType
 Particles< ParticleConfig, DeviceType>::getSearchRadius() const
@@ -56,6 +56,50 @@ void
 Particles< ParticleConfig, DeviceType>::setSearchRadius( const RealType& searchRadius )
 {
    this->radius = searchRadius;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::PointType
+Particles< ParticleConfig, DeviceType >::getGridReferentialOrigin() const
+{
+   return gridReferentialOrigin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setGridReferentialOrigin( const PointType& origin )
+{
+   gridReferentialOrigin = origin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::PointType
+Particles< ParticleConfig, DeviceType >::getGridOrigin() const
+{
+   return gridOrigin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setGridOrigin( const PointType& origin )
+{
+   gridOrigin = origin;
+}
+
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
+Particles< ParticleConfig, DeviceType >::getGridDimensions() const
+{
+   return gridDimension;
+}
+
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setGridDimensions( const IndexVectorType& dimensions )
+{
+   gridDimension = dimensions;
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -126,6 +170,50 @@ typename Particles< ParticleConfig, DeviceType >::IndexArrayTypePointer&
 Particles< ParticleConfig, DeviceType >::getSortPermutations()
 {
    return this->sortPermutations;
+}
+
+template < typename ParticleConfig, typename Device >
+const typename Particles< ParticleConfig, Device >::GlobalIndexType
+Particles< ParticleConfig, Device >::getNumberOfParticlesToRemove() const
+{
+   return numberOfParticlesToRemove;
+}
+
+template < typename ParticleConfig, typename Device >
+void
+Particles< ParticleConfig, Device >::setNumberOfParticlesToRemove( const GlobalIndexType& removeCount )
+{
+   this->numberOfParticlesToRemove = removeCount;
+}
+
+template< typename ParticleConfig, typename Device >
+template< typename Device2, typename Func >
+void
+Particles< ParticleConfig, Device >::forAll( Func f ) const
+{
+   const PointType domainOrigin = this->gridInteriorOrigin;
+   const PointType domainSize = this->gridInteriorDimension * this->radius;
+   const auto view_points = this->points.getConstView();
+   auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
+         f( i );
+   };
+   Algorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
+}
+
+template < typename ParticleConfig, typename Device >
+__cuda_callable__
+bool
+Particles< ParticleConfig, Device >::isInsideDomain( const PointType& point,
+                                                               const PointType& domainOrigin,
+                                                               const PointType& domainSize ) const
+{
+   //FIXME: These two lines produces different results
+   //if( ( point > domainOrigin ) && ( point < ( domainOrigin + domainSize ) ) )
+   if( ( point[ 0 ] >= domainOrigin[ 0 ] ) && ( point[ 0 ] < ( domainOrigin[ 0 ] + domainSize[ 0 ] ) ) ) // >=, <= vs >, <
+      return true;
+   return false;
 }
 
 template < typename ParticleConfig, typename DeviceType >
