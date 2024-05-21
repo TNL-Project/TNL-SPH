@@ -233,11 +233,26 @@ class ParticleSet
       return this->variables;
    }
 
-   void sortParticles()
+   void
+   sortParticles()
    {
       particles->sortParticles();
       variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
       integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+   }
+
+   void
+   sortVariables()
+   {
+      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
+      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+   }
+
+   void
+   searchForNeighbors()
+   {
+      this->particles->searchForNeighbors();
+      this->sortVariables();
    }
 
    void

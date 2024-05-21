@@ -234,6 +234,24 @@ Particles< ParticleConfig, Device >::isInsideDomain( const PointType& point,
    return false;
 }
 
+template < typename ParticleConfig, typename Device >
+void
+Particles< ParticleConfig, Device >::reorderParticles()
+{
+   const GlobalIndexType numberOfParticle = this->getNumberOfParticles();
+   using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< Device >;
+   ThrustDeviceType thrustDevice;
+   auto view_map = this->sortPermutations->getView();
+   auto view_points = this->getPoints().getView();
+   auto view_points_swap = this->points_swap.getView();
+   thrust::gather( thrustDevice,
+                   view_map.getArrayData(),
+                   view_map.getArrayData() + numberOfParticle,
+                   view_points.getArrayData(),
+                   view_points_swap.getArrayData() );
+   this->getPoints().swap( this->points_swap );
+}
+
 template < typename ParticleConfig, typename DeviceType >
 void
 Particles< ParticleConfig, DeviceType >::writeProlog( TNL::Logger& logger ) const noexcept

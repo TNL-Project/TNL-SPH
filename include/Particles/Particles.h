@@ -7,6 +7,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
+#include "../SPH/shared/thrustExecPolicySelector.h"
 
 #include "ParticlesTraits.h"
 
@@ -208,6 +209,12 @@ public:
    __cuda_callable__
    bool
    isInsideDomain( const PointType& point, const PointType& domainOrigin, const PointType& domainSize ) const;
+
+   /**
+    * \brief Reorder particles based on permutation vector.
+    */
+   void
+   reorderParticles();
 
    void
    writeProlog( TNL::Logger& logger ) const noexcept;

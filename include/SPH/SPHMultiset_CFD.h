@@ -97,8 +97,11 @@ public:
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
+   //void
+   //performNeighborSearch( TNL::Logger& log );
+
    void
-   performNeighborSearch( TNL::Logger& log );
+   performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 
    //TODO: Should we have log in this functions?
    template< typename ParticleSetPointer >

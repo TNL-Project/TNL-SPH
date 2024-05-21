@@ -155,8 +155,7 @@ template < typename ParticleConfig, typename Device >
 void
 ParticlesLinkedList< ParticleConfig, Device >::sortParticles()
 {
-
-   GlobalIndexType numberOfParticle = this->getNumberOfParticles();
+   const GlobalIndexType numberOfParticle = this->getNumberOfParticles();
    auto view_particleCellIndices = this->particleCellInidices.getView();
    auto view_map = this->sortPermutations->getView();
    this->sortPermutations->forAllElements( [] __cuda_callable__ ( int i, int& value ) { value = i; } );
@@ -166,15 +165,6 @@ ParticlesLinkedList< ParticleConfig, Device >::sortParticles()
                         view_particleCellIndices.getArrayData(),
                         view_particleCellIndices.getArrayData() + numberOfParticle,
                         view_map.getArrayData() );
-
-   auto view_points = this->getPoints().getView();
-   auto view_points_swap = this->points_swap.getView();
-   thrust::gather( thrustDevice,
-                   view_map.getArrayData(),
-                   view_map.getArrayData() + numberOfParticle,
-                   view_points.getArrayData(),
-                   view_points_swap.getArrayData() );
-   this->getPoints().swap( this->points_swap );
 }
 
 template< typename ParticleConfig, typename Device >
@@ -240,8 +230,10 @@ ParticlesLinkedList< ParticleConfig, Device >::searchForNeighbors()
    resetListWithIndices();
    computeParticleCellIndices();
    sortParticles();
+   this->reorderParticles();
    //update number of particles - removed particles with invalid positions are shifted at the end of the array
-   this->setNumberOfParticles( this->getNumberOfParticles() - this->numberOfParticlesToRemove() );
+   if( this->getNumberOfParticles() != 0 )
+      this->setNumberOfParticles( this->getNumberOfParticles() - this->getNumberOfParticlesToRemove() );
    particlesToCells();
 }
 
