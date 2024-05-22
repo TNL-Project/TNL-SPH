@@ -1,4 +1,5 @@
 #include "ParticlesLinkedList.h"
+#include "details/details.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -50,28 +51,6 @@ ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndices()
    return particleCellInidices;
 }
 
-/*
-template < typename ParticleConfig, typename Device >
-__cuda_callable__
-const typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexType&
-ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndex( GlobalIndexType particleIndex ) const
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, this->numberOfParticles, "invalid particle index" );
-   return this->particleCellInidices[ particleIndex ];
-}
-
-template < typename ParticleConfig, typename Device >
-__cuda_callable__
-typename ParticlesLinkedList< ParticleConfig, Device >::CellIndexType&
-ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndex( GlobalIndexType particleIndex )
-{
-   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
-   TNL_ASSERT_LT( particleIndex, this->numberOfParticles, "invalid particle index" );
-   return this->particleCellInidices[ particleIndex ];
-}
-*/
-
 template < typename ParticleConfig, typename Device >
 template< typename UseWithDomainDecomposition, std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled >
 void
@@ -107,14 +86,7 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
    auto indexParticles = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
    {
       const PointType point = view_points[ i ];
-      //FIXME: Resolve with specialized detail class
-      //error: An extended __host__ __device__ lambda cannot first-capture variable in constexpr-if context
-      //if constexpr( ParticleConfig::spaceDimension == 2 )
-      //   if( view_points[ i ][ 0 ] == FLT_MAX || view_points[ i ][ 1 ] == FLT_MAX )
-      //if constexpr( ParticleConfig::spaceDimension == 3 )
-      //   if( view_points[ i ][ 0 ] == FLT_MAX || view_points[ i ][ 1 ] == FLT_MAX ||  view_points[ i ][ 2 ] == FLT_MAX )
-      //      view_particeCellIndices[ i ] = INT_MAX;
-      if( view_points[ i ][ 0 ] == FLT_MAX || view_points[ i ][ 1 ] == FLT_MAX ){
+      if( detail::isInvalid( view_points[ i ] )){
          view_particeCellIndices[ i ] = INT_MAX;
       }
       else{
