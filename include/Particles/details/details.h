@@ -14,6 +14,7 @@ struct checkParticle< 2 >
 {
    template< typename PointType >
    static bool
+   __cuda_callable__
    isValid( const PointType& point )
    {
       if( point[ 0 ] == FLT_MAX || point[ 1 ] == FLT_MAX )
@@ -23,6 +24,7 @@ struct checkParticle< 2 >
    }
 
    template< typename PointType >
+   __cuda_callable__
    static bool
    isInvalid( const PointType& point )
    {
@@ -37,6 +39,7 @@ template <>
 struct checkParticle< 3 >
 {
    template< typename PointType >
+   __cuda_callable__
    static bool
    isValid( const PointType& point )
    {
@@ -47,6 +50,7 @@ struct checkParticle< 3 >
    }
 
    template< typename PointType >
+   __cuda_callable__
    static bool
    isInvalid( const PointType& point )
    {
@@ -62,6 +66,7 @@ struct checkParticle< 3 >
 //        but since it is udes in lambda function, nvcc disaegree
 
 template< typename PointType >
+__cuda_callable__
 static bool
 isValid( PointType point )
 {
@@ -70,6 +75,7 @@ isValid( PointType point )
 }
 
 template< typename PointType >
+__cuda_callable__
 static bool
 isInvalid( PointType point )
 {

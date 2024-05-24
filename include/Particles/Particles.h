@@ -146,6 +146,22 @@ public:
    getGridDimensionsWithOverlap() const;
 
    /**
+    * \brief Set width of overlap expressed in number of cells.
+    *
+    * \param Integer expressing the overlap width in number of cells
+    */
+   void
+   setOverlapWidth( const GlobalIndexType width );
+
+   /**
+    * \brief Set width of overlap expressed in number of cells.
+    *
+    * \return Integer expressing the overlap width in number of cells
+    */
+   [[nodiscard]] const GlobalIndexType
+   getOverlapWidth() const;
+
+   /**
     * Get particle (i.e. point) positions.
     */
    [[nodiscard]] const PointArrayType&

@@ -102,9 +102,12 @@ template < typename ParticleConfig, typename Device >
 void
 ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
 {
-   const PointType domainOrigin = this->gridInteriorOrigin;
-   //const PointType domainSize = this->gridInteriorDimension * this->radius;
-   const PointType domainSize = this->interiorSize;
+   //const PointType domainOrigin = this->gridInteriorOrigin;
+   ////const PointType domainSize = this->gridInteriorDimension * this->radius;
+   //const PointType domainSize = this->interiorSize;
+   const PointType domainOrigin = this->gridOrigin;
+   const PointType domainSize = this->gridDimension * this->radius;
+   //const PointType domainSize = this->interiorSize;
    auto view_points = this->points.getView();
    auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -116,8 +119,8 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
          return 1;
       }
    };
-   const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( this->firstActiveParticle,
-                                                                                       this->lastActiveParticle + 1,
+   const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( 0,
+                                                                                       this->numberOfParticles,
                                                                                        checkParticlePosition,
                                                                                        TNL::Plus() );
    this->setNumberOfParticlesToRemove( this->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );

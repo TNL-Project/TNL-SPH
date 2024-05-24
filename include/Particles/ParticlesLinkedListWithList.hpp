@@ -20,7 +20,7 @@ void
 ParticlesLinkedList< ParticleConfig, DeviceType >::setSize( const GlobalIndexType& size )
 {
    BaseType::setSize( size );
-   this->particleCellInidices.setSize( size );
+   this->neighborList
 }
 
 template< typename ParticleConfig, typename Device >

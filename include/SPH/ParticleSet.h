@@ -102,20 +102,24 @@ class ParticleSet
 
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridSize( gridDimensionWithOverlap );
-      this->particles->setGridOrigin( gridOriginWithOverlap );
+      //this->particles->setGridDimensions( gridDimensionWithOverlap );
+      //this->particles->setGridOrigin( gridOriginWithOverlap );
+      this->particles->setGridDimensions( gridDimension );
+      this->particles->setGridOrigin( gridOrigin );
+      this->particles->setOverlapWidth( 1 );
       this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setFirstActiveParticle( 0 );
-      this->particles->setLastActiveParticle( numberOfParticles - 1 );
+      //this->particles->setFirstActiveParticle( 0 );
+      //this->particles->setLastActiveParticle( numberOfParticles - 1 );
       this->firstActiveParticle = 0;
       this->lastActiveParticle = numberOfParticles - 1;
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
-      this->particles->setGlobalGridSize( globalGridDimension );
-      this->particles->setGlobalGridOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
-      this->particles->setGridInteriorDimension( gridDimension );
-      this->particles->setGridInteriorOrigin( gridOrigin );
+      //this->particles->setGlobalGridSize( globalGridDimension );
+      //this->particles->setGlobalGridOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
+      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
+      //this->particles->setGridInteriorDimension( gridDimension );
+      //this->particles->setGridInteriorOrigin( gridOrigin );
 
       // ..this->particles->setGridInterirSize( ... );
       logger.writeSeparator();
@@ -312,7 +316,7 @@ class ParticleSet
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
       particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
-      particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
+      //particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
       this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
    }
 #endif

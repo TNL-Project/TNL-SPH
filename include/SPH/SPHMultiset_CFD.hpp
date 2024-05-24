@@ -155,7 +155,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                    domainGridDimension,
                                    domainOrigin,
                                    logger );
-   fluid->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
+   //fluid->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
 
    // init boundary
    logger.writeParameter( "initDistributed:", "boundary->initialize" );
@@ -167,7 +167,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                       domainGridDimension,
                                       domainOrigin,
                                       logger );
-   boundary->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
+   //boundary->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
 
    // set distributed particle system: FIXME: All this lines are ugly
   fluid->distributedParticles->setDistributedGridParameters( domainGridDimension,

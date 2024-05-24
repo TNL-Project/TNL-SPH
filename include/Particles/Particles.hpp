@@ -120,6 +120,20 @@ Particles< ParticleConfig, DeviceType >::getGridDimensionsWithOverlap() const
 }
 
 template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setOverlapWidth( const GlobalIndexType width )
+{
+   overlapWidth = width;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::GlobalIndexType
+Particles< ParticleConfig, DeviceType >::getOverlapWidth() const
+{
+   return overlapWidth;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointArrayType&
 Particles< ParticleConfig, DeviceType >::getPoints() const
 {
