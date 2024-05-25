@@ -80,7 +80,7 @@ public:
          if( neighbors[ i ] != -1 )
              bufferSize += innerOverlapsView[ i ].getNumberOfCells() * innerOverlapsView[ i ].getNumberOfParticlesPerCell();
 
-      this->sendBuffers.setSize( bufferSize * Particles::getParticleDimension() );
+      this->sendBuffers.setSize( bufferSize * Particles::getParticlesDimension() );
    }
 
 
