@@ -172,19 +172,21 @@ int main( int argc, char* argv[] )
 
       // SingleSet + Overlaps: collect particles, send them between processors
       //if( sph.timeStepping.getStep() == 1707 && TNL::MPI::GetRank() == 1 )
-      if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 1 )
-         sph.fluid->distributedParticles->DEBUG_printParticlesInOverlap( sph.fluid->particles );
+      //if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 1 )
+      //   sph.fluid->distributedParticles->DEBUG_printParticlesInOverlap( sph.fluid->particles );
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
 
       //if( sph.timeStepping.getStep() == 1707 && TNL::MPI::GetRank() == 0 ){
-      if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 0 ){
-         std::cout << "+++++++++++++++++++++++++++++++++++++++++-+-+-+-+-+-+- WE HERE ada+s-d+a-+-+-+-+-+-+--+---------------------------------242" << std::endl;
-         sph.synchronizeDistributedSimulation( true );
-      }
-      else
-         sph.synchronizeDistributedSimulation();
+      //if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 0 ){
+      //   std::cout << "+++++++++++++++++++++++++++++++++++++++++-+-+-+-+-+-+- WE HERE ada+s-d+a-+-+-+-+-+-+--+---------------------------------242" << std::endl;
+      //   sph.synchronizeDistributedSimulation( true );
+      //}
+      //else
+
+      sph.writeLog( log, "Starting synchronization.", "" );
+      sph.synchronizeDistributedSimulation();
       sph.writeLog( log, "Synchronize...", "Done." );
       //return 0;
 
