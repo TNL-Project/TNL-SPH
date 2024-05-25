@@ -100,6 +100,8 @@ public:
       const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + increaseLocalGridSizeDueToOverlaps;
       const GlobalIndexType zoneWidth = 1 + numberOfOverlapsLayers;
 
+      std::cout << "rank: [" << TNL::MPI::GetRank() << "] localGridDimensions: " << localGridDimensions << " increaseLocalGridSizeDueToOverlaps: " << increaseLocalGridSizeDueToOverlaps << " localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << " zoneWidth: " << zoneWidth << std::endl;
+
       //if( distributedGrid.isThereNeighbor( Directions::template getXYZ< 2 >( ZzYzXm ) ) ){
       //   const PointType zoneOriginIdx = { 0, 0 };
       //   const PointType zoneDimensions = { 2, localGridDimensions[ 1 ] + 2 }; //TODO: Add 2 due to overlaps
