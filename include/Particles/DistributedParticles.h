@@ -154,6 +154,12 @@ public:
    {
       this->communicator = comm;
 
+      std::cout << "rank: <" << TNL::MPI::GetRank() << " globalGridSize: " << globalGridSize << \
+                                                       " globalGridOrigin: " << globalGridOrigin << \
+                                                       " localGridSize: " << localGridSize << \
+                                                       " localGridOrigin: " << localGridOrigin << \
+                                                       " numberOfOverlapsLayers " << numberOfOverlapsLayers << \
+                                                       " searchRadius " << searchRadius << std::endl;
       //TODO: Pass as globalGrid
       GridType globalGrid;
       globalGrid.setDimensions( globalGridSize );
