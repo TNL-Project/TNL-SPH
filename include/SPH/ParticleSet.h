@@ -118,21 +118,22 @@ class ParticleSet
       //this->particles->setGlobalGridSize( globalGridDimension );
       //this->particles->setGlobalGridOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
       this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
+      //this->particles->setGridReferentialOrigin( globalGridOrigin );
       //this->particles->setGridInteriorDimension( gridDimension );
       //this->particles->setGridInteriorOrigin( gridOrigin );
 
       // ..this->particles->setGridInterirSize( ... );
-      logger.writeSeparator();
-      logger.writeParameter( "Initialize particle set:", "" );
-      logger.writeParameter( "searchRadius:", searchRadius );
-      logger.writeParameter( "gridDimension:", gridDimension );
-      logger.writeParameter( "gridOrigin:", gridOrigin );
-      logger.writeParameter( "shiftOriginDueToOverlaps:", shiftOriginDueToOverlaps );
-      logger.writeParameter( "resizeGridDimensionDueToOverlaps:", resizeGridDimensionDueToOverlaps );
-      logger.writeParameter( "gridOriginWithOverlap:", gridOriginWithOverlap );
-      logger.writeParameter( "gridDimensionWithOverlap:", gridDimensionWithOverlap );
-      logger.writeParameter( "gridEnd:", gridOrigin + searchRadius * gridDimension );
-      logger.writeParameter( "gridEndWithOverlaps: ", gridOriginWithOverlap + searchRadius * gridDimensionWithOverlap );
+      //logger.writeSeparator();
+      //logger.writeParameter( "Initialize particle set:", "" );
+      //logger.writeParameter( "searchRadius:", searchRadius );
+      //logger.writeParameter( "gridDimension:", gridDimension );
+      //logger.writeParameter( "gridOrigin:", gridOrigin );
+      //logger.writeParameter( "shiftOriginDueToOverlaps:", shiftOriginDueToOverlaps );
+      //logger.writeParameter( "resizeGridDimensionDueToOverlaps:", resizeGridDimensionDueToOverlaps );
+      //logger.writeParameter( "gridOriginWithOverlap:", gridOriginWithOverlap );
+      //logger.writeParameter( "gridDimensionWithOverlap:", gridDimensionWithOverlap );
+      //logger.writeParameter( "gridEnd:", gridOrigin + searchRadius * gridDimension );
+      //logger.writeParameter( "gridEndWithOverlaps: ", gridOriginWithOverlap + searchRadius * gridDimensionWithOverlap );
    }
 #endif
 

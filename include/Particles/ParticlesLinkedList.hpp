@@ -217,9 +217,6 @@ void
 ParticlesLinkedList< ParticleConfig, DeviceType >::writeProlog( TNL::Logger& logger ) const noexcept
 {
    BaseType::writeProlog( logger );
-   logger.writeParameter( "Grid dimensions:", this->gridDimension );
-   logger.writeParameter( "Number of grid cells:", this->firstLastCellParticle.getSize() );
-   logger.writeParameter( "Grid origin:", this->gridOrigin );
 }
 
 } //namespace TNL
