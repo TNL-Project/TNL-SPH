@@ -150,7 +150,7 @@ public:
     *
     * \param Integer expressing the overlap width in number of cells
     */
-   void
+   virtual void
    setOverlapWidth( const GlobalIndexType width );
 
    /**

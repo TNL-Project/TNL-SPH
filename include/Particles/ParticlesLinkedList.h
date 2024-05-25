@@ -102,6 +102,14 @@ public:
    setGridDimensions( const IndexVectorType& dimensions );
 
    /**
+    * \brief Set width of overlap expressed in number of cells.
+    *
+    * \param Integer expressing the overlap width in number of cells
+    */
+   void
+   setOverlapWidth( const GlobalIndexType width );
+
+   /**
     * Get particle cell indices.
     */
    const CellIndexArrayType&

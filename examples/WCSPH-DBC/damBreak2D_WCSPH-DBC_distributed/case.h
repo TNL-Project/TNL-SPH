@@ -137,9 +137,18 @@ int main( int argc, char* argv[] )
 
       // search for neighbros
       sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log );
+      sph.performNeighborSearch( log , true );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
+
+      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      //if( TNL::MPI::GetRank() == 0 )
+      //   std::cout << sph.boundary->particles->getPoints() << std::endl;
+      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+      sph.save( log, true );
 
       // output particle data
       //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
@@ -194,7 +203,7 @@ int main( int argc, char* argv[] )
 
       // SingleSet: perform second search to assign received particles
       sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log );
+      sph.performNeighborSearch( log, true );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search second...", "Done." );
 

@@ -84,6 +84,8 @@ void
 Particles< ParticleConfig, DeviceType >::setGridOrigin( const PointType& origin )
 {
    gridOrigin = origin;
+   if( gridReferentialOriginSet == false )
+      gridReferentialOrigin = origin;
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -238,8 +240,8 @@ template < typename ParticleConfig, typename Device >
 __cuda_callable__
 bool
 Particles< ParticleConfig, Device >::isInsideDomain( const PointType& point,
-                                                               const PointType& domainOrigin,
-                                                               const PointType& domainSize ) const
+                                                     const PointType& domainOrigin,
+                                                     const PointType& domainSize ) const
 {
    //FIXME: These two lines produces different results
    //if( ( point > domainOrigin ) && ( point < ( domainOrigin + domainSize ) ) )
@@ -252,18 +254,19 @@ template < typename ParticleConfig, typename Device >
 void
 Particles< ParticleConfig, Device >::reorderParticles()
 {
-   const GlobalIndexType numberOfParticle = this->getNumberOfParticles();
-   using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< Device >;
-   ThrustDeviceType thrustDevice;
-   auto view_map = this->sortPermutations->getView();
-   auto view_points = this->getPoints().getView();
-   auto view_points_swap = this->points_swap.getView();
-   thrust::gather( thrustDevice,
-                   view_map.getArrayData(),
-                   view_map.getArrayData() + numberOfParticle,
-                   view_points.getArrayData(),
-                   view_points_swap.getArrayData() );
-   this->getPoints().swap( this->points_swap );
+   //const GlobalIndexType numberOfParticle = this->getNumberOfParticles();
+   //using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< Device >;
+   //ThrustDeviceType thrustDevice;
+   //auto view_map = this->sortPermutations->getView();
+   //auto view_points = this->getPoints().getView();
+   //auto view_points_swap = this->points_swap.getView();
+   //thrust::gather( thrustDevice,
+   //                view_map.getArrayData(),
+   //                view_map.getArrayData() + numberOfParticle,
+   //                view_points.getArrayData(),
+   //                view_points_swap.getArrayData() );
+   //this->getPoints().swap( this->points_swap );
+   //std::cout << "@@@@@@@@@@@@@@@@@@@@@ particles reordered." << std::endl;
 }
 
 template < typename ParticleConfig, typename DeviceType >
