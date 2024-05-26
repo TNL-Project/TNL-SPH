@@ -36,6 +36,9 @@ ParticlesLinkedList< ParticleConfig, DeviceType >::setSize( const GlobalIndexTyp
 {
    BaseType::setSize( size );
    this->particleCellInidices.setSize( size );
+   //is this necessary
+   //particleCellInidices = INT_MAX;
+   //firstLastCellParticle = INT_MAX;
 }
 
 template< typename ParticleConfig, typename Device >
@@ -203,13 +206,13 @@ template< typename ParticleConfig, typename Device >
 void
 ParticlesLinkedList< ParticleConfig, Device >::resetListWithIndices()
 {
-   //auto view_firstLastCellParticle = this->firstLastCellParticle.getView();
-   //auto init = [=] __cuda_callable__ ( int i ) mutable
-   //{
-   //   view_firstLastCellParticle[ i ] = INT_MAX ;
-   //};
-   //Algorithms::parallelFor< DeviceType >( 0, this->firstLastCellParticle.getSize(), init );
-   firstLastCellParticle = std::numeric_limits< int >::max();
+   auto view_firstLastCellParticle = this->firstLastCellParticle.getView();
+   auto init = [=] __cuda_callable__ ( int i ) mutable
+   {
+      view_firstLastCellParticle[ i ] = INT_MAX ;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, this->firstLastCellParticle.getSize(), init );
+   //firstLastCellParticle = std::numeric_limits< int >::max();
 }
 
 template< typename ParticleConfig, typename Device >

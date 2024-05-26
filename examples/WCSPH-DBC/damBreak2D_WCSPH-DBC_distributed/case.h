@@ -141,63 +141,11 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
 
-      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-      //if( TNL::MPI::GetRank() == 0 )
-      //   std::cout << sph.boundary->particles->getPoints() << std::endl;
-      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-      sph.save( log, true );
-
-      // output particle data
-      //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      //:if( sph.timeStepping.getStep() < 3090 || sph.timeStepping.getStep() > 4010 ){
-      //:   if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      //:   {
-      //:      /**
-      //:       * Compute pressure from density.
-      //:       * This is not necessary since we do this localy, if pressure is needed.
-      //:       * It's useful for output anyway.
-      //:       */
-      //:      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      //:      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-      //:      sph.save( log, true );
-      //:   }
-      //:}
-      //:else{
-      //:      std::cout << "=========================================================== STEP " << sph.timeStepping.getStep() << " =================== " << std::endl;
-      //:      sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-      //:      sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-      //:      sph.save( log, true );
-      //:}
-      ////if( sph.timeStepping.getStep() == 1316 )
-      ////   return 0;
-
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-
-      // SingleSet + Overlaps: collect particles, send them between processors
-      //if( sph.timeStepping.getStep() == 1707 && TNL::MPI::GetRank() == 1 )
-      //if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 1 )
-      //   sph.fluid->distributedParticles->DEBUG_printParticlesInOverlap( sph.fluid->particles );
-
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-
-      //if( sph.timeStepping.getStep() == 1707 && TNL::MPI::GetRank() == 0 ){
-      //if( sph.timeStepping.getStep() == 3099 && TNL::MPI::GetRank() == 0 ){
-      //   std::cout << "+++++++++++++++++++++++++++++++++++++++++-+-+-+-+-+-+- WE HERE ada+s-d+a-+-+-+-+-+-+--+---------------------------------242" << std::endl;
-      //   sph.synchronizeDistributedSimulation( true );
-      //}
-      //else
 
       sph.writeLog( log, "Starting synchronization.", "" );
       sph.synchronizeDistributedSimulation();
       sph.writeLog( log, "Synchronize...", "Done." );
-      //return 0;
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
@@ -239,16 +187,6 @@ int main( int argc, char* argv[] )
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
 
-      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-      //if( TNL::MPI::GetRank() == 0 )
-      //   sph.synchronizeDistributedSimulation();
-      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-      //if( TNL::MPI::GetRank() == 1 )
-      //   sph.synchronizeDistributedSimulation();
-      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-      //if( TNL::MPI::GetRank() == 2 )
-      //   sph.synchronizeDistributedSimulation();
-      //TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
@@ -258,7 +196,6 @@ int main( int argc, char* argv[] )
 
       // SingleSet: forgot overlaps
       sph.resetOverlaps();
-      //sph.writeLog( log, "Reset overlaps...", "Done." );
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
@@ -289,12 +226,6 @@ int main( int argc, char* argv[] )
       // update time step
       sph.timeStepping.updateTimeStep();
 
-      if( sph.timeStepping.getStep() == 26170 )
-         sph.verbose = "full";
-
-
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
-      std::cout << "============================================++++++++++++++++++++++++++++++++++++============================" << std::endl;
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
    }
 

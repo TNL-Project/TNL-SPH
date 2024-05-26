@@ -37,8 +37,8 @@ public:
 
    NeighborsLoopParams( ParticlesPointerType& particles )
    : numberOfParticles( particles->getNumberOfParticles() ),
-     gridSize( particles->getGridDimensions() ),
-     gridOrigin( particles->getGridOrigin() ),
+     gridSize( particles->getGridDimensionsWithOverlap() ),
+     gridOrigin( particles->getGridOriginWithOverlap() ),
      searchRadius( particles->getSearchRadius() ),
      view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
 
