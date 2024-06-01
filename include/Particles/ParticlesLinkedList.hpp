@@ -307,7 +307,7 @@ ParticlesLinkedList< ParticleConfig, Device >::searchForNeighbors()
    sortParticles();
    this->reorderParticles();
    //update number of particles - removed particles with invalid positions are shifted at the end of the array
-   if( this->getNumberOfParticles() != 0 ){
+   if( this->getNumberOfParticlesToRemove() != 0 ){
       this->setNumberOfParticles( this->getNumberOfParticles() - this->getNumberOfParticlesToRemove() );
       this->setNumberOfParticlesToRemove( 0 );
    }

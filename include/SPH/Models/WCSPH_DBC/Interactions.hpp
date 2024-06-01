@@ -231,12 +231,11 @@ WCSPH_DBC< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectP
    auto view_p = physicalObject->getVariables()->p.getView();
    typename EquationOfState::ParamsType eosParams( modelParams );
 
-   auto init = [=] __cuda_callable__ ( int i ) mutable
+   auto evalPressure = [=] __cuda_callable__ ( int i ) mutable
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   Algorithms::parallelFor< DeviceType >(
-         physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
+   physicalObject->particles->forAll( evalPressure ); //TODO: forloop?
 }
 
 template< typename Particles, typename ModelConfig >
@@ -297,8 +296,7 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
 
       view_rho_bound[ i ] = rho_bound;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoop );
+   boundary->particles->forAll( particleLoop ); //TODO: forloop?
 }
 
 } // SPH

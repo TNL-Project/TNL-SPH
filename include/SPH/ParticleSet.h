@@ -56,9 +56,7 @@ class ParticleSet
    ParticleSet( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h, numberOfCells ),
      variables( sizeAllocated ),
-     integratorVariables( sizeAllocated ),
-     firstActiveParticle( 0 ),
-     lastActiveParticle( size - 1 ) {};
+     integratorVariables( sizeAllocated ) {};
 
    void
    initialize( unsigned int numberOfParticles,
@@ -74,8 +72,6 @@ class ParticleSet
       this->particles->setNumberOfParticles( numberOfParticles );
       //removed: this->particles->setFirstActiveParticle( 0 );
       //removed: this->particles->setLastActiveParticle( numberOfParticles - 1 );
-      this->firstActiveParticle = 0;
-      this->lastActiveParticle = numberOfParticles - 1;
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
       //removed: // initialize grid origin
@@ -110,8 +106,6 @@ class ParticleSet
       this->particles->setNumberOfParticles( numberOfParticles );
       //this->particles->setFirstActiveParticle( 0 );
       //this->particles->setLastActiveParticle( numberOfParticles - 1 );
-      this->firstActiveParticle = 0;
-      this->lastActiveParticle = numberOfParticles - 1;
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
@@ -158,36 +152,6 @@ class ParticleSet
                                            domainOrigin );
                                            //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
       }
-   }
-
-   const GlobalIndexType
-   getFirstActiveParticle() const
-   {
-      return this->firstActiveParticle;
-   }
-
-   void
-   setFirstActiveParticle( GlobalIndexType firstActiveParticle )
-   {
-      this->firstActiveParticle = firstActiveParticle;
-   }
-
-   const GlobalIndexType
-   getLastActiveParticle() const
-   {
-      return this->lastActiveParticle;
-   }
-
-   void
-   setLastActiveParticle( GlobalIndexType lastActiveParticle )
-   {
-      this->lastActiveParticle = lastActiveParticle;
-   }
-
-   const GlobalIndexType
-   getNumberOfActiveParticles() const
-   {
-      return ( this->lastActiveParticle - this->firstActiveParticle + 1 );
    }
 
    const GlobalIndexType
@@ -247,17 +211,18 @@ class ParticleSet
    }
 
    void
-   sortVariables()
+   sortVariables( const GlobalIndexType numberOfParticlesToRemove = 0 )
    {
-      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
-      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
+      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
    }
 
    void
    searchForNeighbors()
    {
+      const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
       this->particles->searchForNeighbors();
-      this->sortVariables();
+      this->sortVariables( numberOfParticlesToRemove );
    }
 
    void
@@ -318,22 +283,16 @@ class ParticleSet
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
       particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
       //particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
-      this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
+      //this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
    }
 #endif
 
    void
    writeProlog( TNL::Logger& logger ) const noexcept
    {
-      logger.writeParameter( "First active particle index:", this->firstActiveParticle );
-      logger.writeParameter( "Last active particle index:", this->lastActiveParticle );
       logger.writeParameter( "Particle system parameters:", "" );
       particles->writeProlog( logger );
    }
-
-   //Some additional informations
-   GlobalIndexType firstActiveParticle = 0;
-   GlobalIndexType lastActiveParticle = 0;
 
    //Properties of physical object
    ParticlePointerType particles;
