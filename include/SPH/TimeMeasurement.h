@@ -1,7 +1,9 @@
 #pragma once
 
+#include <TNL/Benchmarks/Benchmarks.h>
 #include "TNL/Timer.h"
 #include <map>
+#include <string>
 
 namespace TNL {
 namespace SPH {
@@ -57,6 +59,27 @@ public:
       }
       logger.writeParameter( "Total time:", totalTime );
       logger.writeSeparator();
+   }
+
+   void
+   writeInfoToJson( const std::string resultsPath, const int stepsTotal )
+   {
+      std::map< std::string, std::string > timeResults;
+
+      float totalTime = 0.f;
+      for ( auto const& [ key, val ] : this->timers ) {
+         if ( val.second == true )
+            totalTime += val.first.getRealTime();
+      }
+
+      for ( auto const& [ key, val ] : this->timers ) {
+         timeResults.insert( { key, std::to_string( val.first.getRealTime() ) } );
+         timeResults.insert( { key + "-average", std::to_string( val.first.getRealTime() / stepsTotal ) } );
+         timeResults.insert( { key + "-percentage", std::to_string( val.first.getRealTime() / totalTime * 100 ) } );
+      }
+      timeResults.insert( { "total", std::to_string( totalTime ) } );
+      timeResults.insert( { "total-average", std::to_string( totalTime / stepsTotal ) } );
+      Benchmarks::writeMapAsJson( timeResults, resultsPath, ".json" );
    }
 
 protected:
