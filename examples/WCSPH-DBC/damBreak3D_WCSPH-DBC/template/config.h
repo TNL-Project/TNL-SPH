@@ -21,6 +21,7 @@ class ParticleSystemConfig
 
    static constexpr int spaceDimension = 3;
 
+   using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
@@ -79,10 +80,8 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
 /**
  * Include type of particle system.
  */
-//#include <Particles/ParticlesLinkedList.h>
-//using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
-#include <Particles/ParticlesLinkedListWithList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
+#include <Particles/ParticlesLinkedList.h>
+using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.

@@ -323,11 +323,13 @@ void
 SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool performBoundarySearch )
 {
    fluid->searchForNeighbors();
-   logger.writeParameter( "Fluid search procedure:", "Done." );
+   if( verbose == "full" )
+      logger.writeParameter( "Fluid search procedure:", "Done." );
 
    if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
       boundary->searchForNeighbors();
-      logger.writeParameter( "Boundary search procedure:", "Done." );
+      if( verbose == "full" )
+         logger.writeParameter( "Boundary search procedure:", "Done." );
    }
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
