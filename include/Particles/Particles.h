@@ -7,6 +7,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
+#include <type_traits>
 #include "../SPH/shared/thrustExecPolicySelector.h"
 
 #include "ParticlesTraits.h"
@@ -207,7 +208,17 @@ public:
     * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
     * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
     */
-   template< typename Device2 = DeviceType, typename Func >
+   template< typename Device2 = DeviceType,
+             typename Func,
+             typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
+             std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled = true >
+   void
+   forAll( Func f ) const;
+
+   template< typename Device2 = DeviceType,
+             typename Func,
+             typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
+             std::enable_if_t< UseWithDomainDecomposition::value, bool > Enabled = true >
    void
    forAll( Func f ) const;
 

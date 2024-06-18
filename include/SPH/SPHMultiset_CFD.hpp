@@ -322,20 +322,119 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool performBoundarySearch )
 {
-   fluid->searchForNeighbors();
-   if( verbose == "full" )
-      logger.writeParameter( "Fluid search procedure:", "Done." );
-
-   if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
-      boundary->searchForNeighbors();
-      if( verbose == "full" )
-         logger.writeParameter( "Boundary search procedure:", "Done." );
+   //reset cell indices
+   timeMeasurement.start( "search_reset" );
+   fluid->particles->resetListWithIndices();
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      for( auto& openBoundaryPatch : openBoundaryPatches )
+         openBoundaryPatch->particles->resetListWithIndices();
    }
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
+#ifdef HAVE_MPI
+#else
+   if( timeStepping.getStep() == 0 )
+#endif
+      boundary->particles->resetListWithIndices();
+   timeMeasurement.stop( "search_reset" );
+   writeLog( logger, "Search - reset ...", "Done." );
+
+   //compute cell indices
+   timeMeasurement.start( "search_cellIndices" );
+   fluid->particles->computeParticleCellIndices();
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( auto& openBoundaryPatch : openBoundaryPatches )
-         openBoundaryPatch->searchForNeighbors();
+         openBoundaryPatch->particles->computeParticleCellIndices();
+   }
+
+#ifdef HAVE_MPI
+#else
+   if( timeStepping.getStep() == 0 )
+#endif
+      boundary->particles->computeParticleCellIndices();
+   timeMeasurement.stop( "search_cellIndices" );
+   writeLog( logger, "Search - compute cell indices ...", "Done." );
+
+   //sort particles
+   timeMeasurement.start( "search_sort" );
+   fluid->sortParticles();
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      for( auto& openBoundaryPatch : openBoundaryPatches )
+         openBoundaryPatch->sortParticles();
+   }
+
+#ifdef HAVE_MPI
+#else
+   if( timeStepping.getStep() == 0 )
+#endif
+      boundary->sortParticles();
+   timeMeasurement.stop( "search_sort" );
+   writeLog( logger, "Search - sort ...", "Done." );
+
+#ifdef HAVE_MPI
+   //update number of particles TODO: Do this in elegant way.
+   // --- DEBUG ---
+   logger.writeParameter( "Search - remove particles", "" );
+   logger.writeParameter( "fluid.particles.getNumberOfParticlesToRemove()",  fluid->particles->getNumberOfParticlesToRemove(), 1 );
+   logger.writeParameter( "fluid.synchronizer.getNumberOfRecvParticles()",  fluid->synchronizer.getNumberOfRecvParticles(), 1 );
+   // -------------
+#endif
+
+   fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
+                                           - fluid->particles->getNumberOfParticlesToRemove() );
+   fluid->particles->setNumberOfParticlesToRemove( 0 );
+
+   //update number of particles of boundary object
+   boundary->particles->setNumberOfParticles( boundary->particles->getNumberOfParticles()
+                                           - boundary->particles->getNumberOfParticlesToRemove() );
+   boundary->particles->setNumberOfParticlesToRemove( 0 );
+
+   //update number of particles TODO: Do this in elegant way.
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      for( auto& openBoundaryPatch : openBoundaryPatches ) {
+         fluid->particles->setNumberOfParticles( fluid->particles->getNumberOfParticles()
+                                                 - openBoundaryPatch->numberOfFluidParticlesToRemove );
+         openBoundaryPatch->numberOfFluidParticlesToRemove = 0;
+      }
+      writeLog( logger, "Search - resize ...", "Done." );
+   }
+
+   //assign particles to cells
+   timeMeasurement.start( "search_toCells" );
+   fluid->particles->particlesToCells();
+   writeLog( logger, "Search - particles to cells - fluid ...", "Done." );
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      for( auto& openBoundaryPatch : openBoundaryPatches )
+         openBoundaryPatch->particles->particlesToCells();
+   }
+
+#ifdef HAVE_MPI
+#else
+   if( timeStepping.getStep() == 0 )
+#endif
+      boundary->particles->particlesToCells();
+   timeMeasurement.stop( "search_toCells" );
+   writeLog( logger, "Search - particles to cells ...", "Done." );
 }
+
+
+//template< typename Model >
+//void
+//SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool performBoundarySearch )
+//{
+//   fluid->searchForNeighbors();
+//   if( verbose == "full" )
+//      logger.writeParameter( "Fluid search procedure:", "Done." );
+//
+//   if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
+//      boundary->searchForNeighbors();
+//      if( verbose == "full" )
+//         logger.writeParameter( "Boundary search procedure:", "Done." );
+//   }
+//
+//   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
+//      for( auto& openBoundaryPatch : openBoundaryPatches )
+//         openBoundaryPatch->searchForNeighbors();
+//}
 
 template< typename Model >
 template< typename ParticleSetPointer >

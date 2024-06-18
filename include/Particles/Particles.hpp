@@ -1,4 +1,5 @@
 #include "Particles.h"
+#include "customParallelFor/customParallelFor.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -221,7 +222,26 @@ Particles< ParticleConfig, Device >::setNumberOfParticlesToRemove( const GlobalI
 }
 
 template< typename ParticleConfig, typename Device >
-template< typename Device2, typename Func >
+template< typename Device2,
+          typename Func,
+          typename UseWithDomainDecomposition,
+          std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled >
+void
+Particles< ParticleConfig, Device >::forAll( Func f ) const
+{
+   auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      f( i );
+   };
+   Algorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
+   //ModifiedAlgorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
+}
+
+template< typename ParticleConfig, typename Device >
+template< typename Device2,
+          typename Func,
+          typename UseWithDomainDecomposition,
+          std::enable_if_t< UseWithDomainDecomposition::value, bool > Enabled >
 void
 Particles< ParticleConfig, Device >::forAll( Func f ) const
 {
@@ -234,6 +254,7 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
          f( i );
    };
    Algorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
+   //ModifiedAlgorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
 }
 
 template < typename ParticleConfig, typename Device >
