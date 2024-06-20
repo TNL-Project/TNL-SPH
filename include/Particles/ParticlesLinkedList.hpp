@@ -93,34 +93,6 @@ template< typename UseWithDomainDecomposition, std::enable_if_t< UseWithDomainDe
 void
 ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 {
-   //const RealType searchRadius = this->radius;
-   //const PointType gridReferentialOrigin = this->gridReferentialOrigin;
-   //const PointType gridOriginWithOverlap = this->getGridOriginWithOverlap();
-   //const IndexVectorType gridDimensionWithOverlap = this->getGridDimensionsWithOverlap();
-   //const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOriginWithOverlap - gridReferentialOrigin ) / searchRadius );
-   //auto view_particeCellIndices = this->particleCellInidices.getView();
-   //const auto view_points = this->points.getConstView();
-
-   //std::cout << " -------------------------------->>>> gridReferentialOrigin: " << gridReferentialOrigin << \
-   //                                                  " gridOriginWithOverlap_: " << gridOriginWithOverlap << \
-   //                                                  " gridDimensionWithOverlap : " << gridDimensionWithOverlap << \
-   //                                                  " gridOriginGlobalCoords: " << gridOriginGlobalCoords << std::endl;
-
-   //auto indexParticles = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
-   //{
-   //   const PointType point = view_points[ i ];
-   //   //if( detail::isInvalid( view_points[ i ] )){
-   //   if( view_points[ i ][ 0 ] == FLT_MAX || view_points[ i ][ 1 ] == FLT_MAX ){
-   //      view_particeCellIndices[ i ] = INT_MAX;
-   //   }
-   //   else{
-   //      const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridReferentialOrigin ) / searchRadius );
-   //      const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoords;
-   //      view_particeCellIndices[ i ] = CellIndexer::EvaluateCellIndex( cellCoords, gridDimensionWithOverlap );
-   //   }
-   //};
-   //Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticles, indexParticles );
-
    auto view_particeCellIndices = this->particleCellInidices.getView();
    const auto view_points = this->points.getConstView();
    const RealType searchRadius = this->radius;

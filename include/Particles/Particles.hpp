@@ -1,5 +1,4 @@
 #include "Particles.h"
-#include "customParallelFor/customParallelFor.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -234,7 +233,6 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
       f( i );
    };
    Algorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
-   //ModifiedAlgorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
 }
 
 template< typename ParticleConfig, typename Device >
@@ -254,7 +252,6 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
          f( i );
    };
    Algorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
-   //ModifiedAlgorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
 }
 
 template < typename ParticleConfig, typename Device >
