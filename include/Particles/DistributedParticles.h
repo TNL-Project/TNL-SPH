@@ -26,6 +26,7 @@ public:
    using ParticleZonePointerType = typename Pointers::SharedPointer< ParticleZoneType >;
    using GridType = TNL::Meshes::Grid< ParticleSystem::Config::spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using DistributedGridType = TNL::Meshes::DistributedMeshes::DistributedMesh< GridType >;
+   using SubdomainCoordinates = Containers::StaticVector< 2, int >;
 
    [[nodiscard]] static constexpr int
    getNeighborsCount()
@@ -128,13 +129,50 @@ public:
    }
 
    void
+   initializeInnerOverlaps3D( const GlobalIndexType numberOfOverlapsLayers, const int numberOfParticlesPerCell = 27 )
+   {
+      const IndexVectorType localGridDimensions = distributedGrid.getLocalMesh().getDimensions();
+      const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
+      const IndexVectorType localGridDimensionsWithOverlap = distributedGrid.getLocalMesh().getDimensions() + increaseLocalGridSizeDueToOverlaps;
+      const GlobalIndexType zoneWidth = 1 + numberOfOverlapsLayers;
+
+      const int* neighbors = this->getDistributedGrid().getNeighbors();
+      for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
+         if( neighbors[ i ] != -1 ){
+            Containers::StaticVector< 3, int > direction = Directions::template getXYZ< 3 >( i );
+            // decode overlaps dimensions
+            IndexVectorType zoneOriginIdx;
+            IndexVectorType zoneDimensions;
+            for( int j = 0; j < 2; j ++ ){
+               // assign zone origin
+               if( direction[ j ] == 1 )
+                  zoneOriginIdx[ j ] = localGridDimensions[ j ];
+               else
+                  zoneOriginIdx[ j ] = 0;
+
+               // assign zone dimensions
+               if( direction[ j ] == 0 )
+                  zoneDimensions[ j ] = localGridDimensions[ j ] + zoneWidth;
+               else
+                  zoneDimensions[ j ] = zoneWidth;
+            }
+            zoneDimensions[ 2 ] = localGridDimensions[ 2 ];
+            // set overlaps
+            std::cout << "--->>> zoneOriginIdx: " << zoneOriginIdx << " --->>> zoneDimensions: " << zoneDimensions << " --->>> localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << std::endl;
+            innerOverlaps[ i ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+            innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
+         }
+      }
+   }
+
+   void
    setDistributedGridParameters( const IndexVectorType& globalGridSize,
                                  const PointType& globalGridOrigin,
                                  const IndexVectorType& localGridSize,
                                  const PointType& localGridOrigin,
                                  const GlobalIndexType& numberOfOverlapsLayers,
                                  const RealType& searchRadius,
-                                 const IndexVectorType& domainDecomposition,
+                                 const SubdomainCoordinates& domainDecomposition,
                                  MPI::Comm& comm )
    {
       this->communicator = comm;
@@ -154,7 +192,10 @@ public:
       globalGrid.setSpaceSteps( spaceStepsVector );
 
 
-      distributedGrid.setDomainDecomposition( domainDecomposition );
+      //FIXME: Ugly workaround
+      const IndexVectorType domainDecompositionVect = { domainDecomposition[ 0 ], domainDecomposition[ 1 ], 1 };
+      //distributedGrid.setDomainDecomposition( domainDecomposition );
+      distributedGrid.setDomainDecomposition( domainDecompositionVect );
       distributedGrid.setGlobalGrid( globalGrid );
 
       typename DistributedGridType::SubdomainOverlapsType lowerOverlap, upperOverlap;
@@ -190,7 +231,10 @@ public:
       //Initialize inner particle zones to collect particles
       //TODO: Define inner overlaps with given size directly.
       innerOverlaps.resize( getNeighborsCount() );
-      initializeInnerOverlaps( numberOfOverlapsLayers );
+      if constexpr ( ParticleSystem::spaceDimension == 2 )
+         initializeInnerOverlaps( numberOfOverlapsLayers );
+      if constexpr ( ParticleSystem::spaceDimension == 3 )
+         initializeInnerOverlaps3D( numberOfOverlapsLayers );
    }
 
 
