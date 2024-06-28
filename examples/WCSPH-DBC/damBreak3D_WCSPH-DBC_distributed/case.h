@@ -124,8 +124,8 @@ int main( int argc, char* argv[] )
    // Library model:
    //return 0;
 
-   //while( sph.timeStepping.runTheSimulation() )
-   while( sph.timeStepping.getStep() < 2 )
+   while( sph.timeStepping.runTheSimulation() )
+   //while( sph.timeStepping.getStep() < 2 )
    {
       sph.writeInfo( log );
 

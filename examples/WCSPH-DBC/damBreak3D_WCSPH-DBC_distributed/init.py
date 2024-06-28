@@ -384,6 +384,28 @@ def write_distributed_domain_params( setup ):
                 file.write( f"{key_prefix}size-z = { setup[ 'domain_size_z' ]:.7f}\n" )
                 file.write( f'\n' )
 
+def write_domain_background_grid( setup ):
+    import domainGrid
+    #TODO: Rename the DomainGrid function
+    search_radius = setup[ "search_radius" ]
+    grid_size_x = round( setup[ "domain_size_x" ] / search_radius )
+    grid_size_y = round( setup[ "domain_size_y" ] / search_radius )
+    grid_size_z = round( setup[ "domain_size_z" ] / search_radius )
+    grid_origin_x = setup[ "domain_origin_x" ]
+    grid_origin_y = setup[ "domain_origin_y" ]
+    grid_origin_z = setup[ "domain_origin_z" ]
+    grid_sectors = np.zeros( grid_size_x * grid_size_y * grid_size_z )
+
+    domainGrid.DomainGrid3D( grid_size_x,
+                           grid_size_y,
+                           grid_size_z,
+                           grid_origin_x,
+                           grid_origin_y,
+                           grid_origin_z,
+                           grid_sectors,
+                           search_radius,
+                           "sources/dambreak_grid.vtk" )
+
 if __name__ == "__main__":
     import sys
     import argparse
@@ -392,7 +414,7 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("distribution parameters")
-    g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
+    g.add_argument("--subdomains-x", type=int, default=2, help="number of subdomains in x direction")
     g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.02, help="initial distance between particles")
@@ -453,3 +475,6 @@ if __name__ == "__main__":
 
     # write distributed domain information
     write_distributed_domain_params( dambreak_setup )
+
+    #write linked list background grid
+    write_domain_background_grid( dambreak_setup )
