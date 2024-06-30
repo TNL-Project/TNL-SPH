@@ -4,6 +4,7 @@
 #include <string>
 
 #include "distributedUtils.h"
+#include "../Writers/writeBackgroundGrid.h"
 
 namespace TNL {
 namespace SPH {
@@ -144,6 +145,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >( subdomainKey + "size" ) ;
    const IndexVectorType subdomainGridDimension = TNL::ceil( subdomainSize / searchRadius );
+   //const IndexVectorType subdomainGridDimension = TNL::ceil( (subdomainSize - searchRadius * 1e-5 ) / searchRadius ); //small workaround
 
    // init fluid
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
@@ -439,6 +441,51 @@ SPHMultiset_CFD< Model >::resetOverlaps()
    boundary->particles->removeParitclesOutOfDomain();
 }
 
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
+{
+   //setup tresholds:
+   fluid->distributedParticles->setParticlesCountResizeTrashold( 1000 );
+   //fluid->distributedParticles->setCompTimeResizePercetnageTrashold( 0.05 );
+
+   //synchronize comp. time
+   fluid->distributedParticles->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() );
+   fluid->distributedParticles->setCompTimeForLoadBalancing( 0. ); //FIXME
+   fluid->synchronizeBalancingMeasures();
+
+   //compare computational time / number of particles
+   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->distributedParticles->loadBalancingDomainAdjustment();
+   const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
+   const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->particles->getSearchRadius();
+
+   const IndexVectorType updatedGridDimensions = fluid->particles->getGridDimensions() + gridDimensionsAdjustment;
+   const VectorType updatedGridOrigin = fluid->particles->getGridOrigin() + gridOriginAdjustment;
+
+   logger.writeSeparator();
+   logger.writeParameter( "Grid dimensions adjustment: ", gridDimensionsAdjustment );
+   logger.writeParameter( "Grid origin adjustment: ", gridOriginAdjustment );
+   logger.writeParameter( "Old grid dimensions: ", fluid->particles->getGridDimensions() );
+   logger.writeParameter( "Old grid origin adjustment: ", fluid->particles->getGridOrigin() );
+   logger.writeParameter( "Old firstLastCellParticleList size: ", fluid->particles->getCellFirstLastParticleList().getSize() );
+
+   //update size of subdomain
+   fluid->particles->setGridDimensions( updatedGridDimensions );
+   fluid->particles->setGridOrigin( updatedGridOrigin );
+   boundary->particles->setGridDimensions( updatedGridDimensions );
+   boundary->particles->setGridOrigin( updatedGridOrigin );
+
+   logger.writeParameter( "New grid dimensions: ", fluid->particles->getGridDimensions() );
+   logger.writeParameter( "New grid origin adjustment: ", fluid->particles->getGridOrigin() );
+   logger.writeParameter( "New firstLastCellParticleList size: ", fluid->particles->getCellFirstLastParticleList().getSize() );
+   logger.writeSeparator();
+
+   //update distributed particles and overlaps
+   //TODO: 1 stands for overlapWidth, pass as parameter
+   fluid->distributedParticles->updateDistriutedGridParameters( updatedGridDimensions, updatedGridOrigin, 1 );
+   boundary->distributedParticles->updateDistriutedGridParameters( updatedGridDimensions, updatedGridOrigin, 1 );
+}
+
 #endif
 
 template< typename Model >
@@ -473,6 +520,14 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
       }
    }
+
+#ifdef HAVE_MPI
+   std::string outputFileNameGrid = outputDirecotry + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( step ) + ".vtk";
+#else
+   std::string outputFileNameGrid = outputDirecotry + "/grid" + std::to_string( step ) + ".vtk";
+#endif
+   TNL::Writers::writeBackgroundGrid( outputFileNameGrid, fluid->particles->getGridDimensions(), fluid->particles->getGridOrigin(), fluid->particles->getSearchRadius() );
+   logger.writeParameter( "Saved:", outputFileNameGrid );
 
    // output simulation sensors to files
    simulationMonitor.save( logger );
@@ -574,6 +629,7 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
                                    boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
       }
    }
+   fluid->writeProlog( logger ); //TODO: just for debug
    logger.writeSeparator();
 }
 

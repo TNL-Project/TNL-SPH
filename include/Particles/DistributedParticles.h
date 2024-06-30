@@ -78,6 +78,54 @@ public:
       return this->innerOverlaps;
    }
 
+   [[nodiscard]] Containers::StaticArray< DistributedGridType::getNeighborsCount(), GlobalIndexType >&
+   getSubdomainsParticlesCount()
+   {
+      return this->subdomainsParticlesCount;
+   }
+
+   [[nodiscard]] Containers::StaticArray< DistributedGridType::getNeighborsCount(), float >&
+   getSubdomainsCompTime()
+   {
+      return this->subdomainsCompTime;
+   }
+
+   const GlobalIndexType
+   getNumberOfParticlesForLoadBalancing() const
+   {
+      return this->subdomainParticlesCount;
+   }
+
+   void
+   setNumberOfParticlesForLoadBalancing( const GlobalIndexType numberOfParticles )
+   {
+      this->subdomainParticlesCount = numberOfParticles;
+   }
+
+   const GlobalIndexType
+   getCompTime() const
+   {
+      return this->subdomainCompTime;
+   }
+
+   void
+   setCompTimeForLoadBalancing( const RealType compTime )
+   {
+      this->subdomainsCompTime = compTime;
+   }
+
+   void
+   setParticlesCountResizeTrashold( const GlobalIndexType trashold )
+   {
+      this->particlesCountResizeTrashold = trashold;
+   }
+
+   void
+   setCompTimeResizePercetnageTrashold( const RealType trashold )
+   {
+      this->computationalTimeResizeTrashold = trashold;
+   }
+
    //[[nodiscard]] const MPI::Comm&
    //getCommunicator() const
    //{
@@ -129,7 +177,7 @@ public:
    }
 
    void
-   initializeInnerOverlaps3D( const GlobalIndexType numberOfOverlapsLayers, const int numberOfParticlesPerCell = 27 )
+   initializeInnerOverlaps3D( const GlobalIndexType numberOfOverlapsLayers, const int numberOfParticlesPerCell = 125 )
    {
       const IndexVectorType localGridDimensions = distributedGrid.getLocalMesh().getDimensions();
       const IndexVectorType increaseLocalGridSizeDueToOverlaps = 2 * numberOfOverlapsLayers;
@@ -138,29 +186,35 @@ public:
 
       const int* neighbors = this->getDistributedGrid().getNeighbors();
       for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
+         innerOverlaps[ i ].resetParticles();
+         innerOverlaps[ i ].resetZoneCells();
          if( neighbors[ i ] != -1 ){
-            Containers::StaticVector< 3, int > direction = Directions::template getXYZ< 3 >( i );
+            //Containers::StaticVector< 3, int > direction = Directions::template getXYZ< 3 >( i );
+            Containers::StaticVector< 2, int > direction = Directions::template getXYZ< 2 >( i );
             // decode overlaps dimensions
             IndexVectorType zoneOriginIdx;
             IndexVectorType zoneDimensions;
             for( int j = 0; j < 2; j ++ ){
                // assign zone origin
                if( direction[ j ] == 1 )
-                  zoneOriginIdx[ j ] = localGridDimensions[ j ];
+                  zoneOriginIdx[ j ] = localGridDimensions[ j ]; //added - 1
+                  //zoneOriginIdx[ j ] = localGridDimensionsWithOverlap[ j ] - 2; //this is added
                else
                   zoneOriginIdx[ j ] = 0;
 
                // assign zone dimensions
                if( direction[ j ] == 0 )
-                  zoneDimensions[ j ] = localGridDimensions[ j ] + zoneWidth;
+                  //zoneDimensions[ j ] = localGridDimensions[ j ] + zoneWidth;
+                  zoneDimensions[ j ] = localGridDimensionsWithOverlap[ j ];
                else
                   zoneDimensions[ j ] = zoneWidth;
             }
-            zoneDimensions[ 2 ] = localGridDimensions[ 2 ];
+            zoneOriginIdx[ 2 ] = 0;
+            zoneDimensions[ 2 ] = localGridDimensionsWithOverlap[ 2 ];
             // set overlaps
-            std::cout << "--->>> zoneOriginIdx: " << zoneOriginIdx << " --->>> zoneDimensions: " << zoneDimensions << " --->>> localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << std::endl;
+            std::cout << "dir: " << direction << " --->>> zoneOriginIdx: " << zoneOriginIdx << " --->>> zoneDimensions: " << zoneDimensions << " --->>> localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << " --->>> localGridDimensions: " << localGridDimensions << "\n" << std::endl;
             innerOverlaps[ i ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-            innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
+            innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap ); //FIXME: Why there is no localGridDimensionWithOverlap??????
          }
       }
    }
@@ -181,6 +235,7 @@ public:
                                                        " globalGridOrigin: " << globalGridOrigin << \
                                                        " localGridSize: " << localGridSize << \
                                                        " localGridOrigin: " << localGridOrigin << \
+                                                       " localGridOriginINCELLS: " << TNL::ceil( ( localGridOrigin - globalGridOrigin ) / searchRadius ) << \
                                                        " numberOfOverlapsLayers " << numberOfOverlapsLayers << \
                                                        " searchRadius " << searchRadius << std::endl;
 
@@ -235,8 +290,23 @@ public:
          initializeInnerOverlaps( numberOfOverlapsLayers );
       if constexpr ( ParticleSystem::spaceDimension == 3 )
          initializeInnerOverlaps3D( numberOfOverlapsLayers );
+
+      //initialize load balancing measures
+      subdomainsParticlesCount = 0;
+      subdomainsCompTime = 0.;
    }
 
+   void
+   updateDistriutedGridParameters( const IndexVectorType& updatedGridDimensions, const PointType& updatedGridOrigin, const GlobalIndexType& numberOfOverlapsLayers )
+   {
+      distributedGrid.localGrid.setOrigin( updatedGridOrigin );
+      distributedGrid.localGrid.setDimensions( updatedGridDimensions );
+
+      if constexpr ( ParticleSystem::spaceDimension == 2 )
+         initializeInnerOverlaps( numberOfOverlapsLayers );
+      if constexpr ( ParticleSystem::spaceDimension == 3 )
+         initializeInnerOverlaps3D( numberOfOverlapsLayers );
+   }
 
    //collect particles to innerOverlaps
    template< typename ParticlePointer >
@@ -247,10 +317,57 @@ public:
       const int* neighbors = this->getDistributedGrid().getNeighbors();
       for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
          //TODO: We shoud limit ourselves only to filled zones to save the call time
-         if( neighbors[ i ] != -1 )
+         if( neighbors[ i ] != -1 ){
             innerOverlaps[ i ].updateParticlesInZone( particles );
+            std::cout << "NUMBER OF PARTICLES IN ZONE: " << innerOverlaps[ i ].getNumberOfParticles() << " NUMBER OF CELLS: " << innerOverlaps[ i ].getNumberOfCells() << std::endl;
+            //std::cout << innerOverlaps[ i ].getCellsInZone() << std::endl;
+         }
       }
    }
+
+   std::pair< IndexVectorType, IndexVectorType >
+   loadBalancingDomainAdjustment()
+   {
+      IndexVectorType gridDimensionsAdjustment = 0;
+      IndexVectorType gridOriginAdjustment = 0.;
+      const int* neighbors = this->getDistributedGrid().getNeighbors();
+      std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") subdomainsParticlesCount = " <<  subdomainsParticlesCount << ", subdomainParticlesCount: " << subdomainParticlesCount  << std::endl;
+
+      if( neighbors[ ZzYzXm ] != -1 ){
+         const GlobalIndexType particlesCountDifference = subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXm ];
+         if( particlesCountDifference > this->particlesCountResizeTrashold  ){
+            //pCD > pCRT -> interface mm => gridDimension.x++, gridOrigin--
+            gridDimensionsAdjustment[ 0 ]--;
+            gridOriginAdjustment[ 0 ]++;
+            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXm ] ) = " << particlesCountDifference << " > pCRT."  << std::endl;
+         }
+         if( particlesCountDifference < ( ( -1 ) * this->particlesCountResizeTrashold ) ){
+            //pCD > pCRT -> interface mm => gridDimension.x--, gridOrigin++
+            gridDimensionsAdjustment[ 0 ]++;
+            gridOriginAdjustment[ 0 ]--;
+            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXm ] ) = " << particlesCountDifference << " < ( -1 ) * pCRT."  << std::endl;
+         }
+
+      }
+
+      if( neighbors[ ZzYzXp ] != -1 ){
+         const GlobalIndexType particlesCountDifference = subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXp ];
+         if( particlesCountDifference > this->particlesCountResizeTrashold  ){
+            //pCD > pCRT -> interface pp => gridDimensions.x++, gridOring unchanged
+            gridDimensionsAdjustment[ 0 ]--;
+            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXp ] ) = " <<  particlesCountDifference << " > pCRT."  << std::endl;
+         }
+         if( particlesCountDifference < ( ( -1 ) * this->particlesCountResizeTrashold ) ){
+            //pCD > pCRT -> interface pm => gridDimensions.x--, gridOrigin unchanged
+            gridDimensionsAdjustment[ 0 ]++;
+            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXp ] ) = " <<  particlesCountDifference << " < ( -1 ) * pCRT."  << std::endl;
+         }
+      }
+
+      return std::make_pair( gridDimensionsAdjustment, gridOriginAdjustment );
+   }
+
+
 
    //collect particles to innerOverlaps
    template< typename ParticlePointer >
@@ -453,6 +570,14 @@ protected:
 
    Containers::StaticArray< DistributedGridType::getNeighborsCount(), int > innerOverlapsOffests;
    IndexArrayType innerOverlapsLinearized;
+
+   Containers::StaticArray< DistributedGridType::getNeighborsCount(), int > subdomainsParticlesCount;
+   GlobalIndexType subdomainParticlesCount;
+   int particlesCountResizeTrashold;
+
+   Containers::StaticArray< DistributedGridType::getNeighborsCount(), float > subdomainsCompTime;
+   RealType subdomainCompTime;
+   RealType computationalTimeResizeTrashold;
 
    MPI::Comm communicator = MPI_COMM_WORLD;
 

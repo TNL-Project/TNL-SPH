@@ -2,6 +2,7 @@
 #include "details/details.h"
 #include <climits>
 #include <limits>
+#include <vector>
 
 namespace TNL {
 namespace ParticleSystem {
@@ -126,16 +127,29 @@ template < typename ParticleConfig, typename Device >
 void
 ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
 {
-   //const PointType domainOrigin = this->gridInteriorOrigin;
-   ////const PointType domainSize = this->gridInteriorDimension * this->radius;
-   //const PointType domainSize = this->interiorSize;
-   const PointType domainOrigin = this->gridOrigin;
-   const PointType domainSize = this->gridDimension * this->radius;
-   //const PointType domainSize = this->interiorSize;
+   //compare by position
+
+   //const PointType domainOrigin = this->gridOrigin;
+   //const PointType domainSize = this->gridDimension * this->radius;
+   //auto view_points = this->points.getView();
+
+   //compare by cell index
+
+   const PointType gridRefOrigin = this->getGridReferentialOrigin();
+   const PointType gridOriginWithOveralp = this->getGridOriginWithOverlap();
+   const RealType searchRadius = this->getSearchRadius();
+   const IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
+   const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    auto view_points = this->points.getView();
+
    auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
    {
-      if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) ){
+      const PointType point = view_points[ i ];
+      const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) / searchRadius );
+      const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+
+      //if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) ){
+      if( this->isInsideDomain( cellCoords, gridDimensionsWithOverlap ) ){
          return 0;
       }
       else {

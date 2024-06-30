@@ -149,6 +149,42 @@ int main( int argc, char* argv[] )
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
+      if( ( sph.timeStepping.getStep() % 500  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
+
+         sph.timeMeasurement.start( "search" );
+         sph.performNeighborSearch( log, true );
+         sph.timeMeasurement.stop( "search" );
+         sph.writeLog( log, "Search second...", "Done." );
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         log.writeSeparator();
+         sph.writeLog( log, "Starting load balancing.", "" );
+         sph.performLoadBalancing( log );
+         sph.writeLog( log, "Load balancing...", "Done." );
+         log.writeSeparator();
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         // SingleSet: forgot overlaps
+         sph.resetOverlaps();
+         sph.writeLog( log, "Reset overlaps...", "Done." );
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         sph.timeMeasurement.start( "search" );
+         sph.performNeighborSearch( log, true );
+         sph.timeMeasurement.stop( "search" );
+         sph.writeLog( log, "Search second...", "Done." );
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         sph.writeLog( log, "Starting synchronization.", "" );
+         sph.synchronizeDistributedSimulation();
+         sph.writeLog( log, "Synchronize...", "Done." );
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      }
+
       // SingleSet: perform second search to assign received particles
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log, true );
@@ -160,7 +196,9 @@ int main( int argc, char* argv[] )
       // output particle data
       //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
       //if( sph.timeStepping.getStep() <  || sph.timeStepping.getStep() > 1480 ){
-      if( sph.timeStepping.getStep() < 0 || sph.timeStepping.getStep() > 10 ){
+      //if( sph.timeStepping.getStep() < 0 || sph.timeStepping.getStep() > 10 ){
+      //if( sph.timeStepping.getStep() < 499 || ( sph.timeStepping.getStep() > 510 && sph.timeStepping.getStep() < 950 ) ){
+      if( sph.timeStepping.getStep() < 499 ||  sph.timeStepping.getStep() > 510 ){
          if( sph.timeStepping.checkOutputTimer( "save_results" ) )
          {
             /**
@@ -225,6 +263,9 @@ int main( int argc, char* argv[] )
 
       // update time step
       sph.timeStepping.updateTimeStep();
+
+      //if( sph.timeStepping.getStep() == 962 )
+      //   return;
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
    }

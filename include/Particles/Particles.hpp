@@ -70,6 +70,7 @@ void
 Particles< ParticleConfig, DeviceType >::setGridReferentialOrigin( const PointType& origin )
 {
    gridReferentialOrigin = origin;
+   gridReferentialOriginSet = true;
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -243,12 +244,29 @@ template< typename Device2,
 void
 Particles< ParticleConfig, Device >::forAll( Func f ) const
 {
-   const PointType domainOrigin = this->gridOrigin;
-   const PointType domainSize = this->gridDimension * this->radius;
+   //compare by position
+
+   //const PointType domainOrigin = this->gridOrigin;
+   //const PointType domainSize = this->gridDimension * this->radius;
+   //const auto view_points = this->points.getConstView();
+
+   //compare by cell index
+
+   const PointType gridRefOrigin = this->getGridReferentialOrigin();
+   const PointType gridOriginWithOveralp = this->getGridOriginWithOverlap();
+   const RealType searchRadius = this->getSearchRadius();
+   const IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
+   const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    const auto view_points = this->points.getConstView();
+
    auto wrapper = [=] __cuda_callable__( GlobalIndexType i ) mutable
    {
-      if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
+      const PointType point = view_points[ i ];
+      const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) / searchRadius );
+      const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+
+      //if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
+      if( this->isInsideDomain( cellCoords, gridDimensionsWithOverlap ) )
          f( i );
    };
    Algorithms::parallelFor< Device2 >( 0, numberOfParticles, wrapper );
@@ -264,6 +282,17 @@ Particles< ParticleConfig, Device >::isInsideDomain( const PointType& point,
    //FIXME: These two lines produces different results
    //if( ( point > domainOrigin ) && ( point < ( domainOrigin + domainSize ) ) )
    if( ( point[ 0 ] >= domainOrigin[ 0 ] ) && ( point[ 0 ] < ( domainOrigin[ 0 ] + domainSize[ 0 ] ) ) ) // >=, <= vs >, <
+      return true;
+   return false;
+}
+
+template < typename ParticleConfig, typename Device >
+__cuda_callable__
+bool
+Particles< ParticleConfig, Device >::isInsideDomain( const IndexVectorType& particleCell,
+                                                     const IndexVectorType& gridDimensionsWithOverlap ) const
+{
+   if( ( particleCell[ 0 ] >  0  ) && ( particleCell[ 0 ] < ( gridDimensionsWithOverlap[ 0 ] - 1 ) ) ) // >=, <= vs >, <
       return true;
    return false;
 }

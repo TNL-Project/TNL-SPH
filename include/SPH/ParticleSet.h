@@ -285,6 +285,12 @@ class ParticleSet
       //particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
       //this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
    }
+
+   void
+   synchronizeBalancingMeasures()
+   {
+      this->synchronizer.synchronizeBalancingMeasures( distributedParticles );
+   }
 #endif
 
    void

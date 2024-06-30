@@ -237,6 +237,10 @@ public:
    bool
    isInsideDomain( const PointType& point, const PointType& domainOrigin, const PointType& domainSize ) const;
 
+   __cuda_callable__
+   bool
+   isInsideDomain( const IndexVectorType& particleCell, const IndexVectorType& gridDimensionWithOverlap ) const;
+
    /**
     * \brief Reorder particles based on permutation vector.
     */

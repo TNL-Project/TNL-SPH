@@ -105,7 +105,7 @@ public:
       recvSizes = 0;
       sendNeighborOffsets = 0;
       recvNeighborOffsets = 0;
-      std::cout << "RANK: " << communicator.rank() << " EMPTY: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+      //std::cout << "RANK: " << communicator.rank() << " EMPTY: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
 
       const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
 
@@ -149,7 +149,61 @@ public:
             recvNeighborOffsets[ i ] += recvSizes[ j ];
          }
       }
-      std::cout << "RANKEND " << communicator.rank() << " FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+      //std::cout << "RANKEND " << communicator.rank() << " FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+   }
+
+   template< typename DistributedParticlesPointer >
+   void
+   synchronizeBalancingMeasures( DistributedParticlesPointer& distributedParticles )
+   {
+      TNL_ASSERT_TRUE( isSet, "Synchronizer is not set, but used to synchronize" );
+      if( ! distributedParticles->getDistributedGrid().isDistributed() )
+         return;
+
+      // resent send and recv sizes
+      sendParticlesCount = 0;
+      recvParticlesCount = 0;
+      sendCompTime = 0;
+      recvCompTime = 0;
+      const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
+
+      // fill send sizes
+      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
+         if( neighbors[ i ] != -1 ){
+            sendParticlesCount[ i ] = distributedParticles->getNumberOfParticlesForLoadBalancing();
+            sendCompTime[ i ] = distributedParticles->getCompTime();
+         }
+      }
+
+      // async send and receive
+      std::unique_ptr< MPI_Request[] > requests{ new MPI_Request[ 2 * this->getNeighborsCount() ] };
+      //const MPI::Comm& communicator = distributedParticles->getCommunicator();
+      int requestsCount = 0;
+
+      // send everything, recieve everything
+      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
+         if( neighbors[ i ] != -1 ) {
+            requests[ requestsCount++ ] = MPI::Isend( &sendParticlesCount[ i ], 1, neighbors[ i ], 0, communicator );
+            requests[ requestsCount++ ] = MPI::Isend( &sendCompTime[ i ], 1, neighbors[ i ], 0, communicator );
+            requests[ requestsCount++ ] = MPI::Irecv( &recvParticlesCount[ i ], 1, neighbors[ i ], 0, communicator );
+            requests[ requestsCount++ ] = MPI::Irecv( &recvCompTime[ i ], 1, neighbors[ i ], 0, communicator );
+         }
+      }
+
+      // wait until send is done
+      MPI::Waitall( requests.get(), requestsCount );
+
+      // store recv values
+      //auto subdomainsParticlesCount_view = distributedParticles->getSubdomainsParticlesCount().getView();
+      //auto subdomainsCompTime_view = distributedParticles->getSubdomainsCompTime().getView();
+      for( int i = 0; i < this->getNeighborsCount(); i++ ) {
+         if( neighbors[ i ] != -1 ){
+            //subdomainsParticlesCount_view[ i ] = recvParticlesCount[ i ];
+            //subdomainsCompTime_view[ i ] = recvCompTime[ i ];
+            distributedParticles->getSubdomainsParticlesCount()[ i ] = recvParticlesCount[ i ];
+            distributedParticles->getSubdomainsCompTime()[ i ] = recvCompTime[ i ];
+         }
+      }
    }
 
    GlobalIndexType
@@ -316,6 +370,13 @@ private:
 
    Containers::StaticArray< getNeighborsCount(), int > sendSizes;
    Containers::StaticArray< getNeighborsCount(), int > recvSizes;
+
+   // load balancing props
+   Containers::StaticArray< getNeighborsCount(), int > sendParticlesCount;
+   Containers::StaticArray< getNeighborsCount(), int > recvParticlesCount;
+
+   Containers::StaticArray< getNeighborsCount(), float > sendCompTime;
+   Containers::StaticArray< getNeighborsCount(), float > recvCompTime;
 
    Containers::StaticArray< getNeighborsCount(), int > sendNeighborOffsets;
    Containers::StaticArray< getNeighborsCount(), int > recvNeighborOffsets;

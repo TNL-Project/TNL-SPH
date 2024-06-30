@@ -29,6 +29,19 @@ ParticleZone< ParticleConfig >::assignCells( IndexVectorType firstPointIdx,
       const IndexVectorType begin = { 0, 0 };
       Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
+
+   if constexpr( ParticleConfig::spaceDimension == 3 ) {
+      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      {
+         const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ] + i[ 2 ] * zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+
+         //cellsInZone_view[ idxLinearized ] = i[ 2 ] * gridSize[ 0 ] * gridSize[ 1 ] + i[ 1 ] * gridSize[ 0 ] + i[ 0 ];
+         //cellsInZone_view[ idxLinearized ] = i[ 2 ] * gridSize[ 0 ] * gridSize[ 1 ] + i[ 0 ] * gridSize[ 1 ] + i[ 1 ];
+      };
+      const IndexVectorType begin = { 0, 0, 0 };
+      Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
+   }
 }
 
 //TODO: Merge both assign functions together

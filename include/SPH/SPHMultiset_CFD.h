@@ -169,6 +169,9 @@ public:
    void
    resetOverlaps();
 
+   void
+   performLoadBalancing( TNL::Logger& logger );
+
 #endif
 
    /**
