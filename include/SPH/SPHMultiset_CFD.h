@@ -164,7 +164,7 @@ public:
 #ifdef HAVE_MPI
 
    void
-   synchronizeDistributedSimulation( bool writePoints = false );
+   synchronizeDistributedSimulation( TNL::Logger& logger );
 
    void
    resetOverlaps();

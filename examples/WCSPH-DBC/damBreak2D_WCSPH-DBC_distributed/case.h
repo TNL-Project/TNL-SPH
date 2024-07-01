@@ -128,6 +128,8 @@ int main( int argc, char* argv[] )
    //while( sph.timeStepping.getStep() < 2 )
    {
       sph.writeInfo( log );
+      if( TNL::MPI::GetRank() == 1 )
+         std::cout << "*************** step: " << sph.timeStepping.getStep() << std::endl;
 
       // SingleSet: forgot overlaps
       //sph.resetOverlaps();
@@ -144,19 +146,22 @@ int main( int argc, char* argv[] )
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
       sph.writeLog( log, "Starting synchronization.", "" );
-      sph.synchronizeDistributedSimulation();
+      sph.synchronizeDistributedSimulation( log );
       sph.writeLog( log, "Synchronize...", "Done." );
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
-      if( ( sph.timeStepping.getStep() % 500  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
+      if( sph.timeStepping.getStep() == 606 )
+         return;
+
+      if( ( sph.timeStepping.getStep() % 200  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
 
          sph.timeMeasurement.start( "search" );
          sph.performNeighborSearch( log, true );
          sph.timeMeasurement.stop( "search" );
          sph.writeLog( log, "Search second...", "Done." );
 
-         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+         //TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
          log.writeSeparator();
          sph.writeLog( log, "Starting load balancing.", "" );
@@ -180,7 +185,7 @@ int main( int argc, char* argv[] )
          TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
          sph.writeLog( log, "Starting synchronization.", "" );
-         sph.synchronizeDistributedSimulation();
+         sph.synchronizeDistributedSimulation( log );
          sph.writeLog( log, "Synchronize...", "Done." );
          TNL::MPI::Barrier( sph.communicator ); //To have clear output
       }
@@ -190,6 +195,10 @@ int main( int argc, char* argv[] )
       sph.performNeighborSearch( log, true );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search second...", "Done." );
+
+      if( sph.timeStepping.getStep() == 600 )
+         sph.save( log, true );
+
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 

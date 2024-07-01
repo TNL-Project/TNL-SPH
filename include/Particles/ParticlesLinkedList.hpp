@@ -162,6 +162,8 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
                                                                                        checkParticlePosition,
                                                                                        TNL::Plus() );
    this->setNumberOfParticlesToRemove( this->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
+   if( TNL::MPI::GetRank() == 2 )
+   std::cout << "removeParticlesOutOfDomain: reset overlaps: number of particles to remove:" << numberOfParticlesToRemove << " grid org with overlap: " << gridOriginWithOveralp << std::endl;
 }
 
 template < typename ParticleConfig, typename Device >
@@ -293,6 +295,8 @@ ParticlesLinkedList< ParticleConfig, Device >::searchForNeighbors()
    sortParticles();
    this->reorderParticles();
    //update number of particles - removed particles with invalid positions are shifted at the end of the array
+   if( TNL::MPI::GetRank() == 2 )
+   std::cout << "number of particles to remove: " << this->getNumberOfParticlesToRemove() << std::endl;
    if( this->getNumberOfParticlesToRemove() != 0 ){
       this->setNumberOfParticles( this->getNumberOfParticles() - this->getNumberOfParticlesToRemove() );
       this->setNumberOfParticlesToRemove( 0 );

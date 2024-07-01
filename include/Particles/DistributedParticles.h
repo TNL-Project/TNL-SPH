@@ -297,10 +297,15 @@ public:
    }
 
    void
-   updateDistriutedGridParameters( const IndexVectorType& updatedGridDimensions, const PointType& updatedGridOrigin, const GlobalIndexType& numberOfOverlapsLayers )
+   updateDistriutedGridParameters( const IndexVectorType& updatedGridDimensions, const PointType& updatedGridOrigin, const GlobalIndexType& numberOfOverlapsLayers, const RealType& searchRadius )
    {
+      std::cout << "< rank: " << TNL::MPI::GetRank() << "> :: distGrid.locGrid.getDim(): " << distributedGrid.localGrid.getDimensions() << " | updatedGridDimensions: " << updatedGridDimensions << std::endl;
       distributedGrid.localGrid.setOrigin( updatedGridOrigin );
       distributedGrid.localGrid.setDimensions( updatedGridDimensions );
+      //there is some wierd grid size
+      const PointType spaceStepsVector = searchRadius;
+      distributedGrid.localGrid.setSpaceSteps( spaceStepsVector );
+      std::cout << "< rank: " << TNL::MPI::GetRank() << "> :: distGrid.locGrid.getDim() after updated: " << distributedGrid.localGrid.getDimensions() << std::endl;
 
       if constexpr ( ParticleSystem::spaceDimension == 2 )
          initializeInnerOverlaps( numberOfOverlapsLayers );
@@ -318,7 +323,9 @@ public:
       for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
          //TODO: We shoud limit ourselves only to filled zones to save the call time
          if( neighbors[ i ] != -1 ){
+            //innerOverlaps[ i ].resetParticles(); //this is not required
             innerOverlaps[ i ].updateParticlesInZone( particles );
+            if( TNL::MPI::GetRank() == 2 )
             std::cout << "NUMBER OF PARTICLES IN ZONE: " << innerOverlaps[ i ].getNumberOfParticles() << " NUMBER OF CELLS: " << innerOverlaps[ i ].getNumberOfCells() << std::endl;
             //std::cout << innerOverlaps[ i ].getCellsInZone() << std::endl;
          }
