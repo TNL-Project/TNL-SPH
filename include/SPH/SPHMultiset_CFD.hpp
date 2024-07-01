@@ -479,6 +479,10 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
    boundary->particles->setGridDimensions( updatedGridDimensions );
    boundary->particles->setGridOrigin( updatedGridOrigin );
 
+   const IndexVectorType updatedGridOriginGlobalCoords = fluid->particles->getGridOriginGlobalCoords() + subdomainAdjustment.second;
+   fluid->particles->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
+   boundary->particles->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
+
    logger.writeParameter( "New grid dimensions: ", fluid->particles->getGridDimensions() );
    logger.writeParameter( "New grid origin adjustment: ", fluid->particles->getGridOrigin() );
    logger.writeParameter( "New firstLastCellParticleList size: ", fluid->particles->getCellFirstLastParticleList().getSize() );

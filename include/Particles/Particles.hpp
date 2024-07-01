@@ -74,6 +74,20 @@ Particles< ParticleConfig, DeviceType >::setGridReferentialOrigin( const PointTy
 }
 
 template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
+Particles< ParticleConfig, DeviceType >::getGridOriginGlobalCoords() const
+{
+   return gridOriginGlobalCoords;
+}
+
+template < typename ParticleConfig, typename DeviceType >
+void
+Particles< ParticleConfig, DeviceType >::setGridOriginGlobalCoords( const IndexVectorType& origin )
+{
+   this->gridOriginGlobalCoords = origin;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::PointType
 Particles< ParticleConfig, DeviceType >::getGridOrigin() const
 {
@@ -255,7 +269,8 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
    const PointType gridRefOrigin = this->getGridReferentialOrigin();
    const PointType gridOriginWithOveralp = this->getGridOriginWithOverlap();
    const RealType searchRadius = this->getSearchRadius();
-   const IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
+   //const IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
+   const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
    const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    const auto view_points = this->points.getConstView();
 

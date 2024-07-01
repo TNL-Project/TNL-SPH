@@ -170,6 +170,7 @@ public:
                   zoneDimensions[ j ] = zoneWidth;
             }
             // set overlaps
+            std::cout << "||| rank: " << TNL::MPI::GetRank() << "||| :: zoneOriginIdx: " << zoneOriginIdx << " zoneDimensions: " << zoneDimensions << " localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << std::endl;
             innerOverlaps[ i ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
             innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
          }

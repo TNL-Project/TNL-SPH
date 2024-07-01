@@ -151,8 +151,8 @@ int main( int argc, char* argv[] )
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
-      if( sph.timeStepping.getStep() == 606 )
-         return;
+      //if( sph.timeStepping.getStep() == 606 )
+      //   return;
 
       if( ( sph.timeStepping.getStep() % 200  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
 
@@ -177,10 +177,36 @@ int main( int argc, char* argv[] )
 
          TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
+
          sph.timeMeasurement.start( "search" );
          sph.performNeighborSearch( log, true );
          sph.timeMeasurement.stop( "search" );
          sph.writeLog( log, "Search second...", "Done." );
+
+         if( TNL::MPI::GetRank() == 2 ){
+            std::cout << "_____ First 10 points:" << std::endl;
+            typename Simulation::ParticlesType::PointType gridRefOrigin = sph.fluid->particles->getGridReferentialOrigin();
+            typename Simulation::ParticlesType::PointType gridOriginWithOveralp = sph.fluid->particles->getGridOriginWithOverlap();
+            typename Simulation::ParticlesType::RealType searchRadius = sph.fluid->particles->getSearchRadius();
+            typename Simulation::ParticlesType::IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
+            typename Simulation::ParticlesType::IndexVectorType gridDimensionsWithOverlap = sph.fluid->particles->getGridDimensionsWithOverlap();
+            std::cout << " @@ gridRefOrigin: " << gridRefOrigin << " gridOriginWithOveralp: " << gridOriginWithOveralp << " searchRadius: " << searchRadius << " gridRefOriginCoords: " << gridRefOriginCoords << " gridDimensionsWithOverlap: " << gridDimensionsWithOverlap << std::endl;
+            std::cout << " @@@@: gridOriginWithOveralp - gridRefOrigin :" << gridOriginWithOveralp - gridRefOrigin << " ( gridOriginWithOveralp - gridRefOrigin  ) / searchRadius: " <<  ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius <<  "floor(gridOriginWithOveralp-gridRefOrigin)/searchRadius:" << TNL::floor(( gridOriginWithOveralp - gridRefOrigin ) / searchRadius) << std::endl;
+
+            std::cout << " $$$$: A:" << TNL::floor( gridOriginWithOveralp / searchRadius ) << " B: " << TNL::floor( gridRefOrigin / searchRadius ) << " result: " << TNL::floor( ( gridOriginWithOveralp / searchRadius ) - TNL::floor( gridRefOrigin / searchRadius ) ) << std::endl;
+
+            //std::cout << " ( gridOriginWithOveralp - gridRefOrigin  ) REM searchRadius: " <<  ( gridOriginWithOveralp[ 0 ] - gridRefOrigin[ 0 ] ) % searchRadius << std::endl;
+            std::cout << "FMOD ( gridOriginWithOveralp - gridRefOrigin  ) REM searchRadius: " <<  std::fmod(( gridOriginWithOveralp[ 0 ] - gridRefOrigin[ 0 ] ) , searchRadius )<< std::endl;
+
+            for( int j = 0; j < 10; j++ ){
+
+               typename Simulation::ParticlesType::PointType point = sph.fluid->particles->getPoints().getElement( j );
+               typename Simulation::ParticlesType::IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) / searchRadius );
+               typename Simulation::ParticlesType::IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+
+               std::cout << " | " << point << " cidx: " << cellCoords ;
+            }
+         }
 
          TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
@@ -205,9 +231,9 @@ int main( int argc, char* argv[] )
       // output particle data
       //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
       //if( sph.timeStepping.getStep() <  || sph.timeStepping.getStep() > 1480 ){
-      //if( sph.timeStepping.getStep() < 0 || sph.timeStepping.getStep() > 10 ){
-      //if( sph.timeStepping.getStep() < 499 || ( sph.timeStepping.getStep() > 510 && sph.timeStepping.getStep() < 950 ) ){
-      if( sph.timeStepping.getStep() < 499 ||  sph.timeStepping.getStep() > 510 ){
+      if( sph.timeStepping.getStep() < 0 || sph.timeStepping.getStep() > 10 ){
+      //if( sph.timeStepping.getStep() < 499 || ( sph.timeStepping.getStep() > 510 && sph.timeStepping.getStep() < 18978 ) ){
+      //if( sph.timeStepping.getStep() < 499 ||  sph.timeStepping.getStep() > 510 ){
          if( sph.timeStepping.checkOutputTimer( "save_results" ) )
          {
             /**
@@ -273,7 +299,7 @@ int main( int argc, char* argv[] )
       // update time step
       sph.timeStepping.updateTimeStep();
 
-      //if( sph.timeStepping.getStep() == 962 )
+      //if( sph.timeStepping.getStep() == 19199 )
       //   return;
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output

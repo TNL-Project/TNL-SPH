@@ -112,6 +112,11 @@ class ParticleSet
       //this->particles->setGlobalGridSize( globalGridDimension );
       //this->particles->setGlobalGridOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
       this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
+
+      const VectorType gridRefOrigin = particles->getGridReferentialOrigin();
+      //const VectorType gridOriginWithOverlap = particles->getGridOriginWithOverlap();
+      const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOriginWithOverlap - gridRefOrigin ) / searchRadius );
+      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
       //this->particles->setGridReferentialOrigin( globalGridOrigin );
       //this->particles->setGridInteriorDimension( gridDimension );
       //this->particles->setGridInteriorOrigin( gridOrigin );

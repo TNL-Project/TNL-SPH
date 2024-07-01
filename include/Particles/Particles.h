@@ -99,6 +99,15 @@ public:
    setGridReferentialOrigin( const PointType& origin );
 
    /**
+    *
+    */
+   [[nodiscard]] const IndexVectorType
+   getGridOriginGlobalCoords() const;
+
+   void
+   setGridOriginGlobalCoords( const IndexVectorType& origin );
+
+   /**
     * \brief Returns origin of the implicit linked list grid.
     *
     * \return the origin of the grid.
@@ -280,6 +289,11 @@ protected:
     */
    bool gridReferentialOriginSet = false;
    PointType gridReferentialOrigin;
+
+   /**
+    * In case that referential origin is used, store global coordinates of current origin.
+    */
+   IndexVectorType gridOriginGlobalCoords;
 
    /**
     * Origin of the domain where particles live. The domain is assumed in form
