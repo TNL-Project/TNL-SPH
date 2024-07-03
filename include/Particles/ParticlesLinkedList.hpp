@@ -164,8 +164,6 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
                                                                                        checkParticlePosition,
                                                                                        TNL::Plus() );
    this->setNumberOfParticlesToRemove( this->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
-   if( TNL::MPI::GetRank() == 2 )
-   std::cout << "removeParticlesOutOfDomain: reset overlaps: number of particles to remove:" << numberOfParticlesToRemove << " grid org with overlap: " << gridOriginWithOveralp << std::endl;
 }
 
 template < typename ParticleConfig, typename Device >

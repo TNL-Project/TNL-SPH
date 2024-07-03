@@ -170,7 +170,6 @@ public:
                   zoneDimensions[ j ] = zoneWidth;
             }
             // set overlaps
-            std::cout << "||| rank: " << TNL::MPI::GetRank() << "||| :: zoneOriginIdx: " << zoneOriginIdx << " zoneDimensions: " << zoneDimensions << " localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << std::endl;
             innerOverlaps[ i ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
             innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap );
          }
@@ -213,7 +212,6 @@ public:
             zoneOriginIdx[ 2 ] = 0;
             zoneDimensions[ 2 ] = localGridDimensionsWithOverlap[ 2 ];
             // set overlaps
-            std::cout << "dir: " << direction << " --->>> zoneOriginIdx: " << zoneOriginIdx << " --->>> zoneDimensions: " << zoneDimensions << " --->>> localGridDimensionsWithOverlap: " << localGridDimensionsWithOverlap << " --->>> localGridDimensions: " << localGridDimensions << "\n" << std::endl;
             innerOverlaps[ i ].setNumberOfParticlesPerCell( numberOfParticlesPerCell );
             innerOverlaps[ i ].assignCells( zoneOriginIdx, zoneDimensions, localGridDimensionsWithOverlap ); //FIXME: Why there is no localGridDimensionWithOverlap??????
          }
@@ -300,13 +298,11 @@ public:
    void
    updateDistriutedGridParameters( const IndexVectorType& updatedGridDimensions, const PointType& updatedGridOrigin, const GlobalIndexType& numberOfOverlapsLayers, const RealType& searchRadius )
    {
-      std::cout << "< rank: " << TNL::MPI::GetRank() << "> :: distGrid.locGrid.getDim(): " << distributedGrid.localGrid.getDimensions() << " | updatedGridDimensions: " << updatedGridDimensions << std::endl;
       distributedGrid.localGrid.setOrigin( updatedGridOrigin );
       distributedGrid.localGrid.setDimensions( updatedGridDimensions );
-      //there is some wierd grid size
+      //there is some wierd grid size, but search radius is not necessay here
       const PointType spaceStepsVector = searchRadius;
       distributedGrid.localGrid.setSpaceSteps( spaceStepsVector );
-      std::cout << "< rank: " << TNL::MPI::GetRank() << "> :: distGrid.locGrid.getDim() after updated: " << distributedGrid.localGrid.getDimensions() << std::endl;
 
       if constexpr ( ParticleSystem::spaceDimension == 2 )
          initializeInnerOverlaps( numberOfOverlapsLayers );
@@ -418,32 +414,6 @@ public:
          }
 
       }
-   }
-
-   //THe system is currently still fucked up, so it works on extranela, not he local partocles.
-   template< typename ParticlePointer >
-   void
-   removeParitclesOutOfDomain( ParticlePointer& particles )
-   {
-
-      auto points_view = particles->getPoints().getView();
-      //auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
-      auto checkParticlePosition = [ points_view, particles ] __cuda_callable__ ( int i ) mutable
-      {
-         if( particles->isInsideDomain( points_view[ i ] ) ){
-            return 0;
-         }
-         else {
-            points_view[ i ] = FLT_MAX;
-            return 1;
-         }
-      };
-      const GlobalIndexType numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( particles->getFirstActiveParticle(),
-                                                                                          particles->getLastActiveParticle(),
-                                                                                          checkParticlePosition,
-                                                                                          TNL::Plus() );
-      std::cout <<"RANK: " << TNL::MPI::GetRank() <<"(func: removeParitclesOutOfDomain): numberOfParticlesToRemove: " << numberOfParticlesToRemove << " particles.numberOfParticlesToRemove: " << particles->getNumberOfParticlesToRemove() << std::endl;
-      particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
    }
 
    void

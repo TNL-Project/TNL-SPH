@@ -105,8 +105,8 @@ public:
       recvSizes = 0;
       sendNeighborOffsets = 0;
       recvNeighborOffsets = 0;
-      if( TNL::MPI::GetRank() == 2 )
-      std::cout << "RANK: " << communicator.rank() << " EMPTY: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+      //if( TNL::MPI::GetRank() == 2 )
+      //std::cout << "RANK: " << communicator.rank() << " EMPTY: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
 
       const int* neighbors = distributedParticles->getDistributedGrid().getNeighbors();
 
@@ -150,8 +150,8 @@ public:
             recvNeighborOffsets[ i ] += recvSizes[ j ];
          }
       }
-      if( TNL::MPI::GetRank() == 2 )
-      std::cout << "RANKEND " << communicator.rank() << " FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
+      //if( TNL::MPI::GetRank() == 2 )
+      //std::cout << "RANKEND " << communicator.rank() << " FILLED: [ sendSize ] = " << sendSizes << " [ sendNeighborOffsets ] = " << sendNeighborOffsets << " [ recvSizes ] = " << recvSizes << " [ recvNeighborOffsets ] = " << recvNeighborOffsets << std::endl;
    }
 
    template< typename DistributedParticlesPointer >
