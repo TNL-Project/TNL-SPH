@@ -383,7 +383,7 @@ def write_distributed_domain_params( setup ):
                 file.write( f'{key_prefix}fluid_n = { setup[ f"{key_prefix}fluid_n" ] }\n' )
                 file.write( f'{key_prefix}boundary_n = { setup[ f"{key_prefix}box_n" ] }\n' )
                 file.write( f'{key_prefix}fluid_n_allocated = { 2*setup[ f"{key_prefix}fluid_n" ] }\n' )
-                file.write( f'{key_prefix}boundary_n_allocated = { 2*setup[ f"{key_prefix}box_n" ] }\n' )
+                file.write( f'{key_prefix}boundary_n_allocated = { 3*setup[ f"{key_prefix}box_n" ] }\n' )
                 subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
                 subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
                 #file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
