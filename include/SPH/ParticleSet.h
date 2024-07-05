@@ -86,7 +86,7 @@ class ParticleSet
                             RealType searchRadius,
                             IndexVectorType gridDimension,
                             VectorType gridOrigin,
-                            IndexVectorType globalGridDimension,
+                            IndexVectorType gridOriginGlobalCoords,
                             VectorType globalGridOrigin,
                             TNL::Logger& logger,
                             GlobalIndexType numberOfOverlapsLayers = 1 )
@@ -98,24 +98,16 @@ class ParticleSet
 
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
-      //this->particles->setGridDimensions( gridDimensionWithOverlap );
-      //this->particles->setGridOrigin( gridOriginWithOverlap );
       this->particles->setGridDimensions( gridDimension );
       this->particles->setGridOrigin( gridOrigin );
       this->particles->setOverlapWidth( 1 );
       this->particles->setNumberOfParticles( numberOfParticles );
-      //this->particles->setFirstActiveParticle( 0 );
-      //this->particles->setLastActiveParticle( numberOfParticles - 1 );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
+      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps );
 
-      //this->particles->setGlobalGridSize( globalGridDimension );
-      //this->particles->setGlobalGridOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
-      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps);
-
-      const VectorType gridRefOrigin = particles->getGridReferentialOrigin();
-      //const VectorType gridOriginWithOverlap = particles->getGridOriginWithOverlap();
-      const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOriginWithOverlap - gridRefOrigin ) / searchRadius );
+      //const IndexVectorType shiftOriginGlobalCoords = numberOfOverlapsLayers;
+      //const IndexVectorType gridOriginGlobalCoordsWithOverlap = gridOriginGlobalCoords - shiftOriginGlobalCoords;
       this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
       //this->particles->setGridReferentialOrigin( globalGridOrigin );
       //this->particles->setGridInteriorDimension( gridDimension );

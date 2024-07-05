@@ -143,9 +143,10 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >( subdomainKey + "size" ) ;
-   const IndexVectorType subdomainGridDimension = TNL::ceil( subdomainSize / searchRadius );
-   //const IndexVectorType subdomainGridDimension = TNL::ceil( (subdomainSize - searchRadius * 1e-5 ) / searchRadius ); //small workaround
+   //const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >( subdomainKey + "size" ) ;
+   //const IndexVectorType subdomainGridDimension = TNL::ceil( subdomainSize / searchRadius );
+   const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
+   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
 
    // init fluid
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
@@ -154,7 +155,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                    searchRadius,
                                    subdomainGridDimension,
                                    subdomainOrigin,
-                                   domainGridDimension,
+                                   subdomainGridOriginGlobalCoords,
                                    domainOrigin,
                                    logger );
    //fluid->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
@@ -166,7 +167,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                       searchRadius,
                                       subdomainGridDimension,
                                       subdomainOrigin,
-                                      domainGridDimension,
+                                      subdomainGridOriginGlobalCoords,
                                       domainOrigin,
                                       logger );
    //boundary->particles->interiorSize = subdomainSize; //FIXME Getter, Setter
@@ -220,7 +221,9 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
    // subdomain properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
    const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
+   //const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
+   const IndexVectorType subdomainGridSize = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
+   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
 
    int overlapCellsCount = 0;
    IndexVectorType resizedSubdomainGridSize = 0;
@@ -247,6 +250,7 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
    }
    int numberOfParticlesPerCell = parameters.getParameter< int >( "numberOfParticlesPerCell" );
 
+   // FIXME: Here, the arguments are probably fcked
    fluidOverlap->initializeAsDistributed( 0,
                              numberOfParticlesPerCell * overlapCellsCount,
                              searchRadius,
@@ -256,6 +260,7 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
                              domainOrigin,
                              logger );
 
+   // FIXME: Here, the arguments are probably fcked
    boundaryOverlap->initializeAsDistributed( 0,
                                 numberOfParticlesPerCell * overlapCellsCount,
                                 searchRadius,

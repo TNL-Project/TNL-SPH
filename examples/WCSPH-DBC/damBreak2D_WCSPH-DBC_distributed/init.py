@@ -122,6 +122,7 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
         grid_origins_x.append( setup[ "domain_origin_x" ] )
         grid_index_origins_x.append( 0 )
         domain_sizes_x( setup[ "domain_size_x" ] )
+        grid_sizes_x.append( ( int )( np.ceil( setup[ "domain_size_x" ] / search_radius ) ) )
     else:
         #for subdomain_x in range( subdomains_x - 1 ):
         for subdomain_x in range( subdomains_x ):
@@ -161,6 +162,7 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
         grid_origins_y.append( setup[ "domain_origin_y" ] )
         grid_index_origins_y.append( 0 )
         domain_sizes_y.append( setup[ "domain_size_y" ] )
+        grid_sizes_y.append( ( int )( np.ceil( setup[ "domain_size_y" ] / search_radius ) ) )
     else:
         #for subdomain_y in range( subdomains_y - 1 ):
         for subdomain_y in range( subdomains_y ):
@@ -362,16 +364,6 @@ def write_distributed_domain_params( setup ):
 
     # write paramerters to new created config file related to decomposition
     with open( 'sources/config-distributed-domain.ini', "w") as file:
-        #file.write( f'# Distributed subdomains global informations\n' )
-        #file.write( f'number-of-subdomains = { setup[ f"number_of_subdomains" ]}\n' )
-        #file.write( f'subdomains-x = { subdomains_x }\n' )
-        #file.write( f'subdomains-y = { subdomains_y }\n' )
-        #file.write( f'domainOrigin-x = { setup[ "domain_origin_x" ]:.5}\n' )
-        #file.write( f'domainOrigin-y = { setup[ "domain_origin_y" ]:.5}\n' )
-        #file.write( f'domainSize-x = { setup[ "domain_size_x" ]:.5}\n' )
-        #file.write( f'domainSize-y = { setup[ "domain_size_y" ]:.5}\n' )
-
-        #file.write( f'\n' )
         file.write( f'# Subdomains informations\n' );
         for subdomain_x in range( subdomains_x ):
             for subdomain_y in range( subdomains_y ):
@@ -386,18 +378,20 @@ def write_distributed_domain_params( setup ):
                 file.write( f'{key_prefix}boundary_n_allocated = { 3*setup[ f"{key_prefix}box_n" ] }\n' )
                 subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
                 subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
-                #file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
-                #file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
                 file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
                 file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
-                #subdomain_grid_size_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
-                #subdomain_grid_size_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
-                #file.write( f"{key_prefix}girdSize-x = { subdomain_grid_size_x:.2f}\n" )
-                #file.write( f"{key_prefix}girdSize-y = { subdomain_grid_size_y:.2f}\n" )
+                subdomain_grid_origin_glob_coords_x = setup[ f"grid_index_origins_x" ][ subdomain_x ]
+                subdomain_grid_origin_glob_coords_y = setup[ f"grid_index_origins_y" ][ subdomain_y ]
+                file.write( f"{key_prefix}origin-global-coords-x = { subdomain_grid_origin_glob_coords_x }\n" )
+                file.write( f"{key_prefix}origin-global-coords-y = { subdomain_grid_origin_glob_coords_y }\n" )
                 subdomain_size_x = setup[ f"domain_sizes_x" ][ subdomain_x ]
                 subdomain_size_y = setup[ f"domain_sizes_y" ][ subdomain_y ]
                 file.write( f"{key_prefix}size-x = { subdomain_size_x:.7f}\n" )
                 file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
+                subdomain_grid_dims_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
+                subdomain_grid_dims_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
+                file.write( f"{key_prefix}grid-dimensions-x = { subdomain_grid_dims_x:.2f}\n" )
+                file.write( f"{key_prefix}grid-dimensions-y = { subdomain_grid_dims_y:.2f}\n" )
                 file.write( f'\n' )
 
 def configure_and_write_measuretool_parameters():

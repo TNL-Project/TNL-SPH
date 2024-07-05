@@ -339,6 +339,7 @@ Particles< ParticleConfig, DeviceType >::writeProlog( TNL::Logger& logger ) cons
    logger.writeParameter( "Number of allocated particles:", this->numberOfAllocatedParticles );
    logger.writeParameter( "Search radius:", this->radius );
    logger.writeParameter( "Grid origin:", this->gridOrigin );
+   logger.writeParameter( "Grid origin global coordinates:", this->gridOriginGlobalCoords );
    logger.writeParameter( "Grid referential origin:", this->gridReferentialOrigin );
    logger.writeParameter( "Grid dimensions:", this->gridDimension );
    logger.writeParameter( "Domain grid overlap width:", this->overlapWidth );
