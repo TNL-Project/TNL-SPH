@@ -646,11 +646,6 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
                                    boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
       }
    }
-   //TODO: just for debug
-   logger.writeHeader( "Fluid object information." );
-   fluid->writeProlog( logger );
-   logger.writeHeader( "Boundary object information:" );
-   boundary->writeProlog( logger );
    logger.writeSeparator();
 }
 
