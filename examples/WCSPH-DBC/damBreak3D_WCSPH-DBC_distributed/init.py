@@ -122,6 +122,7 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
         grid_origins_x.append( setup[ "domain_origin_x" ] )
         grid_index_origins_x.append( 0 )
         domain_sizes_x( setup[ "domain_size_x" ] )
+        grid_sizes_x.append( ( int )( np.ceil( setup[ "domain_size_x" ] / search_radius ) ) )
     else:
         #for subdomain_x in range( subdomains_x - 1 ):
         for subdomain_x in range( subdomains_x ):
@@ -146,7 +147,8 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
                 grid_end_x.append( setup[ "domain_size_x" ] )
                 grid_index_end_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) + math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
             else:
-                grid_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] - grid_index_origins_x[ subdomain_x -1 ] )
+                ##grid_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] - grid_index_origins_x[ subdomain_x -1 ] )
+                grid_sizes_x.append( grid_splits_x[ subdomain_x ] - grid_splits_x[ subdomain_x - 1 ] )
                 grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
                 print( f"""Adding grid index origin for submodule x: {subdomain_x}, located at: {setup[ 'domain_origin_x' ] + grid_splits_x[ subdomain_x - 1 ] * search_radius},
                       taking into accout grid_split: {grid_splits_x[ subdomain_x - 1 ]}""" )
@@ -165,6 +167,7 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
         grid_origins_y.append( setup[ "domain_origin_y" ] )
         grid_index_origins_y.append( 0 )
         domain_sizes_y.append( setup[ "domain_size_y" ] )
+        grid_sizes_y.append( ( int )( np.ceil( setup[ "domain_size_y" ] / search_radius ) ) )
     else:
         #for subdomain_y in range( subdomains_y - 1 ):
         for subdomain_y in range( subdomains_y ):
@@ -365,23 +368,27 @@ def write_distributed_domain_params( setup ):
                 file.write( f'{key_prefix}fluid_n = { setup[ f"{key_prefix}fluid_n" ] }\n' )
                 file.write( f'{key_prefix}boundary_n = { setup[ f"{key_prefix}box_n" ] }\n' )
                 file.write( f'{key_prefix}fluid_n_allocated = { 2*setup[ f"{key_prefix}fluid_n" ] }\n' )
-                file.write( f'{key_prefix}boundary_n_allocated = { 2*setup[ f"{key_prefix}box_n" ] }\n' )
+                file.write( f'{key_prefix}boundary_n_allocated = { 3*setup[ f"{key_prefix}box_n" ] }\n' )
                 subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
                 subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
-                #file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
-                #file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
                 file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
                 file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
-                file.write( f"{key_prefix}origin-z = { setup[ 'domain_origin_z' ]:.7f}\n" )
-                #subdomain_grid_size_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
-                #subdomain_grid_size_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
-                #file.write( f"{key_prefix}girdSize-x = { subdomain_grid_size_x:.2f}\n" )
-                #file.write( f"{key_prefix}girdSize-y = { subdomain_grid_size_y:.2f}\n" )
+                file.write( f"{key_prefix}origin-z = { setup[ 'domain_origin_z' ]:.7f}\n" ) #2D decomposition
+                subdomain_grid_origin_glob_coords_x = setup[ f"grid_index_origins_x" ][ subdomain_x ]
+                subdomain_grid_origin_glob_coords_y = setup[ f"grid_index_origins_y" ][ subdomain_y ]
+                file.write( f"{key_prefix}origin-global-coords-x = { subdomain_grid_origin_glob_coords_x }\n" )
+                file.write( f"{key_prefix}origin-global-coords-y = { subdomain_grid_origin_glob_coords_y }\n" )
+                file.write( f"{key_prefix}origin-global-coords-z = { 0 }\n" ) #2D decomposition
                 subdomain_size_x = setup[ f"domain_sizes_x" ][ subdomain_x ]
                 subdomain_size_y = setup[ f"domain_sizes_y" ][ subdomain_y ]
                 file.write( f"{key_prefix}size-x = { subdomain_size_x:.7f}\n" )
                 file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
-                file.write( f"{key_prefix}size-z = { setup[ 'domain_size_z' ]:.7f}\n" )
+                file.write( f"{key_prefix}size-z = { setup[ 'domain_size_z' ]:.7f}\n" ) #2D decomposition
+                subdomain_grid_dims_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
+                subdomain_grid_dims_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
+                file.write( f"{key_prefix}grid-dimensions-x = { subdomain_grid_dims_x }\n" )
+                file.write( f"{key_prefix}grid-dimensions-y = { subdomain_grid_dims_y }\n" )
+                file.write( f"{key_prefix}grid-dimensions-z = { ( int )( np.ceil( setup[ 'domain_size_z'] / setup[ 'search_radius' ] ) ) }\n" ) #2D decomposition
                 file.write( f'\n' )
 
 def write_domain_background_grid( setup ):
@@ -414,7 +421,7 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("distribution parameters")
-    g.add_argument("--subdomains-x", type=int, default=2, help="number of subdomains in x direction")
+    g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
     g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.02, help="initial distance between particles")

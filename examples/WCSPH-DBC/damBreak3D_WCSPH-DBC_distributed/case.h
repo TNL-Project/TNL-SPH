@@ -144,10 +144,47 @@ int main( int argc, char* argv[] )
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
       sph.writeLog( log, "Starting synchronization.", "" );
-      sph.synchronizeDistributedSimulation();
+      sph.synchronizeDistributedSimulation( log );
       sph.writeLog( log, "Synchronize...", "Done." );
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+      if( ( sph.timeStepping.getStep() % 200  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
+
+         sph.timeMeasurement.start( "search" );
+         sph.performNeighborSearch( log, true );
+         sph.timeMeasurement.stop( "search" );
+         sph.writeLog( log, "Search second...", "Done." );
+
+         //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         log.writeSeparator();
+         sph.writeLog( log, "Starting load balancing.", "" );
+         sph.performLoadBalancing( log );
+         sph.writeLog( log, "Load balancing...", "Done." );
+         log.writeSeparator();
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         // SingleSet: forgot overlaps
+         sph.resetOverlaps();
+         sph.writeLog( log, "Reset overlaps...", "Done." );
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+
+         sph.timeMeasurement.start( "search" );
+         sph.performNeighborSearch( log, true );
+         sph.timeMeasurement.stop( "search" );
+         sph.writeLog( log, "Search second...", "Done." );
+
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+         sph.writeLog( log, "Starting synchronization.", "" );
+         sph.synchronizeDistributedSimulation( log );
+         sph.writeLog( log, "Synchronize...", "Done." );
+         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      }
 
       // SingleSet: perform second search to assign received particles
       sph.timeMeasurement.start( "search" );
@@ -158,35 +195,20 @@ int main( int argc, char* argv[] )
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
       // output particle data
-      //if( sph.timeStepping.getStep() < 950 || sph.timeStepping.getStep() > 1050 ){
-      //if( sph.timeStepping.getStep() <  || sph.timeStepping.getStep() > 1480 ){
-      if( sph.timeStepping.getStep() < 0 || sph.timeStepping.getStep() > 10 ){
-         if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-         {
-            /**
-             * Compute pressure from density.
-             * This is not necessary since we do this localy, if pressure is needed.
-             * It's useful for output anyway.
-             */
-            sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-            sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+      if( sph.timeStepping.checkOutputTimer( "save_results" ) )
+      {
+         /**
+          * Compute pressure from density.
+          * This is not necessary since we do this localy, if pressure is needed.
+          * It's useful for output anyway.
+          */
+         sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+         sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
 
-            sph.save( log, true );
-         }
+         sph.save( log, true );
       }
-      else{
-            std::cout << "=========================================================== STEP " << sph.timeStepping.getStep() << " =================== " << std::endl;
-            sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-            sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-            sph.save( log, true );
-      }
-      //if( sph.timeStepping.getStep() == 1316 )
-      //   return 0;
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-
 
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );

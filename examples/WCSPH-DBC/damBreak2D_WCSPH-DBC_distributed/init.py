@@ -390,8 +390,8 @@ def write_distributed_domain_params( setup ):
                 file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
                 subdomain_grid_dims_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
                 subdomain_grid_dims_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}grid-dimensions-x = { subdomain_grid_dims_x:.2f}\n" )
-                file.write( f"{key_prefix}grid-dimensions-y = { subdomain_grid_dims_y:.2f}\n" )
+                file.write( f"{key_prefix}grid-dimensions-x = { subdomain_grid_dims_x }\n" )
+                file.write( f"{key_prefix}grid-dimensions-y = { subdomain_grid_dims_y }\n" )
                 file.write( f'\n' )
 
 def configure_and_write_measuretool_parameters():
