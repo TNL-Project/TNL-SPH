@@ -271,16 +271,10 @@ class ParticleSet
    synchronizeObject( OverlapSetPointer& overlapSet, TNL::Logger& logger )
    {
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
-      logger.writeParameter( "Collect particles in inner overlaps...", "Done." );
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
-      logger.writeParameter( "Synchronize overlap sizes...", "Done." );
-      logger.writeParameter( "Number of received particles:", this->synchronizer.getNumberOfRecvParticles() );
       this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
-      logger.writeParameter( "Synchronize points...", "Done." );
       this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
-      logger.writeParameter( "Synchronize variables...", "Done." );
       this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
-      logger.writeParameter( "Synchronize integrator variables...", "Done." );
 
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();

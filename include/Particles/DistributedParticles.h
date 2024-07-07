@@ -315,17 +315,10 @@ public:
    void
    collectParticlesInInnerOverlaps( ParticlePointer& particles )
    {
-      //NOTE: This was original idea, but the overlap size is much smaller.
       const int* neighbors = this->getDistributedGrid().getNeighbors();
       for( int i = 0; i < this->getDistributedGrid().getNeighborsCount(); i++ ) {
-         //TODO: We shoud limit ourselves only to filled zones to save the call time
-         if( neighbors[ i ] != -1 ){
-            //innerOverlaps[ i ].resetParticles(); //this is not required
+         if( neighbors[ i ] != -1 )
             innerOverlaps[ i ].updateParticlesInZone( particles );
-            if( TNL::MPI::GetRank() == 2 )
-            std::cout << "NUMBER OF PARTICLES IN ZONE: " << innerOverlaps[ i ].getNumberOfParticles() << " NUMBER OF CELLS: " << innerOverlaps[ i ].getNumberOfCells() << std::endl;
-            //std::cout << innerOverlaps[ i ].getCellsInZone() << std::endl;
-         }
       }
    }
 
@@ -516,8 +509,6 @@ public:
    {
       logger.writeParameter( "Distributed particles:", "" );
       distributedGrid.writeProlog( logger );
-
-      //debug info from local subdomains
       logger.writeParameter( "Lower overlap:", distributedGrid.getLowerOverlap() );
       logger.writeParameter( "Upper overlap:", distributedGrid.getUpperOverlap() );
       logger.writeParameter( "Local grid origin:", distributedGrid.localGrid.getOrigin() );
@@ -527,13 +518,10 @@ public:
       logger.writeParameter( "Local grid dimensions:", distributedGrid.localGrid.getDimensions() );
       logger.writeParameter( "Local grid interior begin:", distributedGrid.localGrid.getInteriorBegin() );
       logger.writeParameter( "Local grid interior end:", distributedGrid.localGrid.getInteriorEnd() );
+      // print zones details
       //logger.writeParameter( "Total neighbors count:", distributedGrid.getNeighborsCount() );
-      //zones
-      for( int i = 0; i < innerOverlaps.getSize(); i++ )
-         innerOverlaps[ i ].writeProlog( logger );
-
-
-
+      //for( int i = 0; i < innerOverlaps.getSize(); i++ )
+      //   innerOverlaps[ i ].writeProlog( logger );
    }
 
 protected:

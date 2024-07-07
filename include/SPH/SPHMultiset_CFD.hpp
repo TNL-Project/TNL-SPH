@@ -434,9 +434,7 @@ void
 SPHMultiset_CFD< Model >::synchronizeDistributedSimulation( TNL::Logger& logger )
 {
    fluid->synchronizeObject( fluidOverlap, logger );
-   logger.writeParameter( "Fluid synchronization...", "Done." );
    boundary->synchronizeObject( boundaryOverlap, logger );
-   logger.writeParameter( "Boundary synchronization...", "Done." );
 }
 
 template< typename Model >
@@ -469,9 +467,7 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
    const IndexVectorType updatedGridDimensions = fluid->particles->getGridDimensions() + gridDimensionsAdjustment;
    const VectorType updatedGridOrigin = fluid->particles->getGridOrigin() + gridOriginAdjustment;
 
-   logger.writeSeparator();
-   boundary->distributedParticles->writeProlog( logger );
-   logger.writeSeparator();
+   logger.writeParameter( "Load balancing - subdomain adjustment: ", "" );
    logger.writeParameter( "Grid dimensions adjustment: ", gridDimensionsAdjustment );
    logger.writeParameter( "Grid origin adjustment: ", gridOriginAdjustment );
    logger.writeParameter( "Old grid dimensions: ", fluid->particles->getGridDimensions() );
@@ -491,16 +487,12 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
    logger.writeParameter( "New grid dimensions: ", fluid->particles->getGridDimensions() );
    logger.writeParameter( "New grid origin adjustment: ", fluid->particles->getGridOrigin() );
    logger.writeParameter( "New firstLastCellParticleList size: ", fluid->particles->getCellFirstLastParticleList().getSize() );
-   logger.writeSeparator();
-
 
    //update distributed particles and overlaps
    //TODO: 1 stands for overlapWidth, pass as parameter
    fluid->distributedParticles->updateDistriutedGridParameters( updatedGridDimensions, updatedGridOrigin, 1, fluid->particles->getSearchRadius() );
    boundary->distributedParticles->updateDistriutedGridParameters( updatedGridDimensions, updatedGridOrigin, 1, boundary->particles->getSearchRadius() );
 
-   boundary->distributedParticles->writeProlog( logger );
-   logger.writeSeparator();
 }
 
 #endif
@@ -631,6 +623,9 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
                           "" );
    logger.writeCurrentTime( "Current time:" );
    logger.writeParameter( "Number of fluid particles:", fluid->getNumberOfParticles() );
+   logger.writeParameter( "Number of allocated fluid particles:", fluid->getNumberOfAllocatedParticles() );
+   logger.writeParameter( "Number of boundary particles:", boundary->getNumberOfParticles() );
+   logger.writeParameter( "Number of allocated fluid particles:", boundary->getNumberOfAllocatedParticles() );
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ )
          logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " particles:",

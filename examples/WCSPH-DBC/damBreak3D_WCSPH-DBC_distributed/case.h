@@ -124,13 +124,11 @@ int main( int argc, char* argv[] )
    //sph.exec();
    //sph.writeEpilog( parameters );
 
-   // Library model:
-   //return 0;
-
    while( sph.timeStepping.runTheSimulation() )
    //while( sph.timeStepping.getStep() < 2 )
    {
-      sph.writeInfo( log );
+      if( ( sph.timeStepping.getStep() % 50  == 0 )  )
+         sph.writeInfo( log );
 
       // SingleSet: forgot overlaps
       //sph.resetOverlaps();
