@@ -102,14 +102,17 @@ int main( int argc, char* argv[] )
    Simulation sph;
    TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
-   if( TNL::MPI::GetRank() == 0 )
-      sph.init( parameters, log );
-   TNL::MPI::Barrier( sph.communicator ); //To have clear output
-   if( TNL::MPI::GetRank() == 1 )
-      sph.init( parameters, log );
-   TNL::MPI::Barrier( sph.communicator ); //To have clear output
-   if( TNL::MPI::GetRank() == 2 )
-      sph.init( parameters, log );
+   //if( TNL::MPI::GetRank() == 0 )
+   //   sph.init( parameters, log );
+   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   //if( TNL::MPI::GetRank() == 1 )
+   //   sph.init( parameters, log );
+   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   //if( TNL::MPI::GetRank() == 2 )
+   //   sph.init( parameters, log );
+   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
+
+   sph.init( parameters, log );
    TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
    sph.writeProlog( log );

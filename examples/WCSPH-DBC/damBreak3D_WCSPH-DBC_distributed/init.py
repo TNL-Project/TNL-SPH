@@ -152,8 +152,10 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
                 grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
                 print( f"""Adding grid index origin for submodule x: {subdomain_x}, located at: {setup[ 'domain_origin_x' ] + grid_splits_x[ subdomain_x - 1 ] * search_radius},
                       taking into accout grid_split: {grid_splits_x[ subdomain_x - 1 ]}""" )
-                grid_index_origins_x.append( grid_sizes_x[ subdomain_x - 1 ] )
-                domain_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
+                #grid_index_origins_x.append( grid_sizes_x[ subdomain_x - 1 ] )
+                grid_index_origins_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) )
+                #domain_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
+                domain_sizes_x.append( ( grid_splits_x[ subdomain_x ] - grid_splits_x[ subdomain_x - 1 ] ) * search_radius )
                 grid_end_x.append( setup[ "domain_origin_x" ] + (  grid_splits_x[ subdomain_x ] * search_radius ) )
                 grid_index_end_x.append( grid_splits_x[ subdomain_x ] )
 
