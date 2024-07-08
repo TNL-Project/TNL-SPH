@@ -123,93 +123,68 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
 
-   GhostZone zone_A( 3, 5 );
-   IndexVectorType zone_A_begin = { 1, 1 };
-   IndexVectorType zone_A_direction = { 0, 1 };
+   GhostZone zone_A( 5 );
+   IndexVectorType zone_A_origin = { 1, 1 };
+   IndexVectorType zone_A_dimensions = { 1, 3 };
 
-   GhostZone zone_B( 4, 4 );
-   IndexVectorType zone_B_begin = { 1, 1 };
-   IndexVectorType zone_B_direction = { 1, 0 };
+   GhostZone zone_B;
+   IndexVectorType zone_B_origin = { 1, 1 };
+   IndexVectorType zone_B_dimensions = { 4, 1 };
 
-   GhostZone zone_C( 3, 5 );
+   GhostZone zone_C( 3 );
    IndexVectorType zone_C_begin = { 2, 1 };
-   IndexVectorType zone_C_direction = { 1, 1 };
+   IndexVectorType zone_C_dimensions = { 2, 2 };
 
-   zone_A.assignCells( zone_A_begin, zone_A_direction, particles->getGridDimensions() );
-  //  zone_A.updateParticlesInZone( particles );
-
-   //: const auto particlesInZoneA = zone_A.getParticlesInZone().getConstView();
+   zone_A.assignCells( zone_A_origin, zone_A_dimensions, particles->getGridDimensions() );
+   zone_A.updateParticlesInZone( particles );
+   const auto particlesInZoneA = zone_A.getParticlesInZone().getConstView();
 
    EXPECT_EQ( zone_A.getNumberOfCells(), 3 );
-   //: EXPECT_EQ( zone_A.getNumberOfParticles(), 5 );
+   EXPECT_EQ( zone_A.getNumberOfParticlesPerCell(), 5 );
+   EXPECT_EQ( zone_A.getNumberOfParticles(), 5 );
+   //[ 1, 1 ]
+   EXPECT_EQ( particlesInZoneA.getElement( 0 ), 0 );
+   //[ 1, 2 ]
+   EXPECT_EQ( particlesInZoneA.getElement( 1 ), 5 );
+   EXPECT_EQ( particlesInZoneA.getElement( 2 ), 6 );
+   //[ 1, 3 ]
+   EXPECT_EQ( particlesInZoneA.getElement( 3 ), 13 );
+   EXPECT_EQ( particlesInZoneA.getElement( 4 ), 14 );
 
-   //: //[ 1, 1 ]
-   //: EXPECT_EQ( particlesInZoneA.getElement( 0 ), 0 );
-   //: //[ 1, 2 ]
-   //: EXPECT_EQ( particlesInZoneA.getElement( 1 ), 5 );
-   //: EXPECT_EQ( particlesInZoneA.getElement( 2 ), 6 );
-   //: //[ 1, 3 ]
-   //: EXPECT_EQ( particlesInZoneA.getElement( 3 ), 13 );
-   //: EXPECT_EQ( particlesInZoneA.getElement( 4 ), 14 );
+   zone_B.setNumberOfParticlesPerCell( 4 );
+   zone_B.assignCells( zone_B_origin, zone_B_dimensions, particles->getGridDimensions() );
+   zone_B.updateParticlesInZone( particles );
+   const auto particlesInZoneB = zone_B.getParticlesInZone().getConstView();
 
+   EXPECT_EQ( zone_B.getNumberOfCells(), 4 );
+   EXPECT_EQ( zone_B.getNumberOfParticlesPerCell(),  4 );
+   EXPECT_EQ( zone_B.getNumberOfParticles(), 5 );
+   //[ 1, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 0 ), 0 );
+   //[ 2, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 1 ), 1 );
+   EXPECT_EQ( particlesInZoneB.getElement( 2 ), 2 );
+   //[ 3, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 3 ), 3 );
+   //[ 4, 1 ]
+   EXPECT_EQ( particlesInZoneB.getElement( 4 ), 4 );
 
-   //: zone_B.assignCells( zone_B_begin, zone_B_direction, particles->getGridDimensions() );
-   //: zone_B.updateParticlesInZone( particles );
+   zone_C.assignCells( zone_C_begin, zone_C_dimensions, particles->getGridDimensions() );
+   zone_C.updateParticlesInZone( particles );
+   const auto particlesInZoneC = zone_C.getParticlesInZone().getConstView();
 
-   //: const auto particlesInZoneB = zone_B.getParticlesInZone().getConstView();
-
-   //: EXPECT_EQ( zone_B.getNumberOfCells(), 4 );
-   //: EXPECT_EQ( zone_B.getNumberOfParticles(), 5 );
-
-   //: //[ 1, 1 ]
-   //: EXPECT_EQ( particlesInZoneB.getElement( 0 ), 0 );
-   //: //[ 2, 1 ]
-   //: EXPECT_EQ( particlesInZoneB.getElement( 1 ), 1 );
-   //: EXPECT_EQ( particlesInZoneB.getElement( 2 ), 2 );
-   //: //[ 3, 1 ]
-   //: EXPECT_EQ( particlesInZoneB.getElement( 3 ), 3 );
-   //: //[ 4, 1 ]
-   //: EXPECT_EQ( particlesInZoneB.getElement( 4 ), 4 );
-
-   //: zone_C.assignCells( zone_C_begin, zone_C_direction, particles->getGridDimensions() );
-   //: zone_C.updateParticlesInZone( particles );
-
-   //: const auto particlesInZoneC = zone_C.getParticlesInZone().getConstView();
-
-   //: //[ 2, 1 ]
-   //: EXPECT_EQ( particlesInZoneC.getElement( 0 ), 1 );
-   //: EXPECT_EQ( particlesInZoneC.getElement( 1 ), 2 );
-   //: //[ 3, 2 ]
-   //: EXPECT_EQ( particlesInZoneC.getElement( 2 ), 8 );
-   //: EXPECT_EQ( particlesInZoneC.getElement( 3 ), 9 );
-   //: //[ 4, 3 ]
-   //: EXPECT_EQ( particlesInZoneC.getElement( 4 ), 19 );
-
-   //: GhostZone zone_D( 5 );
-   //: PointType zone_D_firstPoint = { 0.6f, 0.f };
-   //: PointType zone_D_secondPoint = { 1.2f, 1.5f };
-
-   //: zone_D.assignCells( zone_D_firstPoint, zone_D_secondPoint, setup.gridSize, setup.gridOrigin, setup.searchRadius );
-   //: zone_D.updateParticlesInZone( particles );
-
-   //: const auto particlesInZoneD = zone_D.getParticlesInZone().getConstView();
-
-   //: //[ 2, 1 ]
-   //: EXPECT_EQ( particlesInZoneD.getElement( 0 ), 1 );
-   //: EXPECT_EQ( particlesInZoneD.getElement( 1 ), 2 );
-   //: //[ 3, 1 ]
-   //: EXPECT_EQ( particlesInZoneD.getElement( 2 ), 3 );
-   //: //[ 2, 2 ]
-   //: EXPECT_EQ( particlesInZoneD.getElement( 3 ), 7 );
-   //: //[ 3, 2 ]
-   //: EXPECT_EQ( particlesInZoneD.getElement( 4 ), 8 );
-   //: EXPECT_EQ( particlesInZoneD.getElement( 5 ), 9 );
-   //: //[ 2, 3 ]
-   //: EXPECT_EQ( particlesInZoneD.getElement( 6 ), 15 );
-   //: EXPECT_EQ( particlesInZoneD.getElement( 7 ), 16 );
-   //: EXPECT_EQ( particlesInZoneD.getElement( 8 ), 17 );
-   //: //[ 3, 3 ]
-   //: EXPECT_EQ( particlesInZoneD.getElement( 9 ), 18 );
-
+   EXPECT_EQ( zone_C.getNumberOfCells(), 4 );
+   EXPECT_EQ( zone_C.getNumberOfParticlesPerCell(),  3 );
+   EXPECT_EQ( zone_C.getNumberOfParticles(), 6 );
+   //[ 2, 1 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 0 ), 1 );
+   EXPECT_EQ( particlesInZoneC.getElement( 1 ), 2 );
+   //[ 3, 1 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 2 ), 3 );
+   //[ 2, 2 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 3 ), 7 );
+   //[ 3, 2 ]
+   EXPECT_EQ( particlesInZoneC.getElement( 4 ), 8 );
+   EXPECT_EQ( particlesInZoneC.getElement( 5 ), 9 );
 }
 

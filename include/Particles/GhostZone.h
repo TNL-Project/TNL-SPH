@@ -39,11 +39,12 @@ public:
    /**
     * Constructor - allocate only the field.
     */
-   ParticleZone( GlobalIndexType numberOfCells, GlobalIndexType numerOfParticlesPerCells )
+   ParticleZone( GlobalIndexType numberOfCells, GlobalIndexType numberOfParticlesPerCells )
    : numberOfCellsInZone( numberOfCells ),
      cellsInZone( numberOfCells ),
      numberOfParticlesInCell( numberOfCells ),
-     particlesInZone( numberOfCells * numerOfParticlesPerCells ) {}
+     numberOfParticlesPerCell( numberOfParticlesPerCell ),
+     particlesInZone( numberOfCells * numberOfParticlesPerCells ) {}
 
 
    /**
