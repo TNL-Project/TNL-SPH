@@ -56,6 +56,11 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
     config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
     config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
+    config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "numberOfParticles" );
+        config.addEntryEnum( "numberOfParticles" );
+        config.addEntryEnum( "computationalTime" );
+    config.addEntry< float >( "number-of-particles-balancing-coef", "Particles count treshold for rebalancing [%].", 0.05 );
+    config.addEntry< float >( "computational-time-balancing-coef", "Comp. time treshold for rebalancing.", 0.05 );
 
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
