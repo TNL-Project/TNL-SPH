@@ -92,9 +92,6 @@ class ParticleSet
                             GlobalIndexType numberOfOverlapsLayers = 1 )
    {
       const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
-      const IndexVectorType resizeGridDimensionDueToOverlaps = 2 * numberOfOverlapsLayers; //FIXME: sqrt(2)*dp requires fact. 3
-      const VectorType gridOriginWithOverlap = gridOrigin - shiftOriginDueToOverlaps;
-      const IndexVectorType gridDimensionWithOverlap = gridDimension + resizeGridDimensionDueToOverlaps;
 
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
@@ -104,27 +101,8 @@ class ParticleSet
       this->particles->setNumberOfParticles( numberOfParticles );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
-      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps );
-
-      //const IndexVectorType shiftOriginGlobalCoords = numberOfOverlapsLayers;
-      //const IndexVectorType gridOriginGlobalCoordsWithOverlap = gridOriginGlobalCoords - shiftOriginGlobalCoords;
+      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //TODO: This could be done automatically from overlapWidth
       this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
-      //this->particles->setGridReferentialOrigin( globalGridOrigin );
-      //this->particles->setGridInteriorDimension( gridDimension );
-      //this->particles->setGridInteriorOrigin( gridOrigin );
-
-      // ..this->particles->setGridInterirSize( ... );
-      //logger.writeSeparator();
-      //logger.writeParameter( "Initialize particle set:", "" );
-      //logger.writeParameter( "searchRadius:", searchRadius );
-      //logger.writeParameter( "gridDimension:", gridDimension );
-      //logger.writeParameter( "gridOrigin:", gridOrigin );
-      //logger.writeParameter( "shiftOriginDueToOverlaps:", shiftOriginDueToOverlaps );
-      //logger.writeParameter( "resizeGridDimensionDueToOverlaps:", resizeGridDimensionDueToOverlaps );
-      //logger.writeParameter( "gridOriginWithOverlap:", gridOriginWithOverlap );
-      //logger.writeParameter( "gridDimensionWithOverlap:", gridDimensionWithOverlap );
-      //logger.writeParameter( "gridEnd:", gridOrigin + searchRadius * gridDimension );
-      //logger.writeParameter( "gridEndWithOverlaps: ", gridOriginWithOverlap + searchRadius * gridDimensionWithOverlap );
    }
 #endif
 
@@ -272,6 +250,9 @@ class ParticleSet
    {
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
+      // check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
+
+      // sychronize
       this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
       this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
       this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
@@ -279,8 +260,6 @@ class ParticleSet
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
       particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
-      //particles->setLastActiveParticle( particles->getLastActiveParticle() + numberOfRecvParticles );
-      //this->setLastActiveParticle( this->getLastActiveParticle() + numberOfRecvParticles );
    }
 
    void

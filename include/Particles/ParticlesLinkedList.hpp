@@ -101,11 +101,8 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
    //FIXME: Global grid origin should be shifted aswell with search radius
    //const PointType shifOriginDueToOverlaps = this->radius;
    const PointType globalGridOrigin = this->gridReferentialOrigin;
-   //const IndexVectorType globalGridDimension = this->globalGridDimension;
-   //FIXME: Resolve the mess with gridOrigin/gridDimension and gridOriginWithOverlap/gridDimensionWithOverlap
-   const PointType gridOriginWithOverlap_ = this->getGridOriginWithOverlap();
+   //
    const IndexVectorType gridDimensionWithOverlap_ = this->getGridDimensionsWithOverlap();
-   //const IndexVectorType gridOriginGlobalCoords = TNL::floor( ( gridOriginWithOverlap_ - globalGridOrigin ) / searchRadius );
    const IndexVectorType gridOriginGlobalCoords = this->getGridOriginGlobalCoords();
 
    auto indexParticles = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
@@ -136,10 +133,8 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
 
    //compare by cell index
 
-   const PointType gridRefOrigin = this->getGridReferentialOrigin();
-   const PointType gridOriginWithOveralp = this->getGridOriginWithOverlap();
    const RealType searchRadius = this->getSearchRadius();
-   //const IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
+   const PointType gridRefOrigin = this->getGridReferentialOrigin();
    const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
    const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    auto view_points = this->points.getView();

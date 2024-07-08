@@ -267,9 +267,7 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
    //compare by cell index
 
    const PointType gridRefOrigin = this->getGridReferentialOrigin();
-   const PointType gridOriginWithOveralp = this->getGridOriginWithOverlap();
    const RealType searchRadius = this->getSearchRadius();
-   //const IndexVectorType gridRefOriginCoords = TNL::floor( ( gridOriginWithOveralp - gridRefOrigin ) / searchRadius );
    const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
    const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    const auto view_points = this->points.getConstView();

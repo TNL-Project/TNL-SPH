@@ -215,12 +215,12 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
    // global domain properties
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   //const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   //const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    // subdomain properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
+   //const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
    //const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
    const IndexVectorType subdomainGridSize = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
    const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
@@ -252,23 +252,23 @@ SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& paramet
 
    // FIXME: Here, the arguments are probably fcked
    fluidOverlap->initializeAsDistributed( 0,
-                             numberOfParticlesPerCell * overlapCellsCount,
-                             searchRadius,
-                             resizedSubdomainGridSize,
-                             resizedSubdomainGridOrigin,
-                             domainGridDimension,
-                             domainOrigin,
-                             logger );
+                                          numberOfParticlesPerCell * overlapCellsCount,
+                                          searchRadius,
+                                          resizedSubdomainGridSize,
+                                          resizedSubdomainGridOrigin,
+                                          subdomainGridOriginGlobalCoords,
+                                          domainOrigin,
+                                          logger );
 
    // FIXME: Here, the arguments are probably fcked
    boundaryOverlap->initializeAsDistributed( 0,
-                                numberOfParticlesPerCell * overlapCellsCount,
-                                searchRadius,
-                                resizedSubdomainGridSize,
-                                resizedSubdomainGridOrigin,
-                                domainGridDimension,
-                                domainOrigin,
-                                logger );
+                                             numberOfParticlesPerCell * overlapCellsCount,
+                                             searchRadius,
+                                             resizedSubdomainGridSize,
+                                             resizedSubdomainGridOrigin,
+                                             subdomainGridOriginGlobalCoords,
+                                             domainOrigin,
+                                             logger );
 }
 #endif
 
