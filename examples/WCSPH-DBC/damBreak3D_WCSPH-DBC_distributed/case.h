@@ -150,7 +150,7 @@ int main( int argc, char* argv[] )
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
-      if( ( sph.timeStepping.getStep() % 200  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
+      if( ( sph.timeStepping.getStep() % 100  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
 
          sph.timeMeasurement.start( "search" );
          sph.performNeighborSearch( log, true );
