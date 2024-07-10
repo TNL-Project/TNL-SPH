@@ -100,6 +100,11 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
     subdomains_x = setup[ "subdomains_x" ]
     subdomains_y = setup[ "subdomains_y" ]
     search_radius = setup[ "search_radius" ]
+    overlap_width = setup[ "overlap_width" ]
+
+    # referential origin (its not loaded by solver, added just for orientation)
+    setup[ "referential_origin_x" ] = setup[ "domain_origin_x" ] - overlap_width * search_radius
+    setup[ "referential_origin_y" ] = setup[ "domain_origin_y" ] - overlap_width * search_radius
 
     ptcs_per_subdomain = ( int )( math.ceil( setup[ "fluid_n" ] + setup[ "boundary_n" ] ) / ( setup[ "number_of_subdomains" ] ) )
     grid_splits_x = []
@@ -120,16 +125,44 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
     if subdomains_x == 1:
         #grid_sizes_y.append( setup[ "grid_size_y" ] ) # there is not variable grid size, only domain size
         grid_origins_x.append( setup[ "domain_origin_x" ] )
-        grid_index_origins_x.append( 0 )
+        grid_index_origins_x.append( 0 + overlap_width )
         domain_sizes_x( setup[ "domain_size_x" ] )
         grid_sizes_x.append( ( int )( np.ceil( setup[ "domain_size_x" ] / search_radius ) ) )
+    #else:
+    #    #for subdomain_x in range( subdomains_x - 1 ):
+    #    for subdomain_x in range( subdomains_x ):
+    #        if subdomain_x == 0:
+    #            grid_sizes_x.append( grid_splits_x[ subdomain_x ] - 0 )
+    #            grid_origins_x.append( setup[ "domain_origin_x" ] )
+    #            grid_index_origins_x.append( 0 )
+    #            domain_sizes_x.append( grid_splits_x[ subdomain_x ] * search_radius )
+    #            grid_end_x.append( setup[ "domain_origin_x" ] + (  grid_splits_x[ subdomain_x ] * search_radius ) )
+    #            grid_index_end_x.append( grid_splits_x[ subdomain_x ] )
+    #        elif subdomain_x == subdomains_x - 1:
+    #            #grid_sizes_x.append( setup[ "domain_size_x" ] - grid_splits_x[ subdomain_x - 1 ] ) //TODO:
+    #            grid_sizes_x.append( math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
+    #            #grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
+    #            #grid_index_origins_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
+    #            grid_origins_x.append( setup[ "domain_origin_x" ] + search_radius * np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this, added domain origin
+    #            grid_index_origins_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this.
+    #            domain_sizes_x.append( setup[ "domain_size_x" ]  - grid_splits_x[ subdomain_x - 1 ] * search_radius )
+    #            grid_end_x.append( setup[ "domain_size_x" ] )
+    #            grid_index_end_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) + math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
+    #        else:
+    #            grid_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] - grid_index_origins_x[ subdomain_x -1 ] )
+    #            grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
+    #            grid_index_origins_x.append( grid_sizes_x[ subdomain_x - 1 ] )
+    #            #grid_index_origins_x.append( grid_splits_x[ subdomain_x - 1 ] )
+    #            domain_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
+    #            grid_end_x.append( setup[ "domain_origin_x" ] + (  grid_splits_x[ subdomain_x ] * search_radius ) )
+    #            grid_index_end_x.append( grid_splits_x[ subdomain_x ] )
     else:
         #for subdomain_x in range( subdomains_x - 1 ):
         for subdomain_x in range( subdomains_x ):
             if subdomain_x == 0:
                 grid_sizes_x.append( grid_splits_x[ subdomain_x ] - 0 )
                 grid_origins_x.append( setup[ "domain_origin_x" ] )
-                grid_index_origins_x.append( 0 )
+                grid_index_origins_x.append( 0 + overlap_width )
                 domain_sizes_x.append( grid_splits_x[ subdomain_x ] * search_radius )
                 grid_end_x.append( setup[ "domain_origin_x" ] + (  grid_splits_x[ subdomain_x ] * search_radius ) )
                 grid_index_end_x.append( grid_splits_x[ subdomain_x ] )
@@ -138,17 +171,24 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
                 grid_sizes_x.append( math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
                 #grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
                 #grid_index_origins_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
-                grid_origins_x.append( setup[ "domain_origin_x" ] + search_radius * np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this, added domain origin
-                grid_index_origins_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this.
+                #FIXME: grid_origins_x.append( setup[ "domain_origin_x" ] + search_radius * np.sum( grid_sizes_x[ 0 : subdomain_x ] ) ) #TODO: Use this, added domain origin
+                grid_origins_x.append( setup[ "domain_origin_x" ] + (  grid_splits_x[ subdomain_x - 1 ] * search_radius ) )
+                print( f"""Adding grid index origin for submodule x: {subdomain_x}, located at: { setup[ 'domain_origin_x' ] + search_radius * np.sum( grid_sizes_x[ 0 : subdomain_x ] ) },
+                      taking into grid_sizes_x[ 0 : subdomain_x ]: {np.sum( grid_sizes_x[ 0 : subdomain_x ] )}""" )
+                grid_index_origins_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) + overlap_width ) #TODO: Use this.
                 domain_sizes_x.append( setup[ "domain_size_x" ]  - grid_splits_x[ subdomain_x - 1 ] * search_radius )
                 grid_end_x.append( setup[ "domain_size_x" ] )
                 grid_index_end_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) + math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
             else:
-                grid_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] - grid_index_origins_x[ subdomain_x -1 ] )
+                ##grid_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] - grid_index_origins_x[ subdomain_x -1 ] )
+                grid_sizes_x.append( grid_splits_x[ subdomain_x ] - grid_splits_x[ subdomain_x - 1 ] )
                 grid_origins_x.append( setup[ "domain_origin_x" ] + grid_splits_x[ subdomain_x - 1 ] * search_radius )
-                grid_index_origins_x.append( grid_sizes_x[ subdomain_x - 1 ] )
-                #grid_index_origins_x.append( grid_splits_x[ subdomain_x - 1 ] )
-                domain_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
+                print( f"""Adding grid index origin for submodule x: {subdomain_x}, located at: {setup[ 'domain_origin_x' ] + grid_splits_x[ subdomain_x - 1 ] * search_radius},
+                      taking into accout grid_split: {grid_splits_x[ subdomain_x - 1 ]}""" )
+                #grid_index_origins_x.append( grid_sizes_x[ subdomain_x - 1 ] )
+                grid_index_origins_x.append( np.sum( grid_sizes_x[ 0 : subdomain_x ] ) + overlap_width )
+                #domain_sizes_x.append( grid_splits_x[ subdomain_x - 1 ] * search_radius )
+                domain_sizes_x.append( ( grid_splits_x[ subdomain_x ] - grid_splits_x[ subdomain_x - 1 ] ) * search_radius )
                 grid_end_x.append( setup[ "domain_origin_x" ] + (  grid_splits_x[ subdomain_x ] * search_radius ) )
                 grid_index_end_x.append( grid_splits_x[ subdomain_x ] )
 
@@ -160,7 +200,7 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
     if subdomains_y == 1:
         #grid_sizes_y.append( setup[ "grid_size_y" ] ) # there is not variable grid size, only domain size
         grid_origins_y.append( setup[ "domain_origin_y" ] )
-        grid_index_origins_y.append( 0 )
+        grid_index_origins_y.append( 0 + overlap_width )
         domain_sizes_y.append( setup[ "domain_size_y" ] )
         grid_sizes_y.append( ( int )( np.ceil( setup[ "domain_size_y" ] / search_radius ) ) )
     else:
@@ -431,6 +471,7 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("distribution parameters")
     g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
     g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
+    g.add_argument("--overlap-width", type=int, default=1, help="width of domain overlap in cells")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.002, help="initial distance between particles")
     g.add_argument("--h-coef", type=float, default=2**0.5, help="smoothing length coefitient")
@@ -469,7 +510,8 @@ if __name__ == "__main__":
         # distribution parameters
         "subdomains_x" : args.subdomains_x,
         "subdomains_y" : args.subdomains_y,
-        "number_of_subdomains" : args.subdomains_x * args.subdomains_y
+        "number_of_subdomains" : args.subdomains_x * args.subdomains_y,
+        "overlap_width" : args.overlap_width
     }
 
     # check initial settings

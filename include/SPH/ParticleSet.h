@@ -99,10 +99,10 @@ class ParticleSet
       this->particles->setGridOrigin( gridOrigin );
       this->particles->setOverlapWidth( 1 );
       this->particles->setNumberOfParticles( numberOfParticles );
+      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //NOTE: Load?
+      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
-      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //TODO: This could be done automatically from overlapWidth
-      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
    }
 #endif
 

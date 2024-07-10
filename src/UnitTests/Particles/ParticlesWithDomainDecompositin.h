@@ -49,8 +49,8 @@ struct ParticlesWithDecomposition2DSetup
 
    // input parameters for enhanced decomposition paritlces
    const int overlapWidth = 1;
-   const PointType gridReferentialOrigin = { -3 * searchRadius, -3 * searchRadius };
-   const IndexVectorType gridOriginGlobalCoords = { 1, 1 };
+   const PointType gridReferentialOrigin = { gridOrigin[ 0 ] - overlapWidth * searchRadius, gridOrigin[ 1 ]  - overlapWidth * searchRadius };
+   const IndexVectorType gridOriginGlobalCoords = { overlapWidth, overlapWidth };
 };
 
 TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
@@ -95,11 +95,12 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 56 );
 
    EXPECT_EQ( particles->getOverlapWidth(), 1 );
-   const PointType gridReferentialOrigin = { -1.5, -1.5 };
+   const PointType gridReferentialOrigin = { -1.0, -1.0 };
    EXPECT_EQ( particles->getGridReferentialOrigin(), gridReferentialOrigin );
    const IndexVectorType gridOriginGlobalCoords = { 1, 1 };
    EXPECT_EQ( particles->getGridOriginGlobalCoords(), gridOriginGlobalCoords );
 
+   // NOTE: With changing overlap width, gridReferentialOrigin should be changed aswell
    // test particle system computed properties
    const PointType gridOriginWithOverlap = { -1.0, -1.0 };
    EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap );
@@ -172,7 +173,7 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesDevice )
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 56 );
 
    EXPECT_EQ( particles->getOverlapWidth(), 1 );
-   const PointType gridReferentialOrigin = { -1.5, -1.5 };
+   const PointType gridReferentialOrigin = { -1.0, -1.0 };
    EXPECT_EQ( particles->getGridReferentialOrigin(), gridReferentialOrigin );
    const IndexVectorType gridOriginGlobalCoords = { 1, 1 };
    EXPECT_EQ( particles->getGridOriginGlobalCoords(), gridOriginGlobalCoords );
@@ -183,6 +184,7 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesDevice )
    const IndexVectorType gridDimensionsWithOverlap = { 8, 7 };
    EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap );
 
+   // NOTE: With changing overlap width, gridReferentialOrigin should be changed aswell
    // change overlap, recompute sizes
    particles->setOverlapWidth( 3 );
    const PointType gridOriginWithOverlap_scaledUp = { -2.0, -2.0 };
@@ -273,6 +275,49 @@ TEST( ParticlesWithDecomposition2DTest, ComputeParticleCellIndicesCuda )
    //[ 4, 3 ]
    EXPECT_EQ( cellIndices.getElement( 3 ), 37 );
 
+   // update  overlap size
+   particles->setOverlapWidth( 2 );
+   // NOTE: With changing overlap width, gridReferentialOrigin should be changed aswell
+   const PointType shiftReferentialOrigin_overlap2 = particles->getSearchRadius() * particles->getOverlapWidth();
+   particles->setGridReferentialOrigin( particles->getGridOrigin() - shiftReferentialOrigin_overlap2 );
+
+   particles->computeParticleCellIndices();
+   const auto cellIndices_resizedOverlap = particles->getParticleCellIndices().getConstView();
+
+   //[ 1, 1 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 10 ), 44 );
+   //[ 2, 1 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 4 ), 45 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 16 ), 45 );
+   //[ 3, 1 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 5 ), 46 );
+   //[ 4, 1 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 11 ), 47 );
+
+   //[ 1, 2 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 0 ), 54 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 18 ), 54 );
+   //[ 2, 2 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 19 ), 55 );
+   //[ 3, 2 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 6 ), 56 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 9 ), 56 );
+   //[ 4, 2 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 2 ), 57 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 14 ), 57 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 15 ), 57 );
+
+   //[ 1, 3 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 1 ), 64 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 12 ), 64 );
+   //[ 2, 3 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 17 ), 65 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 7 ), 65 );
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 8 ), 65 );
+   //[ 3, 3 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 13 ), 66 );
+   //[ 4, 3 ]
+   EXPECT_EQ( cellIndices_resizedOverlap.getElement( 3 ), 67 );
 
 }
 

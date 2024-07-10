@@ -103,7 +103,8 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
    const PointType globalGridOrigin = this->gridReferentialOrigin;
    //
    const IndexVectorType gridDimensionWithOverlap_ = this->getGridDimensionsWithOverlap();
-   const IndexVectorType gridOriginGlobalCoords = this->getGridOriginGlobalCoords();
+   //// const IndexVectorType gridOriginGlobalCoords = this->getGridOriginGlobalCoords();
+   const IndexVectorType gridOriginGlobalCoordsWithOverlap = this->getGridOriginGlobalCoordsWithOverlap();
 
    auto indexParticles = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
    {
@@ -113,7 +114,8 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
       }
       else{
          const IndexVectorType cellGlobalCoords = TNL::floor( ( point - globalGridOrigin ) / searchRadius );
-         const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoords;
+         //const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoords;
+         const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoordsWithOverlap;
          view_particeCellIndices[ i ] = CellIndexer::EvaluateCellIndex( cellCoords, gridDimensionWithOverlap_ );
       }
 
@@ -135,7 +137,8 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
 
    const RealType searchRadius = this->getSearchRadius();
    const PointType gridRefOrigin = this->getGridReferentialOrigin();
-   const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
+   //// const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
+   const IndexVectorType gridOriginGlobalCoordsWithOverlap = this->getGridOriginGlobalCoordsWithOverlap();
    const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    auto view_points = this->points.getView();
 
@@ -143,7 +146,8 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
    {
       const PointType point = view_points[ i ];
       const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) / searchRadius );
-      const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+      //const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+      const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoordsWithOverlap;
 
       //if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) ){
       if( this->isInsideDomain( cellCoords, gridDimensionsWithOverlap ) ){

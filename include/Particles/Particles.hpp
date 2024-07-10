@@ -88,6 +88,15 @@ Particles< ParticleConfig, DeviceType >::setGridOriginGlobalCoords( const IndexV
 }
 
 template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::IndexVectorType
+Particles< ParticleConfig, DeviceType >::getGridOriginGlobalCoordsWithOverlap() const
+{
+   const IndexVectorType originShift = this->overlapWidth;
+   const IndexVectorType shiftedGridOriginGlobalCoords = gridOriginGlobalCoords - originShift;
+   return shiftedGridOriginGlobalCoords;
+}
+
+template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::PointType
 Particles< ParticleConfig, DeviceType >::getGridOrigin() const
 {
@@ -268,7 +277,8 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
 
    const PointType gridRefOrigin = this->getGridReferentialOrigin();
    const RealType searchRadius = this->getSearchRadius();
-   const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
+   //const IndexVectorType gridRefOriginCoords = this->getGridOriginGlobalCoords();
+   const IndexVectorType gridOriginGlobalCoordsWithOverlap = this->getGridOriginGlobalCoordsWithOverlap();
    const IndexVectorType gridDimensionsWithOverlap = this->getGridDimensionsWithOverlap();
    const auto view_points = this->points.getConstView();
 
@@ -276,7 +286,8 @@ Particles< ParticleConfig, Device >::forAll( Func f ) const
    {
       const PointType point = view_points[ i ];
       const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) / searchRadius );
-      const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+      //const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
+      const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoordsWithOverlap;
 
       //if( this->isInsideDomain( view_points[ i ], domainOrigin, domainSize ) )
       if( this->isInsideDomain( cellCoords, gridDimensionsWithOverlap ) )
@@ -338,6 +349,7 @@ Particles< ParticleConfig, DeviceType >::writeProlog( TNL::Logger& logger ) cons
    logger.writeParameter( "Search radius:", this->radius );
    logger.writeParameter( "Grid origin:", this->gridOrigin );
    logger.writeParameter( "Grid origin global coordinates:", this->gridOriginGlobalCoords );
+   logger.writeParameter( "Grid origin global coordinates with overlap:", this->getGridOriginGlobalCoordsWithOverlap() );
    logger.writeParameter( "Grid referential origin:", this->gridReferentialOrigin );
    logger.writeParameter( "Grid dimensions:", this->gridDimension );
    logger.writeParameter( "Domain grid overlap width:", this->overlapWidth );

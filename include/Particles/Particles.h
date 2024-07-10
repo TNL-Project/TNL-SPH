@@ -107,6 +107,9 @@ public:
    void
    setGridOriginGlobalCoords( const IndexVectorType& origin );
 
+   [[nodiscard]] const IndexVectorType
+   getGridOriginGlobalCoordsWithOverlap() const;
+
    /**
     * \brief Returns origin of the implicit linked list grid.
     *
