@@ -196,6 +196,7 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -274,7 +275,8 @@ if __name__ == "__main__":
     # setup parameters
     compute_domain_size( openchannel_setup )
 
-    print( openchannel_setup )
+    print( "Complete example setup:" )
+    pprint( openchannel_setup )
     # write simulation params
     write_simulation_params( openchannel_setup )
 

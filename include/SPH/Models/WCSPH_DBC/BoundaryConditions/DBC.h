@@ -160,8 +160,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] += drho_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
 
 }
 

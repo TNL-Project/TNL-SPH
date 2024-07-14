@@ -125,8 +125,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       view_a[ i ] = a_i;
       view_gamma[ i ] = gamma_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-      fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   fluid->particles->forAll( particleLoop );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ) {
@@ -210,8 +209,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       view_rho_bound[ i ] = rho_i;
       view_gamma_bound[ i ] = gamma_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-      boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ) {
@@ -289,8 +287,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoin
       view_rho_bound[ i ] += rho0;
       view_gamma_bound[ i ] += gamma_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-      boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -304,12 +301,11 @@ WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPo
 
    typename EOS::ParamsType eosParams( modelParams );
 
-   auto init = [ = ] __cuda_callable__( int i ) mutable
+   auto evalPressure = [ = ] __cuda_callable__( int i ) mutable
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   Algorithms::parallelFor< DeviceType >(
-      physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
+   physicalObject->particles->forAll( evalPressure ); //TODO: forloop?
 }
 
 template< typename Particles, typename ModelConfig >
@@ -529,8 +525,7 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
          view_a[ i ] = 0.f + gravity;
       }
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-      fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   fluid->particles->forAll( particleLoop );
 
    //finalize boundary-fluid interactions
    const RealType rho0 = modelParams.rho0;
@@ -550,8 +545,7 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
          view_rho_bound[ i ] = rho0;
       }
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-      boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
 }
 
 }  //namespace SPH

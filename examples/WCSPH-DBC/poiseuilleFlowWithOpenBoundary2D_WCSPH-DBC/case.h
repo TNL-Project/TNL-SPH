@@ -76,7 +76,9 @@ int main( int argc, char* argv[] )
        return EXIT_FAILURE;
    }
 
-   TNL::Logger log( 100, std::cout );
+   std::string logFileName = "results/simulationLog_rank" + std::to_string( TNL::MPI::GetRank() );
+   std::ofstream logFile( logFileName );
+   TNL::Logger log( 100, logFile );
    Simulation sph;
    sph.init( parameters, log );
    sph.writeProlog( log );

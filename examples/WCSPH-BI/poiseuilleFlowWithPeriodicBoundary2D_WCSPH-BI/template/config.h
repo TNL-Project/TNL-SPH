@@ -21,6 +21,7 @@ class ParticleSystemConfig
 
    static constexpr int spaceDimension = 2;
 
+   using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 1, 0 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
@@ -46,9 +47,11 @@ class SPHConfig
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Models/BoundaryViscousTerms.h>
+#include <SPH/Models/DensityFilters.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
+//#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -72,6 +75,9 @@ class SPHParams
    using BCType = TNL::SPH::WCSPH_BCTypes::BI_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
+   //using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
+   using DensityFilter = TNL::SPH::DensityFilters::None;
+   //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
 
 using SPHDefs = SPHParams< Device >;
