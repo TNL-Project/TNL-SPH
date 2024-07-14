@@ -143,8 +143,6 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
 
    //Update number of particles
    fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
-   fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() + numberOfRetyped );
-   fluid->setLastActiveParticle( fluid->getLastActiveParticle() + numberOfRetyped );
 }
 
 template< typename SPHConfig, typename ModelConfig >
@@ -223,10 +221,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertFluidToBuffer( F
    Algorithms::parallelFor< DeviceType >( 0, fluidToBufferCount, retypeFluidToOutlet );
 
    openBoundary->particles->setNumberOfParticles( numberOfBufferParticles + fluidToBufferCount );
-   openBoundary->particles->setLastActiveParticle( openBoundary->particles->getLastActiveParticle() + fluidToBufferCount );
-   openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() + fluidToBufferCount );
-
-   openBoundary->numberOfFluidParticlesToRemove = fluidToBufferCount;
+   fluid->particles->setNumberOfParticlesToRemove( fluid->particles->getNumberOfParticlesToRemove() + fluidToBufferCount );
 
 }
 
@@ -281,8 +276,6 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOuletBoundaryCondi
 
    sortBufferParticlesByMark( openBoundary );
    openBoundary->particles->setNumberOfParticles( openBoundary->particles->getNumberOfParticles() - bufferToVoidCount );
-   openBoundary->particles->setLastActiveParticle( openBoundary->getLastActiveParticle() - bufferToVoidCount );
-   openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() - bufferToVoidCount );
 
    //Convert fluid to buffer;
    const GlobalIndexType fluidToBufferCount = getFluidParticlesEnteringOutlet( fluid, openBoundary );

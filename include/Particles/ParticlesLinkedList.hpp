@@ -83,8 +83,13 @@ ParticlesLinkedList< ParticleConfig, Device >::computeParticleCellIndices()
 
    auto indexParticles = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
    {
-      const IndexVectorType cellCoords = TNL::floor( ( points_view[ i ] - gridOrigin ) / searchRadius );
-      view_particeCellIndices[ i ] = CellIndexer::EvaluateCellIndex( cellCoords, gridDimension );
+      if( points_view[ i ][ 0 ] == FLT_MAX || points_view[ i ][ 1 ] == FLT_MAX ){
+         view_particeCellIndices[ i ] = INT_MAX;
+      }
+      else{
+         const IndexVectorType cellCoords = TNL::floor( ( points_view[ i ] - gridOrigin ) / searchRadius );
+         view_particeCellIndices[ i ] = CellIndexer::EvaluateCellIndex( cellCoords, gridDimension );
+      }
    };
    Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticles, indexParticles );
 }

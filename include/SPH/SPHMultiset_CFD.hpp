@@ -501,7 +501,7 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex )
 {
-   if( verbose == "with-snapshot" )
+   if( ( verbose == "with-snapshot" ) || ( verbose == "full" ) )
       writeInfo( logger );
 
    const int step = timeStepping.getStep();

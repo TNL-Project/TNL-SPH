@@ -120,7 +120,7 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, particleLoop );
+   fluid->particles->forAll( particleLoop );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -139,11 +139,11 @@ RSPH< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPointe
 
    typename EOS::ParamsType eosParams( sphState );
 
-   auto init = [=] __cuda_callable__ ( int i ) mutable
+   auto evalPressure = [=] __cuda_callable__ ( int i ) mutable
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   Algorithms::parallelFor< DeviceType >( physicalObject->getFirstActiveParticle(), physicalObject->getLastActiveParticle() + 1, init );
+   physicalObject->particles->forAll( evalPressure ); //TODO: forloop?
 }
 
 } // SPH

@@ -52,6 +52,28 @@ class FluidVariables
    }
 
    void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho = rho.getView();
+      auto view_v = v.getView();
+
+      auto view_rho_swap = rho_swap.getView();
+      auto view_v_swap = v_swap.getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho.getArrayData(), view_rho_swap.getArrayData() );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v.getArrayData(), view_v_swap.getArrayData() );
+
+      rho.swap( rho_swap );
+      v.swap( v_swap );
+   }
+
+   void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {
       auto view_map = map->getView();
@@ -83,7 +105,7 @@ class FluidVariables
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType firstActiveParticle = 0 )
    {
       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
@@ -99,9 +121,9 @@ public:
    using Base = FluidVariables< SPHState >;
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using IndexArrayTypePointer = typename Base::IndexArrayTypePointer;
 
    void
    setSize( const GlobalIndexType& size )
@@ -114,7 +136,23 @@ public:
    VectorArrayType n;
    VectorArrayType n_swap;
 
-   template< typename IndexArrayTypePointer >
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      Base::sortVariables( map, numberOfParticles );
+
+      auto view_map = map->getView();
+      auto view_n = n.getView();
+      auto view_n_swap = n_swap.getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_n.getArrayData(), view_n_swap.getArrayData() );
+
+      n.swap( n_swap );
+   }
+
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {
