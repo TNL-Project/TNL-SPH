@@ -183,15 +183,11 @@ public:
    using Base = FluidVariables< SPHState >;
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using IndexArrayTypePointer = typename Base::IndexArrayTypePointer;
    using VectorExtendedArrayType = typename SPHTraitsType::VectorExtendedArrayType;
    using MatrixExtendedArrayType = typename SPHTraitsType::MatrixExtendedArrayType;
-
-
-   //SPHBoundaryVariables( GlobalIndexType size )
-   //: SPHFluidVariables< SPHState >( size ), ghostNodes( size ), ghostNodes_swap( size ) {}
 
    void
    setSize( const GlobalIndexType& size )
@@ -208,8 +204,23 @@ public:
    VectorExtendedArrayType rhoGradRho_gn;
    MatrixExtendedArrayType cMatrix_gn;
 
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      Base::sortVariables( map, numberOfParticles );
 
-   template< typename IndexArrayTypePointer >
+      auto view_map = map->getView();
+      auto view_ghostNodes = ghostNodes.getView();
+      auto view_ghostNodes_swap = ghostNodes_swap.getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_ghostNodes.getArrayData(), view_ghostNodes_swap.getArrayData() );
+
+      ghostNodes.swap( ghostNodes_swap );
+   }
+
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {

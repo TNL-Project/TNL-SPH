@@ -83,8 +83,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       view_rhoGradRhoGhostNode_bound[ i ] = b_gn;
       view_correctionMatrices_bound[ i ] = A_gn;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ){

@@ -157,11 +157,9 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
    // setup particles
    particles->setSize( subdomainsSetup.numberOfAllocatedParticles[ rank ] );
    particles->setSearchRadius( subdomainsSetup.searchRadius );
-   particles->setGridSize( subdomainsSetup.gridDimension[ rank ] + subdomainsSetup.overlapSize );
+   particles->setGridDimensions( subdomainsSetup.gridDimension[ rank ] + subdomainsSetup.overlapSize );
    particles->setGridOrigin( subdomainsSetup.gridOrigin[ rank ] - subdomainsSetup.overlapWidth );
    particles->setNumberOfParticles( subdomainsSetup.numberOfParticles[ rank ] );
-   particles->setFirstActiveParticle( 0 );
-   particles->setLastActiveParticle( subdomainsSetup.numberOfParticles[ rank ] - 1 );
 
    // setup distributed particles
    std::ofstream logFile( "testLog" );
