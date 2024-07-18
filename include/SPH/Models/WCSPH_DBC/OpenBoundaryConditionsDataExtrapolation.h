@@ -25,11 +25,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData( FluidPointer& flu
    if constexpr( SPHState::SPHConfig::spaceDimension == 3 )
    {
       if( ( openBoundaryParams.rho_bc == "extrapolated" ) && ( openBoundaryParams.v_bc == "extrapolated" ) )
-         extrapolateOpenBoundaryData2D( fluid, openBoundary, modelParams, openBoundaryParams );
+         extrapolateOpenBoundaryData3D( fluid, openBoundary, modelParams, openBoundaryParams );
       else if ( openBoundaryParams.rho_bc == "extrapolated"  )
-         extrapolateOpenBoundaryDensity2D( fluid, openBoundary, modelParams, openBoundaryParams );
+         extrapolateOpenBoundaryDensity3D( fluid, openBoundary, modelParams, openBoundaryParams );
       else if ( openBoundaryParams.v_bc == "extrapolated"  )
-         extrapolateOpenBoundaryVelocity2D( fluid, openBoundary, modelParams, openBoundaryParams );
+         extrapolateOpenBoundaryVelocity3D( fluid, openBoundary, modelParams, openBoundaryParams );
    }
 }
 
@@ -414,7 +414,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& f
 
          const RealType V = m / rho_j;
 
-         *A_gn += matrixCorrection2D< Matrix >( W, gradW, r_ij, V );
+         *A_gn += matrixCorrection3D< Matrix >( W, gradW, r_ij, V );
          *rho_gradrho_gn += getVariableValueAndGradient3D< VectorExtendedType >( W, gradW, rho_j, V );
          *vx_gradvx_gn += getVariableValueAndGradient3D< VectorExtendedType >( W, gradW, v_j[ 0 ], V );
          *vy_gradvy_gn += getVariableValueAndGradient3D< VectorExtendedType >( W, gradW, v_j[ 1 ], V );
@@ -428,7 +428,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& f
       const VectorType v_i = view_v_openBound[ i ];
       const RealType rho_i = view_rho_openBound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ] }; //FIXME
+      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ], r_i[ 2 ] }; //FIXME
 
       Matrix A_gn = 0.f;
       VectorExtendedType rho_gradrho_gn = 0.f;
@@ -540,7 +540,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer
 
          const RealType V = m / rho_j;
 
-         *A_gn += matrixCorrection2D< Matrix >( W, gradW, r_ij, V );
+         *A_gn += matrixCorrection3D< Matrix >( W, gradW, r_ij, V );
          *rho_gradrho_gn += getVariableValueAndGradient3D< VectorExtendedType >( W, gradW, rho_j, V );
       }
    };
@@ -549,7 +549,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer
    {
       const VectorType r_i = view_points_openBound[ i ];
       const RealType rho_i = view_rho_openBound[ i ];
-      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ] }; //FIXME
+      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ], r_i[ 2 ] }; //FIXME
 
       Matrix A_gn = 0.f;
       VectorExtendedType rho_gradrho_gn = 0.f;
@@ -598,7 +598,6 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointe
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
-   const VectorType gravity = modelParams.gravity;
    const RealType extrapolationDetTreshold = openBoundaryParams.extrapolationDetTreshold;
 
    typename EOS::ParamsType eosParams( modelParams );
@@ -654,7 +653,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointe
       const VectorType v_i = view_v_openBound[ i ];
       const RealType rho_i = view_rho_openBound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ] }; //FIXME
+      const VectorType ghostNode_i = { bufferPosition[ 0 ] - ( r_i[ 0 ] - bufferPosition[ 0 ] ), r_i[ 1 ], r_i[ 2 ] }; //FIXME
 
       Matrix A_gn = 0.f;
       VectorExtendedType vx_gradvx_gn = 0.f;

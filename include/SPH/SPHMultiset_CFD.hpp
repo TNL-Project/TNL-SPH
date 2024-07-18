@@ -289,6 +289,7 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         logger.writeParameter( "Reading open boundary particles:", parameters.getParameter< std::string >( prefix + "particles" ) );
          openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
             parameters.getParameter< std::string >( prefix + "particles" ) );
       }
@@ -340,8 +341,11 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
    }
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
-      for( auto& openBoundaryPatch : openBoundaryPatches )
+      for( auto& openBoundaryPatch : openBoundaryPatches ){
          openBoundaryPatch->searchForNeighbors();
+         if( verbose == "full" )
+            logger.writeParameter( "Open boundary patch search procedure:", "Done." );
+      }
 }
 
 template< typename Model >
