@@ -41,7 +41,7 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
                RealType searchRadius,
                IndexVectorType gridSize,
                VectorType gridOrigin,
-               GlobalIndexType numberOfParticlesPerCell = 15 )
+               GlobalIndexType numberOfParticlesPerCell = 75 )
    {
       BaseType::initialize( numberOfParticles, numberOfAllocatedParticles, searchRadius, gridSize, gridOrigin );
 

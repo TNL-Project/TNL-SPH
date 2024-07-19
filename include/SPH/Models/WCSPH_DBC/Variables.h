@@ -104,9 +104,9 @@ class FluidVariables
       reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
       //FIXME
       if constexpr( SPHConfig::spaceDimension == 2 )
-         reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( v, "Velocity" );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( v, "Velocity" );
    }
 
    template< typename WriterType >
@@ -243,7 +243,11 @@ public:
    readVariables( ReaderType& reader )
    {
       Base::readVariables( reader );
-      reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
+      //FIXME
+      if constexpr( SPHConfig::spaceDimension == 2 )
+         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
+      if constexpr( SPHConfig::spaceDimension == 3 )
+         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
    }
 };
 

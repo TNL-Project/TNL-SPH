@@ -78,6 +78,15 @@ ParticleZone< ParticleConfig >::assignCells( const PointType firstPoint,
       const IndexVectorType begin = { 0, 0 };
       Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
+   if constexpr( ParticleConfig::spaceDimension == 3 ) {
+      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      {
+         const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ] + i[ 2 ] * zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+      };
+      const IndexVectorType begin = { 0, 0, 0 };
+      Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
+   }
 }
 
 template< typename ParticleConfig >

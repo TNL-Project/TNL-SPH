@@ -276,9 +276,11 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
-   logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
-   fluid->template readParticlesAndVariables< SimulationReaderType >(
-      parameters.getParameter< std::string >( "fluid-particles" ) );
+   if( parameters.getParameter< int >( "numberOfParticles" ) != 0 ){
+      logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
+      fluid->template readParticlesAndVariables< SimulationReaderType >(
+         parameters.getParameter< std::string >( "fluid-particles" ) );
+   }
    logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
    boundary->template readParticlesAndVariables< SimulationReaderType >(
       parameters.getParameter< std::string >( "boundary-particles" ) );
