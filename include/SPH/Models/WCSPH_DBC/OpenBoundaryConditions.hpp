@@ -136,7 +136,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
          const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation;
 
          view_r_buffer[ i ] = newBufferParticle;
-         view_v_buffer[ i ] = inletConstVelocity;
+         //view_v_buffer[ i ] = inletConstVelocity; //TODO: Keep the velocity same, keep the profile the same
          //view_rho_buffer[ i ] = inletConstDensity; //TODO: Keep the density same.
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
