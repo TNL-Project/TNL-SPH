@@ -192,7 +192,7 @@ public:
    writeInfo( TNL::Logger& logger ) const noexcept;
 
    void
-   writeEpilog( TNL::Logger& logger ) const noexcept;
+   writeEpilog( TNL::Logger& logger ) noexcept;
 
 //protected:
 

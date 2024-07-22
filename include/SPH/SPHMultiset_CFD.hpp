@@ -652,11 +652,14 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::writeEpilog( TNL::Logger& logger ) const noexcept
+SPHMultiset_CFD< Model >::writeEpilog( TNL::Logger& logger ) noexcept
 {
    logger.writeHeader( "SPH simulation successfully finished." );
    logger.writeCurrentTime( "Ended at:" );
    timeMeasurement.writeInfo( logger, timeStepping.getStep() );
+
+   std::string saveTimersOutputName = outputDirecotry + "/time_measurements";
+   timeMeasurement.writeInfoToJson( saveTimersOutputName, timeStepping.getStep() );
 }
 
 }  //namespace SPH
