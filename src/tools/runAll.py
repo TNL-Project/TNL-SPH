@@ -1,11 +1,12 @@
 #! /usr/bin/env python3
 
 import os
+import argparse
 import subprocess
-from pathlib import Path
 import json
 import pandas as pd
 import tabulate
+from pathlib import Path
 
 # initialize directories
 tools_dir = Path(__file__).parent
@@ -31,6 +32,8 @@ results = []
 results_fancy = []
 results_returncode = []
 computational_time = []
+referential_computational_time = []
+computational_time_difference_formatted = []
 
 def init( case_dir ):
     args = []
@@ -55,7 +58,7 @@ def parse_tnl_sph_output( case_dir ):
         lines = json.load( f )
         json_str = json.dumps( lines )
         timers_dictionary = json.loads( json_str )
-        return timers_dictionary[ "total" ]
+        return float( timers_dictionary[ "total" ] )
 
 def run_cases():
     for case in cases_list:
@@ -71,13 +74,38 @@ def run_cases():
         # get computational time
         computational_time.append( parse_tnl_sph_output( case_dir ) )
 
-def process_results():
+def process_results( gpu_type ):
     # parse return codes to fancy output
     for entry in results:
         if entry == 0:
-            results_fancy.append( '<span style="color:green">Success.</span>' )
+            results_fancy.append( '<span style="color:green">__Success__</span>' )
         else:
             results_fancy.append( '<span style="color:red">__Failed__</span>' )
+
+    # compute timers
+    referential_timers_filename = f"referentialComputationalTimes/referential_comp_times_{gpu_type}.json"
+    with open( referential_timers_filename ) as f:
+        lines = json.load( f )
+        json_str = json.dumps( lines )
+        timers_dictionary = json.loads( json_str )
+
+        for key, value in timers_dictionary.items():
+            # TODO Check with: if key not in cases_list:
+            referential_computational_time.append( float( value ) )
+
+        for i in range( len( cases_list ) ):
+            t_live = computational_time[ i ]
+            t_ref = referential_computational_time[ i ]
+            t_dif_precentage = 100 * ( t_live - t_ref ) / t_ref
+
+            if t_dif_precentage > 5:
+                t_diff_percentage_string = f'<span style="color:red">__{t_dif_precentage:.1f} %__</span>'
+            elif t_dif_precentage < -5:
+                t_diff_percentage_string = f'<span style="color:green">__{t_dif_precentage:.1f} %__</span>'
+            else:
+                t_diff_percentage_string = f'{t_dif_precentage:.1f} %'
+
+            computational_time_difference_formatted.append( t_diff_percentage_string )
 
 def write_results():
     for i in range( len( cases_list ) ):
@@ -85,13 +113,23 @@ def write_results():
 
     summary = { 'Cases' : cases_list,
                 'Result' : results_fancy,
-                'Comp. Time' : computational_time,
-                'Ref. Comp. Time' : computational_time }
+                'Comp. time' : computational_time,
+                'Ref. comp. time' : referential_computational_time,
+                'Comp. time dif.' : computational_time_difference_formatted }
     summary_df = pd.DataFrame( summary )
     with open('log.md', 'w') as f:
         f.write( summary_df.to_markdown( ) )
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser( description="Test all examples" )
+    # TODO: Decetct the GPU automatically
+    argparser.add_argument("--gpu", type=str, default="NVIDIA-A40",
+            help="gpu model which runs the test")
+
+    # parse the command line arguments
+    args = argparser.parse_args()
+    gpu_type = args.gpu
+
     run_cases()
-    process_results()
+    process_results( gpu_type )
     write_results()
