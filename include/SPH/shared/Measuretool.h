@@ -114,10 +114,10 @@ class SensorInterpolation
    init( std::vector< VectorType >& points, const int numberOfSensors, const int numberOfSavedSteps, bool includeBoundary )
    {
       this->numberOfSensors = numberOfSensors;
-      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
+      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
-      this->numberOfSavedSteps = numberOfSavedSteps;
+      this->numberOfSavedSteps = numberOfSavedSteps + 1;
    }
 
    template<typename SPHKernelFunction, typename EOS, typename SPHState >
@@ -191,14 +191,17 @@ class SensorWaterLevel
          RealType endLevel )
    {
       this->numberOfSensors = points.size();
-      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
+      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
 
       numberOfLevels = TNL::ceil( ( endLevel - startLevel ) / levelIncrement );
       levels.setSize( numberOfLevels );
       this->direction = direction;
-      this->numberOfSavedSteps = numberOfSavedSteps;
+      this->numberOfSavedSteps = numberOfSavedSteps + 1;
+
+      this->startLevel = startLevel;
+      this->endLevel = endLevel;
    }
 
    template< typename SPHKernelFunction, typename EOS, typename SPHState >
