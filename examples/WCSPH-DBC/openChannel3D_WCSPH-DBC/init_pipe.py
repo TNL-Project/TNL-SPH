@@ -1,61 +1,23 @@
 #! /usr/bin/env python3
 
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import domainGrid
 
-def velocity_profile_parabolic_in_y( r_x, r_y, r_z, setup ):
-    parabolic_level = 0.04
-    v_max = 0.5
-
-    coef_vx = v_max / ( parabolic_level * parabolic_level )
-    if r_z < parabolic_level:
-        v_x = coef_vx * r_z * r_z
-    else:
-        v_x = v_max
-    v_y = 0.
-    v_z = 0.
-    return v_x, v_y, v_z
-
 def velocity_paraboloid_profile( r_x, r_y, r_z, setup ):
     v_max = 0.5
-    y_center = 0.5 * setup[ "channel_width" ]
-    z_center = setup[ "channel_height" ]
+    y_center = 0
+    z_center = 0
 
-    v_x = v_max - v_max * ( max( 2 * np.abs( r_y - y_center ) / setup[ 'channel_width' ],  np.abs( r_z - z_center ) / setup[ 'channel_height' ] )**2 )
+    v_x = v_max - v_max * ( ( np.abs( r_y - y_center ) / setup[ 'inlet_radius' ] )**2 + ( np.abs( r_z - z_center ) / setup[ 'inlet_radius' ] )**2 )
     v_y = 0.
     v_z = 0.
     return v_x, v_y, v_z
 
-def plot_inlet_velocity_profile( velocity_profile, setup ):
-    n_points_for_plot = 100
-    y_coords = np.linspace( 0, setup[ "channel_width" ], n_points_for_plot )
-    z_coords = np.linspace( 0, setup[ "channel_height" ], n_points_for_plot )
-    y, z = np.meshgrid( y_coords, z_coords )
-
-    velocity_profile_vectorized = np.vectorize( velocity_profile, excluded=[ "setup" ] )
-    velocity = np.array( velocity_profile_vectorized( 0, y, z, setup ) )
-    print(velocity.shape)
-    print(velocity)
-
-    fig = plt.figure()
-    ax = fig.add_subplot( 1,2,1, projection='3d')
-    ax.plot_surface(y, z, velocity[ 0, :, : ], cmap=plt.cm.seismic)
-    ax.set_xlim( 0, 0.1 )
-    ax.set_ylim( 0, 0.1 )
-
-    ax1 = fig.add_subplot( 1,2,2 )
-    ax1.contour( y, z, velocity[ 0, :, : ], 50 )
-    ax1.set_xlabel( 'y' )
-    ax1.set_ylabel( 'z' )
-
-    plt.show()
-
-
-velocity_profile = velocity_paraboloid_profile
+def velocity_constant_profile( r_x, r_y, r_z, setup ):
+    return 0.5, 0, 0
 
 def generate_channel_fluid_particles( setup ):
     dp = setup[ "dp" ]
@@ -66,23 +28,22 @@ def generate_channel_fluid_particles( setup ):
     fluid_height_n = round( ( setup[ "channel_height" ] - dp ) / dp )
     fluid_width_n = round( ( setup[ "channel_width" ] - dp ) / dp )
 
+    fluid_x_ref_point = -0.2
+    fluid_y_ref_point = -0.5 * setup[ "channel_width" ]
+    fluid_z_ref_point = 0
+
     rho0 = setup[ 'density' ]
     speed_of_sound = setup[ 'speed_of_sound' ]
 
     for x in range( fluid_lenght_n ):
         for y in range( fluid_width_n ):
             for z in range( fluid_height_n ):
-                fluid_rx.append( dp * ( x + 1 ) )
-                fluid_ry.append( dp * ( y + 1 ) )
-                fluid_rz.append( dp * ( z + 1 ) )
-                #fluid_vx.append( setup[ "inlet_velocity_x" ] )
-                #fluid_vy.append( setup[ "inlet_velocity_y" ] )
-                #fluid_vz.append( setup[ "inlet_velocity_z" ] )
-
-                v_x, v_y, v_z = velocity_profile( fluid_rx[ -1 ], fluid_ry[ -1 ], fluid_rz[ -1 ], setup )
-                fluid_vx.append( v_x )
-                fluid_vy.append( v_y )
-                fluid_vz.append( v_z )
+                fluid_rx.append( fluid_x_ref_point + dp * ( x + 1 ) )
+                fluid_ry.append( fluid_y_ref_point + dp * ( y + 1 ) )
+                fluid_rz.append( fluid_z_ref_point + dp * ( z + 1 ) )
+                fluid_vx.append( setup[ "inlet_velocity_x" ] )
+                fluid_vy.append( setup[ "inlet_velocity_y" ] )
+                fluid_vz.append( setup[ "inlet_velocity_z" ] )
 
                 hydrostaticPressure = rho0 * 9.81 * ( setup[ 'channel_height' ] - fluid_rz[ -1 ] )
                 hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
@@ -102,94 +63,53 @@ def generate_channel_fluid_particles( setup ):
 def generate_channel_boundary_particles( setup ):
     dp = setup[ "dp" ]
     n_boundary_layers = setup[ "n_boundary_layers" ]
-
     box_rx = []; box_ry = []; box_rz = []
-    ghost_rx = []; ghost_ry = []; ghost_rz = []
-    box_density = []
-    box_length_n = round( setup[ "channel_length" ] / dp )
-    box_height_n = round( ( 1.3 * setup[ "channel_height" ] ) / dp )
-    box_width_n = round( setup[ "channel_width" ] / dp )
+    #ghost_rx = []; ghost_ry = []; ghost_rz = []
 
-    rho0 = setup[ 'density' ]
-    speed_of_sound = setup[ 'speed_of_sound' ]
+    inlet_pipe_radius = setup[ "pipe_radius" ]
+    inlet_pipe_center_y = setup[ "inlet_center_y" ]
+    inlet_pipe_center_z = setup[ "inlet_center_z" ]
+    inlet_pipe_length = setup[ "pipe_length" ]
 
-    # bottom wall
+    inlet_pipe_pos_x = 0.8
+    # position = position - offset to include additional layers
+    inlet_pipe_pos_y = setup[ "inlet_position_y" ]
+    inlet_pipe_pos_z = setup[ "inlet_position_z" ]
+
+    inlet_pipe_length_n = round( inlet_pipe_length / dp )
+    # size_n = number of points to cover the radius + the last point + offset to include additional layers
+    inlet_pipe_size_y_n = round( ( 2 * ( inlet_pipe_radius ) ) / dp ) + 1 + ( n_boundary_layers + 2 ) * 2
+    inlet_pipe_size_z_n = round( ( 2 * ( inlet_pipe_radius ) ) / dp ) + 1 + ( n_boundary_layers + 2 ) * 2
+
     for layer in range( n_boundary_layers ):
-        for y in range( box_width_n - 1 ):
-            for x in range( box_length_n + ( n_boundary_layers ) * 2 + 1 ):
-                box_rx.append( ( x - ( n_boundary_layers ) ) * dp )
-                box_ry.append( dp + y * dp )
-                box_rz.append( 0. - layer * dp )
-                ghost_rx.append( 0. )
-                ghost_ry.append( 0. )
-                ghost_rz.append( 0. )
+            for y in range( inlet_pipe_size_y_n ):
+                for z in range( inlet_pipe_size_z_n ):
+                    pos_y = inlet_pipe_pos_y + dp * y
+                    pos_z = inlet_pipe_pos_z + dp * z
 
-                hydrostaticPressure = rho0 * 9.81 * ( setup[ 'channel_height' ] - box_rz[ -1 ] )
-                hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
-                box_density.append( hydrostaticDensity )
+                    radius_xy = np.sqrt( ( pos_y - inlet_pipe_center_y )**2 + ( pos_z - inlet_pipe_center_z )**2 )
+                    lowerBound = inlet_pipe_radius + layer * dp - dp / 2
+                    upperBound = inlet_pipe_radius + layer * dp + dp / 2
+                    if layer == 0:
+                        lowerBound = inlet_pipe_radius + layer * dp
 
-    # left wall
-    for layer in range( n_boundary_layers ):
-        for z in range( box_height_n ):
-            for x in range( box_length_n + ( n_boundary_layers ) * 2 + 1 ):
-                box_rx.append( ( x - ( n_boundary_layers ) ) * dp )
-                box_ry.append( 0. - layer * dp )
-                box_rz.append( dp + z * dp )
-                ghost_rx.append( 0. )
-                ghost_ry.append( 0. )
-                ghost_rz.append( 0. )
+                    if radius_xy < upperBound and radius_xy >= lowerBound:
+                        for x in range( inlet_pipe_length_n ):
+                            box_rx.append( inlet_pipe_pos_x - dp * ( x + 1 ) )
+                            box_ry.append( pos_y )
+                            box_rz.append( pos_z )
 
-                hydrostaticPressure = rho0 * 9.81 * ( setup[ 'channel_height' ] - box_rz[ -1 ] )
-                hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
-                box_density.append( hydrostaticDensity )
-
-    # right wall
-    for layer in range( n_boundary_layers ):
-        for z in range( box_height_n ):
-            for x in range( box_length_n + ( n_boundary_layers ) * 2 + 1 ):
-                box_rx.append( ( x - ( n_boundary_layers ) ) * dp )
-                box_ry.append( ( setup[ "channel_width" ] ) + layer * dp )
-                box_rz.append( dp + z * dp )
-                ghost_rx.append( 0. )
-                ghost_ry.append( 0. )
-                ghost_rz.append( 0. )
-
-                hydrostaticPressure = rho0 * 9.81 * ( setup[ 'channel_height' ] - box_rz[ -1 ] )
-                hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
-                box_density.append( hydrostaticDensity )
-
-    # generate corner lines
-    def generate90degCorner( y, z, diry, dirz ):
-      for layer_y in range( n_boundary_layers ):
-        for layer_z in range( n_boundary_layers ):
-            for x in range( box_length_n + ( n_boundary_layers ) * 2 + 1 ):
-                box_rx.append( ( x - ( n_boundary_layers ) ) * dp )
-                box_ry.append( y + layer_y * dp * diry )
-                box_rz.append( z + layer_z * dp * dirz )
-                ghost_rx.append( 0. )
-                ghost_ry.append( 0. )
-                ghost_rz.append( 0. )
-
-                hydrostaticPressure = rho0 * 9.81 * ( setup[ 'channel_height' ] - box_rz[ -1 ] )
-                hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
-                box_density.append( hydrostaticDensity )
-
-    generate90degCorner( 0, 0., -1, -1 )
-    generate90degCorner( setup[ "channel_width" ], 0., +1, -1 )
-
-    boundary_n = len( box_rx )
-    boundary_r = np.array( ( box_rx, box_ry, box_rz ), dtype=float ).T #!!
-    boundary_ghostNodes = np.array( ( ghost_rx, ghost_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
-    boundary_v = np.zeros( ( boundary_n, 3 ) )
-    #boundary_rho = setup[ "density" ] * np.ones( boundary_n )
-    boundary_rho = np.array( box_density, dtype=float )
-    boundary_p = np.zeros( boundary_n )
-    boundary_ptype = np.ones( boundary_n )
-    box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
-                                                                ghostNodes=boundary_ghostNodes )
+    box_n = len( box_rx )
+    box_r = np.array( ( box_rx, box_ry, box_rz ), dtype=float ).T #!!
+    #box_ghostNodes = np.array( ( ghost_rx, ghost_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
+    box_v = np.zeros( ( box_n, 3 ) )
+    box_rho = setup[ "density" ] * np.ones( box_n )
+    box_p = np.zeros( box_n )
+    box_ptype = np.ones( box_n )
+    box_to_write = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype )
     saveParticlesVTK.save_polydata( box_to_write, "sources/openchannel_boundary.vtk" )
 
-    setup[ "boundary_n" ] = boundary_n
+    setup[ "boundary_n" ] = box_n
     setup[ "domain_origin_x" ] = min( box_rx )
     setup[ "domain_origin_y" ]  = min( box_ry )
     setup[ "domain_origin_z" ]  = min( box_rz )
@@ -203,37 +123,43 @@ def generate_channel_open_boundary_particles( setup, prefix ):
     patch_vx = []; patch_vy = []; patch_vz = []
     patch_density = []
 
-    patch_width_n = setup[ prefix + "_layers" ]
-    patch_size_y_n = round( setup[ prefix + "_size_y" ] / dp  )
-    patch_size_z_n = round( setup[ prefix + "_size_z" ] / dp  )
+    patch_pos_x = setup[ prefix + "_position_x" ]
+    patch_pos_y = setup[ prefix + "_position_y" ]
+    patch_pos_z = setup[ prefix + "_position_z" ]
 
-    rho0 = setup[ 'density' ]
-    speed_of_sound = setup[ 'speed_of_sound' ]
+    patch_radius = setup[ prefix + "_radius" ]
+    patch_center_x = setup[ prefix + "_center_x" ]
+    patch_center_y = setup[ prefix + "_center_y" ]
+    patch_center_z = setup[ prefix + "_center_z" ]
+
+    patch_width_n = setup[ prefix + "_layers" ]
+    patch_size_y_n = round( 2 * patch_radius / dp ) + 2
+    patch_size_z_n = round( 2 * patch_radius / dp ) + 2
+
+    patch_orientation_x = setup[ prefix + "_orientation_x" ]
 
     for x in range( patch_width_n ):
         for y in range( patch_size_y_n ):
             for z in range( patch_size_z_n ):
-                patch_rx.append( setup[ prefix + "_position_x" ] - setup[ prefix + "_orientation_x" ] * dp *  x  )
-                patch_ry.append( setup[ prefix + "_position_y" ] + dp * ( y ) )
-                patch_rz.append( setup[ prefix + "_position_z" ] + dp * ( z ) )
-                #patch_vx.append( setup[ prefix + "_velocity_x" ] )
-                #patch_vy.append( setup[ prefix + "_velocity_y" ] )
-                #patch_vz.append( setup[ prefix + "_velocity_z" ] )
+                pos_x = patch_pos_x + ( -1 ) * patch_orientation_x * dp * x
+                pos_y = patch_pos_y + dp * y
+                pos_z = patch_pos_z + dp * z
 
-                v_x, v_y, v_z = velocity_profile( patch_rx[ -1 ], patch_ry[ -1 ], patch_rz[ -1 ], setup )
-                patch_vx.append( v_x )
-                patch_vy.append( v_y )
-                patch_vz.append( v_z )
+                if np.sqrt( ( pos_y - patch_center_y )**2 + ( pos_z - patch_center_z )**2 ) < patch_radius:
+                    patch_rx.append( pos_x )
+                    patch_ry.append( pos_y )
+                    patch_rz.append( pos_z )
 
-                hydrostaticPressure = rho0 * 9.81 * ( setup[ 'channel_height' ] - patch_rz[ -1 ] )
-                hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
-                patch_density.append( hydrostaticDensity )
+                    v_x, v_y, v_z = velocity_profile( patch_rx[ -1 ], patch_ry[ -1 ], patch_rz[ -1 ], setup )
+                    patch_vx.append( v_x )
+                    patch_vy.append( v_y )
+                    patch_vz.append( v_z )
 
     patch_n = len( patch_rx )
     r = np.array( ( patch_rx, patch_ry, patch_rz ), dtype=float ).T #!!
     v = np.array( ( patch_vx, patch_vy, patch_vz ), dtype=float ).T #!!
-    #rho = setup[ "density" ] * np.ones( patch_n, dtype=float )
-    rho = np.array( patch_density, dtype=float )
+    rho = setup[ "density" ] * np.ones( patch_n, dtype=float )
+    #rho = np.array( patch_density, dtype=float )
     p = np.zeros( patch_n )
     ptype = np.ones( patch_n )
 
@@ -282,8 +208,8 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderDomainSize-z', str( round( setup[ "domain_size_z" ], 5  ) ) )
 
     config_file = config_file.replace( 'placeholderInitParticleDistance', str( setup[ "dp" ] ) )
-    config_file = config_file.replace( 'placeholderSmoothingLength', str( round( setup[ "smoothing_lenght" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderMass', str( setup[ "particle_mass" ] ) )
+    config_file = config_file.replace( 'placeholderSmoothingLength', str( round( setup[ "smoothing_length" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderMass', str( round( setup[ "particle_mass" ], 7 ) ) )
     config_file = config_file.replace( 'placeholderSpeedOfSound', str( setup[ "speed_of_sound" ] ) )
     config_file = config_file.replace( 'placeholderDensity', str( setup[ "density" ] ) )
     config_file = config_file.replace( 'placeholderTimeStep', str( setup[ "time_step" ] ) )
@@ -306,8 +232,8 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderInletPosition1_y', str( setup[ "inlet_position_y" ] ) )
     config_file = config_file.replace( 'placeholderInletPosition1_z', str( setup[ "inlet_position_z" ] ) )
     config_file = config_file.replace( 'placeholderInletPosition2_x', str( setup[ "inlet_position_x" ]  + setup[ "dp" ] / 2 ) ) #TODO
-    config_file = config_file.replace( 'placeholderInletPosition2_y', str( setup[ "inlet_position_y" ] + setup[ "inlet_size_y" ] - setup[ "dp" ] / 2 ) ) #TODO
-    config_file = config_file.replace( 'placeholderInletPosition2_z', str( setup[ "inlet_position_z" ] + setup[ "inlet_size_z" ] - setup[ "dp" ] / 2 ) ) #TODO
+    config_file = config_file.replace( 'placeholderInletPosition2_y', str( setup[ "inlet_position_y" ] + setup[ "inlet_size_y" ] ) )# - setup[ "dp" ] / 2 ) )
+    config_file = config_file.replace( 'placeholderInletPosition2_z', str( setup[ "inlet_position_z" ] + setup[ "inlet_size_z" ] ) )# - setup[ "dp" ] / 2 ) )
     config_file = config_file.replace( 'placeholderInletDensity', str( setup[ "density" ] ) )
     config_file = config_file.replace( 'placeholderInletWidth_x', str( round( setup[ "inlet_width" ], 7 ) ) )
     config_file = config_file.replace( 'placeholderInletWidth_y', str( 0. ) )
@@ -323,8 +249,8 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderOutletPosition1_y', str( setup[ "outlet_position_y" ] ) )
     config_file = config_file.replace( 'placeholderOutletPosition1_z', str( setup[ "outlet_position_z" ] ) )
     config_file = config_file.replace( 'placeholderOutletPosition2_x', str( setup[ "outlet_position_x" ] - setup[ "dp" ] / 2 ) ) #FIXME
-    config_file = config_file.replace( 'placeholderOutletPosition2_y', str( setup[ "outlet_position_y" ] + setup[ "outlet_size_y" ] - setup[ "dp" ] / 2  ) )
-    config_file = config_file.replace( 'placeholderOutletPosition2_z', str( setup[ "outlet_position_z" ] + setup[ "outlet_size_z" ] - setup[ "dp" ] / 2  ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_y', str( setup[ "outlet_position_y" ] + setup[ "outlet_size_y" ] ) )# - setup[ "dp" ] / 2  ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_z', str( setup[ "outlet_position_z" ] + setup[ "outlet_size_z" ] ) )# - setup[ "dp" ] / 2  ) )
     config_file = config_file.replace( 'placeholderOutletDensity', str( setup[ "density" ] ) )
     config_file = config_file.replace( 'placeholderOutletWidth_x', str( round( setup[ "outlet_width" ], 7 ) ) )
     config_file = config_file.replace( 'placeholderOutletWidth_y', str( 0. ) )
@@ -356,27 +282,27 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.005, help="initial distance between particles")
-    g.add_argument("--h-coef", type=float, default=2**0.5, help="smoothing length coefitient")
+    g.add_argument("--h-coef", type=float, default=3**0.5, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
-    g.add_argument("--channel-length", type=float, default=0.75, help="length of fluid block")
-    g.add_argument("--channel-height", type=float, default=0.1, help="height of fluid block")
-    g.add_argument("--channel-width", type=float, default=0.1, help="width of fluid block")
+    g.add_argument("--pipe-length", type=float, default=1.5, help="length of pipe")
+    g.add_argument("--pipe-radius", type=float, default=0.06, help="radius of pipe")
     g.add_argument("--n-boundary-layers", type=int, default=3, help="number of boundary layers")
-    g.add_argument("--v-init", type=int, default=0.5, help="initial velocity")
+    g.add_argument("--v-init", type=int, default=1.5, help="initial velocity")
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
-    g.add_argument("--speed-of-sound", type=float, default=34.3, help="speed of sound")
+    g.add_argument("--speed-of-sound", type=float, default=56.0286, help="speed of sound")
     g.add_argument("--cfl", type=float, default=0.2, help="referential density of the fluid")
     #g = argparser.add_argument_group("control parameters")
     #g.add_argument("--example-dir", type=Path, default=1000, help="referential density of the fluid")
 
     args = argparser.parse_args()
 
-    openchannel_setup = {
+    channel_with_pipe_setup = {
         # general parameteres
         "dp" : args.dp,
         "h_coef" : args.h_coef,
@@ -385,39 +311,46 @@ if __name__ == "__main__":
         "speed_of_sound" : args.speed_of_sound,
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp * args.dp ),
-        "smoothing_lenght" : args.h_coef * args.dp,
+        "smoothing_length" : args.h_coef * args.dp,
         "search_radius" :  2 * args.h_coef * args.dp,
         "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
         # geometric size
-        "channel_length" : args.channel_length,
-        "channel_height" : args.channel_height,
-        "channel_width" : args.channel_width,
+        "pipe_length" : args.pipe_length,
+        "pipe_radius" : args.pipe_radius,
         # inlet boundary condition
-        "inlet_position_x" : 0.,
-        "inlet_position_y" : 0. + args.dp,
-        "inlet_position_z" : 0. + args.dp,
+        "inlet_position_x" : -0.6,
+        "inlet_position_y" : -0.07,
+        "inlet_position_z" : -0.07,
         "inlet_orientation_x" : 1.,
         "inlet_orientation_y" : 0.,
         "inlet_orientation_z" : 0.,
         "inlet_layers" : args.n_boundary_layers + 1,
-        "inlet_size_y" : args.channel_width - args.dp,
-        "inlet_size_z" : args.channel_height - args.dp,
+        "inlet_radius" : args.pipe_radius,
+        "inlet_center_x" : -0.6,
+        "inlet_center_y" : 0.,
+        "inlet_center_z" : 0.,
+        "inlet_size_y" : 0.14,
+        "inlet_size_z" : 0.14,
         "inlet_width" : ( args.n_boundary_layers + 1 ) * args.dp,
         "inlet_velocity_x" : args.v_init,
         "inlet_velocity_y" : 0.,
         "inlet_velocity_z" : 0.,
-        # outlet boundary condition
-        "outlet_position_x" : args.channel_length,
-        "outlet_position_y" : 0. + args.dp,
-        "outlet_position_z" : 0. + args.dp,
+        # outlet boundary conditions
+        "outlet_position_x" : 0.7,
+        "outlet_position_y" : -0.07,
+        "outlet_position_z" : -0.07,
         "outlet_orientation_x" : -1.,
         "outlet_orientation_y" : 0.,
         "outlet_orientation_z" : 0.,
         "outlet_layers" : args.n_boundary_layers + 1,
-        "outlet_size_y" : args.channel_width - args.dp,
-        "outlet_size_z" : args.channel_height - args.dp,
+        "outlet_radius" : args.pipe_radius,
+        "outlet_center_x" : 0.3,
+        "outlet_center_y" : 0.,
+        "outlet_center_z" : 0.,
+        "outlet_size_y" : 0.14,
+        "outlet_size_z" : 0.14,
         "outlet_width" : ( args.n_boundary_layers + 1 ) * args.dp,
-        "outlet_velocity_x" : args.v_init,
+        "outlet_velocity_x" : 0.,
         "outlet_velocity_y" : 0.,
         "outlet_velocity_z" : 0.,
     }
@@ -431,21 +364,23 @@ if __name__ == "__main__":
     if not os.path.exists( sourcesPath ):
         os.makedirs( sourcesPath )
 
+    # define and plot inlet velocity profile
+    velocity_profile = velocity_constant_profile
+    #plot_inlet_velocity_profile( velocity_profile, channel_with_pipe_setup )
+
     # generate particles
-    generate_channel_fluid_particles( openchannel_setup )
-    generate_channel_boundary_particles( openchannel_setup )
-    generate_channel_open_boundary_particles( openchannel_setup, "inlet" )
-    generate_channel_open_boundary_particles( openchannel_setup, "outlet" )
+    #generate_channel_fluid_particles( channel_with_pipe_setup )
+    channel_with_pipe_setup[ "fluid_n" ] = 0
+    generate_channel_boundary_particles( channel_with_pipe_setup )
+    generate_channel_open_boundary_particles( channel_with_pipe_setup, "inlet" )
+    generate_channel_open_boundary_particles( channel_with_pipe_setup, "outlet" )
 
     # setup parameters
-    compute_domain_size( openchannel_setup )
+    compute_domain_size( channel_with_pipe_setup )
 
-    print( openchannel_setup )
+    pprint( channel_with_pipe_setup )
     # write simulation params
-    write_simulation_params( openchannel_setup )
+    write_simulation_params( channel_with_pipe_setup )
 
     #write linked list background grid
-    write_domain_background_grid( openchannel_setup )
-
-    #plot inlet velocity profile
-    plot_inlet_velocity_profile( velocity_profile, openchannel_setup )
+    write_domain_background_grid( channel_with_pipe_setup )
