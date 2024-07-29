@@ -34,7 +34,7 @@ public:
    using CoordinatesType = typename GridType::CoordinatesType;
 
    //temp
-   using ParticleSystem = typename SPHSimulation::ParticlesType;
+   using ParticlesType = typename SPHSimulation::ParticlesType;
 
    InterpolateToGrid() : variables() {}
 
@@ -95,7 +95,7 @@ class SensorInterpolation
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
 
    //temp
-   using ParticleSystem = typename SPHSimulation::ParticlesType;
+   using ParticlesType = typename SPHSimulation::ParticlesType;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
@@ -157,7 +157,7 @@ class SensorWaterLevel
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
 
    //temp
-   using ParticleSystem = typename SPHSimulation::ParticlesType;
+   using ParticlesType = typename SPHSimulation::ParticlesType;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder

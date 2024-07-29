@@ -92,81 +92,10 @@ public:
    }
 
    /**
-    * \brief Set size of the particle system, i. e. number of
-    * allocated particles.
-    *
-    * \param size Number of allocated particles.
-    */
-   void
-   setSize( const GlobalIndexType& size );
-
-   void
-   setGridDimensions( const IndexVectorType& dimensions );
-
-   /**
-    * Get particle cell indices.
-    */
-   const CellIndexArrayType&
-   getParticleCellIndices() const;
-
-   CellIndexArrayType&
-   getParticleCellIndices();
-
-   /**
-    * Get list of first and last particle in cells.
-    */
-   const PairIndexArrayType&
-   getCellFirstLastParticleList() const;
-
-   PairIndexArrayType&
-   getCellFirstLastParticleList();
-
-   /**
-    * Reset the list with first and last particle in cell.
-    */
-   void
-   resetListWithIndices();
-
-   /**
-    * Get cell index of given partile - with enabled domain decomposition.
-    */
-   template< typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
-             std::enable_if_t< UseWithDomainDecomposition::value, bool > Enabled = true >
-   void
-   computeParticleCellIndices();
-
-   /**
-    * Get cell index of given partile - without enabled domain decomposition.
-    */
-   template< typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
-             std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled = true >
-   void
-   computeParticleCellIndices();
-
-   /**
-    * Sort particles by its cell index.
-    */
-   void
-   sortParticles();
-
-   /**
-    * Assign to each cell index of first contained particle.
-    */
-   void
-   particlesToCells();
-
-   /**
-    * FIXME: Here or in base?
-    * Start remove procedure for all particles out of interior region.
-    */
-   void
-   removeParitclesOutOfDomain();
-
-   /**
     * Run all procedures required to perform neighbor search.
     */
    void
-   searchForNeighbors();
+   buildParticleList();
 
    void
    writeProlog( TNL::Logger& logge ) const noexcept;
@@ -174,16 +103,9 @@ public:
 protected:
 
    /**
-    * Array with sice of allocated particles indices of corresponding cells
-    * computed based on particle position.
+    * Defines maximum number of possible neighbors.
     */
-   CellIndexArrayType particleCellInidices;
-
-   /**
-    * Array with size of number of cells pairs storing index of first and last
-    * contained in each cell. We assume that particles are continuously sorted.
-    */
-   PairIndexArrayType firstLastCellParticle;
+   GlobalIndexType neighborsCountLimit;
 
    /**
     * Sparse format explicitly storing particle neighbors. Particle pairs are stored

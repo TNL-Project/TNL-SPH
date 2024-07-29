@@ -9,7 +9,7 @@ namespace TNL {
 namespace SPH {
 
 template< typename Simulation >
-inline int
+inline void
 initialize( int argc,
             char* argv[],
             TNL::Config::ParameterContainer& cliParams,

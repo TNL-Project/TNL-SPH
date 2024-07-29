@@ -111,11 +111,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData2D( FluidPointer& f
       VectorExtendedType vx_gradvx_gn = 0.f;
       VectorExtendedType vy_gradvy_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i,
-                                                ghostNode_i,
-                                                searchInFluid,
-                                                OpenBoundaryFluid,
-                                                v_i, rho_i, &A_gn, &rho_gradrho_gn, &vx_gradvx_gn, &vy_gradvy_gn );
+      Particles::NeighborsLoop::exec( i,
+                                      ghostNode_i,
+                                      searchInFluid,
+                                      OpenBoundaryFluid,
+                                      v_i, rho_i, &A_gn, &rho_gradrho_gn, &vx_gradvx_gn, &vy_gradvy_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -220,11 +220,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPointer
       Matrix A_gn = 0.f;
       VectorExtendedType rho_gradrho_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i,
-                                                ghostNode_i,
-                                                searchInFluid,
-                                                OpenBoundaryFluid,
-                                                rho_i, &A_gn, &rho_gradrho_gn );
+      Particles::NeighborsLoop::exec( i,
+                                      ghostNode_i,
+                                      searchInFluid,
+                                      OpenBoundaryFluid,
+                                      rho_i, &A_gn, &rho_gradrho_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -322,11 +322,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity2D( FluidPointe
       VectorExtendedType vx_gradvx_gn = 0.f;
       VectorExtendedType vy_gradvy_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i,
-                                                ghostNode_i,
-                                                searchInFluid,
-                                                OpenBoundaryFluid,
-                                                v_i, rho_i, &A_gn, &vx_gradvx_gn, &vy_gradvy_gn );
+      Particles::NeighborsLoop::exec( i,
+                                      ghostNode_i,
+                                      searchInFluid,
+                                      OpenBoundaryFluid,
+                                      v_i, rho_i, &A_gn, &vx_gradvx_gn, &vy_gradvy_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -436,11 +436,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& f
       VectorExtendedType vy_gradvy_gn = 0.f;
       VectorExtendedType vz_gradvz_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i,
-                                                ghostNode_i,
-                                                searchInFluid,
-                                                OpenBoundaryFluid,
-                                                v_i, rho_i, &A_gn, &rho_gradrho_gn, &vx_gradvx_gn, &vy_gradvy_gn, &vz_gradvz_gn );
+      Particles::NeighborsLoop::exec( i,
+                                      ghostNode_i,
+                                      searchInFluid,
+                                      OpenBoundaryFluid,
+                                      v_i, rho_i, &A_gn, &rho_gradrho_gn, &vx_gradvx_gn, &vy_gradvy_gn, &vz_gradvz_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -554,11 +554,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer
       Matrix A_gn = 0.f;
       VectorExtendedType rho_gradrho_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i,
-                                                ghostNode_i,
-                                                searchInFluid,
-                                                OpenBoundaryFluid,
-                                                rho_i, &A_gn, &rho_gradrho_gn );
+      Particles::NeighborsLoop::exec( i,
+                                      ghostNode_i,
+                                      searchInFluid,
+                                      OpenBoundaryFluid,
+                                      rho_i, &A_gn, &rho_gradrho_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {
@@ -660,11 +660,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointe
       VectorExtendedType vy_gradvy_gn = 0.f;
       VectorExtendedType vz_gradvz_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i,
-                                                ghostNode_i,
-                                                searchInFluid,
-                                                OpenBoundaryFluid,
-                                                v_i, rho_i, &A_gn, &vx_gradvx_gn, &vy_gradvy_gn, &vz_gradvz_gn );
+      Particles::NeighborsLoop::exec( i,
+                                      ghostNode_i,
+                                      searchInFluid,
+                                      OpenBoundaryFluid,
+                                      v_i, rho_i, &A_gn, &vx_gradvx_gn, &vy_gradvy_gn, &vz_gradvz_gn );
 
       if( Matrices::determinant( A_gn ) > extrapolationDetTreshold )
       {

@@ -15,6 +15,7 @@
 #include "ParticlesTraits.h"
 #include "CellIndexer.h"
 #include "Particles.h"
+#include "neighborSearchLoop.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -76,6 +77,8 @@ public:
    using PairIndexArrayType = typename ParticleTraitsType::PairIndexArrayType;
 
    /* args for neighbors loop */
+   using NeighborsLoop = NeighborsLoopCellLinkedList;
+   using NeighborsLoopAnotherSet = NeighborsLoopCellLinkedListAnotherSet;
    using NeighborsLoopParams = NeighborsLoopParams< ParticlesLinkedList< ParticleConfig, DeviceType > >;
 
    /**

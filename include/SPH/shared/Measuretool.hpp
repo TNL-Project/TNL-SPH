@@ -7,8 +7,8 @@ void
 InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -60,7 +60,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
                                  ( i[ 1 ] ) * _gridStep[ 1 ] + _gridOrigin[ 1 ]  };
          const GlobalIndexType  idx =  i[ 1 ] * _gridDimension[ 0 ] + i[ 0 ];
 
-         TNL::ParticleSystem::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
+         ParticlesType::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
 
          if( gamma > 0.5f ){
             view_v_interpolation[ idx ] = v / gamma;
@@ -91,7 +91,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
                                        i[ 1 ] * _gridDimension[ 0 ] + \
                                        i[ 0 ];
 
-         TNL::ParticleSystem::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
+         ParticlesType::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
 
          if( gamma > 0.5f ){
             view_v_interpolation[ idx ] = v / gamma;
@@ -145,8 +145,8 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
                                                               bool includeBoundary )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -209,9 +209,9 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
       VectorType v = 0.f;
       RealType gamma = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
+      ParticlesType::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
       if( includeBoundary ){
-         TNL::ParticleSystem::NeighborsLoop::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
+         ParticlesType::NeighborsLoop::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
       }
 
       if( gamma > 0.5f ){
@@ -361,8 +361,8 @@ void
 SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -400,7 +400,7 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
       {
          RealType gamma = 0.f;
          const VectorType r = view_sensorsPositions[ s ] + i * h * direction;
-         TNL::ParticleSystem::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &gamma );
+         ParticlesType::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &gamma );
 
          if( gamma > 0.5f )
             view_levels[ i ] = 1;

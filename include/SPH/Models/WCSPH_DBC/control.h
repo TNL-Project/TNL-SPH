@@ -67,6 +67,36 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
+   static void
+   configSetupModel( TNL::Config::ConfigDescription& config )
+   {
+      config.addDelimiter( "WCSPH-DBC model parameters" );
+      config.addEntry< float >( "dp", "Initial particle distance.", 0 );
+      config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
+      config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
+      config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
+      config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
+      config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
+      config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
+      config.addEntry< RealType >( "dtInit", "Initial time step.", 0 );
+      config.addEntry< RealType >( "CFL", "CFL number.", 0 );
+      config.addEntry< RealType >( "dtMin", "Minimal allowed time step.", 0 );
+      config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
+      config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
+      config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+
+      for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      }
+      for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      }
+   }
+
    void
    init( TNL::Config::ParameterContainer& parameters )
    {

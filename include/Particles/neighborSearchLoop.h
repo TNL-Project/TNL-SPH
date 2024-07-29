@@ -3,7 +3,7 @@
 namespace TNL {
 namespace ParticleSystem {
 
-struct NeighborsLoop2D
+struct NeighborsLoopCellLinkedList2D
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -35,7 +35,7 @@ struct NeighborsLoop2D
    }
 };
 
-struct NeighborsLoop2DAnotherSet
+struct NeighborsLoopCellLinedList2DAnotherSet
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -66,7 +66,7 @@ struct NeighborsLoop2DAnotherSet
    }
 };
 
-struct NeighborsLoop3D
+struct NeighborsLoopCellLinkedList3D
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -100,7 +100,7 @@ struct NeighborsLoop3D
    }
 };
 
-struct NeighborsLoop3DAnotherSet
+struct NeighborsLoopCellLinkedList3DAnotherSet
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -133,7 +133,7 @@ struct NeighborsLoop3DAnotherSet
    }
 };
 
-struct NeighborsBlockLoop3D
+struct NeighborsBlockLoopCellLinkedList3D
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -243,7 +243,7 @@ struct NeighborsBlockLoop3DAnotherSet
    }
 };
 
-struct NeighborsLoop
+struct NeighborsLoopCellLinkedList
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -257,11 +257,11 @@ struct NeighborsLoop
          static_assert( NeighborsLoopParams::PointType::getSize() == 1, "loop over neighbors is not implemented for 1 dimension" );
       }
       else if constexpr( NeighborsLoopParams::PointType::getSize() == 2 ) {
-         NeighborsLoop2D::exec( i, r_i, params, f, args... );
+         NeighborsLoopCellLinkedList2D::exec( i, r_i, params, f, args... );
       }
       else if constexpr( NeighborsLoopParams::PointType::getSize() == 3 ) {
-         NeighborsLoop3D::exec( i, r_i, params, f, args... );
-         //NeighborsBlockLoop3D::exec( i, r_i, params, f, args... );
+         NeighborsLoopCellLinkedList3D::exec( i, r_i, params, f, args... );
+         //NeighborsBlockLoopCellLinkedList3D::exec( i, r_i, params, f, args... );
       }
       else {
          static_assert( NeighborsLoopParams::PointType::getSize() <= 3, "loop over neighbors is not implemented yet for 4 or more dimensions" );
@@ -269,7 +269,7 @@ struct NeighborsLoop
    }
 };
 
-struct NeighborsLoopAnotherSet
+struct NeighborsLoopCellLinkedListAnotherSet
 {
    template< typename NeighborsLoopParams, typename Function, typename... FunctionArgs >
    __cuda_callable__
@@ -283,11 +283,11 @@ struct NeighborsLoopAnotherSet
          static_assert( NeighborsLoopParams::PointType::getSize() == 1, "loop over neighbors is not implemented for 1 dimension" );
       }
       else if constexpr( NeighborsLoopParams::PointType::getSize() == 2 ) {
-         NeighborsLoop2DAnotherSet::exec( i, r_i, params, f, args... );
+         NeighborsLoopCellLinedList2DAnotherSet::exec( i, r_i, params, f, args... );
       }
       else if constexpr( NeighborsLoopParams::PointType::getSize() == 3 ) {
-         NeighborsLoop3DAnotherSet::exec( i, r_i, params, f, args... );
-         //NeighborsBlockLoop3DAnotherSet::exec( i, r_i, params, f, args... );
+         NeighborsLoopCellLinkedList3DAnotherSet::exec( i, r_i, params, f, args... );
+         //NeighborsBlockLoopCellLinkedList3DAnotherSet::exec( i, r_i, params, f, args... );
       }
       else {
          static_assert( NeighborsLoopParams::PointType::getSize() <= 3, "loop over neighbors is not implemented yet for 4 or more dimensions" );

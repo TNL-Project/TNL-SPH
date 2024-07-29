@@ -78,7 +78,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       Matrix A_gn = 0.f;
       VectorExtendedType b_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i, ghostNode_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &A_gn, &b_gn );
+      Particles::NeighborsLoop::exec( i, ghostNode_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &A_gn, &b_gn );
 
       view_rhoGradRhoGhostNode_bound[ i ] = b_gn;
       view_correctionMatrices_bound[ i ] = A_gn;
@@ -105,7 +105,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
             Matrix A_gn = 0.f;
             VectorExtendedType b_gn = 0.f;
 
-            TNL::ParticleSystem::NeighborsLoop::exec( p, ghostNode_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &A_gn, &b_gn );
+            Particles::NeighborsLoop::exec( p, ghostNode_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &A_gn, &b_gn );
 
             view_rhoGradRhoGhostNode_bound[ p ] += b_gn;
             view_correctionMatrices_bound[ p ] += A_gn;
@@ -188,8 +188,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       Matrix A_gn = 0.f;
       VectorExtendedType b_gn = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec(
-            i, ghostNode_i, searchInOpenBoundary, BoundOpenBoundary, v_i, rho_i, p_i, &A_gn, &b_gn );
+      Particles::NeighborsLoop::exec( i, ghostNode_i, searchInOpenBoundary, BoundOpenBoundary, v_i, rho_i, p_i, &A_gn, &b_gn );
 
       view_rhoGradRhoGhostNode_bound[ i ] += b_gn;
       view_correctionMatrices_bound[ i ] += A_gn;

@@ -101,8 +101,8 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid,
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       a_i += gravity;
@@ -127,10 +127,8 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid,
             VectorType a_i = 0.f;
             RealType drho_i = 0.f;
 
-            TNL::ParticleSystem::NeighborsLoop::exec(
-                  p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
-            TNL::ParticleSystem::NeighborsLoopAnotherSet::exec(
-                  p, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+            Particles::NeighborsLoop::exec( p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
+            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
             view_Drho[ p ] += drho_i;
             view_a[ p ] += a_i;
@@ -210,7 +208,7 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec(
+      Particles::NeighborsLoopAnotherSet::exec(
             p, r_i, searchInOpenBoundary, FluidOpenBoundary, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ p ] += drho_i;

@@ -30,10 +30,10 @@ class ParticlesTraits
    using PairIndexArrayType = Containers::Array< PairIndexType, DeviceType, GlobalIndexType >;
 
    ///* ParticlesLinkedListWithList.h related */
-   //using NeighborListType = typename ParticleConfig::NeighborListType;
-   //using NeighborsCountArrayType = Containers::Array< LocalIndexType, Device, GlobalIndexType >;
-   //using NeighborsArrayType = Containers::Array< GlobalIndexType, Device, GlobalIndexType >;
-   //using GridType = Meshes::Grid< spaceDimension, RealType, DeviceType, GlobalIndexType >;
+   using NeighborListType = typename ParticleConfig::NeighborListType;
+   using NeighborsCountArrayType = Containers::Array< LocalIndexType, Device, GlobalIndexType >;
+   using NeighborsArrayType = Containers::Array< GlobalIndexType, Device, GlobalIndexType >;
+   using GridType = Meshes::Grid< spaceDimension, RealType, DeviceType, GlobalIndexType >;
 };
 
 } // namepsace ParticleSystem
