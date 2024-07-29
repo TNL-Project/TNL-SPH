@@ -296,7 +296,7 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=56.0286, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.2, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.15, help="referential density of the fluid")
     #g = argparser.add_argument_group("control parameters")
     #g.add_argument("--example-dir", type=Path, default=1000, help="referential density of the fluid")
 
