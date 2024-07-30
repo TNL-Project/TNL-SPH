@@ -17,6 +17,8 @@ ParticlesLinkedList< ParticleConfig, DeviceType >::setGridDimensions( const Inde
       firstLastCellParticle.setSize( dimensionsWithOverlap[ 0 ] * dimensionsWithOverlap[ 1 ] );
    if constexpr ( ParticleConfig::spaceDimension == 3 )
       firstLastCellParticle.setSize( dimensionsWithOverlap[ 0 ] * dimensionsWithOverlap[ 1 ] * dimensionsWithOverlap[ 2 ] );
+
+   this->resetListWithIndices();
 }
 
 template < typename ParticleConfig, typename DeviceType >
@@ -29,6 +31,8 @@ ParticlesLinkedList< ParticleConfig, DeviceType >::setOverlapWidth( const Global
       firstLastCellParticle.setSize( dimensionsWithOverlap[ 0 ] * dimensionsWithOverlap[ 1 ] );
    if constexpr ( ParticleConfig::spaceDimension == 3 )
       firstLastCellParticle.setSize( dimensionsWithOverlap[ 0 ] * dimensionsWithOverlap[ 1 ] * dimensionsWithOverlap[ 2 ] );
+
+   this->resetListWithIndices();
 }
 
 template < typename ParticleConfig, typename DeviceType >
