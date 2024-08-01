@@ -14,50 +14,40 @@
 
 #include "ParticlesTraits.h"
 #include "CellIndexer.h"
-#include "Particles.h"
+#include "ParticlesLinkedList.h"
+#include "neighborSearchLoopCLLWithList.h"
 
 namespace TNL {
 namespace ParticleSystem {
 
 template< typename ParticleSystem >
-class NeighborsLoopParams
+class NeighborsLoopParamsCLLWithList
 {
 public:
 
    using DeviceType = typename ParticleSystem::DeviceType;
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
-   using RealType = typename ParticleSystem::RealType;
    using PointType = typename ParticleSystem::PointType;
-   using IndexVectorType = typename ParticleSystem::IndexVectorType;
-   using PairIndexType = typename ParticleSystem::PairIndexType;
-   using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
+   using NeighborListView = typename ParticleSystem::NeighborListType::ViewType;
+   using IndexArrayView = typename Containers::ArrayView< GlobalIndexType, DeviceType >;
    using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
-   using CellIndexer = typename ParticleSystem::CellIndexer;
+   NeighborsLoopParamsCLLWithList( ParticlesPointerType& particles )
+   : neighborsCountLimit( particles->getNeighborsCountLimit() ),
+     neighborListStorageView( particles->getNeighborListStorage().getView() ) {}
 
-   NeighborsLoopParams( ParticlesPointerType& particles )
-   : numberOfParticles( particles->getNumberOfParticles() ),
-     gridSize( particles->getGridDimensions() ),
-     gridOrigin( particles->getGridOrigin() ),
-     searchRadius( particles->getSearchRadius() ),
-     view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
-
-   const GlobalIndexType numberOfParticles;
-   const IndexVectorType gridSize;
-   const PointType gridOrigin;
-   const RealType searchRadius;
-
-   const PairIndexArrayView view_firstLastCellParticle;
+   GlobalIndexType neighborsCountLimit;
+   IndexArrayView neighborListStorageView;
 };
 
 template < typename ParticleConfig, typename Device >
-class ParticlesLinkedListWithList : public Particles< ParticleConfig, Device > {
+class ParticlesLinkedListWithList : public ParticlesLinkedList< ParticleConfig, Device > {
 public:
 
    using DeviceType = Device;
    using Config = ParticleConfig;
    using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
-   using BaseType = Particles< ParticleConfig, Device >;
+   using BaseType = ParticlesLinkedList< ParticleConfig, Device >;
 
    /* common */
    using GlobalIndexType = typename BaseType::GlobalIndexType;
@@ -75,21 +65,51 @@ public:
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
    using PairIndexArrayType = typename ParticleTraitsType::PairIndexArrayType;
 
+   using IndexArrayType = typename ParticleTraitsType::IndexArrayType;
    using NeighborListType = typename ParticleTraitsType::NeighborListType;
 
    /* args for neighbors loop */
-   using NeighborsLoopParams = NeighborsLoopParams< ParticlesLinkedListWithList< ParticleConfig, DeviceType > >;
+   using NeighborsLoopParams = NeighborsLoopParamsCLLWithList< ParticlesLinkedListWithList< ParticleConfig, DeviceType > >;
+   using NeighborsLoop = NeighborsLoopCellLinkedListWithList;
+   using NeighborsLoopAnotherSet = NeighborsLoopCellLinkedListWithListAnitherSet;
 
    /**
     * Constructors.
     */
-   ParticlesLinkedList() : particleCellInidices( 0 ), firstLastCellParticle( 0 ) {}
+   //ParticlesLinkedList() : particleCellInidices( 0 ), firstLastCellParticle( 0 ) {}
 
    static std::string
    writeModelType()
    {
-      return "TNL::ParticleSystem::ParticlesLinkedList";
+      return "TNL::ParticleSystem::ParticlesCellLinkedListWithList";
    }
+
+   void
+   setSize( const GlobalIndexType& size );
+
+   void
+   setNeighborsCountLimit( const GlobalIndexType& limit );
+
+   const GlobalIndexType
+   getNeighborsCountLimit() const;
+
+   /**
+    * Get neighbor list.
+    */
+   const NeighborListType&
+   getNeighborList() const;
+
+   NeighborListType&
+   getNeighborList();
+
+   /**
+    * Get neighbor list.
+    */
+   const IndexArrayType&
+   getNeighborListStorage() const;
+
+   IndexArrayType&
+   getNeighborListStorage();
 
    /**
     * Run all procedures required to perform neighbor search.
@@ -97,15 +117,21 @@ public:
    void
    buildParticleList();
 
+   /**
+    * Run all procedures required to perform neighbor search.
+    */
    void
-   writeProlog( TNL::Logger& logge ) const noexcept;
+   searchForNeighbors();
+
+   //void
+   //writeProlog( TNL::Logger& logge ) const noexcept;
 
 protected:
 
    /**
     * Defines maximum number of possible neighbors.
     */
-   GlobalIndexType neighborsCountLimit;
+   GlobalIndexType neighborsCountLimit = 100;
 
    /**
     * Sparse format explicitly storing particle neighbors. Particle pairs are stored
@@ -113,10 +139,15 @@ protected:
     */
    NeighborListType neighborList;
 
+   /**
+    * Storage for the actual neighbor list.
+    */
+   IndexArrayType neighborListStorage;
+
 };
 
 } //namespace Particles
 } //namespace TNL
 
-#include "ParticlesLinkedList.hpp"
+#include "ParticlesLinkedListWithList.hpp"
 

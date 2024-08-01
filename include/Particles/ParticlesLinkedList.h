@@ -36,6 +36,8 @@ public:
 
    using CellIndexer = typename ParticleSystem::CellIndexer;
 
+   NeighborsLoopParams() = default;
+
    NeighborsLoopParams( ParticlesPointerType& particles )
    : numberOfParticles( particles->getNumberOfParticles() ),
      gridSize( particles->getGridDimensionsWithOverlap() ),
@@ -43,12 +45,12 @@ public:
      searchRadius( particles->getSearchRadius() ),
      view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
 
-   const GlobalIndexType numberOfParticles;
-   const IndexVectorType gridSize;
-   const PointType gridOrigin;
-   const RealType searchRadius;
+   GlobalIndexType numberOfParticles;
+   IndexVectorType gridSize;
+   PointType gridOrigin;
+   RealType searchRadius;
 
-   const PairIndexArrayView view_firstLastCellParticle;
+   PairIndexArrayView view_firstLastCellParticle;
 };
 
 template < typename ParticleConfig, typename Device >
@@ -129,6 +131,9 @@ public:
 
    PairIndexArrayType&
    getCellFirstLastParticleList();
+
+   NeighborsLoopParams
+   getSearchToken();
 
    /**
     * Reset the list with first and last particle in cell.

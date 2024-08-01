@@ -74,6 +74,22 @@ ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndices()
    return particleCellInidices;
 }
 
+template< typename ParticleConfig, typename Device >
+typename ParticlesLinkedList< ParticleConfig, Device >::NeighborsLoopParams
+ParticlesLinkedList< ParticleConfig, Device >::getSearchToken()
+{
+   NeighborsLoopParams searchToken;
+
+   searchToken.numberOfParticles = this->getNumberOfParticles();
+   searchToken.gridSize = this->getGridDimensionsWithOverlap();
+   searchToken.gridOrigin = this->getGridOriginWithOverlap();
+   searchToken.searchRadius = this->getSearchRadius();
+   searchToken.view_firstLastCellParticle.bind( this->getCellFirstLastParticleList().getView() );
+
+   return searchToken;
+}
+
+
 template < typename ParticleConfig, typename Device >
 template< typename UseWithDomainDecomposition, std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled >
 void
