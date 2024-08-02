@@ -70,7 +70,8 @@ public:
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
-   using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
+   //using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
+   using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
 
@@ -83,6 +84,9 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  */
 #include <Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+
+//#include <Particles/ParticlesLinkedListWithList.h>
+//using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.

@@ -131,6 +131,7 @@ def compute_and_write_simulation_params( dp,
     config_file = config_file.replace( 'placeholderSpeedOfSound', str( speed_of_sound ) )
     config_file = config_file.replace( 'placeholderDensity', str( density ))
     config_file = config_file.replace( 'placeholderTimeStep', str( timeStep ) )
+    config_file = config_file.replace( 'placeholderCFL', str( cfl ) )
     config_file = config_file.replace( 'placeholderFluidParticles', str( fluid_n ) )
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( fluid_n ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( boundary_n ) )

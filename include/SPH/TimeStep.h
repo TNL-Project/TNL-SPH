@@ -105,6 +105,9 @@ public:
       return false;
    }
 
+   template< typename FluidPointer, typename SPHState >
+   void computeTimeStep( FluidPointer& fluid, SPHState& params ) {}
+
 protected:
 
    GlobalIndexType step;
@@ -136,7 +139,7 @@ public:
    void computeTimeStep( FluidPointer& fluid, SPHState& params )
    {
       const RealType delta_r_max = 0.1f * params.h;
-      const RealType CFL = params.CFL;
+      const RealType cfl = params.cfl;
 
       const auto view_v = fluid->getFluidVariables()->v.getConstView();
       const auto view_a = fluid->getFluidVariables()->a.getConstView();
@@ -146,16 +149,16 @@ public:
          const RealType dt_vel = delta_r_max / l2Norm( view_v[ i ] );
          const RealType dt_acc = sqrt( delta_r_max / ( 0.5f * l2Norm( view_a[ i ] ) ) );
 
-         return CFL * min( dt_vel, dt_acc );
+         return cfl * min( dt_vel, dt_acc );
       };
-      RealType newTimeStep = Algorithms::reduce< DeviceType >( fluid->getFirstActiveParticle(),
-                                                               fluid->getLastActiveParticle() + 1,
+      RealType newTimeStep = Algorithms::reduce< DeviceType >( 0,
+                                                               fluid->getNumberOfParticles(),
                                                                fetch,
                                                                TNL::Min() );
 
-      std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtMin: " << params.dtMin << std::endl;
-      std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtInit: " << params.dtInit << std::endl;
-      std::cout << "[ VariableTimeStep.computeTimeStep ] newTimeStep: " << newTimeStep << std::endl;
+      //std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtMin: " << params.dtMin << std::endl;
+      //std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtInit: " << params.dtInit << std::endl;
+      //std::cout << "[ VariableTimeStep.computeTimeStep ] newTimeStep: " << newTimeStep << std::endl;
 
       this->timeStep = std::max( std::min( newTimeStep, params.dtInit ), params.dtMin );
    }

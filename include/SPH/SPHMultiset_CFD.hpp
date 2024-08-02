@@ -426,6 +426,14 @@ SPHMultiset_CFD< Model >::interact()
 }
 
 template< typename Model >
+void
+SPHMultiset_CFD< Model >::updateTimeStep()
+{
+   timeStepping.computeTimeStep( fluid, modelParams );
+   timeStepping.updateTimeStep();
+}
+
+template< typename Model >
 template< typename SPHKernelFunction, typename EOS >
 void
 SPHMultiset_CFD< Model >::measure( TNL::Logger& logger )

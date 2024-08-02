@@ -154,6 +154,12 @@ public:
    interact();
 
    /**
+    *
+    */
+   void
+   updateTimeStep();
+
+   /**
     * \brief Check if is time to perform measurement and if is time to perform
     * measurement, perform measurement.
     */

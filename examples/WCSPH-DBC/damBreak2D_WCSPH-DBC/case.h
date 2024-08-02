@@ -81,7 +81,7 @@ int main( int argc, char* argv[] )
       //sph.save( log );
 
       // update time step
-      sph.timeStepping.updateTimeStep();
+      sph.updateTimeStep();
    }
 
    sph.writeEpilog( log );
