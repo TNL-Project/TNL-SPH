@@ -3,6 +3,8 @@ using Device = TNL::Devices::Cuda;
 
 #include <TNL/Containers/StaticVector.h>
 #include <Particles/CellIndexer.h>
+#include <TNL/Algorithms/Segments/CSR.h>
+#include <TNL/Algorithms/Segments/Ellpack.h>
 
 template< typename Device >
 class ParticleSystemConfig
@@ -20,6 +22,7 @@ class ParticleSystemConfig
    using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1 > >;
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
 template< typename Device >

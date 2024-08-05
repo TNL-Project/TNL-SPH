@@ -118,8 +118,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       RealType drho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       view_a[ i ] = a_i;
@@ -144,10 +144,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
             RealType drho_i = 0.f;
             RealType gamma_i = 0.f;
 
-            TNL::ParticleSystem::NeighborsLoop::exec(
-               p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
-            TNL::ParticleSystem::NeighborsLoopAnotherSet::exec(
-               p, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+            Particles::NeighborsLoop::exec( p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
             view_Drho[ p ] += drho_i;
             view_a[ p ] += a_i;
@@ -204,7 +202,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
 
       view_rho_bound[ i ] = rho_i;
       view_gamma_bound[ i ] = gamma_i;
@@ -224,7 +222,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
             RealType rho_i = 0.f;
             RealType gamma_i = 0.f;
 
-            TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( p, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
+            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
 
             view_rho_bound[ p ] += rho_i;
             view_gamma_bound[ p ] += gamma_i;
@@ -282,7 +280,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoin
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundOpenBoundary, &rho_i, &gamma_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundOpenBoundary, &rho_i, &gamma_i );
 
       view_rho_bound[ i ] += rho0;
       view_gamma_bound[ i ] += gamma_i;
@@ -402,7 +400,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
       RealType drho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec(
+      Particles::NeighborsLoopAnotherSet::exec(
          p, r_i, searchInOpenBoundary, FluidOpenBoundary, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
 
       view_Drho[ p ] += drho_i;
@@ -489,8 +487,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches( FluidPointer
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec(
-         p, r_i, searchInOpenBoundary, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+      Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInOpenBoundary, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ p ] += drho_i;
       view_a[ p ] += a_i;
