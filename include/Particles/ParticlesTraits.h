@@ -4,6 +4,10 @@
 #include <TNL/Containers/Array.h>
 #include <TNL/Meshes/Grid.h>
 
+//NeighborListType
+#include <TNL/Algorithms/Segments/CSR.h>
+#include <TNL/Algorithms/Segments/Ellpack.h>
+
 namespace TNL {
 namespace ParticleSystem {
 
@@ -31,7 +35,8 @@ class ParticlesTraits
 
    ///* ParticlesLinkedListWithList.h related */
    using IndexArrayType = typename Containers::Array< GlobalIndexType, DeviceType, GlobalIndexType >;
-   using NeighborListType = typename ParticleConfig::NeighborListType;
+   //using NeighborListType = typename ParticleConfig::NeighborListType;
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
    using NeighborsCountArrayType = Containers::Array< LocalIndexType, Device, GlobalIndexType >;
    using NeighborsArrayType = Containers::Array< GlobalIndexType, Device, GlobalIndexType >;
 };
