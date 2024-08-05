@@ -36,9 +36,9 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
    config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
    config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-   config.addEntry< RealType >( "dtInit", "Initial time step.", 0 );
+   config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
    config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-   config.addEntry< RealType >( "dtMin", "Minimal allowed time step.", 0 );
+   config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
    config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
    config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
    config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
@@ -81,7 +81,7 @@ public:
       config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
       config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
       config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-      config.addEntry< RealType >( "dtMin", "Minimal allowed time step.", 0 );
+      config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
       config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
@@ -110,7 +110,7 @@ public:
       rho0 = parameters.getParameter< RealType >( "rho0" );
       dtInit = parameters.getParameter< RealType >( "initial-time-step" );
       cfl = parameters.getParameter< RealType >( "CFL" );
-      dtMin = parameters.getParameter< RealType >( "dtMin" );
+      dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
 
