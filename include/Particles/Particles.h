@@ -74,18 +74,27 @@ public:
    getNumberOfAllocatedParticles() const;
 
    /**
-    * Set number of particles in particle system.
+    * \brief Set number of active particles in particle system.
+    *
+    * \param new number of active particles in the system
     */
    void
    setNumberOfParticles( const GlobalIndexType& newNumberOfParticles );
 
    /**
-    * Get search radius.
+    * \brief Get value of the search (cutoff) radius.
+    *
+    * This method can be called from device kernels.
     */
    [[nodiscard]] __cuda_callable__
    const RealType
    getSearchRadius() const;
 
+   /**
+    * \brief Set value of the search (cutoff) radius.
+    *
+    * \param new value of the search radius
+    */
    void
    setSearchRadius( const RealType& searchRadius );
 
@@ -175,39 +184,63 @@ public:
    getOverlapWidth() const;
 
    /**
-    * Get particle (i.e. point) positions.
+    * \brief Return const-qualified array of spatial coordinates of particles.
     */
    [[nodiscard]] const PointArrayType&
    getPoints() const;
 
+   /**
+    * \brief Return array of spatial coordinates of particles.
+    */
    PointArrayType&
    getPoints();
 
    /**
-    * Get particle (i.e. point) positions.
+    * \brief Return const-qualified array of spatial coordinates of particles used as swap field.
+    * Points are defined in two duplicit arrays to avoid some inplace operations.
     */
    [[nodiscard]] const PointArrayType&
    getPointsSwap() const;
 
+   /**
+    * \brief Return array of spatial coordinates of particles used as swap field.
+    * Points are defined in two duplicit arrays to avoid some inplace operations.
+    */
    PointArrayType&
    getPointsSwap();
 
    /**
-    * \brief Get list with new particle ordering. This is used for reodering of
-    * fields with variables defined on particles.
+    * \brief Get list with new particle ordering. This is used for reodering of fields with variables
+    * defined on particles.
+    *
+    * \return pointer to array with permutations.
     */
    [[nodiscard]] const IndexArrayTypePointer&
    getSortPermutations() const;
 
+   /**
+    * \brief Get list with new particle ordering. This is used for reodering of fields with variables
+    * defined on particles.
+    *
+    * \return pointer to array with permutations.
+    */
    IndexArrayTypePointer&
    getSortPermutations();
 
    /**
+    * \brief Get number of particles that are set to be removed during next search procedure.
+    *
+    * \return number of particles
     */
    [[nodiscard]] const GlobalIndexType
    getNumberOfParticlesToRemove() const;
 
    /**
+    * \brief Set number of particles to remove. Since we can remove particles from any position in the set,
+    * in order to remove particles, their position should be invalidated (set as FLT_MAX) and corresponding
+    * number of particles has to be saved. Particles are erased during next search procedure.
+    *
+    * \param number of invalidated particles that should be erased during next search procedure.
     */
    void
    setNumberOfParticlesToRemove( const GlobalIndexType& removeCount );
@@ -227,6 +260,14 @@ public:
    void
    forAll( Func f ) const;
 
+   /**
+    * \brief Execute function \e f in parallel for all particles
+    *
+    * The function \e f is executed as `f(i)`, where `GlobalIndexType i` is the global index of the
+    * particle to be processed. The particle set itself is not passed to the function `f`, it is the user's
+    * responsibility to ensure proper access to the mesh if needed, e.g. by the means of lambda capture
+    * and/or using a \ref TNL::Pointers::SharedPointer "SharedPointer".
+    */
    template< typename Device2 = DeviceType,
              typename Func,
              typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
