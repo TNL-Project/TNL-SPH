@@ -33,9 +33,11 @@ public:
    using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
    NeighborsLoopParamsCLLWithList( ParticlesPointerType& particles )
-   : neighborsCountLimit( particles->getNeighborsCountLimit() ),
+   : particleSetLabel( particles->getParticleSetLabel() ),
+     neighborsCountLimit( particles->getNeighborsCountLimit() ),
      neighborListStorageView( particles->getNeighborListStorage().getView() ) {}
 
+   int particleSetLabel;
    GlobalIndexType neighborsCountLimit;
    IndexArrayView neighborListStorageView;
 };
@@ -84,6 +86,12 @@ public:
       return "TNL::ParticleSystem::ParticlesCellLinkedListWithList";
    }
 
+   static constexpr bool
+   specifySearchedSetExplicitly()
+   {
+      return true;
+   }
+
    void
    setSize( const GlobalIndexType& size );
 
@@ -92,6 +100,12 @@ public:
 
    const GlobalIndexType
    getNeighborsCountLimit() const;
+
+   void
+   setParticleSetLabel( const int& label );
+
+   const int
+   getParticleSetLabel() const;
 
    /**
     * Get neighbor list.
@@ -114,14 +128,16 @@ public:
    /**
     * Run all procedures required to perform neighbor search.
     */
+   template< typename ParticlesPointerType >
    void
-   buildParticleList();
+   buildParticleList( ParticlesPointerType& particlesToSearch );
 
    /**
     * Run all procedures required to perform neighbor search.
     */
+   template< typename ParticlesPointerType >
    void
-   searchForNeighbors();
+   searchForNeighbors( ParticlesPointerType& particlesToSearch );
 
    //void
    //writeProlog( TNL::Logger& logge ) const noexcept;
@@ -143,6 +159,15 @@ protected:
     * Storage for the actual neighbor list.
     */
    IndexArrayType neighborListStorage;
+
+   /**
+    * Particle set number.
+    *
+    * This variable is used to add neighbors from different particle sets.
+    * All particle sets have to be labeled in ascending order integers starting
+    * from zero. This allows add and iterate over neighbors from another set.
+    */
+   int particleSetLabel = 0;
 
 };
 

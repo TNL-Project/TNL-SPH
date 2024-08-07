@@ -35,6 +35,12 @@ public:
 
    static constexpr int spaceDimension = Config::spaceDimension;
 
+   static std::string
+   writeModelType()
+   {
+      return "TNL::ParticleSystem::Particles";
+   }
+
    /**
     * Constructors.
     */

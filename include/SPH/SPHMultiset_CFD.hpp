@@ -332,22 +332,32 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool performBoundarySearch )
 {
-   fluid->searchForNeighbors();
-   if( verbose == "full" )
-      logger.writeParameter( "Fluid search procedure:", "Done." );
-
-   if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
-      boundary->searchForNeighbors();
+   if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
+      fluid->searchForNeighbors();
       if( verbose == "full" )
-         logger.writeParameter( "Boundary search procedure:", "Done." );
-   }
+         logger.writeParameter( "Fluid search procedure:", "Done." );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
-      for( auto& openBoundaryPatch : openBoundaryPatches ){
-         openBoundaryPatch->searchForNeighbors();
+      if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
+         boundary->searchForNeighbors();
          if( verbose == "full" )
-            logger.writeParameter( "Open boundary patch search procedure:", "Done." );
+            logger.writeParameter( "Boundary search procedure:", "Done." );
       }
+
+      if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
+         for( auto& openBoundaryPatch : openBoundaryPatches ){
+            openBoundaryPatch->searchForNeighbors();
+            if( verbose == "full" )
+               logger.writeParameter( "Open boundary patch search procedure:", "Done." );
+         }
+      }
+   else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
+      fluid->searchForNeighbors( fluid->getParticles() );
+      if( verbose == "full" )
+         logger.writeParameter( "Fluid-fluid search procedure:", "Done." );
+      fluid->searchForNeighbors( boundary->getParticles() );
+      if( verbose == "full" )
+         logger.writeParameter( "Fluid-boundary search procedure:", "Done." );
+   }
 }
 
 template< typename Model >

@@ -94,6 +94,12 @@ public:
       return "TNL::ParticleSystem::ParticlesLinkedList";
    }
 
+   static constexpr bool
+   specifySearchedSetExplicitly()
+   {
+      return false;
+   }
+
    /**
     * \brief Set size of the particle system, i. e. number of
     * allocated particles.
