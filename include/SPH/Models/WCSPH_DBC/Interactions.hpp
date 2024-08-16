@@ -13,8 +13,10 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid,
                                                   ModelParams& modelParams )
 {
    // searchable objects
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename Particles::NeighborsLoopParams searchInBound( boundary->particles );
+   //typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
+   //typename Particles::NeighborsLoopParams searchInBound( boundary->particles );
+   auto searchInFluid = fluid->getParticles()->getSearchToken( fluid->particles );
+   auto searchInBound = fluid->getParticles()->getSearchToken( boundary->particles );
 
    // load constant variables
    const RealType searchRadius = fluid->particles->getSearchRadius();

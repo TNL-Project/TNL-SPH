@@ -41,6 +41,16 @@ class ParticlesTraits
    using NeighborsArrayType = Containers::Array< GlobalIndexType, Device, GlobalIndexType >;
 };
 
+namespace NeighborListLayouts {
+
+struct NeighborMajorLinear
+{};
+
+struct ParticleMajorLinear
+{};
+
+}
+
 } // namepsace ParticleSystem
 } // namespace TNL
 

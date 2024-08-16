@@ -318,7 +318,7 @@ protected:
 
    /**
     * Total number of allocated particles inside domain. In case we assume
-    * that number of partickes is not constant, we preallocate the fields with
+    * that number of particles is not constant, we pre-allocate the fields with
     * bigger size.
     */
    GlobalIndexType numberOfAllocatedParticles;
@@ -352,9 +352,9 @@ protected:
    PointType gridOrigin;
 
    /**
-    * Size of the domain where particles live expresed asi grid dimension
+    * Size of the domain where particles live expressed as a grid dimension
     * with cell size corresponding to search radius. The domain s assumed in form of
-    * uniform cartesian grid.
+    * uniform cartezian grid.
     */
    IndexVectorType gridDimension;
 

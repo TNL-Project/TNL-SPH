@@ -76,7 +76,7 @@ ParticlesLinkedList< ParticleConfig, Device >::getParticleCellIndices()
 
 template< typename ParticleConfig, typename Device >
 typename ParticlesLinkedList< ParticleConfig, Device >::NeighborsLoopParams
-ParticlesLinkedList< ParticleConfig, Device >::getSearchToken()
+ParticlesLinkedList< ParticleConfig, Device >::getCLLSearchToken()
 {
    NeighborsLoopParams searchToken;
 
@@ -89,6 +89,36 @@ ParticlesLinkedList< ParticleConfig, Device >::getSearchToken()
    return searchToken;
 }
 
+template< typename ParticleConfig, typename Device >
+template< typename ParticlesPointerType >
+typename ParticlesLinkedList< ParticleConfig, Device >::NeighborsLoopParams
+ParticlesLinkedList< ParticleConfig, Device >::getCLLSearchToken( ParticlesPointerType& particlesToSearch )
+{
+   NeighborsLoopParams searchToken;
+
+   searchToken.numberOfParticles = particlesToSearch->getNumberOfParticles();
+   searchToken.gridSize = particlesToSearch->getGridDimensionsWithOverlap();
+   searchToken.gridOrigin = particlesToSearch->getGridOriginWithOverlap();
+   searchToken.searchRadius = particlesToSearch->getSearchRadius();
+   searchToken.view_firstLastCellParticle.bind( particlesToSearch->getCellFirstLastParticleList().getView() );
+
+   return searchToken;
+}
+
+template< typename ParticleConfig, typename Device >
+typename ParticlesLinkedList< ParticleConfig, Device >::NeighborsLoopParams
+ParticlesLinkedList< ParticleConfig, Device >::getSearchToken()
+{
+   return this->getCLLSearchToken();
+}
+
+template< typename ParticleConfig, typename Device >
+template< typename ParticlesPointerType >
+typename ParticlesLinkedList< ParticleConfig, Device >::NeighborsLoopParams
+ParticlesLinkedList< ParticleConfig, Device >::getSearchToken( ParticlesPointerType& particlesToSearch )
+{
+   return this->getCLLSearchToken( particlesToSearch );
+}
 
 template < typename ParticleConfig, typename Device >
 template< typename UseWithDomainDecomposition, std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled >

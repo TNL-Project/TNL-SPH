@@ -14,7 +14,8 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
                                                           ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
+   //typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
+   auto searchInFluid = boundary->getParticles()->getSearchToken( fluid->getParticles() );
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();

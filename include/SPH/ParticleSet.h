@@ -198,6 +198,16 @@ class ParticleSet
       const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
       this->particles->searchForNeighbors();
       this->sortVariables( numberOfParticlesToRemove );
+
+   }
+
+   template< std::enable_if_t< ParticleSystem::specifySearchedSetExplicitly(), bool > Enabled = true >
+   void
+   makeSetSearchable()
+   {
+       const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
+       this->particles->makeSetSearchable();
+       this->sortVariables( numberOfParticlesToRemove );
    }
 
    void

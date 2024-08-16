@@ -1,6 +1,8 @@
 #include "SPHMultiset_CFD.h"
 #include "SPH/OpenBoundaryConfig.h"
 #include "SPH/TimeMeasurement.h"
+#include <iterator>
+#include <ostream>
 #include <string>
 
 #include "distributedUtils.h"
@@ -92,6 +94,8 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
                       searchRadius,
                       gridSize,
                       domainOrigin );
+   if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
+      fluid->particles->setParticleSetLabel( 0 );
 
    // init boundary
    boundary->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
@@ -99,6 +103,8 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
                          searchRadius,
                          gridSize,
                          domainOrigin );
+   if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
+      boundary->particles->setParticleSetLabel( 1 );
 
    // init open boundary patches
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -349,14 +355,53 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
             if( verbose == "full" )
                logger.writeParameter( "Open boundary patch search procedure:", "Done." );
          }
-      }
+   }
    else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
-      fluid->searchForNeighbors( fluid->getParticles() );
+
+      fluid->makeSetSearchable();
       if( verbose == "full" )
          logger.writeParameter( "Fluid-fluid search procedure:", "Done." );
-      fluid->searchForNeighbors( boundary->getParticles() );
+
+      if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
+         boundary->makeSetSearchable();
+         if( verbose == "full" )
+            logger.writeParameter( "Boundary-boundary search procedure:", "Done." );
+      }
+
+               // D:
+               //const int numberOfPtcs = fluid->getNumberOfParticles();
+               //const int offsetParticle = 0;
+               //for( int j = 0; j < 50; j++ ){
+               //   std::cout << fluid->particles->getNeighborListStorage().getElement( j * numberOfPtcs + offsetParticle ) << " ";
+
+               //}
+               //std::cout << std::endl;
+
+      fluid->particles->addToParticleList( fluid->getParticles() );
       if( verbose == "full" )
          logger.writeParameter( "Fluid-boundary search procedure:", "Done." );
+
+      fluid->particles->addToParticleList( boundary->getParticles() );
+      if( verbose == "full" )
+         logger.writeParameter( "Fluid-boundary search procedure:", "Done." );
+
+      boundary->particles->addToParticleList( fluid->getParticles() );
+      if( verbose == "full" )
+         logger.writeParameter( "Boundary-fluid search procedure:", "Done." );
+
+               // D:
+               //for( int j = 0; j < 50; j++ ){
+               //   std::cout << fluid->particles->getNeighborListStorage().getElement( j * numberOfPtcs + offsetParticle ) << " ";
+               //}
+               //std::cout << std::endl;
+
+               // D:
+               //const int numberOfPtcsBoundary = boundary->getNumberOfParticles();
+               //const int offsetParticleBoundary = 0;
+               //for( int j = 0; j < 50; j++ ){
+               //   std::cout << boundary->particles->getNeighborListStorage().getElement( j * numberOfPtcsBoundary + offsetParticleBoundary ) << " ";
+               //}
+               //std::cout << std::endl;
    }
 }
 

@@ -32,13 +32,14 @@ public:
    using IndexVectorType = typename ParticleSystem::IndexVectorType;
    using PairIndexType = typename ParticleSystem::PairIndexType;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
-   using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
+   //using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
    using CellIndexer = typename ParticleSystem::CellIndexer;
 
    NeighborsLoopParams() = default;
 
-   NeighborsLoopParams( ParticlesPointerType& particles )
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams( ParticlesPointerType particles )
    : numberOfParticles( particles->getNumberOfParticles() ),
      gridSize( particles->getGridDimensionsWithOverlap() ),
      gridOrigin( particles->getGridOriginWithOverlap() ),
@@ -139,7 +140,18 @@ public:
    getCellFirstLastParticleList();
 
    NeighborsLoopParams
+   getCLLSearchToken();
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams
+   getCLLSearchToken( ParticlesPointerType& particlesToSearch );
+
+   NeighborsLoopParams
    getSearchToken();
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams
+   getSearchToken( ParticlesPointerType& particlesPointerType );
 
    /**
     * Reset the list with first and last particle in cell.

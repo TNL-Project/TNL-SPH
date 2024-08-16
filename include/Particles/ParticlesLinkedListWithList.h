@@ -32,14 +32,19 @@ public:
    using IndexArrayView = typename Containers::ArrayView< GlobalIndexType, DeviceType >;
    using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
+   NeighborsLoopParamsCLLWithList() = default;
+
    NeighborsLoopParamsCLLWithList( ParticlesPointerType& particles )
    : particleSetLabel( particles->getParticleSetLabel() ),
+     numberOfParticles( particles->getNumberOfParticles() ),
      neighborsCountLimit( particles->getNeighborsCountLimit() ),
      neighborListStorageView( particles->getNeighborListStorage().getView() ) {}
 
    int particleSetLabel;
    GlobalIndexType neighborsCountLimit;
    IndexArrayView neighborListStorageView;
+
+   GlobalIndexType numberOfParticles;
 };
 
 template < typename ParticleConfig, typename Device >
@@ -74,6 +79,7 @@ public:
    using NeighborsLoopParams = NeighborsLoopParamsCLLWithList< ParticlesLinkedListWithList< ParticleConfig, DeviceType > >;
    using NeighborsLoop = NeighborsLoopCellLinkedListWithList;
    using NeighborsLoopAnotherSet = NeighborsLoopCellLinkedListWithListAnitherSet;
+   using NeighborListLayout = NeighborListLayouts::NeighborMajorLinear;
 
    /**
     * Constructors.
@@ -125,22 +131,84 @@ public:
    IndexArrayType&
    getNeighborListStorage();
 
+   NeighborsLoopParams
+   getCLLwLSearchToken();
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams
+   getCLLwLSearchToken( ParticlesPointerType& particlesToSearch );
+
+   NeighborsLoopParams
+   getSearchToken();
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams
+   getSearchToken( ParticlesPointerType& particlesToSearch );
+
+   /**
+    * \brief Reset list with neighbor.
+    */
+   void
+   resetNeighborList();
+
+   /**
+    * \bief Run all the procedures required before collecting the neighbors
+    */
+   void
+   makeSetSearchable();
+
    /**
     * Run all procedures required to perform neighbor search.
+    *
+    * Using Neihgbor Major Linear Layout
     */
-   template< typename ParticlesPointerType >
+   template< typename Layout = NeighborListLayout,
+             std::enable_if_t< std::is_same_v< Layout, NeighborListLayouts::NeighborMajorLinear >, bool > Enabled = true >
+   void
+   buildParticleList();
+
+   template< typename ParticlesPointerType,
+             typename Layout = NeighborListLayout,
+             std::enable_if_t< std::is_same_v< Layout, NeighborListLayouts::NeighborMajorLinear >, bool > Enabled = true >
    void
    buildParticleList( ParticlesPointerType& particlesToSearch );
 
+   template< typename ParticlesPointerType,
+             typename Layout = NeighborListLayout,
+             std::enable_if_t< std::is_same_v< Layout, NeighborListLayouts::NeighborMajorLinear >, bool > Enabled = true >
+   void
+   addToParticleList( ParticlesPointerType& particlesToSearch );
+
+   /**
+    * Run all procedures required to perform neighbor search.
+    *
+    * Using Particles Major Linear Layout
+    */
+   template< typename Layout = NeighborListLayout,
+             std::enable_if_t< std::is_same_v< Layout, NeighborListLayouts::ParticleMajorLinear >, bool > Enabled = true >
+   void
+   buildParticleList();
+
+   template< typename ParticlesPointerType,
+             typename Layout = NeighborListLayout,
+             std::enable_if_t< std::is_same_v< Layout, NeighborListLayouts::ParticleMajorLinear >, bool > Enabled = true >
+   void
+   buildParticleList( ParticlesPointerType& particlesToSearch );
+
+   template< typename ParticlesPointerType,
+             typename Layout = NeighborListLayout,
+             std::enable_if_t< std::is_same_v< Layout, NeighborListLayouts::ParticleMajorLinear >, bool > Enabled = true >
+   void
+   addToParticleList( ParticlesPointerType& particlesToSearch );
+
    /**
     * Run all procedures required to perform neighbor search.
     */
-   template< typename ParticlesPointerType >
    void
-   searchForNeighbors( ParticlesPointerType& particlesToSearch );
+   searchForNeighbors();
 
-   //void
-   //writeProlog( TNL::Logger& logge ) const noexcept;
+   void
+   writeProlog( TNL::Logger& logger ) const noexcept;
 
 protected:
 
