@@ -201,13 +201,19 @@ class ParticleSet
 
    }
 
-   template< std::enable_if_t< ParticleSystem::specifySearchedSetExplicitly(), bool > Enabled = true >
    void
    makeSetSearchable()
    {
-       const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
-       this->particles->makeSetSearchable();
-       this->sortVariables( numberOfParticlesToRemove );
+       if constexpr( ParticleSystem::specifySearchedSetExplicitly() == true ){
+         const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
+         this->particles->makeSetSearchable();
+         this->sortVariables( numberOfParticlesToRemove );
+       }
+       else if constexpr( ParticleSystem::specifySearchedSetExplicitly() == false ){
+         const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
+         this->particles->searchForNeighbors();
+         this->sortVariables( numberOfParticlesToRemove );
+      }
    }
 
    void
