@@ -33,8 +33,15 @@ public:
    using GridType = Meshes::Grid< SPHConfig::spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using CoordinatesType = typename GridType::CoordinatesType;
 
-   //temp
-   using ParticlesType = typename SPHSimulation::ParticlesType;
+   /**
+    * \brief Particle type is required to search through particle seats we want to
+    * monitor with measuretool. Measuretool works with CLL search, so in case we use
+    * CLLwL, for measuretool we need to load the base class.
+    */
+   //using ParticlesType = typename SPHSimulation::ParticlesType;
+   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+                                             typename SPHSimulation::ParticlesType::BaseType,
+                                             typename SPHSimulation::ParticlesType >;
 
    InterpolateToGrid() : variables() {}
 
@@ -94,8 +101,15 @@ class SensorInterpolation
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
 
-   //temp
-   using ParticlesType = typename SPHSimulation::ParticlesType;
+   /**
+    * \brief Particle type is required to search through particle seats we want to
+    * monitor with measuretool. Measuretool works with CLL search, so in case we use
+    * CLLwL, for measuretool we need to load the base class.
+    */
+   //using ParticlesType = typename SPHSimulation::ParticlesType;
+   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+                                             typename SPHSimulation::ParticlesType::BaseType,
+                                             typename SPHSimulation::ParticlesType >;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
@@ -156,8 +170,15 @@ class SensorWaterLevel
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
 
-   //temp
-   using ParticlesType = typename SPHSimulation::ParticlesType;
+   /**
+    * \brief Particle type is required to search through particle seats we want to
+    * monitor with measuretool. Measuretool works with CLL search, so in case we use
+    * CLLwL, for measuretool we need to load the base class.
+    */
+   //using ParticlesType = typename SPHSimulation::ParticlesType;
+   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+                                             typename SPHSimulation::ParticlesType::BaseType,
+                                             typename SPHSimulation::ParticlesType >;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
