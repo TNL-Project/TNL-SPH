@@ -2,16 +2,13 @@
 add_executable(damBreak2D_RSPH_cuda damBreak2D_RSPH.cu)
 
 # add TNL to all targets
-target_link_libraries(damBreak2D_RSPH_cuda PUBLIC TNL::TNL_CUDA)
+target_link_libraries(damBreak2D_RSPH_cuda PUBLIC TNL::TNL)
 
 set(TARGETS
         damBreak2D_RSPH_cuda
 )
 
 foreach(target IN ITEMS ${TARGETS})
-    # add special flags used in lbm3d
-    target_compile_definitions(${target} PUBLIC "-DHAVE_CUDA")
-
     # enable OpenMP for the target
    find_package(OpenMP COMPONENTS CXX)
    if(OPENMP_FOUND)
