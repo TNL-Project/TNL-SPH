@@ -215,7 +215,7 @@ protected:
    /**
     * Defines maximum number of possible neighbors.
     */
-   GlobalIndexType neighborsCountLimit = 100;
+   GlobalIndexType neighborsCountLimit = 256;
 
    /**
     * Sparse format explicitly storing particle neighbors. Particle pairs are stored
