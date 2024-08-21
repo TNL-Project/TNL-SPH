@@ -43,6 +43,7 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
    config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
    config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+   config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e3 );
 
    for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -86,6 +87,7 @@ public:
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e3 );
 
       for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -113,6 +115,7 @@ public:
       dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
+      mdbcExtrapolationDetTreshold = parameters.getParameter< RealType >( "mdbcExtrapolationDetTreshold" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * h / speedOfSound;
@@ -150,6 +153,8 @@ public:
 
    //Define type of boundary conditions.
    using BCType = typename SPHDefs::BCType;
+   //mdbcExtrapolationDetTreshold - trashold to limit 0th and 1st order for MDBC [-]:w
+   RealType mdbcExtrapolationDetTreshold = 0.f;
 
    //Type of integration scheme
    using IntegrationScheme = typename SPHDefs::IntegrationScheme;

@@ -262,6 +262,7 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
                                                           ModelParams& modelParams )
 {
    const RealType rho0 = modelParams.rho0;
+   const RealType mdbcExtrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;
 
    auto view_rho_bound = boundary->variables->rho.getView();
    const auto view_points_bound = boundary->particles->getPoints().getConstView();
@@ -277,10 +278,10 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
       const VectorExtendedType rhoGradRho_gn = view_rhoGradRhoGhostNode_bound[ i ];
       RealType rho_bound = 0.f;
 
-      if( Matrices::determinant( cMatrix_gn ) > 0.001 ) {
+      if( Matrices::determinant( cMatrix_gn ) > mdbcExtrapolationDetTreshold ) {
          VectorExtendedType cRhoGradRho = Matrices::solve( cMatrix_gn, rhoGradRho_gn );
          VectorType r_ign = ghostNode_i - r_i;
-         rho_bound = cRhoGradRho[ 0 ] + cRhoGradRho[ 1 ] * r_ign[ 0 ] + cRhoGradRho[ 2 ] * r_ign[ 1 ];
+         rho_bound = ghostNodeDetail::interpolateGhostNode( cRhoGradRho, r_ign );
       }
       else if( cMatrix_gn( 0, 0 ) > 0.f ) {
          rho_bound = rhoGradRho_gn[ 0 ] / cMatrix_gn( 0, 0 );

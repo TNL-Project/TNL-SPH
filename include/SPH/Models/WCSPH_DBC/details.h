@@ -84,6 +84,44 @@ getVariableValueAndGradient3D( RealType W, VectorType gradW, VariableType f, Rea
    return f_gradf;
 }
 
+//template< typename VectorExtendedTyep, typename VectorType >
+//__cuda_callable__
+//static typename VectorType::RealType
+//interpolateGhostNode2D( VectorExtendedType& variableValAndGrad, VectorType& dist )
+//{
+//   const RealType valInterpolated = variableValAndGrad[ 0 ] + \
+//                                    variableValAndGrad[ 1 ] * dist[ 0 ] + \
+//                                    variableValAndGrad[ 2 ] * dist[ 1 ];
+//   return valInterpolated;
+//}
+
+namespace ghostNodeDetail {
+
+template< typename VectorExtendedType, typename VectorType >
+__cuda_callable__
+static typename VectorType::RealType
+interpolateGhostNode( VectorExtendedType& variableValAndGrad, VectorType& dist )
+{
+   using RealType = typename VectorType::RealType;
+
+   if constexpr( VectorType::getSize() == 2 ){
+      const RealType valInterpolated = variableValAndGrad[ 0 ] + \
+                                       variableValAndGrad[ 1 ] * dist[ 0 ] + \
+                                       variableValAndGrad[ 2 ] * dist[ 1 ];
+      return valInterpolated;
+   }
+
+   if constexpr( VectorType::getSize() == 3 ){
+      const RealType valInterpolated = variableValAndGrad[ 0 ] + \
+                                       variableValAndGrad[ 1 ] * dist[ 0 ] + \
+                                       variableValAndGrad[ 2 ] * dist[ 1 ] + \
+                                       variableValAndGrad[ 3 ] * dist[ 2 ];
+      return valInterpolated;
+   }
+}
+
+} // ghostNodeDetails
+
 } // SPH
 } // TNL
 

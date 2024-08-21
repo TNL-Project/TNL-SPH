@@ -63,6 +63,11 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
             *A_gn += matrixCorrection2D< Matrix >( W, gradW, r_ij, V );
             *b_gn += getVariableValueAndGradient2D< VectorExtendedType >( W, gradW, rho_j, V );
          }
+         if( SPHConfig::spaceDimension == 3 )
+         {
+            *A_gn += matrixCorrection3D< Matrix >( W, gradW, r_ij, V );
+            *b_gn += getVariableValueAndGradient3D< VectorExtendedType >( W, gradW, rho_j, V );
+         }
       }
    };
 

@@ -49,7 +49,19 @@ def process_dam_break_boundary_particles( setup ):
     box_p = np.zeros( box_n )
     box_ptype = np.zeros( box_n )
 
-    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype )
+    # generate ghost nodes from normals
+    reader_normals = vtk.vtkPolyDataReader()
+    reader_normals.SetFileName( f'./sources/genCaseGeometries/dambreak_normals_dp{setup[ "dp" ]}.vtk' )
+    reader_normals.ReadAllScalarsOn()
+    reader_normals.ReadAllVectorsOn()
+    reader_normals.Update()
+
+    polydata_normals = reader_normals.GetOutput()
+
+    box_normals = np.array( dsa.WrapDataObject( polydata_normals ).PointData[ 'Normal' ], dtype=float )
+    box_ghostNodes = box_r + 2 * box_normals;
+
+    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, ghostNodes=box_ghostNodes )
     saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_boundary.vtk" )
 
     setup[ "boundary_n" ] = box_n
@@ -141,7 +153,7 @@ if __name__ == "__main__":
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp * args.dp ),
         "smoothing_length" : args.h_coef * args.dp,
-        "search_radius" :  2 * args.h_coef * args.dp,
+        "search_radius" : 2 * args.h_coef * args.dp,
         "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound
     }
 
