@@ -118,6 +118,7 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderSpeedOfSound', str( setup[ "speed_of_sound" ] ) )
     config_file = config_file.replace( 'placeholderDensity', str( setup[ "density" ] ) )
     config_file = config_file.replace( 'placeholderTimeStep', str( round( setup[ "time_step" ], 8 ) ) )
+    config_file = config_file.replace( 'placeholderCFL', str( setup[ "cfl" ] ) )
     config_file = config_file.replace( 'placeholderFluidParticles', str( setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.15, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.2, help="referential density of the fluid")
     g = argparser.add_argument_group("control initialization")
     g.add_argument( '--generate-geometry', default=True, action=argparse.BooleanOptionalAction, help="generate new geometry with gencase" )
 

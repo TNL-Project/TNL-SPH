@@ -57,17 +57,8 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
          Matrix A_local = 0.f;
          VectorExtendedType b_local = 0.f;
 
-         //TODO: We could bamybe handle this automatically by overloading the matrixCorrection and gVVG function
-         if( SPHConfig::spaceDimension == 2 )
-         {
-            *A_gn += matrixCorrection2D< Matrix >( W, gradW, r_ij, V );
-            *b_gn += getVariableValueAndGradient2D< VectorExtendedType >( W, gradW, rho_j, V );
-         }
-         if( SPHConfig::spaceDimension == 3 )
-         {
-            *A_gn += matrixCorrection3D< Matrix >( W, gradW, r_ij, V );
-            *b_gn += getVariableValueAndGradient3D< VectorExtendedType >( W, gradW, rho_j, V );
-         }
+         *A_gn += ghostNodeDetail::getCorrectionMatrix( W, gradW, r_ij, V );
+         *b_gn += ghostNodeDetail::getVariableValueAndGradient( W, gradW, rho_j, V );
       }
    };
 

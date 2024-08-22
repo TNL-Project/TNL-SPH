@@ -280,7 +280,8 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
 
       if( Matrices::determinant( cMatrix_gn ) > mdbcExtrapolationDetTreshold ) {
          VectorExtendedType cRhoGradRho = Matrices::solve( cMatrix_gn, rhoGradRho_gn );
-         VectorType r_ign = ghostNode_i - r_i;
+         //VectorType r_ign = ghostNode_i - r_i;
+         VectorType r_ign = r_i - ghostNode_i;
          rho_bound = ghostNodeDetail::interpolateGhostNode( cRhoGradRho, r_ign );
       }
       else if( cMatrix_gn( 0, 0 ) > 0.f ) {

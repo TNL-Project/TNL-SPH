@@ -130,7 +130,7 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Resolution parameters", "" );
    logger.writeParameter( "Initial particle distance (dp):", modelParams.dp, 1 );
    logger.writeParameter( "Smoothing length (h):", modelParams.h, 1 );
-   logger.writeParameter( "Spatial resolution (dp/h):", modelParams.dp / modelParams.h, 1 );
+   logger.writeParameter( "Spatial resolution (h/dp):", modelParams.h / modelParams.dp, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Model parameters", "" );
    if constexpr ( std::is_same_v< typename ModelParams::RiemannSolver, RiemannSolvers::RoeLinearized< typename ModelParams::SPHConfig> > ){

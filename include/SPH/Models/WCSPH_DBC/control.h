@@ -43,7 +43,7 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
    config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
    config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-   config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e3 );
+   config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
 
    for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -87,7 +87,7 @@ public:
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-      config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e3 );
+      config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
 
       for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -181,7 +181,7 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Resolution parameters", "" );
    logger.writeParameter( "Initial particle distance (dp):", modelParams.dp, 1 );
    logger.writeParameter( "Smoothing length (h):", modelParams.h, 1 );
-   logger.writeParameter( "Spatial resolution (dp/h):", modelParams.dp / modelParams.h, 1 );
+   logger.writeParameter( "Spatial resolution (h/dp):", modelParams.h / modelParams.dp, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Model parameters", "" );
    if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig> > ){
@@ -209,12 +209,13 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
-   std::string boundaryConditionsTypes;
-   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::DBC > )
-      boundaryConditionsTypes = "TNL::SPH::WCSPH_DBC::DBC";
-   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::MDBC > )
-      boundaryConditionsTypes = "TNL::SPH::WCSPH_DBC::MDBC";
-   logger.writeParameter( "Boundary condition type", boundaryConditionsTypes );
+   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::DBC > ){
+      logger.writeParameter( "Boundary condition type", "TNL::SPH::WCSPH_DBC::DBC" );
+   }
+   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::MDBC > ){
+      logger.writeParameter( "Boundary condition type", "TNL::SPH::WCSPH_DBC::MDBC" );
+      logger.writeParameter( "MDBC determinant threshold (mdbcExtrapolationDetTreshold): ", modelParams.mdbcExtrapolationDetTreshold );
+   }
    logger.writeParameter( "Time integration", "" );
    if constexpr ( std::is_same_v< typename ModelParams::IntegrationScheme, IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig> > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_DBC::VerletScheme", 1 );
