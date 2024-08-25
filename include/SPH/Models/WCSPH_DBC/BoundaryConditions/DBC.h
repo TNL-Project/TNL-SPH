@@ -165,6 +165,20 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
 
 }
 
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer,
+          typename BoundaryPointer,
+          typename BCType,
+          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
+
+void
+WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
+                                                                  BoundaryPointer& boundary,
+                                                                  ModelParams& modelParams )
+{
+
+}
+
 } // SPH
 } // TNL
 

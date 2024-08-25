@@ -30,7 +30,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    const auto view_points = fluid->particles->getPoints().getView();
    const auto view_rho = fluid->variables->rho.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
    auto view_rho_bound = boundary->variables->rho.getView();
    const auto view_v_bound = boundary->variables->v.getView();
    const auto view_ghostNode_bound = boundary->variables->ghostNodes.getView();
@@ -41,7 +40,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
          VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
    {
       const VectorType r_j = view_points[ j ];
-      const VectorType r_ij = r_j - ghostNode_i; //FLUID_POS - GHOSTNODE_POS
+      const VectorType r_ij = ghostNode_i - r_j; // GHOSTNODE_POS - FLUID_POS, originally, I had r_ij = r_j - ghostNode_i
       const RealType drs = l2Norm( r_ij );
       if( drs <= searchRadius )
       {
@@ -54,9 +53,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 
          const RealType V = m / rho_j;
 
-         Matrix A_local = 0.f;
-         VectorExtendedType b_local = 0.f;
-
          *A_gn += ghostNodeDetail::getCorrectionMatrix( W, gradW, r_ij, V );
          *b_gn += ghostNodeDetail::getVariableValueAndGradient( W, gradW, rho_j, V );
       }
@@ -64,7 +60,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
-      const VectorType r_i = view_points_bound[ i ];
       const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
@@ -91,7 +86,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
          auto periodicParticleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
          {
             const GlobalIndexType p = zoneParticleIndices_view[ i ];
-            const VectorType r_i = view_points_bound[ p ] + shift;
             const VectorType v_i = view_v_bound[ p ];
             const RealType rho_i = view_rho_bound[ p ];
             const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
@@ -147,7 +141,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
          VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
    {
       const VectorType r_j = view_points_openBound[ j ];
-      const VectorType r_ij = r_j - ghostNode_i; //FLUID_POS - GHOSTNODE_POS
+      const VectorType r_ij = ghostNode_i - r_j; // GHOSTNODE_POS - FLUID_POS, originally, I had r_ij = r_j - ghostNode_i
       const RealType drs = l2Norm( r_ij );
       if( drs <= searchRadius )
       {
@@ -160,21 +154,13 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
 
          const RealType V = m / rho_j;
 
-         Matrix A_local = 0.f;
-         VectorExtendedType b_local = 0.f;
-
-         //TODO: We could bamybe handle this automatically by overloading the matrixCorrection and gVVG function
-         if( SPHConfig::spaceDimension == 2 )
-         {
-            *A_gn += matrixCorrection2D< Matrix >( W, gradW, r_ij, V );
-            *b_gn += getVariableValueAndGradient2D< VectorExtendedType >( W, gradW, rho_j, V );
-         }
+         *A_gn += ghostNodeDetail::getCorrectionMatrix( W, gradW, r_ij, V );
+         *b_gn += ghostNodeDetail::getVariableValueAndGradient( W, gradW, rho_j, V );
       }
    };
 
    auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {
-      const VectorType r_i = view_points_bound[ i ];
       const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
@@ -189,8 +175,56 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       view_rhoGradRhoGhostNode_bound[ i ] += b_gn;
       view_correctionMatrices_bound[ i ] += A_gn;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary ); //FIXME: This should use zone with boundary particles
+}
+
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer,
+          typename BoundaryPointer,
+          typename BCType,
+          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
+
+void
+WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
+                                                                  BoundaryPointer& boundary,
+                                                                  ModelParams& modelParams )
+{
+   const RealType rho0 = modelParams.rho0;
+   const RealType mdbcExtrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;
+
+   auto view_rho_bound = boundary->variables->rho.getView();
+   const auto view_points_bound = boundary->particles->getPoints().getConstView();
+   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getConstView();
+   const auto view_rhoGradRhoGhostNode_bound = boundary->variables->rhoGradRho_gn.getConstView();
+   const auto view_correctionMatrices_bound = boundary->variables->cMatrix_gn.getConstView();
+
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   {
+      const VectorType r_i = view_points_bound[ i ];
+      const VectorType ghostNode_i = view_ghostNode_bound[ i ];
+      const Matrix cMatrix_gn = view_correctionMatrices_bound[ i ];
+      const VectorExtendedType rhoGradRho_gn = view_rhoGradRhoGhostNode_bound[ i ];
+      RealType rho_bound = 0.f;
+
+      if( std::fabs( Matrices::determinant( cMatrix_gn ) ) > mdbcExtrapolationDetTreshold ) {
+         VectorExtendedType cRhoGradRho = Matrices::solve( cMatrix_gn, rhoGradRho_gn );
+         // paper states r_ing = r_i - ghostNode_i, but here, I follow DualSPHysics version with additional minus in gradients
+         VectorType r_ign = ( -1.f ) * ( r_i - ghostNode_i );
+         rho_bound = ghostNodeDetail::interpolateGhostNode( cRhoGradRho, r_ign );
+      }
+      else if( cMatrix_gn( 0, 0 ) > 0.f ) {
+         rho_bound = rhoGradRho_gn[ 0 ] / cMatrix_gn( 0, 0 );
+      }
+      else {
+         rho_bound = rho0;
+      }
+
+      if( rho_bound < rho0 )
+         rho_bound = rho0;
+
+      view_rho_bound[ i ] = rho_bound;
+   };
+   boundary->particles->forAll( particleLoop ); //TODO: forloop?
 }
 
 } // SPH

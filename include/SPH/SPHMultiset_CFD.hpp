@@ -463,20 +463,25 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::interact()
 {
-   //Interacteraction between fluid and fluid and fluid and boundary
-   model.interaction( fluid, boundary, modelParams );
+   // update solid boundary conditions
    model.updateSolidBoundary( fluid, boundary, modelParams );
+   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+      for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
+         //FIXME: At this point, updateSolidBoundaryOpenBoundary doesn't use ghost zones.
+         //       Here, we should update boundary ghost zones similarly to fluid procedure.
+         model.updateSolidBoundaryOpenBoundary( boundary, openBoundaryPatches[ i ], modelParams );
+      }
+   }
+   model.finalizeBoundaryInteraction( fluid, boundary, modelParams );
 
-   //Interact between fluid and open boundary patches
+   // updat fluid
+   model.interaction( fluid, boundary, modelParams );
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
          openBoundaryPatches[ i ]->zone.updateParticlesInZone( fluid->particles );
          model.interactionWithOpenBoundary( fluid, openBoundaryPatches[ i ], modelParams );
-         model.updateSolidBoundaryOpenBoundary( boundary, openBoundaryPatches[ i ], modelParams );
       }
    }
-
-   //Finalize the interaction
    model.finalizeInteraction( fluid, boundary, modelParams );
 }
 

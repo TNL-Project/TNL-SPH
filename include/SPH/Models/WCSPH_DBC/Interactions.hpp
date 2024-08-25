@@ -106,6 +106,13 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid,
       Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i );
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
 
+      //const float eps = 0.001;
+      //if( ( r_i[ 0 ] > (3.2 - eps) ) && ( r_i[ 0 ] < (3.2 + eps) ) && ( r_i[ 1 ] > (0.02 - eps) ) && ( r_i[ 1 ] < (0.02 + eps) ) && ( r_i[ 2 ] > (0.02 - eps) ) && ( r_i[ 2 ] < (0.02 + eps) ) )
+      //{
+      //   printf("< : acep1.x :%f, acep1.x: %f, acep1.z: %f, apr: %f, dft %f >\n", a_i[ 0 ], a_i[ 1 ], a_i[ 2 ], drho_i, 0.f );
+      //   printf("< : v.x :%f, v.y: %f, v.z: %f, rho: %f >\n", v_i[ 0 ], v_i[ 1 ], v_i[ 2 ], rho_i );
+      //}
+
       view_Drho[ i ] = drho_i;
       a_i += gravity;
       view_a[ i ] = a_i;
@@ -246,9 +253,7 @@ void
 WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
                                                           BoundaryPointer& boundary,
                                                           ModelParams& modelParams )
-{
-
-}
+{}
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer,
@@ -260,44 +265,7 @@ void
 WCSPH_DBC< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
                                                           BoundaryPointer& boundary,
                                                           ModelParams& modelParams )
-{
-   const RealType rho0 = modelParams.rho0;
-   const RealType mdbcExtrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;
-
-   auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_points_bound = boundary->particles->getPoints().getConstView();
-   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getConstView();
-   const auto view_rhoGradRhoGhostNode_bound = boundary->variables->rhoGradRho_gn.getConstView();
-   const auto view_correctionMatrices_bound = boundary->variables->cMatrix_gn.getConstView();
-
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
-   {
-      const VectorType r_i = view_points_bound[ i ];
-      const VectorType ghostNode_i = view_ghostNode_bound[ i ];
-      const Matrix cMatrix_gn = view_correctionMatrices_bound[ i ];
-      const VectorExtendedType rhoGradRho_gn = view_rhoGradRhoGhostNode_bound[ i ];
-      RealType rho_bound = 0.f;
-
-      if( Matrices::determinant( cMatrix_gn ) > mdbcExtrapolationDetTreshold ) {
-         VectorExtendedType cRhoGradRho = Matrices::solve( cMatrix_gn, rhoGradRho_gn );
-         //VectorType r_ign = ghostNode_i - r_i;
-         VectorType r_ign = r_i - ghostNode_i;
-         rho_bound = ghostNodeDetail::interpolateGhostNode( cRhoGradRho, r_ign );
-      }
-      else if( cMatrix_gn( 0, 0 ) > 0.f ) {
-         rho_bound = rhoGradRho_gn[ 0 ] / cMatrix_gn( 0, 0 );
-      }
-      else {
-         rho_bound = rho0;
-      }
-
-      if( rho_bound < rho0 )
-         rho_bound = rho0;
-
-      view_rho_bound[ i ] = rho_bound;
-   };
-   boundary->particles->forAll( particleLoop ); //TODO: forloop?
-}
+{}
 
 } // SPH
 } // TNL

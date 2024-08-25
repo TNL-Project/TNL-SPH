@@ -224,6 +224,24 @@ public:
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
+   template< typename FluidPointer, typename BoundaryPointer >
+   void
+   initializeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   void
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
+
+   template< typename FluidPointer,
+             typename BoundaryPointer,
+             typename BCType = typename ModelConfig::BCType,
+             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   void
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
+
 };
 
 } // SPH
