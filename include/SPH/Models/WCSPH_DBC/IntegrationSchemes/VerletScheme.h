@@ -42,6 +42,11 @@ class IntegrationSchemeVariables
       v_old.setSize( size );
       rho_old_swap.setSize( size );
       v_old_swap.setSize( size );
+
+      rho_old = 1000.f;
+      v_old = 0.f;
+      rho_old_swap = 1000.f;
+      v_old_swap = 0.f;
    }
 
    void
@@ -224,18 +229,20 @@ public:
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
    void
-   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
+   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping, bool integrateBoundary )
    {
       if( timeStepping.getStep() % 20 == 0 ) {
          integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
-         integrateEulerBoundary( timeStepping.getTimeStep(), boundary );
+         if( integrateBoundary )
+            integrateEulerBoundary( timeStepping.getTimeStep(), boundary );
       }
       else {
          integrateVerlet( timeStepping.getTimeStep(), fluid );
-         integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
+         if( integrateBoundary )
+            integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
       }
 
-      correctBoundaryDensity( boundary );
+      //correctBoundaryDensity( boundary );
    }
 
 };

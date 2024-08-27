@@ -5,16 +5,40 @@ namespace SPH {
 namespace WCSPH_BCTypes {
 
 struct DBC
-{};
+{
+   static constexpr bool
+   integrateInTime()
+   {
+      return true;
+   }
+};
 
 struct MDBC
-{};
+{
+   static constexpr bool
+   integrateInTime()
+   {
+      return false;
+   }
+};
 
 struct MDBCVelocity //not implement yet
-{};
+{
+   static constexpr bool
+   integrateInTime()
+   {
+      return false;
+   }
+};
 
 struct GWBC //not implemented
-{};
+{
+   static constexpr bool
+   integrateInTime()
+   {
+      return false;
+   }
+};
 
 struct OpenBoundary
 {};
