@@ -1,7 +1,7 @@
+#pragma once
 #include <TNL/Algorithms/parallelFor.h>
 
 #include "../SPHTraits.h"
-#include "../../Particles/neighborSearchLoop.h"
 
 namespace TNL {
 namespace SPH {

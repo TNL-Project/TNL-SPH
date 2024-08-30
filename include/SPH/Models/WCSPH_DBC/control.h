@@ -156,6 +156,16 @@ public:
    //mdbcExtrapolationDetTreshold - trashold to limit 0th and 1st order for MDBC [-]:w
    RealType mdbcExtrapolationDetTreshold = 0.f;
 
+   // Define elastic bounce boundary correction
+   // enableElasticBounce - enable elastic bounce boundary correction [bool]
+   bool enableElasticBounce = false;
+   //elasticFactor -
+   RealType elasticFactor = 1.f;
+   //r_box -
+   RealType r_box = dp * 1.5f;
+   //minimalDistanceFactor -
+   RealType minimalDistanceFactor = 0.5f;
+
    //Type of integration scheme
    using IntegrationScheme = typename SPHDefs::IntegrationScheme;
    //Type of time stepping scheme

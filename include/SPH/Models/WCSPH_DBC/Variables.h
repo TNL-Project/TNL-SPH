@@ -195,12 +195,18 @@ public:
       Base::setSize( size );
       ghostNodes.setSize( size );
       ghostNodes_swap.setSize( size );
+      n.setSize( size );
+      n_swap.setSize( size );
+
       rhoGradRho_gn.setSize( size );
       cMatrix_gn.setSize( size );
    }
 
    VectorArrayType ghostNodes;
    VectorArrayType ghostNodes_swap;
+   VectorArrayType n;
+   VectorArrayType n_swap;
+
    VectorExtendedArrayType rhoGradRho_gn;
    MatrixExtendedArrayType cMatrix_gn;
 
@@ -212,11 +218,15 @@ public:
       auto view_map = map->getView();
       auto view_ghostNodes = ghostNodes.getView();
       auto view_ghostNodes_swap = ghostNodes_swap.getView();
+      auto view_n = n.getView();
+      auto view_n_swap = n_swap.getView();
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
       ThrustDeviceType thrustDevice;
       thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_ghostNodes.getArrayData(), view_ghostNodes_swap.getArrayData() );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_n.getArrayData(), view_n_swap.getArrayData() );
 
       ghostNodes.swap( ghostNodes_swap );
    }
@@ -229,11 +239,15 @@ public:
       auto view_map = map->getView();
       auto view_ghostNodes = ghostNodes.getView();
       auto view_ghostNodes_swap = ghostNodes_swap.getView();
+      auto view_n = n.getView();
+      auto view_n_swap = n_swap.getView();
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
       ThrustDeviceType thrustDevice;
       thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_ghostNodes.getArrayData() + firstActiveParticle, view_ghostNodes_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_n.getArrayData(), view_n_swap.getArrayData() );
 
       ghostNodes.swap( ghostNodes_swap );
    }
@@ -244,10 +258,14 @@ public:
    {
       Base::readVariables( reader );
       //FIXME
-      if constexpr( SPHConfig::spaceDimension == 2 )
+      if constexpr( SPHConfig::spaceDimension == 2 ){
          reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
-      if constexpr( SPHConfig::spaceDimension == 3 )
+         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
+      }
+      if constexpr( SPHConfig::spaceDimension == 3 ){
          reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
+         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
+      }
    }
 };
 
