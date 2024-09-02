@@ -524,6 +524,15 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
    };
    fluid->particles->forAll( particleLoop );
 
+}
+
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer, typename BoundaryPointer >
+void
+WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
+                                                                 BoundaryPointer& boundary,
+                                                                 ModelParams& modelParams )
+{
    //finalize boundary-fluid interactions
    const RealType rho0 = modelParams.rho0;
 

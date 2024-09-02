@@ -59,11 +59,17 @@ boundaryCorrection( FluidPointer& fluid,
          const VectorType n_j = view_n_bound[ j ];
 
          const RealType r0 = ( r_ij, n_j );
-
-         if( r0 < 0.f ) //Particle is behind the wall
+         if( r0 < 0.f ){ //Particle is behind the wall
+            printf( "[bw: r_i: %f, %f, %f | r_j: %f, %f, %f | r_ij: %f, %f, %f | n_j: %f, %f %f ]",
+                  r_i[ 0 ], r_i[ 1 ], r_i[ 2 ],
+                  r_j[ 0 ], r_j[ 1 ], r_j[ 2 ],
+                  r_ij[ 0 ], r_ij[ 1 ], r_ij[ 2 ],
+                  n_j[ 0 ], n_j[ 1 ], n_j[ 2 ] );
             return;
+         }
 
-         if( ( r_ij, r_ij ) >= r_box * r_box ) //Particle is to far from boundary element
+         const VectorType r_ij_box = r_ij - r0 * n_j;
+         if( ( r_ij_box, r_ij_box ) >= r_box * r_box ) //Particle is to far from boundary element
             return;
 
          const VectorType v_ij = *ve_i - v_j;
@@ -100,6 +106,7 @@ boundaryCorrection( FluidPointer& fluid,
 
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
+   std::cout << "bonk done" << std::endl;
 
    }
 };

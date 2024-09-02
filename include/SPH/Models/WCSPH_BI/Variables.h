@@ -211,9 +211,7 @@ public:
          //"Normals" );
          reader.template readParticleVariable2D< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         //reader.template readParticleVariable< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals"
-         //);
-         reader.template readParticleVariable< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
+         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
    }
 };
 
