@@ -183,8 +183,8 @@ public:
    bool enableElasticBounce = false;
    //elasticFactor -
    RealType elasticFactor = 1.f;
-   //r_box -
-   RealType r_box = dp * 1.5f;
+   //r_box  r_box = r_boxFactor * dp;
+   RealType r_boxFactor = 1.5f;
    //minimalDistanceFactor -
    RealType minimalDistanceFactor = 0.5f;
 

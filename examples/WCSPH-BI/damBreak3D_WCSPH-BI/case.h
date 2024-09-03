@@ -40,7 +40,6 @@ int main( int argc, char* argv[] )
    // Library model:
 
    while( sph.timeStepping.runTheSimulation() )
-   //while( sph.timeStepping.getStep() < 1 )
    {
       // search for neighbros
       sph.timeMeasurement.start( "search" );
@@ -55,7 +54,7 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Interact...", "Done." );
 
       // custom: no-penetration bc
-      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams );
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
