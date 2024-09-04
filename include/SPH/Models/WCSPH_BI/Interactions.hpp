@@ -180,8 +180,12 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    auto view_rho_bound = boundary->variables->rho.getView();
    auto view_gamma_bound = boundary->variables->gamma.getView();
 
-   auto BoundFluid = [ = ] __cuda_callable__(
-                        LocalIndexType i, LocalIndexType j, VectorType & r_i, RealType * rho_i, RealType * gamma_i ) mutable
+   auto BoundFluid = [ = ] __cuda_callable__( LocalIndexType i,
+                                              LocalIndexType j,
+                                              VectorType& r_i,
+                                              RealType*
+                                              rho_i,
+                                              RealType* gamma_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -282,7 +286,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoin
 
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundOpenBoundary, &rho_i, &gamma_i );
 
-      view_rho_bound[ i ] += rho0;
+      view_rho_bound[ i ] += rho_i;
       view_gamma_bound[ i ] += gamma_i;
    };
    boundary->particles->forAll( particleLoopBoundary );
