@@ -70,6 +70,9 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
 
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
       //integrate
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping );

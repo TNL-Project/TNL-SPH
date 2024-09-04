@@ -104,7 +104,7 @@ public:
       if constexpr( SPHConfig::spaceDimension == 2 )
          reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+         reader.template readParticleVariable3D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
    }
 
    template< typename WriterType >
@@ -115,6 +115,7 @@ public:
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
       writer.template writeVector< VectorArrayType, RealType >(
          v, "Velocity", numberOfParticles, firstActiveParticle, 3 );  //TODO: Obvious.
+      //writer.template writePointData< ScalarArrayType >( gamma, "Gamma", numberOfParticles, firstActiveParticle, 1 );
    }
 };
 
