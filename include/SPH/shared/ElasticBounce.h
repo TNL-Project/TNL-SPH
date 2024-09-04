@@ -100,11 +100,8 @@ boundaryCorrection( FluidPointer& fluid,
 
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
-   std::cout << "EB done: mD: " << minimalDistanceFactor * dp  <<
-                " r_box: " << r_box <<
-                " ef: " << elasticFactor << std::endl;
 
-   }
+}
 };
 
 
