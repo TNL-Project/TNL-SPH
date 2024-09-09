@@ -59,9 +59,13 @@ def process_dam_break_boundary_particles( setup ):
     polydata_normals = reader_normals.GetOutput()
 
     box_normals = np.array( dsa.WrapDataObject( polydata_normals ).PointData[ 'Normal' ], dtype=float )
-    box_ghostNodes = box_r + 2 * box_normals;
+    box_ghostNodes = box_r + 2 * box_normals
 
-    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, ghostNodes=box_ghostNodes )
+    # scale normals to unit size
+    for i in range( 0, len( box_normals ) ):
+        box_normals[ i ] = box_normals[ i ] / np.linalg.norm( box_normals[ i, : ] )
+
+    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, ghostNodes=box_ghostNodes, normals=box_normals )
     saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_boundary.vtk" )
 
     setup[ "boundary_n" ] = box_n
@@ -83,7 +87,7 @@ def compute_domain_size( setup ):
     domain_origin_z = eps * ( setup[ "domain_origin_z" ] - search_radius )
     domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
     domain_end_y = eps * ( setup[ "domain_end_y" ] + search_radius )
-    domain_end_z = eps_sloshing * ( setup[ "domain_end_z" ] + search_radius ) #increase size in z due to sloshing
+    domain_end_z = eps_sloshing * ( setup[ "domain_end_z" ] + search_radius ) # increase size in z due to sloshing
     domain_size_x = domain_end_x - domain_origin_x
     domain_size_y = domain_end_y - domain_origin_y
     domain_size_z = domain_end_z - domain_origin_z
@@ -131,6 +135,7 @@ if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -179,5 +184,5 @@ if __name__ == "__main__":
     compute_domain_size( dambreak_setup )
 
     # write simulation params
-    print( dambreak_setup )
+    pprint( dambreak_setup )
     write_simulation_params( dambreak_setup )
