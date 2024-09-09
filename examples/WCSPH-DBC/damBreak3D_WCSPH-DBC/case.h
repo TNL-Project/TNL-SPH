@@ -38,6 +38,8 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
 
    // Library model:
+   sph.fluid->integratorVariables->rho_old = sph.fluid->variables->rho;
+   sph.fluid->integratorVariables->rho_old_swap = sph.fluid->variables->rho;
 
    while( sph.timeStepping.runTheSimulation() )
    {
@@ -55,7 +57,7 @@ int main( int argc, char* argv[] )
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping );
+      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping, SPHDefs::BCType::integrateInTime() );
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
