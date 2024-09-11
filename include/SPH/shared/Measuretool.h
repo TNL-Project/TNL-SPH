@@ -57,7 +57,10 @@ public:
    init( TNL::Config::ParameterContainer& parameters, const std::string& prefix )
    {
       const VectorType gridSize = parameters.getXyz< IndexVectorType >( prefix +"gridSize" );
-      variables->setSize( gridSize[ 0 ] * gridSize[ 1 ] );
+      if constexpr( SPHConfig::spaceDimension == 2 )
+         variables->setSize( gridSize[ 0 ] * gridSize[ 1 ] );
+      if constexpr( SPHConfig::spaceDimension == 3 )
+         variables->setSize( gridSize[ 0 ] * gridSize[ 1 ] * gridSize[ 2 ] );
       interpolationGrid.setOrigin( parameters.getXyz< VectorType >( prefix + "gridOrigin" ) );
       interpolationGrid.setDimensions( gridSize );
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );

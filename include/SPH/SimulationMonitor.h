@@ -116,7 +116,7 @@ public:
       measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-x", "Dirction in which the water level measurement is performed, x component. ", 0 );
       measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-y", "Dirction in which the water level measurement is performed, y component. ", 0 );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-y", "Dirction in which the water level measurement is performed, y component. ", 0 );
+         measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-z", "Dirction in which the water level measurement is performed, y component. ", 0 );
       for( int i = 0; i < this->numberOfWaterLevelSensors; i++ )
       {
          std::string prefix = "sensor-wl-point-" + std::to_string( i + 1 );

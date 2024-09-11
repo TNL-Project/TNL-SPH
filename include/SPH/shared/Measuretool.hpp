@@ -119,14 +119,18 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFil
    writer.writeEntities( interpolationGrid );
 
    writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
+   int entitiesCount;
+   if constexpr( SPHConfig::spaceDimension == 2 )
+      entitiesCount = gridDimension[ 0 ] * gridDimension[ 1 ];
+   if constexpr( SPHConfig::spaceDimension == 3 )
+      entitiesCount = gridDimension[ 0 ] * gridDimension[ 1 ] * gridDimension[ 2 ];
 
    //FIXME: Workaround for vectorArray;
    using BufferType = Containers::Array< RealType, Devices::Host, GlobalIndexType >;
-   BufferType buffer( 3 * gridDimension[ 0 ] * gridDimension[ 1 ] );
+   BufferType buffer( 3 * entitiesCount );
 
    const auto velocityView = variables->v.getView();
    GlobalIndexType k = 0;
-   GlobalIndexType entitiesCount = gridDimension[ 0 ] * gridDimension[ 1 ];
    for( GlobalIndexType i = 0; i < entitiesCount; i++ ) {
       const VectorType vector = velocityView.getElement( i );
       for( int j = 0; j < 3; j++ )
