@@ -131,6 +131,13 @@ def write_simulation_params( setup ):
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 
+def configure_and_write_measuretool_parameters():
+    # write parameters to config file
+    with open( 'template/config-measuretool_template.ini', 'r' ) as file :
+      config_file = file.read()
+    with open( 'sources/config-measuretool.ini', 'w' ) as file:
+      file.write( config_file )
+
 if __name__ == "__main__":
     import sys
     import argparse
@@ -186,3 +193,6 @@ if __name__ == "__main__":
     # write simulation params
     pprint( dambreak_setup )
     write_simulation_params( dambreak_setup )
+
+    # setup measuretool
+    configure_and_write_measuretool_parameters()
