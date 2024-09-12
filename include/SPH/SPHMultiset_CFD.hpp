@@ -58,7 +58,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    // control
    caseName = parameters.getParameter< std::string >( "case-name" );
    verbose = parameters.getParameter< std::string >( "verbose-intensity" );
-   outputDirecotry = parameters.getParameter< std::string >( "output-directory" );
+   outputDirectory = parameters.getParameter< std::string >( "output-directory" );
    particlesFormat = parameters.getParameter< std::string >( "particles-format" );
 
 #ifdef HAVE_MPI
@@ -580,17 +580,17 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
 
    const int step = timeStepping.getStep();
 #ifdef HAVE_MPI
-   std::string outputFileNameFluid = outputDirecotry + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_fluid.vtk";
+   std::string outputFileNameFluid = outputDirectory + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_fluid.vtk";
 #else
-   std::string outputFileNameFluid = outputDirecotry + "/particles" + std::to_string( step ) + "_fluid.vtk";
+   std::string outputFileNameFluid = outputDirectory + "/particles" + std::to_string( step ) + "_fluid.vtk";
 #endif
    fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameFluid );
 
 #ifdef HAVE_MPI
-   std::string outputFileNameBound = outputDirecotry + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_boundary.vtk";
+   std::string outputFileNameBound = outputDirectory + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_boundary.vtk";
 #else
-   std::string outputFileNameBound = outputDirecotry + "/particles" + std::to_string( step ) + "_boundary.vtk";
+   std::string outputFileNameBound = outputDirectory + "/particles" + std::to_string( step ) + "_boundary.vtk";
 #endif
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameBound );
@@ -598,16 +598,16 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          std::string outputFileNameOpenBound =
-            outputDirecotry + "/particles" + std::to_string( step ) + "_" + openBoundaryPatch->parameters.identifier + ".vtk";
+            outputDirectory + "/particles" + std::to_string( step ) + "_" + openBoundaryPatch->parameters.identifier + ".vtk";
          openBoundaryPatch->template writeParticlesAndVariables< Writer >( outputFileNameOpenBound, writeParticleCellIndex );
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
       }
    }
 
 #ifdef HAVE_MPI
-   std::string outputFileNameGrid = outputDirecotry + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( step ) + ".vtk";
+   std::string outputFileNameGrid = outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( step ) + ".vtk";
 #else
-   std::string outputFileNameGrid = outputDirecotry + "/grid" + std::to_string( step ) + ".vtk";
+   std::string outputFileNameGrid = outputDirectory + "/grid" + std::to_string( step ) + ".vtk";
 #endif
    TNL::Writers::writeBackgroundGrid( outputFileNameGrid, fluid->particles->getGridDimensions(), fluid->particles->getGridOrigin(), fluid->particles->getSearchRadius() );
    logger.writeParameter( "Saved:", outputFileNameGrid );
@@ -641,7 +641,7 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
    logger.writeParameter( "Particle system type:", Model::ParticlesType::writeModelType() );
    logger.writeParameter( "SPH model:", Model::writeModelType() );
    logger.writeParameter( "Verbose:", verbose );
-   logger.writeParameter( "Output directory:", outputDirecotry );
+   logger.writeParameter( "Output directory:", outputDirectory );
    logger.writeParameter( "Particles format", particlesFormat );
    writePrologModel( logger, modelParams );
    logger.writeHeader( "Fluid object information." );
@@ -726,7 +726,7 @@ SPHMultiset_CFD< Model >::writeEpilog( TNL::Logger& logger ) noexcept
    logger.writeCurrentTime( "Ended at:" );
    timeMeasurement.writeInfo( logger, timeStepping.getStep() );
 
-   std::string saveTimersOutputName = outputDirecotry + "/time_measurements";
+   std::string saveTimersOutputName = outputDirectory + "/time_measurements";
    timeMeasurement.writeInfoToJson( saveTimersOutputName, timeStepping.getStep() );
 }
 

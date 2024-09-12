@@ -222,7 +222,7 @@ public:
 
    std::string caseName;
    std::string verbose = "none";
-   std::string outputDirecotry;
+   std::string outputDirectory;
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
 
