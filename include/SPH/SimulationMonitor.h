@@ -243,7 +243,7 @@ public:
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
          if( this->numberOfPressureSensors > 0 ){
-            pressureSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams, false );
+            pressureSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
             if( verbose == "full" )
                logger.writeParameter( "Pressure sensor measurement:", "Done." );
          }

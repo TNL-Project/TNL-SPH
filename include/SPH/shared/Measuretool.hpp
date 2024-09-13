@@ -145,23 +145,23 @@ template<typename SPHKernelFunction, typename EOS, typename SPHState >
 void
 SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
                                                               BoundaryPointer& boundary,
-                                                              SPHState& sphState,
-                                                              bool includeBoundary )
+                                                              SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
    typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   const auto view_points_boundary = boundary->particles->getPoints().getView();
-   const auto view_rho_boundary = boundary->variables->rho.getView();
+   const auto view_points = fluid->particles->getPoints().getConstView();
+   const auto view_rho = fluid->variables->rho.getConstView();
+   const auto view_points_boundary = boundary->particles->getPoints().getConstView();
+   const auto view_rho_boundary = boundary->variables->rho.getConstView();
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
+   const bool includeBoundary = this->includeBoundary;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -213,9 +213,9 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
       VectorType v = 0.f;
       RealType gamma = 0.f;
 
-      ParticlesType::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
+      ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
       if( includeBoundary ){
-         ParticlesType::NeighborsLoop::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
+         ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
       }
 
       if( gamma > 0.5f ){
@@ -369,8 +369,8 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
+   const auto view_points = fluid->particles->getPoints().getConstView();
+   const auto view_rho = fluid->variables->rho.getConstView();
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
@@ -381,7 +381,7 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    auto view_sensors = sensors.getView();
    auto view_levels = levels.getView();
 
-   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
+   auto interpolateWaterLevel = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -404,7 +404,7 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
       {
          RealType gamma = 0.f;
          const VectorType r = view_sensorsPositions[ s ] + i * h * direction;
-         ParticlesType::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &gamma );
+         ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInFluid, interpolateWaterLevel, &gamma );
 
          if( gamma > 0.5f )
             view_levels[ i ] = 1;

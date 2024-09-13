@@ -3,7 +3,6 @@
 #include <TNL/Pointers/SharedPointer.h>
 
 #include "../SPHTraits.h"
-#include "../../Particles/neighborSearchLoop.h"
 #include "TNL/Config/ParameterContainer.h"
 
 namespace TNL {
@@ -135,11 +134,12 @@ class SensorInterpolation
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
       this->numberOfSavedSteps = numberOfSavedSteps + 1;
+      this->includeBoundary = includeBoundary;
    }
 
    template<typename SPHKernelFunction, typename EOS, typename SPHState >
    void
-   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, bool includeBoundary );
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
    void
    save( const std::string outputFileName );

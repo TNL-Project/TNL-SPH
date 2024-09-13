@@ -7,7 +7,7 @@ from pathlib import Path
 case_tag = "damBreak3D_WCSPH-DBC"
 example_dir = Path(__file__).parent
 resources_dir = (example_dir / ".." / ".." / "resources" / "damBreak3D" / "damBreak3D_experimentalDataSphericIssaVioleau2006" ).resolve()
-results_dir = ( example_dir / "results_hr" ).resolve()
+results_dir = ( example_dir / "results" ).resolve()
 
 # setup plot parameters
 plt.rcParams.update({
