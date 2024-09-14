@@ -141,7 +141,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFil
 }
 
 template< typename SPHConfig, typename SPHSimulation >
-template<typename SPHKernelFunction, typename EOS, typename SPHState >
+template< typename SPHKernelFunction, typename EOS, typename SPHState >
 void
 SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
                                                               BoundaryPointer& boundary,
@@ -376,8 +376,8 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
+   const RealType levelIncrement = this->levelIncrement;
 
-   auto view_sensorsPositions = sensorPositions.getView();
    auto view_sensors = sensors.getView();
    auto view_levels = levels.getView();
 
@@ -398,12 +398,13 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    for( int s = 0; s < numberOfSensors; s++ )
    {
       const VectorType direction = this->direction;
-      view_levels = 0.f;
+      const VectorType sensorLocation = sensorPositions.getElement( s );
+      view_levels = 0;
 
-      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, GlobalIndexType sensorIndexer ) mutable
+      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
       {
          RealType gamma = 0.f;
-         const VectorType r = view_sensorsPositions[ s ] + i * h * direction;
+         const VectorType r = sensorLocation + i * levelIncrement * direction;
          ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInFluid, interpolateWaterLevel, &gamma );
 
          if( gamma > 0.5f )
@@ -411,13 +412,13 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
          else
             view_levels[ i ] = 0;
       };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop, this->sensorIndexer );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop );
 
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_levels[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
-      const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0.0 );
+      const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0 );
       //const RealType waterLevel = h * numberOfFilledLevels + this->startLevel; //start level can be written as ( startPoint, direction )
-      const RealType waterLevel = h * numberOfFilledLevels; //TODO: in case start level is included, the result is nonsense
+      const RealType waterLevel = levelIncrement * numberOfFilledLevels; //TODO: in case start level is included, the result is nonsense
       view_sensors( sensorIndexer, s ) = waterLevel;
    }
 

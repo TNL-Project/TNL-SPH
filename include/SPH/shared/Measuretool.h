@@ -222,6 +222,7 @@ class SensorWaterLevel
       numberOfLevels = TNL::ceil( ( endLevel - startLevel ) / levelIncrement );
       levels.setSize( numberOfLevels );
       this->direction = direction;
+      this->levelIncrement = levelIncrement;
       this->numberOfSavedSteps = numberOfSavedSteps + 1;
 
       this->startLevel = startLevel;
