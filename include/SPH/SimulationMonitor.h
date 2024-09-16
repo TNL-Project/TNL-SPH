@@ -231,7 +231,7 @@ public:
          for ( auto& [ key, val ] : this->interpolations )
          {
             val.template interpolate< KernelFunction >( fluid, boundary, modelParams );
-            std::string outputFileNameInterpolation = outputDirecotry + "/" + key +
+            std::string outputFileNameInterpolation = outputDirecotry + "/" + key + "_" +
                                                       //std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
                                                       std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
             val.save( outputFileNameInterpolation );
