@@ -150,6 +150,7 @@ public:
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
    using IndexArrayTypePointer = typename Base::IndexArrayTypePointer;
 
@@ -159,10 +160,14 @@ public:
       Base::setSize( size );
       n.setSize( size );
       n_swap.setSize( size );
+      elementSize.setSize( size );
+      elementSize_swap.setSize( size );
    }
 
    VectorArrayType n;
    VectorArrayType n_swap;
+   ScalarArrayType elementSize;
+   ScalarArrayType elementSize_swap;
 
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
@@ -172,33 +177,18 @@ public:
       auto view_map = map->getView();
       auto view_n = n.getView();
       auto view_n_swap = n_swap.getView();
+      auto view_elementSize = elementSize.getView();
+      auto view_elementSize_swap = elementSize_swap.getView();
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
       ThrustDeviceType thrustDevice;
       thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
                       view_n.getArrayData(), view_n_swap.getArrayData() );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+                      view_elementSize.getArrayData(), view_elementSize_swap.getArrayData() );
 
       n.swap( n_swap );
-   }
-
-   void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
-   {
-      Base::sortVariables( map, numberOfParticles, firstActiveParticle );
-
-      auto view_map = map->getView();
-      auto view_n = n.getView();
-      auto view_n_swap = n_swap.getView();
-
-      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
-      ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice,
-                      view_map.getArrayData(),
-                      view_map.getArrayData() + numberOfParticles,
-                      view_n.getArrayData() + firstActiveParticle,
-                      view_n_swap.getArrayData() + firstActiveParticle );
-
-      n.swap( n_swap );
+      elementSize.swap( elementSize_swap );
    }
 
    template< typename ReaderType >
@@ -206,11 +196,10 @@ public:
    readVariables( ReaderType& reader )
    {
       Base::readVariables( reader );
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( elementSize, "ElementSize" );
       //FIXME
       if constexpr( SPHConfig::spaceDimension == 2 )
-         //reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n,
-         //"Normals" );
-         reader.template readParticleVariable2D< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
+         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" );
       if constexpr( SPHConfig::spaceDimension == 3 )
          reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
    }

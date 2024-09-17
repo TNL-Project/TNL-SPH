@@ -39,6 +39,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    auto view_rho_bound = boundary->variables->rho.getView();
    const auto view_v_bound = boundary->variables->v.getView();
    const auto view_n_bound = boundary->variables->n.getView();
+   const auto view_elementSize_bound = boundary->variables->elementSize.getConstView();
 
    auto FluidFluid = [ = ] __cuda_callable__( LocalIndexType i,
                                               LocalIndexType j,
@@ -94,17 +95,18 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const RealType rho_j = view_rho_bound[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
          const VectorType n_j = view_n_bound[ j ];
+         const RealType ds_j = view_elementSize_bound[ j ];
 
          /* Interaction: */
          const VectorType v_ij = v_i - v_j;
 
          const RealType W = KernelFunction::W( drs, h );
 
-         *drho_i += ( -1.f ) * ( v_ij, n_j ) * W * rho_j * ds;
+         *drho_i += ( -1.f ) * ( v_ij, n_j ) * W * rho_j * ds_j;
 
          const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
          const RealType visco = ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermsParams );
-         *a_i += ( p_term + visco ) * n_j * W * rho_j * ds + BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
+         *a_i += ( p_term + visco ) * n_j * W * rho_j * ds_j + BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
       }
    };
 
@@ -414,6 +416,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
 }
 
+//FIXME: WTF is this function
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoudaryPointer >
 void
