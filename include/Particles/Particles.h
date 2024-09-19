@@ -202,6 +202,20 @@ public:
    getPoints();
 
    /**
+    * \brief Returns const-qualified spatial coordinates of the point with given index.
+    */
+   [[nodiscard]] __cuda_callable__
+   const PointType&
+   getPoint( GlobalIndexType particleIndex ) const;
+
+   /**
+    * \brief Returns the spatial coordinates of the point with given index.
+    */
+   [[nodiscard]] __cuda_callable__
+   PointType&
+   getPoint( GlobalIndexType particleIndex );
+
+   /**
     * \brief Return const-qualified array of spatial coordinates of particles used as swap field.
     * Points are defined in two duplicit arrays to avoid some inplace operations.
     */

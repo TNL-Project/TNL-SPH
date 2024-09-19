@@ -174,6 +174,24 @@ Particles< ParticleConfig, DeviceType >::getPoints()
 }
 
 template < typename ParticleConfig, typename DeviceType >
+const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointType&
+Particles< ParticleConfig, DeviceType >::getPoint( GlobalIndexType particleIndex ) const
+{
+   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
+   TNL_ASSERT_LT( particleIndex, getNumberOfParticles(), "invalid particle index" );
+   return this->points[ particleIndex ];
+}
+
+template < typename ParticleConfig, typename DeviceType >
+typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointType&
+Particles< ParticleConfig, DeviceType >::getPoint( GlobalIndexType particleIndex )
+{
+   TNL_ASSERT_GE( particleIndex, 0, "invalid particle index" );
+   TNL_ASSERT_LT( particleIndex, getNumberOfParticles(), "invalid particle index" );
+   return this->points[ particleIndex ];
+}
+
+template < typename ParticleConfig, typename DeviceType >
 const typename Particles< ParticleConfig, DeviceType >::ParticleTraitsType::PointArrayType&
 Particles< ParticleConfig, DeviceType >::getPointsSwap() const
 {
