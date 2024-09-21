@@ -28,6 +28,7 @@ public:
    using DeviceType = typename Model::DeviceType;
    using ModelType = Model;
    using ModelParams = typename ModelType::ModelParams;
+   //using ModelParamsPointer = typename Pointers::SharedPointer< ModelParams, DeviceType >;
    using ParticlesType = typename ModelType::ParticlesType;;
    using IntegrationSchemeType = typename ModelType::IntegrationSchemeType;
    using IntegratorPointer = typename Pointers::SharedPointer< IntegrationSchemeType, DeviceType >;
@@ -213,6 +214,7 @@ public:
 
    Model model;
    ModelParams modelParams;
+   //ModelParamsPointer modelParamsPointer;
    OpenBoundaryModel openBoundaryModel;
 
    IntegratorPointer integrator; // I hate this.

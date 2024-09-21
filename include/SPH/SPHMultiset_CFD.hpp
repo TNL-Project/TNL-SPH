@@ -75,6 +75,10 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
       logger.writeParameter( "Simulation monitor initialization.", "Done." );
    }
 
+   //#ifdef __CUDACC__
+   //TNL::Pointers::synchronizeSmartPointersOnDevice< DeviceType >();
+   //#endif
+
    logger.writeHeader( "SPH simulation successfully initialized." );
 }
 
