@@ -13,6 +13,7 @@ public:
    struct ParamsType
    {
      template< typename SPHState >
+      __cuda_callable__
      ParamsType( SPHState sphState )
      : rho0( sphState.rho0 ),
        coefB( sphState.coefB ) {}
@@ -40,6 +41,7 @@ public:
    struct ParamsType
    {
      template< typename SPHState >
+     __cuda_callable__
      ParamsType( SPHState sphState )
      : rho0( sphState.rho0 ),
        c0( sphState.speedOfSound ) {}

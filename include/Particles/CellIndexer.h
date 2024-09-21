@@ -17,13 +17,13 @@ struct DefaultPermutation;
 template <>
 struct DefaultPermutation< 2 >
 {
-   using type = std::index_sequence< 0, 1 >;
+   using value = std::index_sequence< 0, 1 >;
 };
 
 template <>
 struct DefaultPermutation< 3 >
 {
-   using type = std::index_sequence< 0, 1, 2 >;
+   using value = std::index_sequence< 0, 1, 2 >;
 };
 
 template< int Dimension, typename ParticleConfig, typename Permutation = typename DefaultPermutation< Dimension >::value >

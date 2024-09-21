@@ -4,6 +4,7 @@
 
 #include "../SPHTraits.h"
 #include "TNL/Config/ParameterContainer.h"
+#include <Particles/CellIndexer.h>
 
 namespace TNL {
 namespace SPH {
@@ -32,6 +33,13 @@ public:
    using GridType = Meshes::Grid< SPHConfig::spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using CoordinatesType = typename GridType::CoordinatesType;
 
+   // typenames used in interpolateUsingGrid
+   using GridCell = typename GridType::Cell;
+   using GridVertex = typename GridType::Vertex;
+
+   // typenames used in interpolateUsingParallelFor
+   using CellIndexer = SimpleCellIndex< SPHConfig::spaceDimension, typename SPHSimulation::ParticlesType::Config >;
+
    /**
     * \brief Particle type is required to search through particle seats we want to
     * monitor with measuretool. Measuretool works with CLL search, so in case we use
@@ -44,38 +52,37 @@ public:
 
    InterpolateToGrid() : variables() {}
 
-   InterpolateToGrid( const VectorType& gridSize, const VectorType& gridOrigin, const IndexVectorType& stepSize )
-   : variables( gridSize[ 0 ] * gridSize[ 1 ] ), gridDimension( gridSize ), gridStep( gridStep )
-   {
-      interpolationGrid.setOrigin( gridOrigin );
-      interpolationGrid.setDimensions( gridSize );
-      interpolationGrid.setSpaceSteps( gridStep );
-   }
-
    void
-   init( TNL::Config::ParameterContainer& parameters, const std::string& prefix )
+   init( TNL::Config::ParameterContainer& parameters, const std::string& prefix, const int interpolatedGridEntity = SPHConfig::spaceDimension )
    {
-      const VectorType gridSize = parameters.getXyz< IndexVectorType >( prefix +"gridSize" );
-      if constexpr( SPHConfig::spaceDimension == 2 )
-         variables->setSize( gridSize[ 0 ] * gridSize[ 1 ] );
-      if constexpr( SPHConfig::spaceDimension == 3 )
-         variables->setSize( gridSize[ 0 ] * gridSize[ 1 ] * gridSize[ 2 ] );
+      //TODO: test: interpolateGridEntity can be 0 i.e point or spaceDimension, i.e. cell
+      this->interpolatedGridEntity = interpolatedGridEntity;
+
       interpolationGrid.setOrigin( parameters.getXyz< VectorType >( prefix + "gridOrigin" ) );
-      interpolationGrid.setDimensions( gridSize );
+      interpolationGrid.setDimensions( parameters.getXyz< IndexVectorType >( prefix +"gridSize" ) );
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
 
-      gridDimension = gridSize;
-      gridStep = parameters.getXyz< VectorType >( prefix + "gridStep" );
+      variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
    }
 
    template< typename SPHKernelFunction, typename SPHState >
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
+   template< typename SPHKernelFunction, typename SPHState >
+   void
+   interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+
+   template< typename SPHKernelFunction, typename SPHState >
+   void
+   interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+
    void
    save( const std::string outputFileName );
 
 protected:
+
+   int interpolatedGridEntity;
 
    GridType interpolationGrid;
    CoordinatesType gridDimension;

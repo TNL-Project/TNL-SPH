@@ -13,6 +13,7 @@ class ArtificialViscosity
    struct ParamsType
    {
      template< typename SPHState >
+     __cuda_callable__
      ParamsType( SPHState sphState )
      : h( sphState.h ),
        coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
@@ -41,6 +42,7 @@ class PhysicalViscosity
    struct ParamsType
    {
      template< typename SPHState >
+     __cuda_callable__
      ParamsType( SPHState sphState )
      : h( sphState.h ),
        viscoValue( sphState.dynamicViscosity ),
@@ -70,6 +72,7 @@ class CombinedViscosity
    struct ParamsType
    {
      template< typename SPHState >
+     __cuda_callable__
      ParamsType( SPHState sphState )
      : h( sphState.h ),
        coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
