@@ -25,7 +25,6 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
    // interpolation grid constatns
-   const IndexVectorType gridDimensions = this->interpolationGrid.getDimensions();
    const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
    // specify the offset to distinguish cell-based and vertex-based interpolation
    const VectorType gridOriginOffsetFactor = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 0.5f );
