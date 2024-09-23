@@ -80,9 +80,10 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
     boundary_v = np.zeros( ( boundary_n, 3 ) )
     boundary_rho = density * np.ones( boundary_n )
     boundary_p = np.zeros( boundary_n )
+    boundary_elemetnSize = dp * np.ones( boundary_n )
     boundary_ptype = np.ones( boundary_n )
     box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
-                                                                boundary_normal )
+                                                                boundary_normal, elementSize=boundary_elemetnSize )
     saveParticlesVTK.save_polydata( box_to_write, "sources/dambreak_boundary.vtk" )
 
     domain_origin_x = min( box_rx )

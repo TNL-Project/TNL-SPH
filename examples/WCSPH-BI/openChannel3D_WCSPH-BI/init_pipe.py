@@ -116,7 +116,9 @@ def generate_channel_boundary_particles( setup ):
     box_p = np.zeros( box_n )
     box_ptype = np.ones( box_n )
     box_normals = np.array( ( normal_x, normal_y, normal_z ), dtype=float ).T #!!
-    box_to_write = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, normals=box_normals )
+    box_elemetnSizes = dp * np.ones( box_n )
+    box_to_write = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, normals=box_normals,
+                                                                box_elemetnSizes )
     saveParticlesVTK.save_polydata( box_to_write, "sources/openchannel_boundary.vtk" )
 
     setup[ "boundary_n" ] = box_n

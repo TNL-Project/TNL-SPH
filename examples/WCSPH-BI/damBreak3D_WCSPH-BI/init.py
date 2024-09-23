@@ -47,6 +47,7 @@ def process_dam_break_boundary_particles( setup ):
     box_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
     box_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
     box_p = np.zeros( box_n )
+    box_elemetnSizes = dp * np.ones( box_n )
     box_ptype = np.zeros( box_n )
 
     # generate ghost nodes from normals
@@ -70,7 +71,8 @@ def process_dam_break_boundary_particles( setup ):
         box_normals[ i, : ] = normal / normal_size
     print( f"- Number of undefined normals: {zero_normals_count}." )
 
-    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, normals=box_normals )
+    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, normals=box_normals,
+                                                                elementSize=box_elementSizes )
     saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_boundary.vtk" )
 
     setup[ "boundary_n" ] = box_n

@@ -65,7 +65,7 @@ def run_cases():
         case_dir = examples_dir / case
 
         print( f"Initializing case: {case} in {case_dir}." )
-        #init( case_dir )
+        init( case_dir )
         print( f"Initialization finished." )
         print( f"Executing case: {case} in {case_dir}." )
         run( case_dir )
