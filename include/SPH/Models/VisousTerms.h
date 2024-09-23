@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../SPHTraits.h"
+
 namespace TNL {
 namespace SPH {
 namespace ViscousTerms {
@@ -67,7 +69,61 @@ template< typename SPHCaseConfig >
 class PhysicalViscosity_MVT
 {
    public:
+   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     __cuda_callable__
+     ParamsType( SPHState sphState )
+     : dynamicViscosity( sphState.dynamicViscosity ),
+       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+
+     const RealType dynamicViscosity;
+     const RealType preventZero;
+   };
+
+   __cuda_callable__
+   static VectorType
+   Pi( const RealType& drs, const VectorType& r_ij, const VectorType& v_ij, const VectorType& gradW, const RealType& V_j, const ParamsType& params )
+   {
+      return params.dynamicViscosity * v_ij * ( r_ij, gradW ) / ( drs * drs + params.preventZero ) * V_j;
+   }
+};
+
+template< typename SPHCaseConfig >
+class PhysicalViscosity_MGVT
+{
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     __cuda_callable__
+     ParamsType( SPHState sphState )
+     : h( sphState.h ),
+       dynamicViscosity( sphState.dynamicViscosity ),
+       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+
+     const RealType h;
+     const RealType dynamicViscosity;
+     const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
+     const RealType preventZero;
+   };
+
+   __cuda_callable__
+   static RealType
+   Pi( const RealType& drs, const VectorType& r_ij, const VectorType& v_ij, const VectorType& gradW, const RealType& V_j, const ParamsType& params )
+   {
+      const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity / ( rhoI );
+      return viscoCoef * ( r_ij, v_ij ) / ( drs * drs + params.preventZero ) * gradW * V_j;
+   }
 
 };
 

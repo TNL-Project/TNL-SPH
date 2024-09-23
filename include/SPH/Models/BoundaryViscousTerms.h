@@ -70,6 +70,40 @@ class NewtonViscousLaw
    }
 };
 
+template< typename SPHCaseConfig >
+class PhysicalViscosity_MVT
+{
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
+   using RealType = typename SPHCaseConfig::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     __cuda_callable__
+     ParamsType( SPHState sphState )
+     : dynamicViscosity( sphState.dynamicViscosity ),
+       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+
+     const RealType dynamicViscosity;
+     const RealType preventZero;
+   };
+
+   __cuda_callable__
+   static VectorType
+   Xi( const RealType& drs,
+       const VectorType& r_ik,
+       const VectorType v_ik,
+       const RealType& W,
+       const VectorType& n_k,
+       const RealType& s_k,
+       const ParamsType& params )
+   {
+      return params.dynamicViscosity ds_k * v_ik / ( r_ik, n_k ) * W * s_k;
+   }
+};
+
 } // BoundaryViscousTerms
 } // SPH
 } // TNL
