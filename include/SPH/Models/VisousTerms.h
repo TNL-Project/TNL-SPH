@@ -97,10 +97,9 @@ template< typename SPHCaseConfig >
 class PhysicalViscosity_MGVT
 {
    public:
+   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
-
-   public:
-   using RealType = typename SPHCaseConfig::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
@@ -121,7 +120,7 @@ class PhysicalViscosity_MGVT
    static RealType
    Pi( const RealType& drs, const VectorType& r_ij, const VectorType& v_ij, const VectorType& gradW, const RealType& V_j, const ParamsType& params )
    {
-      const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity / ( rhoI );
+      const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity; // / ( rhoI );
       return viscoCoef * ( r_ij, v_ij ) / ( drs * drs + params.preventZero ) * gradW * V_j;
    }
 

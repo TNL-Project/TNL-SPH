@@ -7,7 +7,7 @@ import json
 import pandas as pd
 import tabulate
 from pathlib import Path
-import ctime
+import time
 
 # initialize directories
 tools_dir = Path(__file__).parent
@@ -119,7 +119,7 @@ def write_results():
                 'Comp. time dif.' : computational_time_difference_formatted }
     summary_df = pd.DataFrame( summary )
     with open('log.md', 'w') as f:
-        f.write( f"Tests completed: {time.ctime()}" )
+        f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S", gmtime())}' )
         f.write( summary_df.to_markdown( ) )
 
 if __name__ == "__main__":

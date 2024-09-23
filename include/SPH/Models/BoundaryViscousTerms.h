@@ -100,7 +100,7 @@ class PhysicalViscosity_MVT
        const RealType& s_k,
        const ParamsType& params )
    {
-      return params.dynamicViscosity ds_k * v_ik / ( r_ik, n_k ) * W * s_k;
+      return params.dynamicViscosity * v_ik / ( r_ik, n_k ) * W * s_k;
    }
 };
 
