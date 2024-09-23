@@ -167,7 +167,9 @@ if __name__ == "__main__":
         "particle_mass" : args.density * ( args.dp * args.dp * args.dp ),
         "smoothing_length" : args.h_coef * args.dp,
         "search_radius" : 2 * args.h_coef * args.dp,
-        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound
+        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
+        # terms and formulations
+        "bc_type" : args.bc_type
     }
 
     # create necessary folders

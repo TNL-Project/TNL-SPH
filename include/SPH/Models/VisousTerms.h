@@ -64,6 +64,14 @@ class PhysicalViscosity
 };
 
 template< typename SPHCaseConfig >
+class PhysicalViscosity_MVT
+{
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+};
+
+template< typename SPHCaseConfig >
 class CombinedViscosity
 {
    public:
