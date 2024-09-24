@@ -152,6 +152,7 @@ if __name__ == "__main__":
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
     g.add_argument("--cfl", type=float, default=0.2, help="referential density of the fluid")
+    g.add_argument("--bc-type", type=str, default="DBC", help="type of solid walls boundary conditions")
     g = argparser.add_argument_group("control initialization")
     g.add_argument( '--generate-geometry', default=True, action=argparse.BooleanOptionalAction, help="generate new geometry with gencase" )
 
