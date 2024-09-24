@@ -70,7 +70,7 @@ def generate_channel_boundary_particles( setup ):
     boundary_rho = setup[ "density" ] * np.ones( boundary_n )
     boundary_p = np.zeros( boundary_n )
     boundary_ptype = np.ones( boundary_n )
-    boundary_elemetnSize = dp * np.ones( boundary_n )
+    boundary_elemetnSizes = dp * np.ones( boundary_n )
     box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
                                                                 boundary_normal, elementSize=boundary_elemetnSizes )
     saveParticlesVTK.save_polydata( box_to_write, "sources/openchannel_boundary.vtk" )
