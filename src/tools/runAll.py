@@ -7,7 +7,7 @@ import json
 import pandas as pd
 import tabulate
 from pathlib import Path
-import time
+from time import strftime, gmtime
 
 # initialize directories
 tools_dir = Path(__file__).parent
