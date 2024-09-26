@@ -113,8 +113,8 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
-   const VectorType inletConstVelocity = openBoundaryParams.velocity;
-   const RealType inletConstDensity = openBoundaryParams.density;
+   //const VectorType inletConstVelocity = openBoundaryParams.velocity;
+   //const RealType inletConstDensity = openBoundaryParams.density;
 
    auto view_r_fluid = fluid->particles->getPoints().getView();
    auto view_v_fluid = fluid->variables->v.getView();
