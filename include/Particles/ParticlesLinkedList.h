@@ -10,10 +10,12 @@
 #include <string_view>
 #include <thrust/sort.h>
 #include <thrust/gather.h>
+#include <type_traits>
 
 #include "ParticlesTraits.h"
-#include "GenerateCellIndex.h"
+#include "CellIndexer.h"
 #include "Particles.h"
+#include "neighborSearchLoop.h"
 
 namespace TNL {
 namespace ParticleSystem {
@@ -30,23 +32,26 @@ public:
    using IndexVectorType = typename ParticleSystem::IndexVectorType;
    using PairIndexType = typename ParticleSystem::PairIndexType;
    using PairIndexArrayView = typename Containers::ArrayView< PairIndexType, DeviceType >;
-   using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
+   //using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
 
    using CellIndexer = typename ParticleSystem::CellIndexer;
 
-   NeighborsLoopParams( ParticlesPointerType& particles )
-   : numberOfParticles( particles->getLastActiveParticle() + 1 ),
-     gridSize( particles->getGridSize() ),
-     gridOrigin( particles->getGridOrigin() ),
+   NeighborsLoopParams() = default;
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams( ParticlesPointerType particles )
+   : numberOfParticles( particles->getNumberOfParticles() ),
+     gridSize( particles->getGridDimensionsWithOverlap() ),
+     gridOrigin( particles->getGridOriginWithOverlap() ),
      searchRadius( particles->getSearchRadius() ),
      view_firstLastCellParticle( particles->getCellFirstLastParticleList().getView() ) {}
 
-   const GlobalIndexType numberOfParticles;
-   const IndexVectorType gridSize;
-   const PointType gridOrigin;
-   const RealType searchRadius;
+   GlobalIndexType numberOfParticles;
+   IndexVectorType gridSize;
+   PointType gridOrigin;
+   RealType searchRadius;
 
-   const PairIndexArrayView view_firstLastCellParticle;
+   PairIndexArrayView view_firstLastCellParticle;
 };
 
 template < typename ParticleConfig, typename Device >
@@ -75,27 +80,25 @@ public:
    using PairIndexArrayType = typename ParticleTraitsType::PairIndexArrayType;
 
    /* args for neighbors loop */
+   using NeighborsLoop = NeighborsLoopCellLinkedList;
+   using NeighborsLoopAnotherSet = NeighborsLoopCellLinkedListAnotherSet;
    using NeighborsLoopParams = NeighborsLoopParams< ParticlesLinkedList< ParticleConfig, DeviceType > >;
 
    /**
     * Constructors.
     */
-   ParticlesLinkedList() : particleCellInidices( 0 ), firstActiveParticle( 0 ) {}
-
-   ParticlesLinkedList( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType radius, GlobalIndexType cellCount )
-   : Particles< ParticleConfig, DeviceType >( size, sizeAllocated, radius ),
-     firstActiveParticle( 0 ),
-     lastActiveParticle( size - 1 ),
-     particleCellInidices( sizeAllocated ),
-     firstLastCellParticle( cellCount )
-   {
-      firstLastCellParticle = INT_MAX;
-   }
+   ParticlesLinkedList() : particleCellInidices( 0 ), firstLastCellParticle( 0 ) {}
 
    static std::string
    writeModelType()
    {
       return "TNL::ParticleSystem::ParticlesLinkedList";
+   }
+
+   static constexpr bool
+   specifySearchedSetExplicitly()
+   {
+      return false;
    }
 
    /**
@@ -107,81 +110,16 @@ public:
    void
    setSize( const GlobalIndexType& size );
 
-   /**
-    * \brief Get index of first active particle in particle set.
-    * For simulation with varying number of particles, particle array is
-    * allocated with bigger size then is the actual number of particles of
-    * active particles. Within this approach, first particle doesn't have to be
-    * necessary the particle at position zero.
-    */
-   const GlobalIndexType
-   getFirstActiveParticle() const;
+   void
+   setGridDimensions( const IndexVectorType& dimensions );
 
    /**
-    * \brief Get and set index of last active particle in particle set.
-    * For simulation with varying number of particles, particle array is
-    * allocated with bigger size then is the actual number of particles of
-    * active particles. Within this approach, first particle doesn't have to be
-    * necessary the particle at position zero.
-    */
-   const GlobalIndexType
-   getLastActiveParticle() const;
-
-   /**
-    * \brief Set and set index of first active particle in particle set.
-    * For simulation with varying number of particles, particle array is
-    * allocated with bigger size then is the actual number of particles of
-    * active particles. Within this approach, first particle doesn't have to be
-    * necessary the particle at position zero.
+    * \brief Set width of overlap expressed in number of cells.
     *
-    * \param firstActiveParticle Position of first active particle.
+    * \param Integer expressing the overlap width in number of cells
     */
    void
-   setFirstActiveParticle( GlobalIndexType firstActiveParticle );
-
-   /**
-    * \brief Set and set index of last active particle in particle set.
-    * For simulation with varying number of particles, particle array is
-    * allocated with bigger size then is the actual number of particles of
-    * active particles. Within this approach, first particle doesn't have to be
-    * necessary the particle at position zero.
-    *
-    * \param lastActiveParticle Position of last active particle.
-    */
-   void
-   setLastActiveParticle( GlobalIndexType lastActiveParticle );
-
-   /**
-    * \brief Returns dimensions of the implicit linked list grid.
-    *
-    * \return Coordinate vector with number of edges along each axis.
-    */
-   const IndexVectorType
-   getGridSize() const;
-
-   /**
-    * \brief Set dimensions of the implicit linked list grid.
-    *
-    * \param gridSize grid dimensions given in a form of coordinate vector.
-    */
-   void
-   setGridSize( IndexVectorType gridSize );
-
-   /**
-    * \brief Returns origin of the implicit linked list grid.
-    *
-    * \return the origin of the grid.
-    */
-   const PointType
-   getGridOrigin() const;
-
-   /**
-    * \brief Set origin of the implicit linked list grid.
-    *
-    * \param the origin of the grid.
-    */
-   void
-   setGridOrigin( PointType gridOrigin );
+   setOverlapWidth( const GlobalIndexType width );
 
    /**
     * Get particle cell indices.
@@ -193,17 +131,6 @@ public:
    getParticleCellIndices();
 
    /**
-    * Get cell index of given partile.
-    */
-   __cuda_callable__
-   const CellIndexType&
-   getParticleCellIndex( GlobalIndexType particleIndex ) const;
-
-   __cuda_callable__
-   CellIndexType&
-   getParticleCellIndex( GlobalIndexType particleIndex );
-
-   /**
     * Get list of first and last particle in cells.
     */
    const PairIndexArrayType&
@@ -212,9 +139,39 @@ public:
    PairIndexArrayType&
    getCellFirstLastParticleList();
 
+   NeighborsLoopParams
+   getCLLSearchToken();
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams
+   getCLLSearchToken( ParticlesPointerType& particlesToSearch );
+
+   NeighborsLoopParams
+   getSearchToken();
+
+   template< typename ParticlesPointerType >
+   NeighborsLoopParams
+   getSearchToken( ParticlesPointerType& particlesPointerType );
+
    /**
-    * Get cell index of given partile.
+    * Reset the list with first and last particle in cell.
     */
+   void
+   resetListWithIndices();
+
+   /**
+    * Get cell index of given partile - with enabled domain decomposition.
+    */
+   template< typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
+             std::enable_if_t< UseWithDomainDecomposition::value, bool > Enabled = true >
+   void
+   computeParticleCellIndices();
+
+   /**
+    * Get cell index of given partile - without enabled domain decomposition.
+    */
+   template< typename UseWithDomainDecomposition = typename Config::UseWithDomainDecomposition,
+             std::enable_if_t< !UseWithDomainDecomposition::value, bool > Enabled = true >
    void
    computeParticleCellIndices();
 
@@ -225,43 +182,39 @@ public:
    sortParticles();
 
    /**
-    * Reset the list with first and last particle in cell.
-    */
-   void
-   resetListWithIndices(); //protected?
-
-   /**
     * Assign to each cell index of first contained particle.
     */
    void
    particlesToCells();
 
    /**
-    * Find first and last particle in grid column.
+    * FIXME: Here or in base?
+    * Start remove procedure for all particles out of interior region.
     */
-   PairIndexType
-   getFirstLastParticleInColumnOfCells( const GlobalIndexType& gridColumn );
+   void
+   removeParitclesOutOfDomain();
 
    /**
-    * Find first and last particle in grid block of column.
+    * Run all procedures required to perform neighbor search.
     */
-   PairIndexType
-   getFirstLastParticleInBlockOfCells( const GlobalIndexType& gridBlock );
+   void
+   searchForNeighbors();
 
    void
    writeProlog( TNL::Logger& logge ) const noexcept;
 
 protected:
 
-   //related to implicit grid
-   PointType gridOrigin;
-   IndexVectorType gridDimension;
-
-   GlobalIndexType firstActiveParticle;
-   GlobalIndexType lastActiveParticle;
-
-   //related to search for neighbors
+   /**
+    * Array with sice of allocated particles indices of corresponding cells
+    * computed based on particle position.
+    */
    CellIndexArrayType particleCellInidices;
+
+   /**
+    * Array with size of number of cells pairs storing index of first and last
+    * contained in each cell. We assume that particles are continuously sorted.
+    */
    PairIndexArrayType firstLastCellParticle;
 
 };

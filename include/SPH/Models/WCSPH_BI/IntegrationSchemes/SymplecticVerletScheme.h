@@ -50,6 +50,32 @@ class SymplecticVerletSchemeVariables
    }
 
    void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho_old = rho_old.getView();
+      auto view_r_old = r_old.getView();
+      auto view_v_old = v_old.getView();
+      auto view_rho_old_swap = rho_old_swap.getView();
+      auto view_r_old_swap = r_old_swap.getView();
+      auto view_v_old_swap = v_old_swap.getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_r_old.getArrayData(), view_r_old_swap.getArrayData() );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
+
+      r_old.swap( r_old_swap );
+      rho_old.swap( rho_old_swap );
+      v_old.swap( v_old_swap );
+   }
+
+   void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {
       auto view_map = map->getView();
@@ -130,7 +156,7 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt05;
       };
-      Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
+      fluid->particles->forAll( init );
 
       //TODO: For some reason, fluid swap is insane slow, due to this, the integrator is build with a workaround
       //fluid->variables->v.swap( fluid->integratorVariables->v_old );
@@ -151,7 +177,7 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt05;
       };
-      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+      boundary->particles->forAll( init );
 
       boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
    }
@@ -178,7 +204,7 @@ public:
          const RealType epsilon =  ( -1.f ) * ( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
-      Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
+      fluid->particles->forAll( init );
    }
 
    template< typename BoundaryPointer >
@@ -196,7 +222,7 @@ public:
          const RealType epsilon =  - ( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
-      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+      boundary->particles->forAll( init );
    }
 
 
@@ -211,7 +237,7 @@ public:
          if( rho_view[ i ] < 1000.f )
             rho_view[ i ] = 1000.f; //TODO: Use referential density or move this to different part
       };
-      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+      boundary->particles->forAll( init );
    }
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >

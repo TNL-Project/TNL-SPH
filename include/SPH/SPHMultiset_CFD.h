@@ -65,11 +65,43 @@ public:
    void
    init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
+   // protected
+   void
+   initParticleSets( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+   // protected
+   void
+   readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+
+#ifdef HAVE_MPI
+   // protected
+   void
+   initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
+                                TNL::Config::ParameterContainer& parametersDistributed,
+                                TNL::Logger& logger );
+
+   // protected
+   void
+   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
+                                 TNL::Config::ParameterContainer& parametersDistributed,
+                                 TNL::Logger& logger );
+#endif
+
+   // protected
+   void
+   initOverlaps( TNL::Config::ParameterContainer& parameters,
+                 TNL::Config::ParameterContainer& parametersDistributed,
+                 TNL::Logger& logger );
+
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
    void
-   performNeighborSearch( TNL::Logger& log );
+   performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
+
+   //void
+   //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 
    //TODO: Should we have log in this functions?
    template< typename ParticleSetPointer >
@@ -122,12 +154,31 @@ public:
    interact();
 
    /**
+    *
+    */
+   void
+   updateTimeStep();
+
+   /**
     * \brief Check if is time to perform measurement and if is time to perform
     * measurement, perform measurement.
     */
    template< typename SPHKernelFunction, typename EOS >
    void
    measure( TNL::Logger& logger );
+
+#ifdef HAVE_MPI
+
+   void
+   synchronizeDistributedSimulation( TNL::Logger& logger );
+
+   void
+   resetOverlaps();
+
+   void
+   performLoadBalancing( TNL::Logger& logger );
+
+#endif
 
    /**
     * \brief Save all particle object to vtk files. Automatically saves all
@@ -147,13 +198,18 @@ public:
    writeInfo( TNL::Logger& logger ) const noexcept;
 
    void
-   writeEpilog( TNL::Logger& logger ) const noexcept;
+   writeEpilog( TNL::Logger& logger ) noexcept;
 
 //protected:
 
    FluidPointer fluid;
    BoundaryPointer boundary;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
+
+#ifdef HAVE_MPI
+   FluidPointer fluidOverlap;
+   BoundaryPointer boundaryOverlap;
+#endif
 
    Model model;
    ModelParams modelParams;
@@ -166,9 +222,17 @@ public:
 
    std::string caseName;
    std::string verbose = "none";
-   std::string outputDirecotry;
+   std::string outputDirectory;
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
+
+   //TEMP: And btw the names are AWFUL
+#ifdef HAVE_MPI
+   MPI::Comm communicator = MPI_COMM_WORLD;
+   TNL::Config::ConfigDescription configDistributed;
+   TNL::Config::ParameterContainer parametersDistributed;
+#endif
+
 };
 
 } // SPH

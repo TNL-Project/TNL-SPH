@@ -14,7 +14,8 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
                                                           ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
+   //typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
+   auto searchInFluid = boundary->getParticles()->getSearchToken( fluid->getParticles() );
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
@@ -65,11 +66,10 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
       RealType drho_i = 0.f;
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] = drho_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ){
@@ -87,7 +87,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
             const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
             RealType drho_i = 0.f;
-            TNL::ParticleSystem::NeighborsLoop::exec( p, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
+            Particles::NeighborsLoop::exec( p, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
             view_Drho_bound[ p ] += drho_i;
          };
 
@@ -158,11 +158,24 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
       RealType drho_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundFluid, v_i, rho_i, p_i, &drho_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] += drho_i;
    };
-   TNL::Algorithms::parallelFor< DeviceType >(
-         boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, particleLoopBoundary );
+   boundary->particles->forAll( particleLoopBoundary );
+
+}
+
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer,
+          typename BoundaryPointer,
+          typename BCType,
+          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
+
+void
+WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
+                                                                  BoundaryPointer& boundary,
+                                                                  ModelParams& modelParams )
+{
 
 }
 

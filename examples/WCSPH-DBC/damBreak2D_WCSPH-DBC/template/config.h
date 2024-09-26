@@ -1,11 +1,12 @@
 #include <TNL/Devices/Cuda.h>
+#include <type_traits>
 using Device = TNL::Devices::Cuda;
 
 #include <TNL/Containers/StaticVector.h>
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include <Particles/GenerateCellIndex.h>
+#include <Particles/CellIndexer.h>
 #include <Particles/ParticlesTraits.h>
 
 template< typename Device >
@@ -21,6 +22,7 @@ class ParticleSystemConfig
 
    static constexpr int spaceDimension = 2;
 
+   using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
@@ -68,7 +70,9 @@ public:
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
-   using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
+   //using BCType = TNL::SPH::WCSPH_BCTypes::MDBC;
+   //using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
+   using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
 
@@ -81,6 +85,9 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  */
 #include <Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+
+//#include <Particles/ParticlesLinkedListWithList.h>
+//using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.

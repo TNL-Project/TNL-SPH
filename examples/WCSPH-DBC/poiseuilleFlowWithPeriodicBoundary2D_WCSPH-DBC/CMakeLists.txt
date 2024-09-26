@@ -2,16 +2,13 @@
 add_executable(poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_cuda poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC.cu)
 
 # add TNL to all targets
-target_link_libraries(poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_cuda PUBLIC TNL::TNL_CUDA)
+target_link_libraries(poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_cuda PUBLIC TNL::TNL)
 
 set(TARGETS
         poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_cuda
 )
 
 foreach(target IN ITEMS ${TARGETS})
-    # add special flags
-    target_compile_definitions(${target} PUBLIC "-DHAVE_CUDA")
-
     # enable OpenMP for the target
    find_package(OpenMP COMPONENTS CXX)
    if(OPENMP_FOUND)

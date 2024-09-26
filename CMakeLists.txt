@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.28)
 
 # Set default CUDA architecture
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
@@ -88,20 +88,22 @@ endif()
 # Set the project's include path
 include_directories(include)
 
+# Find or fetch dependencies
+include(FetchContent)
+FetchContent_Declare(TNL
+    GIT_REPOSITORY https://gitlab.com/tnl-project/tnl.git
+    GIT_TAG main
+    EXCLUDE_FROM_ALL
+)
+set(TNL_EXPORT_INTERFACE_TARGETS ON)  # needed for adding to the interface target
+FetchContent_MakeAvailable(TNL)
+
 # Set the install path for Python modules
 # FIXME: for some reason relying on find_package from libs/pytnl fails (dependent target 'Python3::Module' is not defined)
 find_package(Python 3 COMPONENTS Interpreter Development REQUIRED)
 
 # TODO:
 # Require python vtk
-
-# Add TNL modules
-if(SYSTEM_TNL)
-    find_package(TNL REQUIRED)
-else()
-    add_subdirectory(libs/tnl)
-    set(SYSTEM_TNL TRUE)  # avoid further inclusion of libs/tnl from other libs
-endif()
 
 # Add project subdirectories
 add_subdirectory(include)

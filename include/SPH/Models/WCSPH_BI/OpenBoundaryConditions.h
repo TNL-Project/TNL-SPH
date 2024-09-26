@@ -19,7 +19,7 @@
 namespace TNL {
 namespace SPH {
 
-template< typename SPHConfig >
+template< typename SPHConfig, typename ModelConfig >
 class OpenBoundaryConditionsBuffers
 {
 public:

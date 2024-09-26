@@ -39,18 +39,19 @@ public:
    /**
     * Constructor - allocate only the field.
     */
-   ParticleZone( GlobalIndexType numberOfCells, GlobalIndexType numerOfParticlesPerCells )
+   ParticleZone( GlobalIndexType numberOfCells, GlobalIndexType numberOfParticlesPerCells )
    : numberOfCellsInZone( numberOfCells ),
      cellsInZone( numberOfCells ),
      numberOfParticlesInCell( numberOfCells ),
-     particlesInZone( numberOfCells * numerOfParticlesPerCells ) {}
+     numberOfParticlesPerCell( numberOfParticlesPerCell ),
+     particlesInZone( numberOfCells * numberOfParticlesPerCells ) {}
 
 
    /**
     * Assign cells from point and direction for grid-base orthogonal zones
     */
    void
-   assignCells( IndexVectorType startingPoint, IndexVectorType size, IndexVectorType gridSize );
+   assignCells( IndexVectorType firstPointIdx, IndexVectorType zoneSizeInCells, IndexVectorType gridSize );
 
    /**
     * Assign cells from point and direction for grid-base orthogonal zones
@@ -107,6 +108,9 @@ public:
 
    void
    setNumberOfParticlesPerCell( const GlobalIndexType numberOfParticlesPerCell );
+
+   const GlobalIndexType
+   getNumberOfParticlesPerCell() const;
 
    void
    resetParticles();

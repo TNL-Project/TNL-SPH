@@ -64,7 +64,7 @@ class ShepardFilter
          const VectorType r_i = view_points[ i ];
          RealType rho_i = 0.f;
          RealType gamma_i = 0.f;
-         TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
+         Particles::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
 
          if( gamma_i > 0.01f ){
             view_rho[ i ] = rho_i / gamma_i;
@@ -114,7 +114,7 @@ class ShepardFilter
          const VectorType r_i = view_points[ i ];
          RealType rho_i = 0.f;
          RealType gamma_i = 0.f;
-         TNL::ParticleSystem::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
+         Particles::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
 
          view_rho[ i ] = rho_i ;
          view_gamma[ i ] = gamma_i;
@@ -135,7 +135,7 @@ class ShepardFilter
                const VectorType r_i = view_points[ p ] + shift;
                RealType rho_i = 0.f;
                RealType gamma_i = 0.f;
-               TNL::ParticleSystem::NeighborsLoop::exec( p, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
+               Particles::NeighborsLoop::exec( p, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
 
                view_rho[ p ] += rho_i;
                view_gamma[ p ] += gamma_i;

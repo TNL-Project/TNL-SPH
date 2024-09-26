@@ -1,7 +1,7 @@
+#pragma once
 #include <TNL/Algorithms/parallelFor.h>
 
 #include "../SPHTraits.h"
-#include "../../Particles/neighborSearchLoop.h"
 
 namespace TNL {
 namespace SPH {
@@ -23,7 +23,8 @@ template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
 static void
 boundaryCorrection( FluidPointer& fluid,
                     BoudaryPointer& boundary,
-                    SPHState& sphState )
+                    SPHState& sphState,
+                    const RealType& dt )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
@@ -32,11 +33,10 @@ boundaryCorrection( FluidPointer& fluid,
    typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* CONSTANT VARIABLES */
-   const RealType r_box = sphState.r_box;
+   const RealType dp = sphState.dp;
+   const RealType r_box = sphState.r_boxFactor * dp;
    const RealType minimalDistanceFactor = sphState.minimalDistanceFactor;
    const RealType elasticFactor = sphState.elasticFactor;
-   const RealType dt = sphState.dtInit; //TODO: Use dynamic timestep
-   const RealType dp = sphState.dp;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
@@ -51,36 +51,36 @@ boundaryCorrection( FluidPointer& fluid,
          VectorType& r_i, VectorType* ve_i, VectorType* ae_i ) mutable
    {
       const VectorType r_j = view_points_bound[ j ];
-      const VectorType r_ij = r_i - r_j;
-      const RealType drs = l2Norm( r_ij );
+      const VectorType r_ji = r_j - r_i;
+      const RealType drs = l2Norm( r_ji );
       if (drs <= searchRadius )
       {
          const VectorType v_j = view_v_bound[ j ];
-         const VectorType n_j = view_n_bound[ j ];
+         const VectorType n_j = ( -1.f ) * view_n_bound[ j ];
 
-         const RealType r0 = ( r_ij, n_j );
-
-         if( r0 < 0.f ) //Particle is behind the wall
+         const RealType r0 = ( r_ji, n_j );
+         // Particle is behind the wall
+         if( r0 < 0.f )
             return;
 
-         if( ( r_ij, r_ij ) >= r_box * r_box ) //Particle is to far from boundary element
+         const VectorType r_ji_box = r_ji - r0 * n_j;
+         // Particle is too far from boundary element
+         if( ( r_ji_box, r_ji_box ) >= r_box * r_box )
             return;
 
-         const VectorType v_ij = *ve_i - v_j;
-         const RealType v_n = ( -1.f ) * ( v_ij, n_j );
-         const RealType dvdt_n = ( -1.f ) * ( *ae_i, n_j ); //at this point, we assume boundary with no dvdt_j
-
+         const RealType v_n = ( *ve_i - v_j, n_j );
+         const RealType dvdt_n = ( *ae_i, n_j ); //TODO: include dvdt_j
          const RealType r_n = dt * v_n + 0.5f * dt * dt *  dvdt_n ;
 
-         if( r_n < 0.f ) //Particle is already running away from boundary
+         // Particle is already running away from boundary
+         if( r_n < 0.f )
             return;
 
-         if( r0 - r_n <= minimalDistanceFactor * dp )
-         {
-            *ve_i = ( *ve_i ) - ( 1.f + elasticFactor ) * ( -1.f ) * v_n * n_j; // (-1.f) due to inner normal
-            *ae_i = ( *ae_i ) - ( 1.f + elasticFactor ) * ( -1.f ) * dvdt_n * n_j;
+         // Reflect the particle
+         if( r0 - r_n <= minimalDistanceFactor * dp ){
+            *ve_i = ( *ve_i ) - ( 1.f + elasticFactor ) * v_n * n_j;
+            *ae_i = ( *ae_i ) - ( 1.f + elasticFactor ) * dvdt_n * n_j;
          }
-
       }
    };
 
@@ -101,7 +101,7 @@ boundaryCorrection( FluidPointer& fluid,
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
 
-   }
+}
 };
 
 

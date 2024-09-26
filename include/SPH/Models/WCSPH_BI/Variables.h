@@ -47,6 +47,27 @@ public:
    }
 
    void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho = rho.getView();
+      auto view_v = v.getView();
+      auto view_rho_swap = rho_swap.getView();
+      auto view_v_swap = v_swap.getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+                      view_rho.getArrayData(), view_rho_swap.getArrayData() );
+      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+                      view_v.getArrayData(), view_v_swap.getArrayData() );
+
+      rho.swap( rho_swap );
+      v.swap( v_swap );
+   }
+
+   void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
    {
       auto view_map = map->getView();
@@ -83,17 +104,18 @@ public:
       if constexpr( SPHConfig::spaceDimension == 2 )
          reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+         reader.template readParticleVariable3D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
    }
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& firstActiveParticle )
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType firstActiveParticle = 0 )
    {
       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
       writer.template writeVector< VectorArrayType, RealType >(
          v, "Velocity", numberOfParticles, firstActiveParticle, 3 );  //TODO: Obvious.
+      //writer.template writePointData< ScalarArrayType >( gamma, "Gamma", numberOfParticles, firstActiveParticle, 1 );
    }
 };
 
@@ -127,9 +149,10 @@ public:
    using Base = FluidVariables< SPHState >;
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using IndexArrayTypePointer = typename Base::IndexArrayTypePointer;
 
    void
    setSize( const GlobalIndexType& size )
@@ -137,30 +160,35 @@ public:
       Base::setSize( size );
       n.setSize( size );
       n_swap.setSize( size );
+      elementSize.setSize( size );
+      elementSize_swap.setSize( size );
    }
 
    VectorArrayType n;
    VectorArrayType n_swap;
+   ScalarArrayType elementSize;
+   ScalarArrayType elementSize_swap;
 
-   template< typename IndexArrayTypePointer >
    void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
    {
-      Base::sortVariables( map, numberOfParticles, firstActiveParticle );
+      Base::sortVariables( map, numberOfParticles );
 
       auto view_map = map->getView();
       auto view_n = n.getView();
       auto view_n_swap = n_swap.getView();
+      auto view_elementSize = elementSize.getView();
+      auto view_elementSize_swap = elementSize_swap.getView();
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice,
-                      view_map.getArrayData(),
-                      view_map.getArrayData() + numberOfParticles,
-                      view_n.getArrayData() + firstActiveParticle,
-                      view_n_swap.getArrayData() + firstActiveParticle );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+                      view_n.getArrayData(), view_n_swap.getArrayData() );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+                      view_elementSize.getArrayData(), view_elementSize_swap.getArrayData() );
 
       n.swap( n_swap );
+      elementSize.swap( elementSize_swap );
    }
 
    template< typename ReaderType >
@@ -168,15 +196,12 @@ public:
    readVariables( ReaderType& reader )
    {
       Base::readVariables( reader );
+      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( elementSize, "ElementSize" );
       //FIXME
       if constexpr( SPHConfig::spaceDimension == 2 )
-         //reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n,
-         //"Normals" );
-         reader.template readParticleVariable2D< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
+         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         //reader.template readParticleVariable< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals"
-         //);
-         reader.template readParticleVariable< VectorArrayType, typename Base::ScalarArrayType::ValueType >( n, "Normals" );
+         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
    }
 };
 

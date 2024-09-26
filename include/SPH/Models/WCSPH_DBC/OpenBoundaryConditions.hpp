@@ -124,27 +124,25 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
 
    auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
-         view_r_fluid[ numberOfParticle + i ] = view_r_buffer[ i ];
-         view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
-         view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
+      view_r_fluid[ numberOfParticle + i ] = view_r_buffer[ i ];
+      view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
+      view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
 
-         view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
-         view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
+      view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
+      view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
 
-         //const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
-         //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation;
-         const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation;
+      //const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
+      //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation;
+      const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation;
 
-         view_r_buffer[ i ] = newBufferParticle;
-         view_v_buffer[ i ] = inletConstVelocity;
-         //view_rho_buffer[ i ] = inletConstDensity; //TODO: Keep the density same.
+      view_r_buffer[ i ] = newBufferParticle;
+      //view_v_buffer[ i ] = inletConstVelocity; //TODO: Keep the velocity same, keep the profile the same
+      //view_rho_buffer[ i ] = inletConstDensity; //TODO: Keep the density same.
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
 
    //Update number of particles
    fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
-   fluid->particles->setLastActiveParticle( fluid->particles->getLastActiveParticle() + numberOfRetyped );
-   fluid->setLastActiveParticle( fluid->getLastActiveParticle() + numberOfRetyped );
 }
 
 template< typename SPHConfig, typename ModelConfig >
@@ -223,10 +221,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertFluidToBuffer( F
    Algorithms::parallelFor< DeviceType >( 0, fluidToBufferCount, retypeFluidToOutlet );
 
    openBoundary->particles->setNumberOfParticles( numberOfBufferParticles + fluidToBufferCount );
-   openBoundary->particles->setLastActiveParticle( openBoundary->particles->getLastActiveParticle() + fluidToBufferCount );
-   openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() + fluidToBufferCount );
-
-   openBoundary->numberOfFluidParticlesToRemove = fluidToBufferCount;
+   fluid->particles->setNumberOfParticlesToRemove( fluid->particles->getNumberOfParticlesToRemove() + fluidToBufferCount );
 
 }
 
@@ -281,8 +276,6 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOuletBoundaryCondi
 
    sortBufferParticlesByMark( openBoundary );
    openBoundary->particles->setNumberOfParticles( openBoundary->particles->getNumberOfParticles() - bufferToVoidCount );
-   openBoundary->particles->setLastActiveParticle( openBoundary->getLastActiveParticle() - bufferToVoidCount );
-   openBoundary->setLastActiveParticle( openBoundary->getLastActiveParticle() - bufferToVoidCount );
 
    //Convert fluid to buffer;
    const GlobalIndexType fluidToBufferCount = getFluidParticlesEnteringOutlet( fluid, openBoundary );

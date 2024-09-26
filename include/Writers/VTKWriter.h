@@ -15,7 +15,7 @@ namespace Writers {
 template< typename ParticleSystem >
 class VTKWriter
 {
-   static_assert( ParticleSystem::getParticleDimension() <= 3, "The VTK format supports only 1D, 2D and 3D meshes." );
+   static_assert( ParticleSystem::getParticlesDimension() <= 3, "The VTK format supports only 1D, 2D and 3D meshes." );
    // TODO: check also space dimension when grids allow it
    //   static_assert( Mesh::getSpaceDimension() <= 3, "The VTK format supports only 1D, 2D and 3D meshes." );
 
@@ -28,7 +28,7 @@ public:
    void
    writeMetadata( std::int32_t cycle = -1, double time = -1 );
 
-   template< int EntityDimension = ParticleSystem::getParticleDimension() >
+   template< int EntityDimension = ParticleSystem::getParticlesDimension() >
    void
    writeParticles( const ParticleSystem& particles );
 

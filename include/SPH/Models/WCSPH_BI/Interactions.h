@@ -52,7 +52,7 @@ public:
    using DensityFilter = typename ModelConfig::DensityFilter;
 
    using OpenBoundaryConfig = BIOpenBoundaryConfig< SPHConfig >;
-   using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig >;
+   using OpenBoundaryModel = OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >;
 
    /**
     * Constructor.
@@ -106,6 +106,72 @@ public:
    void
    interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
+   /**
+    * Functions to extrapolate data on open boundary buffers in 2D.
+    * Extrapolation function is provided in 3 alternatives - extrapolation only density or velocity
+    * or extrapolating both together.
+    * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
+    */
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryDensity2D( FluidPointer& fluid,
+                                     OpenBoudaryPointer& openBoundary,
+                                     ModelParams& modelParams,
+                                     OpenBoundaryConfig& openBoundaryParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryVelocity2D( FluidPointer& fluid,
+                                      OpenBoudaryPointer& openBoundary,
+                                      ModelParams& modelParams,
+                                      OpenBoundaryConfig& openBoundaryParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryData2D( FluidPointer& fluid,
+                                  OpenBoudaryPointer& openBoundary,
+                                  ModelParams& modelParams,
+                                  OpenBoundaryConfig& openBoundaryParams );
+
+   /**
+    * Functions to extrapolate data on open boundary buffers in 3D.
+    * Extrapolation function is provided in 3 alternatives - extrapolation only density or velocity
+    * or extrapolating both together.
+    * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
+    */
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryDensity3D( FluidPointer& fluid,
+                                     OpenBoudaryPointer& openBoundary,
+                                     ModelParams& modelParams,
+                                     OpenBoundaryConfig& openBoundaryParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryVelocity3D( FluidPointer& fluid,
+                                      OpenBoudaryPointer& openBoundary,
+                                      ModelParams& modelParams,
+                                      OpenBoundaryConfig& openBoundaryParams );
+
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryData3D( FluidPointer& fluid,
+                                  OpenBoudaryPointer& openBoundary,
+                                  ModelParams& modelParams,
+                                  OpenBoundaryConfig& openBoundaryParams );
+
+   /**
+    * General function to perform extrapolation of open boundary conditions.
+    */
+   template< typename FluidPointer, typename OpenBoudaryPointer >
+   void
+   extrapolateOpenBoundaryData( FluidPointer& fluid,
+                                OpenBoudaryPointer& openBoundary,
+                                ModelParams& modelParams,
+                                OpenBoundaryConfig& openBoundaryParams );
+
+
+
    template< typename FluidPointer, typename BoundaryPointer >
    void
    initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
@@ -114,10 +180,16 @@ public:
    template< typename FluidPointer, typename BoundaryPointer >
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
+
+   template< typename FluidPointer, typename BoundaryPointer >
+   void
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 };
 
 }  //namespace SPH
 }  //namespace TNL
 
 #include "Interactions.hpp"
+
+#include "OpenBoundaryConditionsDataExtrapolation.h"
 

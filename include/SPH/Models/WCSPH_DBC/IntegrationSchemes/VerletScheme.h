@@ -42,6 +42,32 @@ class IntegrationSchemeVariables
       v_old.setSize( size );
       rho_old_swap.setSize( size );
       v_old_swap.setSize( size );
+
+      rho_old = 1000.f;
+      v_old = 0.f;
+      rho_old_swap = 1000.f;
+      v_old_swap = 0.f;
+   }
+
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      auto view_map = map->getView();
+
+      auto view_rho_old = rho_old.getView();
+      auto view_v_old = v_old.getView();
+      auto view_rho_old_swap = rho_old_swap.getView();
+      auto view_v_old_swap = v_old_swap.getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_rho_old.getArrayData(), view_rho_old_swap.getArrayData() );
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            view_v_old.getArrayData(), view_v_old_swap.getArrayData() );
+
+      rho_old.swap( rho_old_swap );
+      v_old.swap( v_old_swap );
    }
 
    void
@@ -66,21 +92,14 @@ class IntegrationSchemeVariables
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronizer, typename SimulationSubdomainInfo >
+   template< typename Synchronizer, typename FluidVariablesPointer, typename DistributedParticlesPointer >
    void
-   synchronizeVariables( Synchronizer& synchronizer, SimulationSubdomainInfo& subdomainInfo )
+   synchronizeVariables( Synchronizer& synchronizer,
+                         FluidVariablesPointer& overlapVariables,
+                         DistributedParticlesPointer& distributedParticles )
    {
-      synchronizer.template synchronizeArray< ScalarArrayType >( rho_old, rho_old_swap, subdomainInfo, 1 );
-      synchronizer.template synchronizeArray< VectorArrayType >( v_old, v_old_swap, subdomainInfo, 1 );
-   }
-
-   void
-   centerVariablesInMemory( const GlobalIndexType firstActiveParticle,
-                            const GlobalIndexType shiftInMemory,
-                            const GlobalIndexType numberOfParticles )
-   {
-      utils::shiftArray( rho_old, rho_old_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
-      utils::shiftArray( v_old, v_old_swap, firstActiveParticle, shiftInMemory, numberOfParticles );
+      synchronizer.synchronize( rho_old, overlapVariables->rho_old, distributedParticles );
+      synchronizer.synchronize( v_old, overlapVariables->v_old, distributedParticles );
    }
 #endif
 
@@ -126,7 +145,7 @@ public:
          v_old_view[ i ] += a_view[ i ] * dt2;
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
+      fluid->particles->forAll( init );
 
       fluid->variables->v.swap( fluid->integratorVariables->v_old );
       fluid->variables->rho.swap( fluid->integratorVariables->rho_old );
@@ -146,7 +165,7 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+      boundary->particles->forAll( init );
 
       boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
    }
@@ -173,7 +192,7 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::parallelFor< DeviceType >( fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, init );
+      fluid->particles->forAll( init );
    }
 
    template< typename BoundaryPointer >
@@ -191,7 +210,7 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+      boundary->particles->forAll( init );
    }
 
    template< typename BoundaryPointer >
@@ -205,23 +224,25 @@ public:
          if( rho_view[ i ] < 1000.f )
             rho_view[ i ] = 1000.f;
       };
-      Algorithms::parallelFor< DeviceType >( boundary->getFirstActiveParticle(), boundary->getLastActiveParticle() + 1, init );
+      boundary->particles->forAll( init );
    }
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
    void
-   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
+   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping, bool integrateBoundary )
    {
       if( timeStepping.getStep() % 20 == 0 ) {
          integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
-         integrateEulerBoundary( timeStepping.getTimeStep(), boundary );
+         if( integrateBoundary )
+            integrateEulerBoundary( timeStepping.getTimeStep(), boundary );
       }
       else {
          integrateVerlet( timeStepping.getTimeStep(), fluid );
-         integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
+         if( integrateBoundary )
+            integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
       }
 
-      correctBoundaryDensity( boundary );
+      //correctBoundaryDensity( boundary );
    }
 
 };

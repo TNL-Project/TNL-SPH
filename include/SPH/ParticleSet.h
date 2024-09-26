@@ -15,6 +15,9 @@
 #include "shared/utils.h"
 #endif
 
+#include <Particles/DistributedParticles.h>
+#include <Particles/DistributedParticlesSynchronizer.h>
+
 namespace TNL {
 namespace SPH {
 
@@ -42,34 +45,66 @@ class ParticleSet
    using PeriodicBoundary = PeriodicBoundary< ParticleSystem, OpenBoundaryConfig >;
    using PeriodicBoundaryPointer = typename Pointers::SharedPointer< PeriodicBoundary, DeviceType >;
 
+#ifdef  HAVE_MPI
+   using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
+   using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
+   using Synchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< DistributedParticlesType >;
+#endif
+
    ParticleSet() : particles(), variables(), integratorVariables() {}
 
    ParticleSet( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h, numberOfCells ),
      variables( sizeAllocated ),
-     integratorVariables( sizeAllocated ),
-     firstActiveParticle( 0 ),
-     lastActiveParticle( size - 1 ) {};
+     integratorVariables( sizeAllocated ) {};
 
    void
    initialize( unsigned int numberOfParticles,
                unsigned int numberOfAllocatedParticles,
                RealType searchRadius,
-               IndexVectorType gridSize,
+               IndexVectorType gridDimension,
                VectorType gridOrigin )
    {
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridSize( gridSize );
+      this->particles->setGridDimensions( gridDimension );
       this->particles->setGridOrigin( gridOrigin );
       this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setFirstActiveParticle( 0 );
-      this->particles->setLastActiveParticle( numberOfParticles - 1 );
-      this->firstActiveParticle = 0;
-      this->lastActiveParticle = numberOfParticles - 1;
+      //removed: this->particles->setFirstActiveParticle( 0 );
+      //removed: this->particles->setLastActiveParticle( numberOfParticles - 1 );
+      this->variables->setSize( numberOfAllocatedParticles );
+      this->integratorVariables->setSize( numberOfAllocatedParticles );
+      //removed: // initialize grid origin
+      //removed: this->particles->setGridInteriorDimension( gridDimension );
+      //removed: this->particles->setGridInteriorOrigin( gridOrigin );
+   }
+
+#ifdef HAVE_MPI
+   void
+   initializeAsDistributed( unsigned int numberOfParticles,
+                            unsigned int numberOfAllocatedParticles,
+                            RealType searchRadius,
+                            IndexVectorType gridDimension,
+                            VectorType gridOrigin,
+                            IndexVectorType gridOriginGlobalCoords,
+                            VectorType globalGridOrigin,
+                            TNL::Logger& logger,
+                            GlobalIndexType numberOfOverlapsLayers = 1 )
+   {
+      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
+
+      this->particles->setSize( numberOfAllocatedParticles );
+      this->particles->setSearchRadius( searchRadius );
+      this->particles->setGridDimensions( gridDimension );
+      this->particles->setGridOrigin( gridOrigin );
+      this->particles->setOverlapWidth( 1 );
+      this->particles->setNumberOfParticles( numberOfParticles );
+      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //NOTE: Load?
+      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
    }
+#endif
 
    void
    initializePeriodicity( TNL::Config::ParameterContainer& parameters )
@@ -92,36 +127,6 @@ class ParticleSet
                                            domainOrigin );
                                            //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
       }
-   }
-
-   const GlobalIndexType
-   getFirstActiveParticle() const
-   {
-      return this->firstActiveParticle;
-   }
-
-   void
-   setFirstActiveParticle( GlobalIndexType firstActiveParticle )
-   {
-      this->firstActiveParticle = firstActiveParticle;
-   }
-
-   const GlobalIndexType
-   getLastActiveParticle() const
-   {
-      return this->lastActiveParticle;
-   }
-
-   void
-   setLastActiveParticle( GlobalIndexType lastActiveParticle )
-   {
-      this->lastActiveParticle = lastActiveParticle;
-   }
-
-   const GlobalIndexType
-   getNumberOfActiveParticles() const
-   {
-      return ( this->lastActiveParticle - this->firstActiveParticle + 1 );
    }
 
    const GlobalIndexType
@@ -172,13 +177,43 @@ class ParticleSet
       return this->variables;
    }
 
-   void sortParticles()
+   void
+   sortParticles()
    {
       particles->sortParticles();
-      variables->sortVariables(
-            particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
-      integratorVariables->sortVariables(
-            particles->getSortPermutations(), particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
+      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
+      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+   }
+
+   void
+   sortVariables( const GlobalIndexType numberOfParticlesToRemove = 0 )
+   {
+      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
+      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
+   }
+
+   void
+   searchForNeighbors()
+   {
+      const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
+      this->particles->searchForNeighbors();
+      this->sortVariables( numberOfParticlesToRemove );
+
+   }
+
+   void
+   makeSetSearchable()
+   {
+       if constexpr( ParticleSystem::specifySearchedSetExplicitly() == true ){
+         const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
+         this->particles->makeSetSearchable();
+         this->sortVariables( numberOfParticlesToRemove );
+       }
+       else if constexpr( ParticleSystem::specifySearchedSetExplicitly() == false ){
+         const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
+         this->particles->searchForNeighbors();
+         this->sortVariables( numberOfParticlesToRemove );
+      }
    }
 
    void
@@ -205,14 +240,13 @@ class ParticleSet
       std::ofstream outputFileFluid ( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( *particles );
-      variables->writeVariables( writer, particles->getNumberOfParticles(), particles->getFirstActiveParticle() );
+      variables->writeVariables( writer, particles->getNumberOfParticles() );
 
       if( writeParticleCellIndex == true )
          writer.template writePointData< typename ParticleSystem::CellIndexArrayType >(
                particles->getParticleCellIndices(),
                "GridIndex",
                particles->getNumberOfParticles(),
-               particles->getFirstActiveParticle(),
                1 );
    }
 
@@ -226,40 +260,49 @@ class ParticleSet
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronzier, typename GhostBoundaryPatches >
+   template< typename OverlapSetPointer >
    void
-   synchronizeObject( Synchronzier& synchronizer, GhostBoundaryPatches& ghostBoundaryPatches )
+   synchronizeObject( OverlapSetPointer& overlapSet, TNL::Logger& logger )
    {
-      particles->synchronize( synchronizer, ghostBoundaryPatches );
-      variables->synchronize( synchronizer, ghostBoundaryPatches );
-      integratorVariables->synchronize( synchronizer, ghostBoundaryPatches );
+      this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
+      this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
+      // check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
+
+      // sychronize
+      this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
+      this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
+      this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
+
+      // update the number of particles inside subdomain
+      const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
+      particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
+   }
+
+   void
+   synchronizeBalancingMeasures()
+   {
+      this->synchronizer.synchronizeBalancingMeasures( distributedParticles );
    }
 #endif
 
    void
    writeProlog( TNL::Logger& logger ) const noexcept
    {
-      logger.writeParameter( "First active particle index:", this->firstActiveParticle );
-      logger.writeParameter( "Last active particle index:", this->lastActiveParticle );
       logger.writeParameter( "Particle system parameters:", "" );
       particles->writeProlog( logger );
    }
 
-   //Some additional informations
-   GlobalIndexType firstActiveParticle = 0;
-   GlobalIndexType lastActiveParticle = 0;
-
    //Properties of physical object
    ParticlePointerType particles;
+#ifdef HAVE_MPI
+   DistributedParticlesPointerType distributedParticles;
+   Synchronizer synchronizer;
+#endif
    VariablesPointerType variables;
    IntegratorVariablesPointerType integratorVariables;
 
    std::vector< PeriodicBoundaryPointer > periodicPatches;
 
-#ifdef HAVE_MPI
-   using SimulationSubdomainInfo = DistributedParticleSetInfo< typename ParticleSystem::Config >;
-   SimulationSubdomainInfo subdomainInfo;
-#endif
 
 };
 

@@ -1,11 +1,12 @@
 #include <TNL/Devices/Cuda.h>
+#include <type_traits>
 using Device = TNL::Devices::Cuda;
 
 #include <TNL/Containers/StaticVector.h>
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include <Particles/GenerateCellIndex.h>
+#include <Particles/CellIndexer.h>
 #include <Particles/ParticlesTraits.h>
 
 template< typename Device >
@@ -21,8 +22,10 @@ class ParticleSystemConfig
 
    static constexpr int spaceDimension = 2;
 
+   using UseWithDomainDecomposition = std::true_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig >;
+   //using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1 > >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 1, 0 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
 
@@ -92,7 +95,8 @@ using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
  * Include type of SPH simulation.
  */
 #include <SPH/SPHMultiset_CFD.h>
-#include <SPH/DistributedSPHMultiset_CFD.h>
+//#include <SPH/DistributedSPHMultiset_CFD.h>
 using LocalSimulation = TNL::SPH::SPHMultiset_CFD< Model >;
-using Simulation = TNL::SPH::DistributedSPHMultiset_CFD< Model >;
+//using Simulation = TNL::SPH::DistributedSPHMultiset_CFD< Model >;
+using Simulation = LocalSimulation;
 

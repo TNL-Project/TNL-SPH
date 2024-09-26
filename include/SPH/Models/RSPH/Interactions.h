@@ -93,6 +93,13 @@ public:
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
 
+   /**
+    * Perform postinteraction procedures.
+    */
+   template< typename FluidPointer, typename BoundaryPointer >
+   void
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+
 };
 
 } // SPH

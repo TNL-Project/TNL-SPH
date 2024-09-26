@@ -104,7 +104,7 @@ class OpenBoundaryConfig
    {
       logger.writeParameter( "Patch orientation:", orientation );
       logger.writeParameter( "Patch referential position:", position );
-      logger.writeParameter( "Max. particle cound per zone cell:", numberOfParticlesPerCell );
+      logger.writeParameter( "Max. particle count per zone cell:", numberOfParticlesPerCell );
       logger.writeParameter( "Zone first point:", zoneFirstPoint );
       logger.writeParameter( "Zone second point:", zoneSecondPoint );
       //temp: Logs to periodic bounday buffers

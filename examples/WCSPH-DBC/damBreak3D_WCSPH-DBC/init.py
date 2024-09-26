@@ -49,7 +49,23 @@ def process_dam_break_boundary_particles( setup ):
     box_p = np.zeros( box_n )
     box_ptype = np.zeros( box_n )
 
-    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype )
+    # generate ghost nodes from normals
+    reader_normals = vtk.vtkPolyDataReader()
+    reader_normals.SetFileName( f'./sources/genCaseGeometries/dambreak_normals_dp{setup[ "dp" ]}.vtk' )
+    reader_normals.ReadAllScalarsOn()
+    reader_normals.ReadAllVectorsOn()
+    reader_normals.Update()
+
+    polydata_normals = reader_normals.GetOutput()
+
+    box_normals = np.array( dsa.WrapDataObject( polydata_normals ).PointData[ 'Normal' ], dtype=float )
+    box_ghostNodes = box_r + 2 * box_normals
+
+    # scale normals to unit size
+    for i in range( 0, len( box_normals ) ):
+        box_normals[ i ] = box_normals[ i ] / np.linalg.norm( box_normals[ i, : ] )
+
+    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, ghostNodes=box_ghostNodes, normals=box_normals )
     saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_boundary.vtk" )
 
     setup[ "boundary_n" ] = box_n
@@ -65,13 +81,13 @@ def compute_domain_size( setup ):
 
     # Resize domain by one layer of cells
     eps = 1.005
-    eps_sloshing = 1.2
+    eps_sloshing = 1.5
     domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
     domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
     domain_origin_z = eps * ( setup[ "domain_origin_z" ] - search_radius )
     domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
     domain_end_y = eps * ( setup[ "domain_end_y" ] + search_radius )
-    domain_end_z = eps_sloshing * ( setup[ "domain_end_z" ] + search_radius ) #increase size in z due to sloshing
+    domain_end_z = eps_sloshing * ( setup[ "domain_end_z" ] + search_radius ) # increase size in z due to sloshing
     domain_size_x = domain_end_x - domain_origin_x
     domain_size_y = domain_end_y - domain_origin_y
     domain_size_z = domain_end_z - domain_origin_z
@@ -106,6 +122,7 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderSpeedOfSound', str( setup[ "speed_of_sound" ] ) )
     config_file = config_file.replace( 'placeholderDensity', str( setup[ "density" ] ) )
     config_file = config_file.replace( 'placeholderTimeStep', str( round( setup[ "time_step" ], 8 ) ) )
+    config_file = config_file.replace( 'placeholderCFL', str( setup[ "cfl" ] ) )
     config_file = config_file.replace( 'placeholderFluidParticles', str( setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
@@ -114,10 +131,18 @@ def write_simulation_params( setup ):
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 
+def configure_and_write_measuretool_parameters():
+    # write parameters to config file
+    with open( 'template/config-measuretool_template.ini', 'r' ) as file :
+      config_file = file.read()
+    with open( 'sources/config-measuretool.ini', 'w' ) as file:
+      file.write( config_file )
+
 if __name__ == "__main__":
     import sys
     import argparse
     import os
+    from pprint import pprint
 
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
@@ -126,7 +151,8 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.15, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.2, help="referential density of the fluid")
+    g.add_argument("--bc-type", type=str, default="DBC", help="type of solid walls boundary conditions")
     g = argparser.add_argument_group("control initialization")
     g.add_argument( '--generate-geometry', default=True, action=argparse.BooleanOptionalAction, help="generate new geometry with gencase" )
 
@@ -141,8 +167,10 @@ if __name__ == "__main__":
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp * args.dp ),
         "smoothing_length" : args.h_coef * args.dp,
-        "search_radius" :  2 * args.h_coef * args.dp,
-        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound
+        "search_radius" : 2 * args.h_coef * args.dp,
+        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
+        # terms and formulations
+        "bc_type" : args.bc_type
     }
 
     # create necessary folders
@@ -166,5 +194,8 @@ if __name__ == "__main__":
     compute_domain_size( dambreak_setup )
 
     # write simulation params
-    print( dambreak_setup )
+    pprint( dambreak_setup )
     write_simulation_params( dambreak_setup )
+
+    # setup measuretool
+    configure_and_write_measuretool_parameters()

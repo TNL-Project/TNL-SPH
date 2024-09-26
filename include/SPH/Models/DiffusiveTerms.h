@@ -16,6 +16,7 @@ class NoneDiffusiveTerm
    struct ParamsType
    {
      template< typename SPHState >
+     __cuda_callable__
      ParamsType( SPHState sphState ) {}
    };
 
@@ -42,6 +43,7 @@ class MolteniDiffusiveTerm
    struct ParamsType
    {
      template< typename SPHState >
+      __cuda_callable__
      ParamsType( SPHState sphState )
      : coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ) {}
 

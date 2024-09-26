@@ -116,7 +116,7 @@ public:
       measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-x", "Dirction in which the water level measurement is performed, x component. ", 0 );
       measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-y", "Dirction in which the water level measurement is performed, y component. ", 0 );
       if constexpr( SPHConfig::spaceDimension == 3 )
-         measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-y", "Dirction in which the water level measurement is performed, y component. ", 0 );
+         measuretoolConfig.addEntry< RealType >( "sensor-wl-direction-z", "Dirction in which the water level measurement is performed, y component. ", 0 );
       for( int i = 0; i < this->numberOfWaterLevelSensors; i++ )
       {
          std::string prefix = "sensor-wl-point-" + std::to_string( i + 1 );
@@ -231,7 +231,7 @@ public:
          for ( auto& [ key, val ] : this->interpolations )
          {
             val.template interpolate< KernelFunction >( fluid, boundary, modelParams );
-            std::string outputFileNameInterpolation = outputDirecotry + "/" + key +
+            std::string outputFileNameInterpolation = outputDirecotry + "/" + key + "_" +
                                                       //std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
                                                       std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
             val.save( outputFileNameInterpolation );
@@ -243,7 +243,7 @@ public:
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
       {
          if( this->numberOfPressureSensors > 0 ){
-            pressureSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams, false );
+            pressureSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
             if( verbose == "full" )
                logger.writeParameter( "Pressure sensor measurement:", "Done." );
          }

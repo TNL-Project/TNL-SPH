@@ -51,12 +51,53 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
     config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
 
+    // distributed simulation parameters
+    config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
+    config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
+    config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
+    config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
+    config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "numberOfParticles" );
+        config.addEntryEnum( "numberOfParticles" );
+        config.addEntryEnum( "computationalTime" );
+    config.addEntry< float >( "number-of-particles-balancing-coef", "Particles count treshold for rebalancing [%].", 0.05 );
+    config.addEntry< float >( "computational-time-balancing-coef", "Comp. time treshold for rebalancing.", 0.05 );
+
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
     config.addEntry< int >( "interpolation-planes-count", "Input boundary particles file path.", 0 );
     config.addEntry< int >( "pressure-sensors-count", "Input boundary particles file path.", 0 );
     config.addEntry< int >( "water-level-sensors-count", "Input boundary particles file path.", 0 );
+
+    //TODO: Move this to suiteble place, it is used also for open zones
+    config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
 }
+
+void
+configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::ConfigDescription& config )
+{
+   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomain_x ) + "-y-" + std::to_string( subdomain_y ) + "-";
+   config.addRequiredEntry< std::string >( subdomainKey + "fluid-particles", "Input fluid particles file path." );
+   config.addRequiredEntry< std::string >( subdomainKey + "boundary-particles", "Input boundary particles file path." );
+   config.addEntry< int >( subdomainKey + "fluid_n", "The initial number of fluid particles.", 0 );
+   config.addEntry< int >( subdomainKey + "fluid_n_allocated", "The allocated number of fluid particles.", 0 );
+   config.addEntry< int >( subdomainKey + "boundary_n", "The initial number of fluid particles.", 0 );
+   config.addEntry< int >( subdomainKey + "boundary_n_allocated", "The allocated number of fluid particles.", 0 );
+
+   config.addEntry< double >( subdomainKey + "origin-x", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "origin-y", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "origin-z", "The origin of domain in z direction.", 0. );
+   config.addEntry< int >( subdomainKey + "origin-global-coords-x", "The origin of domain in global cell coords. in x direction.", 0. );
+   config.addEntry< int >( subdomainKey + "origin-global-coords-y", "The origin of domain in global cell coords. in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "origin-global-coords-z", "The origin of domain in global cell coords. in z direction.", 0. );
+
+   config.addEntry< double >( subdomainKey + "size-x", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "size-y", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "size-z", "The size of domain in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "grid-dimensions-x", "The size of domain in cells in x direction.", 0. );
+   config.addEntry< int >( subdomainKey + "grid-dimensions-y", "The size of domain in cells in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "grid-dimensions-z", "The size of domain in cells in z direction.", 0. );
+}
+
 
 template< typename Simulation >
 void writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
@@ -76,6 +117,28 @@ void writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
         else
             logger.writeParameter( "OMP enabled:", "no", 1 );
     }
+}
+
+void
+parseDistributedConfig( const std::string& configDistributedPath,
+                        TNL::Config::ParameterContainer& parametersDistributed,
+                        TNL::Config::ConfigDescription& configDistributed,
+                        TNL::Logger& logger )
+{
+   if( configDistributedPath != "" ) {
+      logger.writeParameter( "Parsing distributed simulation config.", "" );
+      try {
+          parametersDistributed = TNL::Config::parseINIConfigFile( configDistributedPath, configDistributed );
+      }
+      catch ( const std::exception& e ) {
+          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to the following error:\n" << e.what() << std::endl;
+      }
+      catch (...) {
+          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to an unknown C++ exception." << std::endl;
+          throw;
+      }
+      logger.writeParameter( "Parsing distributed simulation config.", "Done." );
+   }
 }
 
 

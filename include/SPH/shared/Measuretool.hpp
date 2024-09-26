@@ -1,16 +1,17 @@
 namespace TNL {
 namespace SPH {
 
+
 template< typename SPHConfig, typename SPHSimulation >
 template< typename SPHKernelFunction, typename SPHState >
 void
-InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
-   /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+   // neighbor search objects
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
-   /* VARIABLES AND FIELD ARRAYS */
+   // loaded arrays
    const auto view_points = fluid->particles->getPoints().getView();
    const auto view_rho = fluid->variables->rho.getView();
    const auto view_v = fluid->variables->v.getView();
@@ -18,14 +19,16 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
    auto view_rho_interpolation = this->variables->rho.getView();
    auto view_v_interpolation = this->variables->v.getView();
 
-   /* CONSTANT VARIABLES */
+   // loaded constants
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
    const RealType searchRadius = fluid->particles->getSearchRadius();
 
-   const IndexVectorType _gridDimension = this->gridDimension;
-   const VectorType _gridStep = this->gridStep;
-   const VectorType _gridOrigin = this->interpolationGrid.getOrigin();
+   // interpolation grid constatns
+   const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
+   // specify the offset to distinguish cell-based and vertex-based interpolation
+   const VectorType gridOriginOffsetFactor = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 0.5f );
+   const VectorType gridOrigin = this->interpolationGrid.getOrigin() + gridOriginOffsetFactor * gridSpaceSteps;
 
    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
@@ -47,117 +50,183 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
       }
    };
 
-   if constexpr( SPHState::SPHConfig::spaceDimension == 2 ){
-      auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
+   auto processPoint = [=] __cuda_callable__ ( const VectorType r, const GlobalIndexType idx ) mutable
+   {
+      VectorType v = 0.f;
+      RealType rho = 0.f;
+      RealType gamma = 0.f;
+
+      ParticlesType::NeighborsLoop::exec( idx, r, searchInFluid, interpolate, &rho, &v, &gamma );
+
+      if( gamma > 0.5f ){
+         view_v_interpolation[ idx ] = v / gamma;
+         view_rho_interpolation[ idx ] = rho /gamma;
+      }
+      else{
+         view_v_interpolation[ idx ] = 0.f;
+         view_rho_interpolation[ idx ] = 0.f;
+      }
+   };
+
+   if( this->interpolatedGridEntity == 0 )
+      this->interpolationGrid.template forAllEntities< 0 >(
+         [=] __cuda_callable__ ( const GridVertex& gridEntity ) mutable
+         {
+            const IndexVectorType coords = gridEntity.getCoordinates();
+            const VectorType r = coords * gridSpaceSteps + gridOrigin;
+            const GlobalIndexType idx = gridEntity.getIndex();
+            processPoint( r, idx );
+         } );
+   else
+      this->interpolationGrid.template forAllEntities< SPHConfig::spaceDimension >(
+         [=] __cuda_callable__ ( const GridCell& gridEntity ) mutable
+         {
+            const IndexVectorType coords = gridEntity.getCoordinates();
+            const VectorType r = coords * gridSpaceSteps + gridOrigin;
+            const GlobalIndexType idx = gridEntity.getIndex();
+            processPoint( r, idx );
+         } );
+}
+
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename SPHState >
+void
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+{
+   // neighbor search objects
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
+
+   // loaded arrays
+   const auto view_points = fluid->particles->getPoints().getView();
+   const auto view_rho = fluid->variables->rho.getView();
+   const auto view_v = fluid->variables->v.getView();
+
+   auto view_rho_interpolation = this->variables->rho.getView();
+   auto view_v_interpolation = this->variables->v.getView();
+
+   // loaded constants
+   const RealType h = sphState.h;
+   const RealType m = sphState.mass;
+   const RealType searchRadius = fluid->particles->getSearchRadius();
+
+   // specify the offset to distinguish cell-based and vertex-based interpolation
+   const VectorType gridOriginOffsetFactor = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 0.5f );
+   const IndexVectorType gridDimensionsOffset = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 1.0f );
+
+   // interpolation grid constatns
+   const IndexVectorType gridDimensions = this->interpolationGrid.getDimensions() + gridDimensionsOffset;
+   const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
+   const VectorType gridOrigin = this->interpolationGrid.getOrigin() + gridOriginOffsetFactor * gridSpaceSteps;
+
+   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
+         VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius )
       {
-         VectorType v = 0.f;
-         RealType rho = 0.f;
-         RealType gamma = 0.f;
+         const VectorType v_j = view_v[ j ];
+         const RealType rho_j = view_rho[ j ];
+         const RealType W = SPHKernelFunction::W( drs, h );
 
-         //TODO: Replace following lines with some reasonable function
-         //NOTE: I used to increase the indices i[ 0 ], i[ 1 ] by + 1 but I dont know why.
-         const VectorType  r = { ( i[ 0 ] ) * _gridStep[ 0 ] + _gridOrigin[ 0 ],
-                                 ( i[ 1 ] ) * _gridStep[ 1 ] + _gridOrigin[ 1 ]  };
-         const GlobalIndexType  idx =  i[ 1 ] * _gridDimension[ 0 ] + i[ 0 ];
+         const RealType V = m / rho_j;
 
-         TNL::ParticleSystem::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
+         *v += v_j * W * V;
+         *rho += W * m;
+         *gamma += W * V;
+      }
+   };
 
-         if( gamma > 0.5f ){
-            view_v_interpolation[ idx ] = v / gamma;
-            view_rho_interpolation[ idx ] = rho /gamma;
-         }
-         else{
-            view_v_interpolation[ idx ] = 0.f;
-            view_rho_interpolation[ idx ] = 0.f;
-         }
-      };
-      IndexVectorType begin{ 0, 0 };
-      Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop );
-   }
-   if constexpr( SPHState::SPHConfig::spaceDimension == 3 ){
+   auto loopOverGrid = [=] __cuda_callable__ ( const IndexVectorType& i  ) mutable
+   {
+      const VectorType r = i * gridSpaceSteps + gridOrigin;
+      const GlobalIndexType idx = CellIndexer::EvaluateCellIndex( i, gridDimensions );
 
-      auto gridLoop = [=] __cuda_callable__ ( const IndexVectorType& i ) mutable
-      {
-         VectorType v = 0.f;
-         RealType rho = 0.f;
-         RealType gamma = 0.f;
+      VectorType v = 0.f;
+      RealType rho = 0.f;
+      RealType gamma = 0.f;
 
-         //TODO: Replace following lines with some reasonable function
-         //NOTE: I used to increase the indices i[ 0 ], i[ 1 ], i[ 2 ]  by + 1 but I dont know why.
-         const VectorType r = { ( i[ 0 ] + 1 ) * _gridStep[ 0 ] + _gridOrigin[ 0 ],
-                                ( i[ 1 ] + 1 ) * _gridStep[ 1 ] + _gridOrigin[ 1 ],
-                                ( i[ 2 ] + 1 ) * _gridStep[ 2 ] + _gridOrigin[ 2 ]};
-         const GlobalIndexType  idx =  i[ 2 ] * _gridDimension[ 0 ] * _gridDimension[ 1 ] + \
-                                       i[ 1 ] * _gridDimension[ 0 ] + \
-                                       i[ 0 ];
+      ParticlesType::NeighborsLoop::exec( idx, r, searchInFluid, interpolate, &rho, &v, &gamma );
 
-         TNL::ParticleSystem::NeighborsLoop::exec( i[ 0 ], r, searchInFluid, interpolate, &rho, &v, &gamma );
+      if( gamma > 0.5f ){
+         view_v_interpolation[ idx ] = v / gamma;
+         view_rho_interpolation[ idx ] = rho /gamma;
+      }
+      else{
+         view_v_interpolation[ idx ] = 0.f;
+         view_rho_interpolation[ idx ] = 0.f;
+      }
+   };
+   const IndexVectorType beg = 0;
+   Algorithms::parallelFor< DeviceType >( beg, gridDimensions, interpolate );
+}
 
-         if( gamma > 0.5f ){
-            view_v_interpolation[ idx ] = v / gamma;
-            view_rho_interpolation[ idx ] = rho /gamma;
-         }
-         else{
-            view_v_interpolation[ idx ] = 0.f;
-            view_rho_interpolation[ idx ] = 0.f;
-         }
-      };
-      IndexVectorType begin{ 0, 0, 0 };
-      Algorithms::parallelFor< DeviceType >( begin, gridDimension, gridLoop );
-   }
-
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename SPHState >
+void
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+{
+   interpolateUsingGrid< SPHKernelFunction, SPHState >( fluid, boundary, sphState );
 }
 
 template< typename SPHConfig, typename SPHSimulation >
 void
 InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFileName )
 {
+   // write interpolation grid
    using Writer = TNL::Meshes::Writers::VTKWriter< GridType >;
-
    std::ofstream file( outputFileName );
    Writer writer( file );
    writer.writeEntities( interpolationGrid );
 
-   writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
-
    //FIXME: Workaround for vectorArray;
+   const int entitiesCount = this->interpolationGrid.getEntitiesCount( interpolatedGridEntity );
    using BufferType = Containers::Array< RealType, Devices::Host, GlobalIndexType >;
-   BufferType buffer( 3 * gridDimension[ 0 ] * gridDimension[ 1 ] );
-
+   BufferType buffer( 3 * entitiesCount );
    const auto velocityView = variables->v.getView();
    GlobalIndexType k = 0;
-   GlobalIndexType entitiesCount = gridDimension[ 0 ] * gridDimension[ 1 ];
    for( GlobalIndexType i = 0; i < entitiesCount; i++ ) {
       const VectorType vector = velocityView.getElement( i );
       for( int j = 0; j < 3; j++ )
          buffer[ k++ ] = ( j < vector.getSize() ? vector[ j ] : 0 );
    }
 
-   writer.template writeCellData( buffer, "Velocity", 3 );
+   // write data
+   if( this->interpolatedGridEntity >  0 ){
+      writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
+      writer.template writeCellData( buffer, "Velocity", 3 );
+   }
+   else{
+      writer.template writePointData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
+      writer.template writePointData( buffer, "Velocity", 3 );
+   }
+
 }
 
 template< typename SPHConfig, typename SPHSimulation >
-template<typename SPHKernelFunction, typename EOS, typename SPHState >
+template< typename SPHKernelFunction, typename EOS, typename SPHState >
 void
 SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
                                                               BoundaryPointer& boundary,
-                                                              SPHState& sphState,
-                                                              bool includeBoundary )
+                                                              SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   const auto view_points_boundary = boundary->particles->getPoints().getView();
-   const auto view_rho_boundary = boundary->variables->rho.getView();
+   const auto view_points = fluid->particles->getPoints().getConstView();
+   const auto view_rho = fluid->variables->rho.getConstView();
+   const auto view_points_boundary = boundary->particles->getPoints().getConstView();
+   const auto view_rho_boundary = boundary->variables->rho.getConstView();
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
+   const bool includeBoundary = this->includeBoundary;
 
    typename EOS::ParamsType eosParams( sphState );
 
@@ -209,9 +278,9 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
       VectorType v = 0.f;
       RealType gamma = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
+      ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInFluid, interpolate, &p, &v, &gamma );
       if( includeBoundary ){
-         TNL::ParticleSystem::NeighborsLoop::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
+         ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInBound, interpolateBoundary, &p, &v, &gamma );
       }
 
       if( gamma > 0.5f ){
@@ -361,23 +430,23 @@ void
 SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
+   const auto view_points = fluid->particles->getPoints().getConstView();
+   const auto view_rho = fluid->variables->rho.getConstView();
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->particles->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
+   const RealType levelIncrement = this->levelIncrement;
 
-   auto view_sensorsPositions = sensorPositions.getView();
    auto view_sensors = sensors.getView();
    auto view_levels = levels.getView();
 
-   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
+   auto interpolateWaterLevel = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -394,26 +463,27 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
    for( int s = 0; s < numberOfSensors; s++ )
    {
       const VectorType direction = this->direction;
-      view_levels = 0.f;
+      const VectorType sensorLocation = sensorPositions.getElement( s );
+      view_levels = 0;
 
-      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i, GlobalIndexType sensorIndexer ) mutable
+      auto sensorsLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
       {
          RealType gamma = 0.f;
-         const VectorType r = view_sensorsPositions[ s ] + i * h * direction;
-         TNL::ParticleSystem::NeighborsLoop::exec( i, r, searchInFluid, interpolate, &gamma );
+         const VectorType r = sensorLocation + i * levelIncrement * direction;
+         ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInFluid, interpolateWaterLevel, &gamma );
 
          if( gamma > 0.5f )
             view_levels[ i ] = 1;
          else
             view_levels[ i ] = 0;
       };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop, this->sensorIndexer );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfLevels, sensorsLoop );
 
       auto fetch = [=] __cuda_callable__ ( GlobalIndexType i ) -> GlobalIndexType { return view_levels[ i ]; };
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
-      const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0.0 );
+      const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0 );
       //const RealType waterLevel = h * numberOfFilledLevels + this->startLevel; //start level can be written as ( startPoint, direction )
-      const RealType waterLevel = h * numberOfFilledLevels; //TODO: in case start level is included, the result is nonsense
+      const RealType waterLevel = levelIncrement * numberOfFilledLevels; //TODO: in case start level is included, the result is nonsense
       view_sensors( sensorIndexer, s ) = waterLevel;
    }
 

@@ -3,8 +3,8 @@
 #include <TNL/Pointers/SharedPointer.h>
 
 #include "../SPHTraits.h"
-#include "../../Particles/neighborSearchLoop.h"
 #include "TNL/Config/ParameterContainer.h"
+#include <Particles/CellIndexer.h>
 
 namespace TNL {
 namespace SPH {
@@ -33,40 +33,56 @@ public:
    using GridType = Meshes::Grid< SPHConfig::spaceDimension, RealType, DeviceType, GlobalIndexType >;
    using CoordinatesType = typename GridType::CoordinatesType;
 
-   //temp
-   using ParticleSystem = typename SPHSimulation::ParticlesType;
+   // typenames used in interpolateUsingGrid
+   using GridCell = typename GridType::Cell;
+   using GridVertex = typename GridType::Vertex;
+
+   // typenames used in interpolateUsingParallelFor
+   using CellIndexer = SimpleCellIndex< SPHConfig::spaceDimension, typename SPHSimulation::ParticlesType::Config >;
+
+   /**
+    * \brief Particle type is required to search through particle seats we want to
+    * monitor with measuretool. Measuretool works with CLL search, so in case we use
+    * CLLwL, for measuretool we need to load the base class.
+    */
+   //using ParticlesType = typename SPHSimulation::ParticlesType;
+   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+                                             typename SPHSimulation::ParticlesType::BaseType,
+                                             typename SPHSimulation::ParticlesType >;
 
    InterpolateToGrid() : variables() {}
 
-   InterpolateToGrid( const VectorType& gridSize, const VectorType& gridOrigin, const IndexVectorType& stepSize )
-   : variables( gridSize[ 0 ] * gridSize[ 1 ] ), gridDimension( gridSize ), gridStep( gridStep )
-   {
-      interpolationGrid.setOrigin( gridOrigin );
-      interpolationGrid.setDimensions( gridSize );
-      interpolationGrid.setSpaceSteps( gridStep );
-   }
-
    void
-   init( TNL::Config::ParameterContainer& parameters, const std::string& prefix )
+   init( TNL::Config::ParameterContainer& parameters, const std::string& prefix, const int interpolatedGridEntity = SPHConfig::spaceDimension )
    {
-      const VectorType gridSize = parameters.getXyz< IndexVectorType >( prefix +"gridSize" );
-      variables->setSize( gridSize[ 0 ] * gridSize[ 1 ] );
+      //TODO: test: interpolateGridEntity can be 0 i.e point or spaceDimension, i.e. cell
+      this->interpolatedGridEntity = interpolatedGridEntity;
+
       interpolationGrid.setOrigin( parameters.getXyz< VectorType >( prefix + "gridOrigin" ) );
-      interpolationGrid.setDimensions( gridSize );
+      interpolationGrid.setDimensions( parameters.getXyz< IndexVectorType >( prefix +"gridSize" ) );
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
 
-      gridDimension = gridSize;
-      gridStep = parameters.getXyz< VectorType >( prefix + "gridStep" );
+      variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
    }
 
    template< typename SPHKernelFunction, typename SPHState >
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
+   template< typename SPHKernelFunction, typename SPHState >
+   void
+   interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+
+   template< typename SPHKernelFunction, typename SPHState >
+   void
+   interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+
    void
    save( const std::string outputFileName );
 
 protected:
+
+   int interpolatedGridEntity;
 
    GridType interpolationGrid;
    CoordinatesType gridDimension;
@@ -94,8 +110,15 @@ class SensorInterpolation
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
 
-   //temp
-   using ParticleSystem = typename SPHSimulation::ParticlesType;
+   /**
+    * \brief Particle type is required to search through particle seats we want to
+    * monitor with measuretool. Measuretool works with CLL search, so in case we use
+    * CLLwL, for measuretool we need to load the base class.
+    */
+   //using ParticlesType = typename SPHSimulation::ParticlesType;
+   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+                                             typename SPHSimulation::ParticlesType::BaseType,
+                                             typename SPHSimulation::ParticlesType >;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
@@ -114,15 +137,16 @@ class SensorInterpolation
    init( std::vector< VectorType >& points, const int numberOfSensors, const int numberOfSavedSteps, bool includeBoundary )
    {
       this->numberOfSensors = numberOfSensors;
-      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
+      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
-      this->numberOfSavedSteps = numberOfSavedSteps;
+      this->numberOfSavedSteps = numberOfSavedSteps + 1;
+      this->includeBoundary = includeBoundary;
    }
 
    template<typename SPHKernelFunction, typename EOS, typename SPHState >
    void
-   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, bool includeBoundary );
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
    void
    save( const std::string outputFileName );
@@ -156,8 +180,15 @@ class SensorWaterLevel
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
 
-   //temp
-   using ParticleSystem = typename SPHSimulation::ParticlesType;
+   /**
+    * \brief Particle type is required to search through particle seats we want to
+    * monitor with measuretool. Measuretool works with CLL search, so in case we use
+    * CLLwL, for measuretool we need to load the base class.
+    */
+   //using ParticlesType = typename SPHSimulation::ParticlesType;
+   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+                                             typename SPHSimulation::ParticlesType::BaseType,
+                                             typename SPHSimulation::ParticlesType >;
 
    using SensorsDataArray = Containers::NDArray< RealType,  // Value
                                                  Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
@@ -191,14 +222,18 @@ class SensorWaterLevel
          RealType endLevel )
    {
       this->numberOfSensors = points.size();
-      sensors.setSizes( numberOfSavedSteps, numberOfSensors );
+      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
 
       numberOfLevels = TNL::ceil( ( endLevel - startLevel ) / levelIncrement );
       levels.setSize( numberOfLevels );
       this->direction = direction;
-      this->numberOfSavedSteps = numberOfSavedSteps;
+      this->levelIncrement = levelIncrement;
+      this->numberOfSavedSteps = numberOfSavedSteps + 1;
+
+      this->startLevel = startLevel;
+      this->endLevel = endLevel;
    }
 
    template< typename SPHKernelFunction, typename EOS, typename SPHState >

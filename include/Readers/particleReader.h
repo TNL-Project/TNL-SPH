@@ -78,11 +78,13 @@ public:
       }
 
       using PointType = typename ParticleType::PointType;
+      auto points_view = particles.getPoints().getView();
 
       // assign points
       //old using mpark::visit;
       visit(
-         [ &particles ]( auto&& array )
+         //[ &particles ]( auto&& array )
+         [ &points_view ]( auto&& array )
          {
             PointType p;
             std::size_t i = 0;
@@ -93,21 +95,14 @@ public:
                   continue;
                p[ dim ] = c;
                if( dim == PointType::getSize() - 1 )
-                  particles.setPoint( ( i - 1 ) / 3, p );
+                  points_view[ ( i - 1 ) / 3 ] = p;
+                  //particles.setPoint( ( i - 1 ) / 3, p );
                   //particles.setPoint( ( i - 1 ) / 2, p );
             }
          },
          pointsArray );
 
-
-
    }
-
-   //void
-   //TEST_coutPointsArray()
-   //{
-   //  std::cout << "PointsArray: " << pointsArray[0][0] << std::endl;
-   //}
 
    virtual VariantVector
    readPointData( const std::string& arrayName )

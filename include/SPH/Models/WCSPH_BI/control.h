@@ -3,6 +3,7 @@
 #include <SPH/Models/EquationOfState.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
+#include <SPH/Models/DensityFilters.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
@@ -33,15 +34,16 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
    config.addEntry< float >( "boundaryElementSize", "Size of bounadry inegrals element.", 0 );
    config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
+   config.addEntry< float >( "massBoundary", "Mass of particle, constant for all particles.", 0 );
    config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
    config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
    config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
    config.addEntry< float >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
    config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
    config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-   config.addEntry< RealType >( "dtInit", "Initial time step.", 0 );
+   config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
    config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-   config.addEntry< RealType >( "dtMin", "Minimal allowed time step.", 0 );
+   config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
    config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
    config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
    config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
@@ -69,6 +71,39 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
+   static void
+   configSetupModel( TNL::Config::ConfigDescription& config )
+   {
+      config.addDelimiter( "WCSPH-BI model parameters" );
+      config.addEntry< float >( "dp", "Initial particle distance.", 0 );
+      config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
+      config.addEntry< float >( "boundaryElementSize", "Size of bounadry inegrals element.", 0 );
+      config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< float >( "massBoundary", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
+      config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
+      config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
+      config.addEntry< float >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
+      config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
+      config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
+      config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< RealType >( "CFL", "CFL number.", 0 );
+      config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
+      config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
+      config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
+      config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+
+      for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      }
+      for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
+         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      }
+   }
+
    void
    init( TNL::Config::ParameterContainer& parameters )
    {
@@ -76,6 +111,9 @@ public:
       dp = parameters.getParameter< RealType >( "dp" );
       searchRadius = parameters.getParameter< RealType >( "searchRadius" );
       mass = parameters.getParameter< RealType >( "mass" );
+      massBoundary = parameters.getParameter< RealType >( "massBoundary" );
+      if( massBoundary == 0 )
+         massBoundary = mass;
       boundaryElementSize = parameters.getParameter< RealType >( "boundaryElementSize" );
       delta = parameters.getParameter< RealType >( "delta" );
       alpha = parameters.getParameter< RealType >( "alpha" );
@@ -83,13 +121,14 @@ public:
       scaleBVTCoef = parameters.getParameter< RealType >( "scaleBVTCoef" );
       speedOfSound = parameters.getParameter< RealType >( "speedOfSound" );
       rho0 = parameters.getParameter< RealType >( "rho0" );
-      dtInit = parameters.getParameter< RealType >( "dtInit" );
-      CFL = parameters.getParameter< RealType >( "CFL" );
-      dtMin = parameters.getParameter< RealType >( "dtMin" );
+      dtInit = parameters.getParameter< RealType >( "initial-time-step" );
+      cfl = parameters.getParameter< RealType >( "CFL" );
+      dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
+      dtMin = 0.05f * h / speedOfSound;
    }
 
    //dp - initial particle distance [m]
@@ -100,6 +139,8 @@ public:
    RealType searchRadius = 0.f;
    //mass - particle mass [kg]
    RealType mass = 0.f;
+   //massBoundary - boundary particle mass [kg]
+   RealType massBoundary = 0.f;
    //boundaryElementSize - size of boundary element [m]
    RealType boundaryElementSize = 0.f;
    //SPH weight function (kernel).
@@ -137,16 +178,26 @@ public:
    //Define type of boundary conditions.
    using BCType = typename SPHDefs::BCType;
 
+   // Define elastic bounce boundary correction
+   // enableElasticBounce - enable elastic bounce boundary correction [bool]
+   bool enableElasticBounce = false;
+   //elasticFactor -
+   RealType elasticFactor = 1.f;
+   //r_box  r_box = r_boxFactor * dp;
+   RealType r_boxFactor = 1.5f;
+   //minimalDistanceFactor -
+   RealType minimalDistanceFactor = 0.5f;
+
    //Type of integration scheme
    using IntegrationScheme = typename SPHDefs::IntegrationScheme;
    //Type of time stepping scheme
    using TimeStepping = typename SPHDefs::TimeStepping;
    //dtInit - initial time step [ s ]
    RealType dtInit = 0.f;
-   //CFL - cfl number [-];
-   RealType CFL = 0.f;
+   //cfl - CFL number [-];
+   RealType cfl = 0.f;
    //dtMin - minimal allowed time step [s];
-   RealType dtMin = 0.05f * h / speedOfSound;
+   RealType dtMin = 0.f;
 
    //gravity - external forces [m^2 / s].
    VectorType gravity = 0.f;
@@ -163,9 +214,10 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Resolution parameters", "" );
    logger.writeParameter( "Initial particle distance (dp):", modelParams.dp, 1 );
    logger.writeParameter( "Smoothing length (h):", modelParams.h, 1 );
-   logger.writeParameter( "Spatial resolution (dp/h):", modelParams.dp / modelParams.h, 1 );
+   logger.writeParameter( "Spatial resolution (h/dp):", modelParams.h / modelParams.dp, 1 );
    logger.writeParameter( "Search radius (searchRadius):", modelParams.searchRadius, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
+   logger.writeParameter( "Boundary particle mass (massBoundary):", modelParams.massBoundary, 1 );
    logger.writeParameter( "Size of boundary elements (boundaryElementSize):", modelParams.boundaryElementSize, 1 );
    logger.writeParameter( "Model parameters", "" );
    if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
@@ -231,7 +283,7 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Time stepping:", "TNL::SPH::VariableTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
       logger.writeParameter( "Minimal time step (dtMin):", modelParams.dtMin, 1 );
-      logger.writeParameter( "CFL number (CFL):", modelParams.dtMin, 1 );
+      logger.writeParameter( "CFL number (CFL):", modelParams.cfl, 1 );
    }
    logger.writeParameter( "External bulk force:", modelParams.gravity );
 }

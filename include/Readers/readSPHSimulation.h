@@ -47,8 +47,6 @@ public:
       //Array arrayLoaded( array.getSize() );
       Array arrayLoaded(  reader.getNumberOfPoints()  );
       std::vector< Type > temporary = std::get< std::vector< Type > >( reader.readPointData( name ) );
-      std::cout << " Loaded " << name << " size: " << temporary.size() << std::endl;
-
 
       using HostArray = typename Array::
          template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
@@ -57,25 +55,52 @@ public:
       HostArray hostArray( reader.getNumberOfPoints() );
 
       std::vector< Type > hostBuffer;
-      for( long unsigned int i = 1; i < temporary.size() + 1; i ++ )
-      {
+      for( long unsigned int i = 1; i < temporary.size() + 1; i ++ ){
          if( ( i % 3 == 0 ) )
           continue;
-
          hostBuffer.push_back( temporary[ i - 1 ] );
       }
 
       int counter = 0;
-      for( long unsigned int i = 0; i < hostBuffer.size(); i++ )
-      {
-         //std::cout << hostBuffer[ i ] << " ";
+      for( long unsigned int i = 0; i < hostBuffer.size(); i++ ){
          if( i % 2 == 0 )
             continue;
-
          typename HostArray::ValueType aux = { hostBuffer[ i - 1 ], hostBuffer[ i ] };
          hostArray[ counter ] = aux;
          counter++;
-         //std::cout << aux << std::endl;
+      }
+
+      hostArray.resize( numberOfAllocatedParticles, FLT_MAX );
+      array = hostArray;
+   }
+
+   template< typename Array, typename Type >
+   void readParticleVariable3D( Array& array, const std::string& name )
+   {
+      //Array arrayLoaded( array.getSize() );
+      Array arrayLoaded(  reader.getNumberOfPoints()  );
+      std::vector< Type > temporary = std::get< std::vector< Type > >( reader.readPointData( name ) );
+
+      using HostArray = typename Array::
+         template Self< std::remove_const_t< typename Array::ValueType >, Devices::Host, typename Array::IndexType >;
+
+      //HostArray hostArray( array.getSize() );
+      HostArray hostArray( reader.getNumberOfPoints() );
+
+      //std::vector< Type > hostBuffer;
+      //for( long unsigned int i = 1; i < temporary.size() + 1; i ++ ){
+      //   if( ( i % 3 == 0 ) )
+      //    continue;
+      //   hostBuffer.push_back( temporary[ i - 1 ] );
+      //}
+
+      int counter = 0;
+      for( long unsigned int i = 0; i < temporary.size(); i++ ){
+         if( ( i + 1 ) % 3 != 0 )
+            continue;
+         typename HostArray::ValueType aux = { temporary[ i - 2 ], temporary[ i - 1 ], temporary[ i ] };
+         hostArray[ counter ] = aux;
+         counter++;
       }
 
       hostArray.resize( numberOfAllocatedParticles, FLT_MAX );

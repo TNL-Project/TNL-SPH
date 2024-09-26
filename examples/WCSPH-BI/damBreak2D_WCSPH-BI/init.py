@@ -80,9 +80,10 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
     boundary_v = np.zeros( ( boundary_n, 3 ) )
     boundary_rho = density * np.ones( boundary_n )
     boundary_p = np.zeros( boundary_n )
+    boundary_elemetnSize = dp * np.ones( boundary_n )
     boundary_ptype = np.ones( boundary_n )
     box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
-                                                                boundary_normal )
+                                                                normals=boundary_normal, elementSize=boundary_elemetnSize )
     saveParticlesVTK.save_polydata( box_to_write, "sources/dambreak_boundary.vtk" )
 
     domain_origin_x = min( box_rx )
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=34.3, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.13, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.15, help="referential density of the fluid")
     #g = argparser.add_argument_group("control parameters")
     #g.add_argument("--example-dir", type=Path, default=1000, help="referential density of the fluid")
 

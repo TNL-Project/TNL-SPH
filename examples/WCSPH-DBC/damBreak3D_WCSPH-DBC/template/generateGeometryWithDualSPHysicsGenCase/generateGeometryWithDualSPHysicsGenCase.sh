@@ -31,6 +31,7 @@ mkdir -p ${sources}
 
 mv ${dirout}/damBreak3D_WCSPH-DBC_Fluid.vtk ${sources}/dambreak_fluid_dp${initalParticleSpacing}.vtk
 mv ${dirout}/damBreak3D_WCSPH-DBC_Bound.vtk ${sources}/dambreak_bound_dp${initalParticleSpacing}.vtk
+mv ${dirout}/damBreak3D_WCSPH-DBC_Normals.vtk ${sources}/dambreak_normals_dp${initalParticleSpacing}.vtk
 if [ $? -ne 0 ] ; then echo "Unable to copy generated geometry to the sources folder."; exit 3 ; fi
 
 rm -r ${dirout}

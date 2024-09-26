@@ -29,6 +29,7 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
 def generate_dam_break_boundary_particles( dp, box_lenght, box_height, n_boundary_layers, density ):
     box_rx = []; box_ry = []
     ghost_rx = []; ghost_ry = []
+    normal_x = []; normal_y = []
     box_length_n = round( box_lenght / dp )
     box_height_n = round( box_height / dp )
 
@@ -39,6 +40,8 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, n_boundar
             box_ry.append( ( y + 1 ) * dp )
             ghost_rx.append( 0. + dp * ( layer + 1 ) )
             ghost_ry.append( ( y + 1 ) * dp )
+            normal_x.append( 1. )
+            normal_y.append( 0. )
 
     # bottom wall
     for layer in range( n_boundary_layers ):
@@ -47,6 +50,8 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, n_boundar
             box_ry.append( 0. - layer * dp )
             ghost_rx.append( ( x + 1 ) * dp )
             ghost_ry.append( 0. + dp * ( layer + 1 ) )
+            normal_x.append( 0. )
+            normal_y.append( 1. )
 
     x_last = box_rx[ -1 ] + dp #due to discretisation, we need to save last value of bottom wall
 
@@ -57,6 +62,8 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, n_boundar
             box_ry.append( ( y + 1 ) * dp )
             ghost_rx.append( x_last - dp * ( layer + 1 ) )
             ghost_ry.append( ( y + 1 ) * dp )
+            normal_x.append( -1. )
+            normal_y.append( 0. )
 
     # generate the corners
     def generate90degCorner( x, y, dirx, diry ):
@@ -66,6 +73,11 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, n_boundar
           box_ry.append( y + layer * dp * diry )
           ghost_rx.append( x + ( k + 1 ) * dp * dirx * ( -1 ) )
           ghost_ry.append( y + ( layer + 1 ) * dp * diry * ( -1 ) )
+          drx = ghost_rx[ -1 ] - box_rx[ -1 ]
+          dry = ghost_ry[ -1 ] - box_ry[ -1 ]
+          n_norm = np.sqrt( drx**2 + dry**2 )
+          normal_x.append( drx / n_norm )
+          normal_y.append( dry / n_norm )
 
     generate90degCorner( 0, 0., -1, -1 )
     generate90degCorner( x_last, 0., +1, -1 )
@@ -73,12 +85,13 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, n_boundar
     boundary_n = len( box_rx )
     boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
     boundary_ghostNodes = np.array( ( ghost_rx, ghost_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
+    boundary_normals = np.array( ( normal_x, normal_y, np.zeros( boundary_n ) ), dtype=float ).T #!!
     boundary_v = np.zeros( ( boundary_n, 3 ) )
     boundary_rho = density * np.ones( boundary_n )
     boundary_p = np.zeros( boundary_n )
     boundary_ptype = np.ones( boundary_n )
     box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
-                                                              ghostNodes=boundary_ghostNodes )
+                                                                ghostNodes=boundary_ghostNodes, normals=boundary_normals )
     saveParticlesVTK.save_polydata( box_to_write, "sources/dambreak_boundary.vtk" )
 
     domain_origin_x = min( box_rx )
@@ -131,6 +144,7 @@ def compute_and_write_simulation_params( dp,
     config_file = config_file.replace( 'placeholderSpeedOfSound', str( speed_of_sound ) )
     config_file = config_file.replace( 'placeholderDensity', str( density ))
     config_file = config_file.replace( 'placeholderTimeStep', str( timeStep ) )
+    config_file = config_file.replace( 'placeholderCFL', str( cfl ) )
     config_file = config_file.replace( 'placeholderFluidParticles', str( fluid_n ) )
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( fluid_n ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( boundary_n ) )

@@ -2,9 +2,6 @@
 *.ptcs
 *.vtk
 
-# output files
-*.json
-
 # object files
 *.o
 *.cuo

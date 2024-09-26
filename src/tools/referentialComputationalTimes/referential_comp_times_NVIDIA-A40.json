@@ -1,0 +1,9 @@
+{
+	"RSPH/damBreak2D_RSPH": "52.8482",
+	"WCSPH-BI/damBreak2D_WCSPH-BI": "56.4104",
+	"WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI": "87.4829",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC": "10.398",
+	"WCSPH-DBC/damBreak3D_WCSPH-DBC": "6.1914",
+	"WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC": "115.48",
+	"WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC": "74.1144"
+}
