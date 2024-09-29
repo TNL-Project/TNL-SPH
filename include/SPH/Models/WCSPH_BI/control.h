@@ -227,15 +227,15 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
    if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
+                                 BIViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Viscous term:", "TNL::SPH::ArtificialViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
    }
    if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 ViscousTerms::PhysicalViscosity< typename ModelParams::SPHConfig > > )
+                                 BIViscousTerms::PhysicalViscosity_MVT< typename ModelParams::SPHConfig > > )
    {
-      logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity", 1 );
+      logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity_MVT", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
 
    }

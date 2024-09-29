@@ -59,20 +59,21 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
 
-         /* Interaction: */
          const VectorType v_ij = v_i - v_j;
 
          const RealType F = KernelFunction::F( drs, h );
          const RealType W = KernelFunction::W( drs, h );
          const VectorType gradW = r_ij * F;
+         const RealType V_j = m / rho_j;
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
-         const RealType diffTerm = psi * ( r_ij, gradW ) * m / rho_j;
-         *drho_i += ( v_ij, gradW ) * m - diffTerm;
+         const RealType diffTerm = psi * ( r_ij, gradW ) * V_j;
+         *drho_i += rho_i * ( v_ij, gradW ) * V_j - diffTerm;
 
-         const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-         const RealType visco = ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermsParams );
-         *a_i += ( -1.0f ) * ( p_term + visco ) * gradW * m;
+         const VectorType grad_p = ( p_i + p_j ) * gradW * V_j;
+         const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradW, V_j, viscousTermsParams );
+         *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
+
 
          *gamma_i += W * m / rho_j;
       }
@@ -97,16 +98,18 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType n_j = view_n_bound[ j ];
          const RealType ds_j = view_elementSize_bound[ j ];
 
-         /* Interaction: */
          const VectorType v_ij = v_i - v_j;
 
          const RealType W = KernelFunction::W( drs, h );
 
          *drho_i += ( -1.f ) * ( v_ij, n_j ) * W * rho_j * ds_j;
 
-         const RealType p_term = ( p_i + p_j ) / ( rho_i * rho_j );
-         const RealType visco = ViscousTerm::Pi( rho_i, rho_j, drs, ( r_ij, v_ij ), viscousTermsParams );
-         *a_i += ( p_term + visco ) * n_j * W * rho_j * ds_j + BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
+         const VectorType grad_p = ( p_i + p_j ) * n_j * W  * ds_j;
+         const VectorType visco_term = ViscousTerm::BI_Pi( drs, r_ij, v_ij, rho_i, rho_j, W, n_j, ds_j, viscousTermsParams );
+         const VectorType bvt = BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
+         //FIXME: The signs are fucked, because I used inner normals.
+         //       Correct is of course: -1/rho * grad + visco
+         *a_i += ( 1.f / rho_i ) * grad_p - visco_term  + bvt;
       }
    };
 
