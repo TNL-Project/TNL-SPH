@@ -93,6 +93,9 @@ public:
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      config.addEntry< RealType >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
+      config.addEntry< RealType >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
+      config.addEntry< RealType >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
 
       for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -126,6 +129,9 @@ public:
       dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
+      elasticFactor = parameters.getParameter< RealType >( "elasticFactor" );
+      r_boxFactor = parameters.getParameter< RealType >( "r_boxFactor" );
+      minimalDistanceFactor = parameters.getParameter< RealType >( "minimalDistanceFactor" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * h / speedOfSound;
