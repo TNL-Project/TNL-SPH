@@ -12,7 +12,8 @@ def create_series_file( identifier, results_dir, snapshot_names, snapshot_timers
    files_list = [ {} for _ in range( n_snapshots ) ]
 
    for i in range( 0, n_snapshots ):
-       snapshot_path = str( results_dir / "results_data" / snapshot_names[ i ])
+       #snapshot_path = str( results_dir / "results_data" / snapshot_names[ i ])
+       snapshot_path = "results_data/" + ( snapshot_names[ i ] )
        print( snapshot_path )
        files_list[ i ][ "name" ] = snapshot_path
        files_list[ i ][ "time" ] = snapshot_timers[ i ]

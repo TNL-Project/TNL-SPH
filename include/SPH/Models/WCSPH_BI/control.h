@@ -20,45 +20,6 @@
 namespace TNL {
 namespace SPH {
 
-template< typename SPHConfig >
-void
-configSetupModel( TNL::Config::ConfigDescription& config )
-{
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using RealType = typename SPHTraitsType::RealType;
-   using VectorType = typename SPHTraitsType::VectorType;
-
-   config.addDelimiter( "WCSPH-BI model parameters" );
-
-   config.addEntry< float >( "dp", "Initial particle distance.", 0 );
-   config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
-   config.addEntry< float >( "boundaryElementSize", "Size of bounadry inegrals element.", 0 );
-   config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
-   config.addEntry< float >( "massBoundary", "Mass of particle, constant for all particles.", 0 );
-   config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
-   config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
-   config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
-   config.addEntry< float >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
-   config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
-   config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-   config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
-   config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-   config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
-   config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-
-   for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   }
-   for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   }
-}
-
 /**
  * \brief Class used to store core parameters of SPH scheme.
  */
@@ -93,6 +54,7 @@ public:
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
       config.addEntry< RealType >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
       config.addEntry< RealType >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
       config.addEntry< RealType >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
@@ -129,6 +91,7 @@ public:
       dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
+      enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
       elasticFactor = parameters.getParameter< RealType >( "elasticFactor" );
       r_boxFactor = parameters.getParameter< RealType >( "r_boxFactor" );
       minimalDistanceFactor = parameters.getParameter< RealType >( "minimalDistanceFactor" );
@@ -186,7 +149,7 @@ public:
 
    // Define elastic bounce boundary correction
    // enableElasticBounce - enable elastic bounce boundary correction [bool]
-   bool enableElasticBounce = false;
+   bool enableElasticBounce = true;
    //elasticFactor -
    RealType elasticFactor = 1.f;
    //r_box  r_box = r_boxFactor * dp;
@@ -274,6 +237,12 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
       boundaryConditionsTypes = "TNL::SPH::WCSPH_BI::BI_numeric";
    logger.writeParameter( "Boundary condition type", boundaryConditionsTypes );
+   if( modelParams.enableElasticBounce == true ){
+      logger.writeParameter( "Elastic bounce boundary correction:", "Enabled" );
+      logger.writeParameter( "Elastic bounce fact. (elasticFactor):", modelParams.elasticFactor, 1 );
+      logger.writeParameter( "Bounce efect area fact. (r_boxFactor):", modelParams.r_boxFactor, 1 );
+      logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
+   }
    logger.writeParameter( "Time integration", "" );
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
                                  IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
