@@ -50,10 +50,7 @@ class SPHMultiset_CFDDomain
 protected:
 
    FluidPointer fluid;
-   FluidPointer fluidOverlap;
-
    BoundaryPointer boundary;
-   BoundaryPointer boundaryOverlap;
 
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
 };

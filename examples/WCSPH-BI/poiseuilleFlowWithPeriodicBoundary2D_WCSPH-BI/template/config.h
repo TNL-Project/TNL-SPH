@@ -69,7 +69,7 @@ class SPHParams
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::NewtonViscousLaw< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BI_numeric;
