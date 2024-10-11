@@ -1,0 +1,66 @@
+#include <complex>
+namespace TNL {
+namespace SPH {
+namespace features {
+
+template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams, typename RealType,typename VectorType >
+void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
+                                     OpenBoundaryPointer& openBoundary,
+                                     ModelParams& modelParams,
+                                     const VectorType& referentialPoint,
+                                     const VectorType& direction,
+                                     const RealType& waterLevelTrashold,
+                                     const RealType& kineticPressure = 0.f )
+{
+   using DeviceType = typename ModelParams::SPHConfig::DeviceType;
+   using EOS = typename ModelParams::EOS;
+   using GlobalIndexType = typename ModelParams::SPHTraitsType::GlobalIndexType;
+
+   if( fluid->getNumberOfParticles() == 0 )
+      return;
+
+   //obtain point water level - using max z particle component
+   const auto view_points_fluid = fluid->particles->getPoints().getConstView();
+   auto fetch = [=] __cuda_callable__ ( int i )
+   {
+      return ( view_points_fluid[ i ], direction );
+   };
+   const RealType waterLevel = Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), fetch, TNL::Max() );
+
+   //obtain point water level - using measuretool
+   //const RealType waterLevel = ...;
+
+   //update inlet profile
+   const RealType speedOfSound = modelParams.speedOfSound;
+   const RealType rho0 = modelParams.rho0;
+   const VectorType gravity = modelParams.gravity;
+   const RealType gravityMagnitude = ( gravity, direction );
+   const typename EOS::ParamsType eosParams( modelParams );
+   const RealType kineticDensity = EOS::pressureToDensity( kineticPressure, eosParams ) - rho0;
+   std::cout << "direction/nptcs: " << direction << "/" << fluid->getNumberOfParticles() << " waterLevel: " << waterLevel << " kineticDensity: " << kineticDensity << std::endl;
+
+   const auto view_points_openBound = openBoundary->particles->getPoints().getConstView();
+   auto view_rho_openBound = openBoundary->variables->rho.getView();
+
+   // update only if water level is above defined trashold
+   if( waterLevel > waterLevelTrashold ){
+      auto updateParticleDensity = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
+      {
+         const VectorType r_i = view_points_openBound[ i ];
+         const RealType h_depth = waterLevel - ( r_i, direction );
+         const RealType hydrostaticPressure = rho0 * gravityMagnitude * h_depth;
+         const RealType hydrostaticDensity = EOS::pressureToDensity( hydrostaticPressure, eosParams );
+
+         view_rho_openBound[ i ] = hydrostaticDensity + kineticDensity;
+      };
+      openBoundary->particles->forAll( updateParticleDensity );
+   }
+   else{
+      view_rho_openBound = rho0 + kineticDensity;
+   }
+}
+
+} // features
+} // SPH
+} // TNL
+
