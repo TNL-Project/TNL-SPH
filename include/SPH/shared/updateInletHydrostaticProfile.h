@@ -70,9 +70,9 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
       };
       openBoundary->particles->forAll( updateParticleDensity );
    }
-   else{
-      view_rho_openBound = rho0 + kineticDensity;
-   }
+   //else{
+   //   view_rho_openBound = rho0 + kineticDensity;
+   //}
 }
 
 } // features
