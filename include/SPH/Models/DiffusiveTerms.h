@@ -58,6 +58,47 @@ class MolteniDiffusiveTerm
    }
 };
 
+/**
+ * \brief Diffusive term proposed by Fourtakas (Fourtakas, 2019).
+ *
+ * \tparam SPHCaseConfig is a default config definig all data types.
+ */
+/*
+template< typename SPHCaseConfig >
+class FourtakasDiffusiveTerm
+{
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+      __cuda_callable__
+     ParamsType( SPHState sphState )
+     : coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ) {}
+
+     const RealType gravity;
+     const RealType rho0;
+     const RealType coefDT;
+   };
+
+   __cuda_callable__
+   static RealType
+   Psi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const ParamsType& params )
+   {
+      const RealType gamma = 7.f;
+      const RealType gravMagnitude = l2Norm( gravity );
+      const VectorType gravDirection = params.gravity;
+
+      const RealType r_z_ij = ( r_ij, gravDirection );
+      const RealType p_hydrostatic_ij = 1.f + r_z_ij * params.rho0 * gravMagnitude / params.coefB;
+      const RealType rho_hydrostatic_ij = params.rho0 * powf( p_hydrostatic_ij, 1.f / gamma ) - params.rho0;
+
+      return params.coefDT * (( rhoJ - rhoI ) - rho_hydrostatic_ij ) / ( drs * drs );
+   }
+};
+*/
+
 } // DiffusiveTerms
 } // SPH
 } // TNL
