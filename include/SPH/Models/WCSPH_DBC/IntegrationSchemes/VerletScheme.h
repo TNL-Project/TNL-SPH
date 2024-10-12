@@ -155,6 +155,8 @@ public:
    void
    integrateVerletBoundary( RealType dt, BoundaryPointer& boundary )
    {
+      auto r_view = boundary->particles->getPoints().getView();
+      const auto v_view = boundary->variables->v.getConstView();
       auto rho_old_view = boundary->integratorVariables->rho_old.getView();
       const auto drho_view = boundary->variables->drho.getConstView();
 
@@ -164,6 +166,7 @@ public:
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
+         r_view[ i ] += v_view[ i ] * dt;
       };
       boundary->particles->forAll( init );
 
@@ -199,6 +202,8 @@ public:
    void
    integrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
    {
+      auto r_view = boundary->particles->getPoints().getView();
+      const auto v_view = boundary->variables->v.getConstView();
       auto rho_view = boundary->variables->rho.getView();
       auto rho_old_view = boundary->integratorVariables->rho_old.getView();
       const auto drho_view = boundary->variables->drho.getView();
@@ -209,6 +214,7 @@ public:
       {
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
+         r_view[ i ] += v_view[ i ] * dt;
       };
       boundary->particles->forAll( init );
    }
