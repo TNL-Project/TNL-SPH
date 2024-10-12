@@ -1,4 +1,5 @@
 #include <SPH/shared/Measuretool.h>
+#include <cmath>
 
 namespace TNL {
 namespace SPH {
@@ -48,7 +49,7 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
    const RealType speedOfSound = modelParams.speedOfSound;
    const RealType rho0 = modelParams.rho0;
    const VectorType gravity = modelParams.gravity;
-   const RealType gravityMagnitude = ( gravity, direction );
+   const RealType gravityMagnitude = TNL::l2Norm( gravity );
    const typename EOS::ParamsType eosParams( modelParams );
    const RealType kineticDensity = EOS::pressureToDensity( kineticPressure, eosParams ) - rho0;
    std::cout << "direction/nptcs: " << direction << "/" << fluid->getNumberOfParticles() << " waterLevel: " << waterLevel << " kineticDensity: " << kineticDensity << std::endl;
