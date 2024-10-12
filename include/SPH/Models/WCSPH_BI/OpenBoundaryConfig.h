@@ -25,15 +25,15 @@ configSetupOpenBoundaryModelPatch( TNL::Config::ConfigDescription& config, std::
    config.addEntry< std::string >( prefix + "type", "Type of open boundary patch.", "none" );
    config.addEntry< std::string >( prefix + "rho_bc", "Define type of open boundary condition for density.", "undefine" );
    config.addEntryEnum( "fixed" );
-   config.addEntryEnum( "hydrostatic" );
+   //config.addEntryEnum( "hydrostatic" );
    config.addEntryEnum( "extrapolated" );
    config.addEntryEnum( "do-nothing" );
    config.addEntry< RealType >( prefix + "density", "Open boundary value for density.", 0 );
    // hydrostatic density inlet parameters
-   config.addEntry< VectorType >( prefix + "hydrostatic-referential-point", "Referential point to evaluate water level.", 0 );
-   config.addEntry< VectorType >( prefix + "hydrostatic-direction", "Direction of water level measurement.", 0 );
-   config.addEntry< RealType >( prefix + "hydrostatic-water-level-trashold", "Water level trashold to activate.", 0 );
-   config.addEntry< RealType >( prefix + "kinetic-pressure", "Direction of water level measurement.", 0 );
+   //config.addEntry< VectorType >( prefix + "hydrostatic-referential-point", "Referential point to evaluate water level.", 0 );
+   //config.addEntry< VectorType >( prefix + "hydrostatic-direction", "Direction of water level measurement.", 0 );
+   //config.addEntry< RealType >( prefix + "hydrostatic-water-level-trashold", "Water level trashold to activate.", 0 );
+   //config.addEntry< RealType >( prefix + "kinetic-pressure", "Direction of water level measurement.", 0 );
    config.addEntry< std::string >( prefix + "v_bc", "Define type of open boundary condition for velocity.", "undefine" );
    config.addEntryEnum( "fixed" );
    config.addEntryEnum( "extrapolated" );

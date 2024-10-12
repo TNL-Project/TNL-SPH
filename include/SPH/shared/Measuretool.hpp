@@ -425,6 +425,13 @@ SensorInterpolation< SPHConfig, SPHSimulation >::save( const std::string outputF
 //}
 
 template< typename SPHConfig, typename SPHSimulation >
+const typename SensorWaterLevel< SPHConfig, SPHSimulation >::SensorsDataArray&
+SensorWaterLevel< SPHConfig, SPHSimulation >::getSensorData() const
+{
+   return sensors;
+}
+
+template< typename SPHConfig, typename SPHSimulation >
 template< typename SPHKernelFunction, typename EOS, typename SPHState >
 void
 SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
@@ -483,7 +490,7 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
       auto reduction = [] __cuda_callable__ ( const GlobalIndexType& a, const GlobalIndexType& b ) { return a + b; };
       const GlobalIndexType numberOfFilledLevels = Algorithms::reduce< DeviceType >( 0, view_levels.getSize(), fetch, reduction, 0 );
       //const RealType waterLevel = h * numberOfFilledLevels + this->startLevel; //start level can be written as ( startPoint, direction )
-      const RealType waterLevel = levelIncrement * numberOfFilledLevels; //TODO: in case start level is included, the result is nonsense
+      const RealType waterLevel = levelIncrement * numberOfFilledLevels + ( sensorLocation, direction ); //TODO: in case start level is included, the result is nonsense //TODO: added start water level
       view_sensors( sensorIndexer, s ) = waterLevel;
    }
 

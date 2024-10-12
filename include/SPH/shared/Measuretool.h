@@ -1,3 +1,5 @@
+#pragma once
+
 #include <TNL/Meshes/Writers/VTKWriter.h>
 #include <TNL/Containers/NDArray.h>
 #include <TNL/Pointers/SharedPointer.h>
@@ -235,6 +237,9 @@ class SensorWaterLevel
       this->startLevel = startLevel;
       this->endLevel = endLevel;
    }
+
+   [[nodiscard]] const SensorsDataArray&
+   getSensorData() const;
 
    template< typename SPHKernelFunction, typename EOS, typename SPHState >
    void

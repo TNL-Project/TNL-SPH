@@ -1,10 +1,12 @@
-#include <complex>
+#include <SPH/shared/Measuretool.h>
+
 namespace TNL {
 namespace SPH {
 namespace features {
 
-template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams, typename RealType,typename VectorType >
+template< typename SPHSimulation, typename FluidPointer, typename BoundaryPointer, typename OpenBoundaryPointer, typename ModelParams, typename RealType,typename VectorType >
 void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
+                                     BoundaryPointer& boundary,
                                      OpenBoundaryPointer& openBoundary,
                                      ModelParams& modelParams,
                                      const VectorType& referentialPoint,
@@ -19,16 +21,28 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
    if( fluid->getNumberOfParticles() == 0 )
       return;
 
-   //obtain point water level - using max z particle component
-   const auto view_points_fluid = fluid->particles->getPoints().getConstView();
-   auto fetch = [=] __cuda_callable__ ( int i )
-   {
-      return ( view_points_fluid[ i ], direction );
-   };
-   const RealType waterLevel = Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), fetch, TNL::Max() );
+   ////obtain point water level - using max z particle component
+   //const auto view_points_fluid = fluid->particles->getPoints().getConstView();
+   //auto fetch = [=] __cuda_callable__ ( int i )
+   //{
+   //   return ( view_points_fluid[ i ], direction );
+   //};
+   //const RealType waterLevel = Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), fetch, TNL::Max() );
 
-   //obtain point water level - using measuretool
-   //const RealType waterLevel = ...;
+   ////obtain point water level - using measuretool
+   ////const RealType waterLevel = ...;
+   using SensorWaterLevel = SensorWaterLevel< typename ModelParams::SPHConfig, SPHSimulation >;
+   SensorWaterLevel waterLevelSensor;
+   std::vector< VectorType > pointsToMeasureWaterLevel = { referentialPoint };
+   waterLevelSensor.init( pointsToMeasureWaterLevel,
+                          1,
+                          modelParams.dp,
+                          direction,
+                          ( referentialPoint, direction ),
+                          0.5 );
+   waterLevelSensor.template interpolate< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
+         fluid, boundary, modelParams );
+   const RealType waterLevel = waterLevelSensor.getSensorData().getElement( 0, 0 );
 
    //update inlet profile
    const RealType speedOfSound = modelParams.speedOfSound;
