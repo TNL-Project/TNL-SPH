@@ -432,12 +432,12 @@ SPHMultiset_CFD< Model >::extrapolateOpenBC()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::applyOpenBC()
+SPHMultiset_CFD< Model >::applyOpenBC( const RealType timeStepFact )
 {
    for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
       //TODO Check if open boundary buffer is really open boundary buffer
       openBoundaryModel.applyOpenBoundary(
-         timeStepping.getTimeStep(), fluid, openBoundaryPatches[ i ], openBoundaryPatches[ i ]->config );
+         timeStepFact * timeStepping.getTimeStep(), fluid, openBoundaryPatches[ i ], openBoundaryPatches[ i ]->config );
    }
 }
 

@@ -124,7 +124,7 @@ public:
     * particles into and from simulations (inflows and outlows).
     */
    void
-   applyOpenBC();
+   applyOpenBC( const RealType timeStepFact = 1.f );
 
    /**
     * \brief Apply periodic boundary conditions - first part. For all periodic
