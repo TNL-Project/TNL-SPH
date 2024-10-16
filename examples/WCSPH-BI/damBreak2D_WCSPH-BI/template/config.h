@@ -50,8 +50,9 @@ class SPHConfig
 #include <SPH/Models/DensityFilters.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
-//#include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -76,7 +77,8 @@ public:
    using BCType = TNL::SPH::WCSPH_BCTypes::BI_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    //using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
-   using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
+   //using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
+   using IntegrationScheme = TNL::SPH::IntegrationSchemes::MidpointScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
    //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };

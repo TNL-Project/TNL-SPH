@@ -125,6 +125,16 @@ public:
 
    SymplecticVerletScheme() = default;
 
+   /**
+    * Print model identifier.
+    */
+   static std::string
+   getSchemeName()
+   {
+      return "TNL::SPH::IntegrationSchemes::SymplecticVerletScheme";
+   }
+
+
    template< typename FluidPointer >
    void
    predictorStep( RealType dt, FluidPointer& fluid )

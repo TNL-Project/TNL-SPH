@@ -14,7 +14,8 @@ namespace TNL {
 namespace SPH {
 namespace IntegrationSchemes {
 
-class IntegrationSchemeVariables
+template< typename SPHConfig >
+class MidpointIntegrationSchemeVariables
 {
    public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
@@ -25,7 +26,7 @@ class IntegrationSchemeVariables
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
-   IntegrationSchemeVariables() = default;
+   MidpointIntegrationSchemeVariables() = default;
 
    void
    setSize( const GlobalIndexType& size )
@@ -94,7 +95,7 @@ public:
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
-   using IntegrationSchemeVariablesType = IntegrationSchemeVariables< SPHConfig >;
+   using IntegrationSchemeVariablesType = MidpointIntegrationSchemeVariables< SPHConfig >;
 
 
    template< typename FluidPointer >
@@ -113,17 +114,38 @@ public:
    void
    midpointUpdateVariables( RealType dt, FluidPointer& fluid )
    {
+      auto v_view = fluid->variables->v.getView();
+      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
+      const auto dvdt_view = fluid->variables->a.getConstView();
+      auto rho_view = fluid->variables->rho.getView();
+      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
+      const auto drhodt_view = fluid->variables->drho.getConstView();
+
       const RealType dt05 = 0.5f * dt;
-      fluid->variables->v = fluid->integratorVariables->v_in + dt05 * fluid->variables->a;
-      fluid->variables->rho = fluid->integratorVariables->rho_in + dt05 * fluid->variables->drho;
+
+      auto init = [=] __cuda_callable__ ( int i ) mutable
+      {
+         v_view[ i ] = v_in_view[ i ] + dt05 * dvdt_view[ i ];
+         rho_view[ i ] = rho_in_view[ i ] + dt05 * drhodt_view[ i ];
+      };
+      fluid->particles->forAll( init );
    }
 
    template< typename FluidPointer >
    void
    midpointUpdatePositions( RealType dt, FluidPointer& fluid )
    {
+      auto r_view = fluid->getParticles()->getPoints().getView();
+      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
+      const auto v_view = fluid->variables->v.getConstView();
+
       const RealType dt05 = 0.5f * dt;
-      fluid->getParticles()->getPoints() = fluid->integratorVariables.r_in + dt05 * fluid->variables->v;
+
+      auto init = [=] __cuda_callable__ ( int i ) mutable
+      {
+         r_view[ i ] = r_in_view[ i ] + 0.5f * v_view[ i ];
+      };
+      fluid->particles->forAll( init );
    }
 
    template< typename FluidPointer >
@@ -157,17 +179,19 @@ public:
          const RealType rho2_i = rho_i * rho_i;
          const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
-         const RealType res_dv_dt = m * std::abs( ( v_view[ i ], dvdt_view - dvdt_in_view[ i ] ) )
+         const RealType res_dv_dt = m * std::abs( ( v_view[ i ], dvdt_view[ i ] - dvdt_in_view[ i ] ) );
          const RealType res_drho_dt = m * std::abs( p_i / rho2_i ) * ( drhodt_view[ i ] - drhodt_in_view[ i ] );
          residua_view[ i ] = res_dv_dt + res_drho_dt;
       };
       fluid->particles->forAll( init );
    }
 
+   //TODO: This can be merged together with midpointResiduals function
+   template< typename FluidPointer >
    const RealType
-   getMaxResidua()
+   getMaxResidua( FluidPointer& fluid )
    {
-      return TNL::Max( residua );
+      return TNL::max( fluid->integratorVariables->residua );
    }
 
    template< typename FluidPointer >
