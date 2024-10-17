@@ -150,10 +150,10 @@ public:
 
    template< typename FluidPointer >
    void
-   relax( RealType dt, FluidPointer& fluid, const RealType relaxMidpoint )
+   relax( FluidPointer& fluid, const RealType relaxMidpoint )
    {
-      fluid->variables->a = relaxMidpoint * fluid->integratorVariables->dvdt_in + ( 1 - relaxMidpoint ) * fluid->variables->a;
-      fluid->variables->drho = relaxMidpoint * fluid->integratorVariables->drhodt_in + ( 1 - relaxMidpoint ) * fluid->variables->drho;
+      fluid->variables->a = relaxMidpoint * fluid->integratorVariables->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->variables->a;
+      fluid->variables->drho = relaxMidpoint * fluid->integratorVariables->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->variables->drho;
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -180,7 +180,7 @@ public:
          const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
 
          const RealType res_dv_dt = m * std::abs( ( v_view[ i ], dvdt_view[ i ] - dvdt_in_view[ i ] ) );
-         const RealType res_drho_dt = m * std::abs( p_i / rho2_i ) * ( drhodt_view[ i ] - drhodt_in_view[ i ] );
+         const RealType res_drho_dt = m * std::abs( ( p_i / rho2_i ) * ( drhodt_view[ i ] - drhodt_in_view[ i ] ) );
          residua_view[ i ] = res_dv_dt + res_drho_dt;
       };
       fluid->particles->forAll( init );
@@ -198,12 +198,25 @@ public:
    void
    corrector( RealType dt, FluidPointer& fluid )
    {
+      auto r_view = fluid->getParticles()->getPoints().getView();
+      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
+      auto v_view = fluid->variables->v.getView();
+      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
+      const auto dvdt_view = fluid->variables->a.getConstView();
+      auto rho_view = fluid->variables->rho.getView();
+      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
+      const auto drhodt_view = fluid->variables->drho.getConstView();
+
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
 
-      fluid->getParticles()->getPoints() = fluid->integratorVariables->r_in + dt * fluid->integratorVariables->v_in + dtdt05 * fluid->variables->a;
-      fluid->variables->v = fluid->integratorVariables->v_in + dt * fluid->variables->a;
-      fluid->variables->rho = fluid->integratorVariables->rho_in + dt * fluid->variables->drho;
+      auto init = [=] __cuda_callable__ ( int i ) mutable
+      {
+         r_view[ i ] = r_in_view[ i ] + dt * v_in_view[ i ] + dtdt05 * dvdt_view[ i ];
+         v_view[ i ] = v_in_view[ i ] + dt * dvdt_view[ i ];
+         rho_view[ i ] = rho_in_view[ i ] + dt * drhodt_view[ i ];
+      };
+      fluid->particles->forAll( init );
    }
 };
 

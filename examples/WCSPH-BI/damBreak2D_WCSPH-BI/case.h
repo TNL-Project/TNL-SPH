@@ -103,9 +103,11 @@ int main( int argc, char* argv[] )
 
       while( sph.timeStepping.runTheSimulation() )
       {
+         std::cout << "Step: " << sph.timeStepping.getStep() << std::endl;
+
          int midpointIteration = 0;
          const int midpointMaxInterations = 10;
-         const RealType residuaTolerance = 0.001f;
+         const RealType residuaTolerance = 0.0001f;
          RealType midpointRelaxCoef = 0;
          const RealType midpointRelaxCoef_0 = midpointRelaxCoef;
          const RealType residaMinimualDecay = 1.f / 5.f;
@@ -155,11 +157,16 @@ int main( int argc, char* argv[] )
             // relax
             sph.timeMeasurement.start( "integrate" );
             if( midpointIteration == 0 )
-               sph.integrator->relax( sph.fluid, sph.modelParams, midpointRelaxCoef_0 );
+               sph.integrator->relax( sph.fluid, midpointRelaxCoef_0 );
             else if( midpointIteration == midpointMaxInterations )
-               sph.integrator->relax( sph.fluid, sph.modelParams, 0.f );
+               sph.integrator->relax( sph.fluid, 0.f );
             else
-               sph.integrator->relax( sph.fluid, sph.modelParams, midpointRelaxCoef );
+               sph.integrator->relax( sph.fluid, midpointRelaxCoef );
+            sph.timeMeasurement.stop( "integrate" );
+            sph.writeLog( log, "Integrate: predictor...", "Done." );
+
+            sph.timeMeasurement.start( "integrate" );
+            sph.integrator->corrector( sph.timeStepping.getTimeStep(), sph.fluid );
             sph.timeMeasurement.stop( "integrate" );
             sph.writeLog( log, "Integrate: predictor...", "Done." );
 
@@ -167,11 +174,28 @@ int main( int argc, char* argv[] )
          }
          midpointIteration = 0;
 
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->corrector( sph.timeStepping.getTimeStep(), sph.fluid );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: predictor...", "Done." );
+         //sph.timeMeasurement.start( "integrate" );
+         //sph.integrator->corrector( sph.timeStepping.getTimeStep(), sph.fluid );
+         //sph.timeMeasurement.stop( "integrate" );
+         //sph.writeLog( log, "Integrate: predictor...", "Done." );
+
+        // output particle data
+        if( sph.timeStepping.checkOutputTimer( "save_results" ) )
+        {
+           /**
+            * Compute pressure from density.
+            * This is not necessary since we do this localy, if pressure is needed.
+            * It's useful for output anyway.
+            */
+           sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+           sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+
+           sph.save( log );
+        }
+
+         sph.timeStepping.updateTimeStep();
       }
+
    }
 
    sph.writeEpilog( log );
