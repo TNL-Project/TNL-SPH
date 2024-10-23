@@ -7,18 +7,27 @@ import saveParticlesVTK
 
 def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density ):
     fluid_rx = []; fluid_ry = []
+    fluid_density = []
     fluid_lenght_n = round( fluid_lenght / dp )
     fluid_height_n = round( fluid_height / dp )
 
+    channel_height = 0.3
+    speed_of_sound = 34
+    rho0 = 1000
+
     for x in range( fluid_lenght_n ):
         for y in range( fluid_height_n ):
-            fluid_rx.append( dp * ( x + 1 ) )
-            fluid_ry.append( dp * ( y + 1 ) )
+            fluid_rx.append( dp * ( x + 1 ) - dp / 2 ) #Ensure that the interface is at 0
+            fluid_ry.append( dp * ( y + 1 ) - dp / 2 )
+
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - fluid_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            fluid_density.append( hydrostaticDensity )
 
     fluid_n = len( fluid_rx )
     fluid_r = np.array( ( fluid_rx, fluid_ry, np.zeros( fluid_n ) ), dtype=float ).T #!!
     fluid_v = np.zeros( ( fluid_n, 3 ) )
-    fluid_rho = density * np.ones( fluid_n )
+    fluid_rho = np.array( fluid_density, dtype=float )
     fluid_p = np.zeros( fluid_n )
     fluid_ptype = np.zeros( fluid_n )
     fluid_to_write = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
@@ -36,16 +45,16 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
     # left wall
     for layer in range( n_boundary_layers ):
         for y in range( box_height_n - 1 ):
-            box_rx.append( 0. - layer * dp )
-            box_ry.append( ( y + 1 ) * dp )
+            box_rx.append( 0. - layer * dp - dp / 2 )
+            box_ry.append( ( y + 1 ) * dp - dp / 2 )
             normal_x.append( 1. )
             normal_y.append( 0. )
 
     # bottom wall
     for layer in range( n_boundary_layers ):
         for x in range( box_length_n - 2 ):
-            box_rx.append( ( x + 1 ) * dp )
-            box_ry.append( 0. - layer * dp )
+            box_rx.append( ( x + 1 ) * dp - dp / 2 )
+            box_ry.append( 0. - layer * dp - dp / 2 )
             normal_x.append( 0. )
             normal_y.append( 1. )
 
@@ -54,8 +63,8 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
     # right wall
     for layer in range( n_boundary_layers ):
         for y in range( box_height_n - 1 ):
-            box_rx.append( x_last + dp * layer )
-            box_ry.append( ( y + 1 ) * dp )
+            box_rx.append( x_last + dp * layer - dp / 2)
+            box_ry.append( ( y + 1 ) * dp - dp / 2)
             normal_x.append( -1. )
             normal_y.append( 0. )
 
@@ -71,8 +80,8 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
           normal_x.append( nx / n_norm )
           normal_y.append( ny / n_norm )
 
-    generate90degCorner( 0, 0., -1, -1 )
-    generate90degCorner( x_last, 0., +1, -1 )
+    generate90degCorner( 0 - dp / 2, 0 - dp / 2 , -1, -1 )
+    generate90degCorner( x_last - dp / 2, 0 - dp / 2, +1, -1 )
 
     boundary_n = len( box_rx )
     boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
@@ -161,7 +170,7 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
     g = argparser.add_argument_group("resolution parameters")
     g.add_argument("--dp", type=float, default=0.002, help="initial distance between particles")
-    g.add_argument("--h-coef", type=float, default=1.8385, help="smoothing length coefitient")
+    g.add_argument("--h-coef", type=float, default=2, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--box-length", type=float, default=1.61, help="length of dam break box")
     g.add_argument("--box-height", type=float, default=0.8, help="height of dam break box")

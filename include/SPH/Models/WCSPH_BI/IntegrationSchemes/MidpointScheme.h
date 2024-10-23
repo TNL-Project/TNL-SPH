@@ -38,11 +38,37 @@ class MidpointIntegrationSchemeVariables
       rho_in.setSize( size );
       residua.setSize( size );
 
+      dvdt_in_swap.setSize( size );
+      drhodt_in_swap.setSize( size );
+      r_in_swap.setSize( size );
+      v_in_swap.setSize( size );
+      rho_in_swap.setSize( size );
+      residua_swap.setSize( size );
+
+      //FIXME:
+      dvdt_in = 0.f;
+      dvdt_in_swap = 0.f;
+      drhodt_in = 0.f;
+      drhodt_in_swap = 0.f;
+
+      r_in = 0.f;
+      r_in_swap = 0.f;
+
+      v_in = 0.f;
+      v_in_swap = 0.f;
+
+      rho_in = 1000.f;
+      rho_in_swap = 1000.f;
+
+      residua = 0.f;
+      residua_swap = 0.f;
+
       //FIXME: disgusting out-place swap
       swapScalar.setSize( size );
       swapVector.setSize( size );
    }
 
+   /*
    void
    sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
    {
@@ -69,6 +95,39 @@ class MidpointIntegrationSchemeVariables
             residua.getArrayData(), swapScalar.getArrayData() );
       residua.swap( swapScalar );
    }
+   */
+
+   void
+   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   {
+      auto view_map = map->getView();
+
+      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
+      ThrustDeviceType thrustDevice;
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            dvdt_in.getArrayData(), dvdt_in_swap.getArrayData() );
+      dvdt_in.swap( dvdt_in_swap );
+
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            drhodt_in.getArrayData(), drhodt_in_swap.getArrayData() );
+      drhodt_in.swap( drhodt_in_swap );
+
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            r_in.getArrayData(), r_in_swap.getArrayData() );
+      r_in.swap( r_in_swap );
+
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            v_in.getArrayData(), v_in_swap.getArrayData() );
+      v_in.swap( v_in_swap );
+
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            rho_in.getArrayData(), rho_in_swap.getArrayData() );
+      rho_in.swap( rho_in_swap );
+
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            residua.getArrayData(), residua_swap.getArrayData() );
+      residua.swap( residua_swap );
+   }
 
    VectorArrayType dvdt_in;
    ScalarArrayType drhodt_in;
@@ -78,6 +137,16 @@ class MidpointIntegrationSchemeVariables
    ScalarArrayType rho_in;
 
    ScalarArrayType residua;
+
+   //FIXME
+   VectorArrayType dvdt_in_swap;
+   ScalarArrayType drhodt_in_swap;
+
+   VectorArrayType r_in_swap;
+   VectorArrayType v_in_swap;
+   ScalarArrayType rho_in_swap;
+
+   ScalarArrayType residua_swap;
 
    //FIXME: disgusting out-place swap
    ScalarArrayType swapScalar;
@@ -96,7 +165,6 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
    using IntegrationSchemeVariablesType = MidpointIntegrationSchemeVariables< SPHConfig >;
-
 
    template< typename FluidPointer >
    void
@@ -154,6 +222,8 @@ public:
    {
       fluid->variables->a = relaxMidpoint * fluid->integratorVariables->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->variables->a;
       fluid->variables->drho = relaxMidpoint * fluid->integratorVariables->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->variables->drho;
+
+      std::cout << "relaxed with relax midpoint: " << relaxMidpoint << std::endl;
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -191,7 +261,7 @@ public:
    const RealType
    getMaxResidua( FluidPointer& fluid )
    {
-      return TNL::max( fluid->integratorVariables->residua );
+      return TNL::sum( fluid->integratorVariables->residua );
    }
 
    template< typename FluidPointer >

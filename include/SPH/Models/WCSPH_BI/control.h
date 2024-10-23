@@ -168,6 +168,20 @@ public:
    //dtMin - minimal allowed time step [s];
    RealType dtMin = 0.f;
 
+   //Parameters of implicit midpoint integration scheme
+   //midpointMaxInterations - max number of midpoint iterations [-]
+   int midpointMaxInterations = 50;
+   //midpointResidualTolerance - midpoint iteration tolerance to reach [-]
+   RealType midpointResidualTolerance = 1.e-7;
+   //midpointRelaxCoef - midpoint relaxation coefficient [-]
+   RealType midpointRelaxCoef = 0;
+   //midpointRelaxCoef_0 - midpoint relaxation coefficinet in first iteration [-]
+   RealType midpointRelaxCoef_0 = 0;
+   //midpointResidalMinimualDecay - midpoint minimal decay of residual [-]
+   RealType midpointResidalMinimalDecay = 0.2f;
+   //midpointRelaxCoefIncrement - midpoint increment of realxation coefficinet [-]
+   RealType midpointRelaxCoefIncrement = 0;
+
    //gravity - external forces [m^2 / s].
    VectorType gravity = 0.f;
 
@@ -250,6 +264,16 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
                                  IntegrationSchemes::SymplecticVerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::SymplecticVerletScheme", 1 );
+   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
+                                 IntegrationSchemes::MidpointScheme< typename ModelParams::SPHConfig > > ){
+      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::MidpointScheme", 1 );
+      logger.writeParameter( "Max. midpoint iteractions: ", modelParams.midpointMaxInterations, 1 );
+      logger.writeParameter( "Residual tolerance: ", modelParams.midpointResidualTolerance, 1 );
+      logger.writeParameter( "Relaxation coef.: ", modelParams.midpointRelaxCoef, 1 );
+      logger.writeParameter( "Relaxation coef. in first iteration: ", modelParams.midpointRelaxCoef_0, 1 );
+      logger.writeParameter( "Residual minimal decay: ", modelParams.midpointResidalMinimalDecay, 1 );
+      logger.writeParameter( "Midpoint relax coef, icrement: ", modelParams.midpointRelaxCoefIncrement, 1 );
+   }
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
