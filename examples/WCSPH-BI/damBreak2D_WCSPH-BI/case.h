@@ -7,6 +7,7 @@
 #include "template/config.h"
 
 #include <SPH/Models/WCSPH_BI/control.h>
+#include <SPH/DefaultTimeLoops.h>
 
 int main( int argc, char* argv[] )
 {
@@ -30,14 +31,9 @@ int main( int argc, char* argv[] )
    sph.init( parameters, log );
    sph.writeProlog( log );
 
-   // Solver model:
-   //sph.init( parameters );
-   //sph.writeProlog( parameters );
-   //sph.exec();
-   //sph.writeEpilog( parameters );
+   TNL::SPH::template exec( sph, log );
 
-   // Library model:
-   //if constexpr ( std::is_same_v< SPHDefs::IntegrationScheme, TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename SPHDefs::SPHConfig > > ){
+   //if constexpr ( std::is_same_v< SPHDefs::IntegrationScheme, TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename SPHDefs::SPHConfig > > ) {
    //   while( sph.timeStepping.runTheSimulation() )
    //   {
    //      //integrate predictor step
@@ -97,7 +93,9 @@ int main( int argc, char* argv[] )
    //      // update time step
    //      sph.timeStepping.updateTimeStep();
    //   }
-   //} // SymplecticVerletScheme
+   //}
+   //else{}// SymplecticVerletScheme
+
    //midpoint//sph.fluid->variables->a = 0.f;
    //midpoint//sph.fluid->variables->drho = 0.f;
 
@@ -258,89 +256,54 @@ int main( int argc, char* argv[] )
 
    //midpoint//}
 
-   if constexpr ( std::is_same_v< SPHDefs::IntegrationScheme, TNL::SPH::IntegrationSchemes::RK45Scheme< typename SPHDefs::SPHConfig > > ){
+   //if constexpr ( std::is_same_v< SPHDefs::IntegrationScheme, TNL::SPH::IntegrationSchemes::RK45Scheme< typename SPHDefs::SPHConfig > > ){
+   //   while( sph.timeStepping.runTheSimulation() ){
+   //      std::cout << "Time: " << sph.timeStepping.getTime() << " step: " << sph.timeStepping.getStep() << std::endl;
 
-         // predictor step
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->predictorStep0( sph.timeStepping.getTimeStep(), sph.fluid );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: predictor...", "Done." );
+   //      for( int predictorStep = 0; predictorStep < 4; predictorStep++ ){
+   //         // predictor step
+   //         sph.timeMeasurement.start( "integrate" );
+   //         sph.integrator->predictor( sph.timeStepping.getTimeStep(), sph.fluid, predictorStep );
+   //         sph.timeMeasurement.stop( "integrate" );
+   //         sph.writeLog( log, "Integrate: predictor...", "Done." );
 
-         // search for neighbros
-         sph.timeMeasurement.start( "search" );
-         sph.performNeighborSearch( log );
-         sph.timeMeasurement.stop( "search" );
-         sph.writeLog( log, "Search...", "Done." );
+   //         // search for neighbros
+   //         sph.timeMeasurement.start( "search" );
+   //         sph.performNeighborSearch( log );
+   //         sph.timeMeasurement.stop( "search" );
+   //         sph.writeLog( log, "Search...", "Done." );
 
-         // perform interaction with given model
-         sph.timeMeasurement.start( "interact" );
-         sph.interact(); //TODO: What about BC conditions?
-         sph.timeMeasurement.stop( "interact" );
-         sph.writeLog( log, "Interact...", "Done." );
-         // custom: no-penetration bc
-         BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+   //         // perform interaction with given model
+   //         sph.timeMeasurement.start( "interact" );
+   //         sph.interact(); //TODO: What about BC conditions?
+   //         sph.timeMeasurement.stop( "interact" );
+   //         sph.writeLog( log, "Interact...", "Done." );
+   //         // custom: no-penetration bc
+   //         //BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+   //      }
 
-         // predictor step
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->predictorStep1( sph.timeStepping.getTimeStep(), sph.fluid );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: predictor...", "Done." );
+   //      // predictor step
+   //      sph.timeMeasurement.start( "integrate" );
+   //      sph.integrator->corrector( sph.timeStepping.getTimeStep(), sph.fluid );
+   //      sph.timeMeasurement.stop( "integrate" );
+   //      sph.writeLog( log, "Integrate: predictor...", "Done." );
 
-         // search for neighbros
-         sph.timeMeasurement.start( "search" );
-         sph.performNeighborSearch( log );
-         sph.timeMeasurement.stop( "search" );
-         sph.writeLog( log, "Search...", "Done." );
+   //       // output particle data
+   //       if( sph.timeStepping.checkOutputTimer( "save_results" ) )
+   //       {
+   //          /**
+   //           * Compute pressure from density.
+   //           * This is not necessary since we do this localy, if pressure is needed.
+   //           * It's useful for output anyway.
+   //           */
+   //          sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
+   //          sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
 
-         // perform interaction with given model
-         sph.timeMeasurement.start( "interact" );
-         sph.interact(); //TODO: What about BC conditions?
-         sph.timeMeasurement.stop( "interact" );
-         sph.writeLog( log, "Interact...", "Done." );
-         // custom: no-penetration bc
-         BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
-
-         // predictor step
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->predictorStep2( sph.timeStepping.getTimeStep(), sph.fluid );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: predictor...", "Done." );
-
-         // search for neighbros
-         sph.timeMeasurement.start( "search" );
-         sph.performNeighborSearch( log );
-         sph.timeMeasurement.stop( "search" );
-         sph.writeLog( log, "Search...", "Done." );
-
-         // perform interaction with given model
-         sph.timeMeasurement.start( "interact" );
-         sph.interact(); //TODO: What about BC conditions?
-         sph.timeMeasurement.stop( "interact" );
-         sph.writeLog( log, "Interact...", "Done." );
-         // custom: no-penetration bc
-         BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
-
-         // predictor step
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->predictorStep3( sph.timeStepping.getTimeStep(), sph.fluid );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: predictor...", "Done." );
-
-         // search for neighbros
-         sph.timeMeasurement.start( "search" );
-         sph.performNeighborSearch( log );
-         sph.timeMeasurement.stop( "search" );
-         sph.writeLog( log, "Search...", "Done." );
-
-         // perform interaction with given model
-         sph.timeMeasurement.start( "interact" );
-         sph.interact(); //TODO: What about BC conditions?
-         sph.timeMeasurement.stop( "interact" );
-         sph.writeLog( log, "Interact...", "Done." );
-         // custom: no-penetration bc
-         BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
-
-   }
+   //          sph.save( log );
+   //       }
+   //      sph.timeStepping.updateTimeStep();
+   //   }
+   //}
 
    sph.writeEpilog( log );
 }

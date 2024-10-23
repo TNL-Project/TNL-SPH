@@ -34,12 +34,14 @@ class RK45IntegrationSchemeVariables
    {
       dvdt_in.setSize( size );
       drhodt_in.setSize( size );
+      v_staged.setSize( size );
       r_in.setSize( size );
       v_in.setSize( size );
       rho_in.setSize( size );
 
       dvdt_in_swap.setSize( size );
       drhodt_in_swap.setSize( size );
+      v_staged_swap.setSize( size );
       r_in_swap.setSize( size );
       v_in_swap.setSize( size );
       rho_in_swap.setSize( size );
@@ -109,6 +111,10 @@ class RK45IntegrationSchemeVariables
       drhodt_in.swap( drhodt_in_swap );
 
       thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
+            v_staged.getArrayData(), v_staged_swap.getArrayData() );
+      v_staged.swap( v_staged_swap );
+
+      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             r_in.getArrayData(), r_in_swap.getArrayData() );
       r_in.swap( r_in_swap );
 
@@ -124,6 +130,7 @@ class RK45IntegrationSchemeVariables
 
    VectorArrayType dvdt_in;
    ScalarArrayType drhodt_in;
+   VectorArrayType v_staged;
 
    VectorArrayType r_in;
    VectorArrayType v_in;
@@ -134,6 +141,7 @@ class RK45IntegrationSchemeVariables
    //FIXME
    VectorArrayType dvdt_in_swap;
    ScalarArrayType drhodt_in_swap;
+   VectorArrayType v_staged_swap;
 
    VectorArrayType r_in_swap;
    VectorArrayType v_in_swap;
@@ -159,43 +167,7 @@ public:
 
    template< typename FluidPointer >
    void
-   predictorStep0( RealType dt, FluidPointer& fluid )
-   {
-      //w^(0) = w^n
-      fluid->integratorVariables->dvdt_in = fluid->variables->a;
-      fluid->integratorVariables->drhodt_in = fluid->variables->drho;
-
-      fluid->integratorVariables->r_in = fluid->getParticles()->getPoints();
-      fluid->integratorVariables->v_in = fluid->variables->v;
-      fluid->integratorVariables->rho_in = fluid->variables->rho;
-   }
-
-   template< typename FluidPointer >
-   void
-   predictorStep1( const RealType dt, FluidPointer& fluid )
-   {
-      auto r_view = fluid->getParticles()->getPoints().getView();
-      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
-      auto v_view = fluid->variables->v.getView();
-      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
-
-      auto init = [=] __cuda_callable__ ( int i ) mutable
-      {
-         //w^(1) = w^(0) + F(w^(0)) * dt/2
-         //r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
-         v_view[ i ] = v_in_view[ i ] + 0.5f * dt * dvdt_view[ i ];
-         rho_view[ i ] = rho_in_view[ i ] + 0.5f * dt * drhodt_view[ i ];
-      };
-      fluid->particles->forAll( init );
-   }
-
-   template< typename FluidPointer >
-   void
-   predictorStep2( RealType dt, FluidPointer& fluid )
+   predictor( RealType dt, FluidPointer& fluid, const int predictorStep )
    {
       auto r_view = fluid->getParticles()->getPoints().getView();
       const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
@@ -207,48 +179,62 @@ public:
       const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
       const auto drhodt_view = fluid->variables->drho.getConstView();
       auto drhodt_view_in = fluid->integratorVariables->drhodt_in.getView();
+      auto v_staged_view = fluid->integratorVariables->v_staged.getView();
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto step1 = [=] __cuda_callable__ ( int i ) mutable
+      {
+         //w^(1) = w^(0) + F(w^(0)) * dt/2
+         r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
+         v_view[ i ] = v_in_view[ i ] + 0.5f * dt * dvdt_view[ i ];
+         rho_view[ i ] = rho_in_view[ i ] + 0.5f * dt * drhodt_view[ i ];
+      };
+
+      auto step2 = [=] __cuda_callable__ ( int i ) mutable
       {
          //w^(2) = w^(0) + F(w^(1)) * dt/2
-         //r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
+         r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
          v_view[ i ] = v_in_view[ i ] + 0.5f * dt * dvdt_view[ i ];
          rho_view[ i ] = rho_in_view[ i ] + 0.5f * dt * drhodt_view[ i ];
 
          //F(w^(0)) + 2 * F(w^(1))
          dvdt_view_in[ i ] += 2 * dvdt_view[ i ];
          drhodt_view_in[ i ] += 2 * drhodt_view[ i ];
+         v_staged_view[ i ] += 2 * v_view[ i ];
       };
-      fluid->particles->forAll( init );
-   }
 
-   template< typename FluidPointer >
-   void
-   predictorStep3( const RealType dt, FluidPointer& fluid )
-   {
-      auto r_view = fluid->getParticles()->getPoints().getView();
-      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
-      auto v_view = fluid->variables->v.getView();
-      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      auto dvdt_view_in = fluid->integratorVariables->dvdt_in.getView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
-      auto drhodt_view_in = fluid->integratorVariables->drhodt_in.getView();
-
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto step3 = [=] __cuda_callable__ ( int i ) mutable
       {
          //w^(3) = w^(0) + F(w^(1)) * dt/2 + dt * F(w^(2))
-         //r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
+         r_view[ i ] = r_in_view[ i ] + dt * v_view[ i ];
          v_view[ i ] = v_in_view[ i ] + dt * dvdt_view[ i ];
          rho_view[ i ] = rho_in_view[ i ] + dt * drhodt_view[ i ];
 
          //F(w^(0)) + 2 * F(w^(1)) + 2 * F(w^(2))
          dvdt_view_in[ i ] += 2 * dvdt_view[ i ];
          drhodt_view_in[ i ] += 2 * drhodt_view[ i ];
+         v_staged_view[ i ] += 2 * v_view[ i ];
       };
-      fluid->particles->forAll( init );
+
+      if( predictorStep == 0 ){
+         //w^(0) = w^n
+         fluid->integratorVariables->dvdt_in = fluid->variables->a;
+         fluid->integratorVariables->drhodt_in = fluid->variables->drho;
+         fluid->integratorVariables->r_in = fluid->getParticles()->getPoints();
+         fluid->integratorVariables->v_in = fluid->variables->v;
+         fluid->integratorVariables->rho_in = fluid->variables->rho;
+
+         fluid->integratorVariables->v_staged = fluid->variables->v;
+      }
+      else if( predictorStep == 1 ){
+         fluid->particles->forAll( step1 );
+      }
+      else if( predictorStep == 2 ){
+         fluid->particles->forAll( step2 );
+      }
+      else if( predictorStep == 3 ){
+         fluid->particles->forAll( step3 );
+      }
+
    }
 
    template< typename FluidPointer >
@@ -264,16 +250,17 @@ public:
       auto rho_view = fluid->variables->rho.getView();
       const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
       const auto drhodt_view = fluid->variables->drho.getConstView();
-      auto drhodt_view_in = fluid->integratorVariables->drhodt_int.getView();
+      auto drhodt_view_in = fluid->integratorVariables->drhodt_in.getView();
+      const auto v_staged_view = fluid->integratorVariables->v_staged.getConstView();
 
       const RealType dtdt05 = 0.5f * dt * dt;
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
          //w^(4) = w^(0) + (dt / 6) * [F(w^(0)) + 2 * F(w^(1)) + 2 * F(w^(2)) + F(w^(3))]
-         r_view[ i ] = r_in_view[ i ] + dt * v_in_view[ i ] + dtdt05 * dvdt_view[ i ];
+         r_view[ i ] = r_in_view[ i ] + ( dt / 6.f ) * ( v_staged_view[ i ] + v_view[ i ] );
          v_view[ i ] = v_in_view[ i ] + ( dt / 6.f ) * ( dvdt_view_in[ i ] + dvdt_view[ i ] );
-         rho_view[ i ] = rho_in_view[ i ] + ( dt / 6.f ) * ( drhodt_view_in[ i ] + dvdt_view[ i ] );
+         rho_view[ i ] = rho_in_view[ i ] + ( dt / 6.f ) * ( drhodt_view_in[ i ] + drhodt_view[ i ] );
       };
       fluid->particles->forAll( init );
    }
