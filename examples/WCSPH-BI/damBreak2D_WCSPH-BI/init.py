@@ -27,7 +27,8 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
     fluid_n = len( fluid_rx )
     fluid_r = np.array( ( fluid_rx, fluid_ry, np.zeros( fluid_n ) ), dtype=float ).T #!!
     fluid_v = np.zeros( ( fluid_n, 3 ) )
-    fluid_rho = np.array( fluid_density, dtype=float )
+    #fluid_rho = np.array( fluid_density, dtype=float )
+    fluid_rho = rho0 * np.ones( fluid_n )
     fluid_p = np.zeros( fluid_n )
     fluid_ptype = np.zeros( fluid_n )
     fluid_to_write = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
@@ -146,6 +147,7 @@ def compute_and_write_simulation_params( dp,
     config_file = config_file.replace( 'placeholderSpeedOfSound', str( speed_of_sound ) )
     config_file = config_file.replace( 'placeholderDensity', str( density ))
     config_file = config_file.replace( 'placeholderTimeStep', str( timeStep ) )
+    config_file = config_file.replace( 'placeholderCFL', str( cfl ) )
     config_file = config_file.replace( 'placeholderFluidParticles', str( fluid_n ) )
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( fluid_n ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( boundary_n ) )

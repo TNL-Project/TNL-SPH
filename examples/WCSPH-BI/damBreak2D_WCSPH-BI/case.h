@@ -56,6 +56,9 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
 
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
       // output particle data
       if( sph.timeStepping.checkOutputTimer( "save_results" ) ){
          // compute pressure from density
