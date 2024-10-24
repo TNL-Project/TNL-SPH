@@ -124,7 +124,7 @@ exec( Simulation& sph, TNL::Logger& log )
 
          // perform interaction with given model
          sph.timeMeasurement.start( "interact" );
-         sph.interact(); //TODO: What about BC conditions?
+         sph.interact();
          sph.timeMeasurement.stop( "interact" );
          sph.writeLog( log, "Interact...", "Done." );
 
@@ -138,11 +138,11 @@ exec( Simulation& sph, TNL::Logger& log )
          sph.writeLog( log, "Integrate: compute residuals...", "Done." );
 
          // stop midpoint iterations
-         if( residual < sph.modelParams.residuaTolerance )
+         if( residual < sph.modelParams.midpointResidualTolerance )
             midpointIteration = sph.modelParams.midpointMaxInterations;
          // constrol residua decay
          if( midpointIteration > 0 )
-            if( residual / residualPrevious > sph.modelParams.residaMinimualDecay )
+            if( residual / residualPrevious > sph.modelParams.midpointResidualMinimalDecay )
                 midpointRelaxCoef = sph.modelParams.midpointRelaxCoefIncrement + ( 1.0 - sph.modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
          // backup residua
          residualPrevious = residual;
@@ -153,9 +153,9 @@ exec( Simulation& sph, TNL::Logger& log )
          sph.timeMeasurement.stop( "integrate" );
          sph.writeLog( log, "Integrate: relax...", "Done." );
 
-         std::cout  << "Midpoint iteractions: " << midpointIteration << " residua: " << residual << " relax coef: " << midpointRelaxCoef << std::endl;
          midpointIteration++;
       }
+      std::cout  << "Midpoint iteractions residua: " << residualPrevious << " relax coef: " << midpointRelaxCoef << std::endl;
 
       sph.timeMeasurement.start( "integrate" );
       if( sph.timeStepping.getStep() == 0 )
@@ -208,7 +208,7 @@ exec( Simulation& sph, TNL::Logger& log )
          sph.writeLog( log, "Interact...", "Done." );
 
          // custom: no-penetration bc
-         //BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+         BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
       }
 
       // predictor step

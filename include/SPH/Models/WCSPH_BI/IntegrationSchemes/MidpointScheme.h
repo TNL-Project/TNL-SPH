@@ -230,8 +230,6 @@ public:
 
       fluid->variables->a = relaxMidpoint * fluid->integratorVariables->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->variables->a;
       fluid->variables->drho = relaxMidpoint * fluid->integratorVariables->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->variables->drho;
-
-      std::cout << "relaxed with relax midpoint: " << relaxMidpoint << std::endl;
    }
 
    template< typename FluidPointer, typename ModelParams >

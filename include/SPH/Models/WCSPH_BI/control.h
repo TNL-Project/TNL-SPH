@@ -54,10 +54,18 @@ public:
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      // parameters of elastic bounce boundary correction
       config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
       config.addEntry< RealType >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
       config.addEntry< RealType >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
       config.addEntry< RealType >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
+      // parameters of midpoint integration scheme
+      config.addEntry< int >( "midpointMaxInterations", "Number of alowed midpoint iterations.", 30 );
+      config.addEntry< RealType >( "midpointResidualTolerance", "Midpoint iteration residual threshold.", 1e-5 );
+      config.addEntry< RealType >( "midpointRelaxCoef", "Midpoint relaxation coefficient.", 0.f );
+      config.addEntry< RealType >( "midpointRelaxCoef_0", "Midpoint relaxation coefficient in first iteration.", 0.f );
+      config.addEntry< RealType >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
+      config.addEntry< RealType >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
 
       for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -91,10 +99,18 @@ public:
       dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
+      // parameters of elastic bounce boundary correction
       enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
       elasticFactor = parameters.getParameter< RealType >( "elasticFactor" );
       r_boxFactor = parameters.getParameter< RealType >( "r_boxFactor" );
       minimalDistanceFactor = parameters.getParameter< RealType >( "minimalDistanceFactor" );
+      // parameters of midpoint integration scheme
+      midpointMaxInterations = parameters.getParameter< int >( "midpointMaxInterations" );
+      midpointResidualTolerance = parameters.getParameter< RealType >( "midpointResidualTolerance" );
+      midpointRelaxCoef = parameters.getParameter< RealType >( "midpointRelaxCoef" );
+      midpointRelaxCoef_0 = parameters.getParameter< RealType >( "midpointRelaxCoef_0" );
+      midpointResidualMinimalDecay = parameters.getParameter< RealType >( "midpointResidualMinimalDecay" );
+      midpointRelaxCoefIncrement = parameters.getParameter< RealType >( "midpointRelaxCoefIncrement" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * h / speedOfSound;
@@ -178,7 +194,7 @@ public:
    //midpointRelaxCoef_0 - midpoint relaxation coefficinet in first iteration [-]
    RealType midpointRelaxCoef_0 = 0;
    //midpointResidalMinimualDecay - midpoint minimal decay of residual [-]
-   RealType midpointResidalMinimalDecay = 0.2f;
+   RealType midpointResidualMinimalDecay = 0.2f;
    //midpointRelaxCoefIncrement - midpoint increment of realxation coefficinet [-]
    RealType midpointRelaxCoefIncrement = 0;
 
@@ -271,7 +287,7 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Residual tolerance: ", modelParams.midpointResidualTolerance, 1 );
       logger.writeParameter( "Relaxation coef.: ", modelParams.midpointRelaxCoef, 1 );
       logger.writeParameter( "Relaxation coef. in first iteration: ", modelParams.midpointRelaxCoef_0, 1 );
-      logger.writeParameter( "Residual minimal decay: ", modelParams.midpointResidalMinimalDecay, 1 );
+      logger.writeParameter( "Residual minimal decay: ", modelParams.midpointResidualMinimalDecay, 1 );
       logger.writeParameter( "Midpoint relax coef, icrement: ", modelParams.midpointRelaxCoefIncrement, 1 );
    }
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
