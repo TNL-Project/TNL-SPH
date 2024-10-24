@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gtest/gtest.h"
 #include <TNL/Containers/Array.h>
 #include <TNL/Containers/ArrayView.h>
 #include <TNL/Pointers/SharedPointer.h>
