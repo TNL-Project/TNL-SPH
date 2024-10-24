@@ -216,10 +216,18 @@ public:
       fluid->particles->forAll( init );
    }
 
-   template< typename FluidPointer >
+   template< typename FluidPointer, typename ModelParams >
    void
-   relax( FluidPointer& fluid, const RealType relaxMidpoint )
+   relax( FluidPointer& fluid, ModelParams& modelParams, const RealType midpointRelaxCoef, const int midpointIteration )
    {
+      RealType relaxMidpoint;
+      if( midpointIteration == 0 )
+         relaxMidpoint = modelParams.midpointRelaxCoef_0;
+      else if( midpointIteration == modelParams.midpointMaxInterations )
+         relaxMidpoint = 0.f;
+      else
+         relaxMidpoint = midpointRelaxCoef;
+
       fluid->variables->a = relaxMidpoint * fluid->integratorVariables->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->variables->a;
       fluid->variables->drho = relaxMidpoint * fluid->integratorVariables->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->variables->drho;
 
@@ -227,7 +235,7 @@ public:
    }
 
    template< typename FluidPointer, typename ModelParams >
-   void
+   RealType
    midpointResiduals( FluidPointer& fluid, ModelParams& modelParams )
    {
       using EOS = typename ModelParams::EOS;
@@ -254,13 +262,7 @@ public:
          residua_view[ i ] = res_dv_dt + res_drho_dt;
       };
       fluid->particles->forAll( init );
-   }
 
-   //TODO: This can be merged together with midpointResiduals function
-   template< typename FluidPointer >
-   const RealType
-   getMaxResidua( FluidPointer& fluid )
-   {
       return TNL::sum( fluid->integratorVariables->residua );
    }
 
