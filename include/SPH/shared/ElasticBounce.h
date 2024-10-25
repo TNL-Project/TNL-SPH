@@ -104,6 +104,108 @@ boundaryCorrection( FluidPointer& fluid,
 }
 };
 
+template< typename ParticleSystem, typename SPHConfig>
+class ElasticBounceLight
+{
+public:
+
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using DeviceType = typename SPHConfig::DeviceType;
+
+   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
+static void
+boundaryCorrection( FluidPointer& fluid,
+                    BoudaryPointer& boundary,
+                    SPHState& sphState,
+                    const RealType& dt )
+{
+   /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
+   GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
+   const RealType searchRadius = fluid->particles->getSearchRadius();
+
+   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+
+   /* CONSTANT VARIABLES */
+   const RealType dp = sphState.dp;
+   const RealType r_boxFactor = sphState.r_boxFactor;
+   const RealType minimalDistanceFactor = sphState.minimalDistanceFactor;
+   const RealType elasticFactor = sphState.elasticFactor;
+
+   /* VARIABLES AND FIELD ARRAYS */
+   const auto view_points = fluid->particles->getPoints().getView();
+   auto view_v = fluid->variables->v.getView();
+   auto view_a = fluid->variables->a.getView();
+
+   const auto view_points_bound = boundary->particles->getPoints().getView();
+   const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_n_bound = boundary->variables->n.getView();
+   const auto view_elementSize_bound = boundary->variables->elementSize.getConstView();
+
+   auto elasticBounce = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
+         VectorType& r_i,  VectorType& v_i, VectorType* ve_i, VectorType* dvdte_i ) mutable
+   {
+      const VectorType r_j = view_points_bound[ j ];
+      const VectorType r_ji = r_j - r_i;
+      const RealType drs = l2Norm( r_ji );
+      if (drs <= searchRadius )
+      {
+         const VectorType v_j = view_v_bound[ j ];
+         const VectorType n_j = ( -1.f ) * view_n_bound[ j ];
+         const RealType s_j = view_elementSize_bound[ j ];
+
+         const RealType rn = ( r_ji, n_j );
+         // Particle is behind the wall
+         if( rn < 0.f )
+            return;
+
+         RealType r_box;
+         if( SPHConfig::spaceDimension == 2 )
+            r_box = r_boxFactor * s_j;
+         else if( SPHConfig::spaceDimension == 3 )
+            r_box = r_boxFactor * sqrt( s_j );
+         const VectorType r_ji_box = r_ji - rn * n_j;
+         // Particle is too far from boundary element
+         if( ( r_ji_box, r_ji_box ) >= r_box * r_box )
+            return;
+
+         const RealType drn = dt * ( *ve_i, n_j );
+         // Particle is already running away from boundary
+         if( drn < 0.f )
+            return;
+
+         // Reflect the particle if is inside or is entering effective area
+         if( rn - drn <= minimalDistanceFactor * dp ){
+            const VectorType v_updated = v_i + dt * ( *dvdte_i );
+            const VectorType v_updated_r = v_updated - 2.f * ( v_updated, n_j ) * n_j;
+            *dvdte_i = ( v_updated_r - v_i ) / dt;
+            *ve_i = v_i + 0.5f * dt * ( *dvdte_i );
+         }
+      }
+   };
+
+   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   {
+      const VectorType r_i = view_points[ i ];
+      const VectorType v_i = view_v[ i ];
+      const VectorType dvdt_i = view_a[ i ];
+
+      VectorType ve_i = v_i + 0.5f * dt * dvdt_i;
+      VectorType dvdte_i = dvdt_i;
+
+      ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, elasticBounce, v_i, &ve_i, &dvdte_i );
+
+      view_a[ i ] = dvdte_i;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
+
+}
+};
+
 
 } // SPH
 } // TNL
