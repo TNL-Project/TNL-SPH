@@ -131,6 +131,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType n_j =  view_n_bound[ j ];
          const RealType ds_j = view_elementSize_bound[ j ];
 
+
          const VectorType v_ij = v_i - v_j;
 
          const RealType W = KernelFunction::W( drs, h );
@@ -138,14 +139,14 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
          //FIXME: The signs are fucked, because I used inner normals.
          //       Correct is of course: -1/rho * grad + visco
-         *drho_i += ( +2.f ) * rho_i * ( v_i - v_j, gradW );
+         *drho_i += ( -2.f ) * rho_i * ( v_i - v_j, gradW );
 
          const VectorType grad_p = 2.f * p_i * gradW;
          const VectorType visco_term = ViscousTerm::BI_Pi( drs, r_ij, v_ij, rho_i, rho_j, W, n_j, ds_j, viscousTermsParams );
          const VectorType bvt = BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
          //FIXME: The signs are fucked, because I used inner normals.
          //       Correct is of course: -1/rho * grad + visco
-         *a_i += ( -1.f / rho_i ) * grad_p - visco_term  + bvt;
+         *a_i += ( +1.f / rho_i ) * grad_p - visco_term  + bvt;
       }
    };
 
@@ -242,13 +243,34 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       }
    };
 
+   auto BoundFluidConservative = [ = ] __cuda_callable__( LocalIndexType i,
+                                                          LocalIndexType j,
+                                                          VectorType& r_i,
+                                                          RealType*
+                                                          rho_i,
+                                                          RealType* gamma_i ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius ) {
+         const RealType rho_j = view_rho[ j ];
+
+         const RealType W = KernelFunction::W( drs, h );
+
+         *rho_i += 2.f * W * m;
+         *gamma_i += W * m / rho_j;
+      }
+   };
+
    auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points_bound[ i ];
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
+      //Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluidConservative, &rho_i, &gamma_i );
 
       view_rho_bound[ i ] = rho_i;
       view_gamma_bound[ i ] = gamma_i;
@@ -558,7 +580,8 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
 
    auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
-      const RealType gamma_i = view_gamma[ i ];
+      //const RealType gamma_i = view_gamma[ i ];
+      const RealType gamma_i = 1.f;
 
       if( gamma_i > 0.01f ) {
          view_Drho[ i ] = view_Drho[ i ] / gamma_i;
@@ -588,7 +611,8 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
 
    auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
-      const RealType gamma_i = view_gamma_bound[ i ];
+      //const RealType gamma_i = view_gamma_bound[ i ];
+      const RealType gamma_i = 1;
       const RealType rho_i = view_rho_bound[ i ];
 
       if( gamma_i > 0.01f ) {
