@@ -27,8 +27,8 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
     fluid_n = len( fluid_rx )
     fluid_r = np.array( ( fluid_rx, fluid_ry, np.zeros( fluid_n ) ), dtype=float ).T #!!
     fluid_v = np.zeros( ( fluid_n, 3 ) )
-    #fluid_rho = np.array( fluid_density, dtype=float )
-    fluid_rho = rho0 * np.ones( fluid_n )
+    fluid_rho = np.array( fluid_density, dtype=float )
+    #fluid_rho = rho0 * np.ones( fluid_n )
     fluid_p = np.zeros( fluid_n )
     fluid_ptype = np.zeros( fluid_n )
     fluid_to_write = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
@@ -39,9 +39,14 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
 def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density ):
     n_boundary_layers = 1;
     box_rx = []; box_ry = []
+    box_density = []
     normal_x = []; normal_y = []
     box_length_n = round( box_lenght / dp )
     box_height_n = round( box_height / dp )
+
+    channel_height = 0.3
+    speed_of_sound = 34
+    rho0 = 1000
 
     # left wall
     for layer in range( n_boundary_layers ):
@@ -51,6 +56,10 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
             normal_x.append( 1. )
             normal_y.append( 0. )
 
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            box_density.append( hydrostaticDensity )
+
     # bottom wall
     for layer in range( n_boundary_layers ):
         for x in range( box_length_n - 2 ):
@@ -58,6 +67,10 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
             box_ry.append( 0. - layer * dp - dp / 2 )
             normal_x.append( 0. )
             normal_y.append( 1. )
+
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            box_density.append( hydrostaticDensity )
 
     x_last = box_rx[ -1 ] + dp #due to discretisation, we need to save last value of bottom wall
 
@@ -68,6 +81,10 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
             box_ry.append( ( y + 1 ) * dp - dp / 2)
             normal_x.append( -1. )
             normal_y.append( 0. )
+
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            box_density.append( hydrostaticDensity )
 
     # generate the corners
     def generate90degCorner( x, y, dirx, diry ):
@@ -81,6 +98,10 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
           normal_x.append( nx / n_norm )
           normal_y.append( ny / n_norm )
 
+          hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+          hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+          box_density.append( hydrostaticDensity )
+
     generate90degCorner( 0 - dp / 2, 0 - dp / 2 , -1, -1 )
     generate90degCorner( x_last - dp / 2, 0 - dp / 2, +1, -1 )
 
@@ -89,6 +110,76 @@ def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density )
     boundary_normal = np.array( ( normal_x, normal_y, np.zeros( boundary_n ) ), dtype=float ).T #!!
     boundary_v = np.zeros( ( boundary_n, 3 ) )
     boundary_rho = density * np.ones( boundary_n )
+    #boundary_rho = np.array( box_density, dtype=float )
+    boundary_p = np.zeros( boundary_n )
+    boundary_elemetnSize = dp * np.ones( boundary_n )
+    boundary_ptype = np.ones( boundary_n )
+    box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
+                                                                normals=boundary_normal, elementSize=boundary_elemetnSize )
+    saveParticlesVTK.save_polydata( box_to_write, "sources/dambreak_boundary.vtk" )
+
+    domain_origin_x = min( box_rx )
+    domain_origin_y = min( box_ry )
+    domain_end_x = max( box_rx )
+    domain_end_y = max( box_ry )
+    return boundary_n, [ domain_origin_x, domain_end_x ], [ domain_origin_y, domain_end_y ]
+
+def generate_dam_break_boundary_particles_light( dp, box_lenght, box_height, density ):
+    n_boundary_layers = 1;
+    box_rx = []; box_ry = []
+    box_density = []
+    normal_x = []; normal_y = []
+    box_length_n = round( box_lenght / dp )
+    box_height_n = round( box_height / dp )
+
+    channel_height = 0.3
+    speed_of_sound = 34
+    rho0 = 1000
+
+    # left wall
+    for layer in range( n_boundary_layers ):
+        for y in range( box_height_n - 1 ):
+            box_rx.append( 0. - layer * dp )
+            box_ry.append( ( y + 1 ) * dp - dp / 2)
+            normal_x.append( 1. )
+            normal_y.append( 0. )
+
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            box_density.append( hydrostaticDensity )
+
+    # bottom wall
+    for layer in range( n_boundary_layers ):
+        for x in range( box_length_n - 0 ):
+            box_rx.append( ( x + 1 ) * dp - dp / 2 )
+            box_ry.append( 0. - layer * dp )
+            normal_x.append( 0. )
+            normal_y.append( 1. )
+
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            box_density.append( hydrostaticDensity )
+
+    x_last = box_rx[ -1 ] + dp / 2 #due to discretisation, we need to save last value of bottom wall
+
+    # right wall
+    for layer in range( n_boundary_layers ):
+        for y in range( box_height_n - 1 ):
+            box_rx.append( x_last + dp * layer )
+            box_ry.append( ( y + 1 ) * dp - dp / 2 )
+            normal_x.append( -1. )
+            normal_y.append( 0. )
+
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - box_ry[ -1 ] )
+            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            box_density.append( hydrostaticDensity )
+
+    boundary_n = len( box_rx )
+    boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
+    boundary_normal = np.array( ( normal_x, normal_y, np.zeros( boundary_n ) ), dtype=float ).T #!!
+    boundary_v = np.zeros( ( boundary_n, 3 ) )
+    boundary_rho = density * np.ones( boundary_n )
+    #boundary_rho = np.array( box_density, dtype=float )
     boundary_p = np.zeros( boundary_n )
     boundary_elemetnSize = dp * np.ones( boundary_n )
     boundary_ptype = np.ones( boundary_n )
@@ -182,7 +273,7 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=34.3, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.15, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.10, help="referential density of the fluid")
     #g = argparser.add_argument_group("control parameters")
     #g.add_argument("--example-dir", type=Path, default=1000, help="referential density of the fluid")
 
@@ -203,10 +294,10 @@ if __name__ == "__main__":
 
     # generate particles
     fluid_n = generate_dam_break_fluid_particles( args.dp, args.fluid_length, args.fluid_height, args.density )
-    boundary_n, domain_limits_x, domain_limits_y = generate_dam_break_boundary_particles( args.dp,
-                                                                                          args.box_length,
-                                                                                          args.box_height,
-                                                                                          args.density )
+    boundary_n, domain_limits_x, domain_limits_y = generate_dam_break_boundary_particles_light( args.dp,
+                                                                                                args.box_length,
+                                                                                                args.box_height,
+                                                                                                args.density )
     # setup parameters
     compute_and_write_simulation_params( args.dp,
                                          args.h_coef,

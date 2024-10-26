@@ -80,6 +80,7 @@ template< typename Simulation,
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
+   /*
    // search for neighbros
    sph.timeMeasurement.start( "search" );
    sph.performNeighborSearch( log, true );
@@ -91,6 +92,7 @@ exec( Simulation& sph, TNL::Logger& log )
    sph.interact(); //TODO: What about BC conditions?
    sph.timeMeasurement.stop( "interact" );
    sph.writeLog( log, "Interact...", "Done." );
+   */
 
    while( sph.timeStepping.runTheSimulation() ){
 
@@ -136,6 +138,7 @@ exec( Simulation& sph, TNL::Logger& log )
          const float residual = sph.integrator->midpointResiduals( sph.fluid, sph.modelParams );
          sph.timeMeasurement.stop( "integrate" );
          sph.writeLog( log, "Integrate: compute residuals...", "Done." );
+         std::cout  << "Step: " << sph.timeStepping.getStep() << " midpoint iteractions: " << midpointIteration << " residua: " << residual << " relax coef: " << midpointRelaxCoef << std::endl;
 
          // stop midpoint iterations
          if( residual < sph.modelParams.midpointResidualTolerance )
@@ -155,7 +158,7 @@ exec( Simulation& sph, TNL::Logger& log )
 
          midpointIteration++;
       }
-      std::cout  << "Midpoint iteractions residua: " << residualPrevious << " relax coef: " << midpointRelaxCoef << std::endl;
+      //std::cout  << "Midpoint iteractions residua: " << residualPrevious << " relax coef: " << midpointRelaxCoef << std::endl;
 
       sph.timeMeasurement.start( "integrate" );
       if( sph.timeStepping.getStep() == 0 )
