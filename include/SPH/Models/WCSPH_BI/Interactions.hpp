@@ -1,4 +1,6 @@
+#include "BoundaryConditionsTypes.h"
 #include "Interactions.h"
+#include <type_traits>
 
 namespace TNL {
 namespace SPH {
@@ -78,14 +80,14 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       }
    };
 
-   auto FluidBound = [ = ] __cuda_callable__( LocalIndexType i,
-                                              LocalIndexType j,
-                                              VectorType & r_i,
-                                              VectorType & v_i,
-                                              RealType & rho_i,
-                                              RealType & p_i,
-                                              RealType * drho_i,
-                                              VectorType * a_i ) mutable
+   auto FluidBoundConsistent = [ = ] __cuda_callable__( LocalIndexType i,
+                                                        LocalIndexType j,
+                                                        VectorType & r_i,
+                                                        VectorType & v_i,
+                                                        RealType & rho_i,
+                                                        RealType & p_i,
+                                                        RealType * drho_i,
+                                                        VectorType * a_i ) mutable
    {
       const VectorType r_j = view_points_bound[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -150,7 +152,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       }
    };
 
-   auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   auto particleLoopConsistent = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points[ i ];
       const VectorType v_i = view_v[ i ];
@@ -161,14 +163,35 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       RealType gamma_i = 0.f;
 
       Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
-      //Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBoundConsistent, v_i, rho_i, p_i, &drho_i, &a_i );
+
+      view_Drho[ i ] = drho_i;
+      view_a[ i ] = a_i;
+      view_gamma[ i ] = gamma_i;
+   };
+
+   auto particleLoopConservative = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   {
+      const VectorType r_i = view_points[ i ];
+      const VectorType v_i = view_v[ i ];
+      const RealType rho_i = view_rho[ i ];
+      const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
+      VectorType a_i = 0.f;
+      RealType drho_i = 0.f;
+      RealType gamma_i = 0.f;
+
+      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBoundConservative, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
       view_a[ i ] = a_i;
       view_gamma[ i ] = gamma_i;
    };
-   fluid->particles->forAll( particleLoop );
+
+   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
+      fluid->particles->forAll( particleLoopConsistent );
+   else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
+      fluid->particles->forAll( particleLoopConservative );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ) {
@@ -188,7 +211,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
             RealType gamma_i = 0.f;
 
             Particles::NeighborsLoop::exec( p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
-            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInBound, FluidBound, v_i, rho_i, p_i, &drho_i, &a_i );
+            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInBound, FluidBoundConsistent, v_i, rho_i, p_i, &drho_i, &a_i );
 
             view_Drho[ p ] += drho_i;
             view_a[ p ] += a_i;
@@ -578,11 +601,9 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
    auto view_a = fluid->variables->a.getView();
    auto view_gamma = fluid->variables->gamma.getView();
 
-   auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   auto finalizeInteractionConsistent = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
-      //const RealType gamma_i = view_gamma[ i ];
-      const RealType gamma_i = 1.f;
-
+      const RealType gamma_i = view_gamma[ i ];
       if( gamma_i > 0.01f ) {
          view_Drho[ i ] = view_Drho[ i ] / gamma_i;
          view_a[ i ] = view_a[ i ] / gamma_i + gravity;
@@ -592,8 +613,16 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
          view_a[ i ] = 0.f + gravity;
       }
    };
-   fluid->particles->forAll( particleLoop );
 
+   auto finalizeInteractionConservative = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   {
+      view_a[ i ] += gravity;
+   };
+
+   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
+      fluid->particles->forAll( finalizeInteractionConsistent );
+   else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
+      fluid->particles->forAll( finalizeInteractionConservative );
 }
 
 template< typename Particles, typename ModelConfig >
