@@ -118,7 +118,7 @@ public:
       mdbcExtrapolationDetTreshold = parameters.getParameter< RealType >( "mdbcExtrapolationDetTreshold" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
-      dtMin = 0.05f * h / speedOfSound;
+      dtMin = 0.05f * dtInit;
    }
 
    //dp - initial particle distance [m]

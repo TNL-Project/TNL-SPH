@@ -7,6 +7,8 @@
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK45Scheme.h>
 
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 
@@ -113,7 +115,7 @@ public:
       midpointRelaxCoefIncrement = parameters.getParameter< RealType >( "midpointRelaxCoefIncrement" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
-      dtMin = 0.05f * h / speedOfSound;
+      dtMin = 0.05f * dtInit;
    }
 
    //dp - initial particle distance [m]
