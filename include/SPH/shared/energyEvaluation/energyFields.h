@@ -60,7 +60,7 @@ public:
    {
       std::ofstream outfile;
       outfile.open(outputPath, std::ios_base::app );
-      outfile << step << " " << time << " " << this->Ekin << " " << Epot << " " << Ecomp << std::endl;
+      outfile << step << " " << time << " " << Ekin << " " << Epot << " " << Ecomp << std::endl;
    }
 
    template< typename FluidPointer, typename ModelParams  >
@@ -90,9 +90,9 @@ public:
          const VectorType v_i = v_view[ i ];
          const VectorType dvdt_i = dvdt_view[ i ];
 
-         dekindt_view[ i ] += ( -1.f ) * m * ( gravity, v_i );
-         depotdt_view[ i ] += m * ( v_i, dvdt_i );
-         decompdt_view[ i ] += m * p_i / ( rho_i * rho_i ) * drhodt_i;
+         dekindt_view[ i ] = ( -1.f ) * m * ( gravity, v_i );
+         depotdt_view[ i ] = m * ( v_i, dvdt_i );
+         decompdt_view[ i ] = m * p_i / ( rho_i * rho_i ) * drhodt_i;
       };
       fluid->particles->forAll( particleLoop );
 
