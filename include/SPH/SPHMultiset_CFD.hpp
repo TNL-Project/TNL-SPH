@@ -491,9 +491,15 @@ SPHMultiset_CFD< Model >::interact()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::updateTimeStep()
+SPHMultiset_CFD< Model >::computeTimeStep()
 {
    timeStepping.computeTimeStep( fluid, modelParams );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::updateTime()
+{
    timeStepping.updateTimeStep();
 }
 

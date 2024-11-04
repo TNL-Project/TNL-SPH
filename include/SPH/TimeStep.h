@@ -2,6 +2,7 @@
 
 #include <iterator>
 #include <map>
+#include <fstream>
 
 namespace TNL {
 namespace SPH {
@@ -105,6 +106,9 @@ public:
       return false;
    }
 
+   void
+   outputTimeStep( const std::string& outputPath ) {}
+
    template< typename FluidPointer, typename SPHState >
    void computeTimeStep( FluidPointer& fluid, SPHState& params ) {}
 
@@ -134,6 +138,14 @@ public:
 
    VariableTimeStep( RealType initialTimeStep, RealType endTime )
    : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime ) {};
+
+   void
+   outputTimeStep( const std::string& outputPath )
+   {
+      std::ofstream outfile;
+      outfile.open(outputPath, std::ios_base::app );
+      outfile << this->step << " " << this->time << " " << this->timeStep << std::endl;
+   }
 
    template< typename FluidPointer, typename SPHState >
    void computeTimeStep( FluidPointer& fluid, SPHState& params )
