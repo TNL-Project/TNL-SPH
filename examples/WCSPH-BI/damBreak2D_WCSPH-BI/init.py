@@ -34,6 +34,11 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
     fluid_to_write = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
     saveParticlesVTK.save_polydata( fluid_to_write, "sources/dambreak_fluid.vtk" )
 
+    # compute potential energy
+    mass = density * ( dp * dp )
+    Epot0 = mass * 9.81 * np.sum( fluid_ry )
+    print( Epot0 )
+
     return fluid_n
 
 def generate_dam_break_boundary_particles( dp, box_lenght, box_height, density ):

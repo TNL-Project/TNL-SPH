@@ -14,6 +14,9 @@ template< typename Simulation,
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
+   EnergyFields energyMonitor;
+   energyMonitor.init( sph.fluid );
+
    while( sph.timeStepping.runTheSimulation() )
    {
       //integrate predictor step
@@ -38,11 +41,20 @@ exec( Simulation& sph, TNL::Logger& log )
       // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
+      // compute new time step
+      sph.computeTimeStep();
+      sph.timeStepping.outputTimeStep( sph.outputDirectory + "/timeStep.dat" );
+
       //integrate
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->integrateCorrectorStep( sph.fluid, sph.boundary, sph.timeStepping );
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate - corrector step...", "Done." );
+
+      // compute and outpute energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
       // search for neighbros
       sph.timeMeasurement.start( "search" );
@@ -60,17 +72,12 @@ exec( Simulation& sph, TNL::Logger& log )
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // output particle data
-      if( sph.timeStepping.checkOutputTimer( "save_results" ) ){
-         // compute pressure from density
-         sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-         sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-         sph.save( log );
-      }
+      sph.makeSnapshot( log );
       // check timers and if measurement or interpolation should be performed, is performed
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
       // update time step
-      sph.timeStepping.updateTimeStep();
+      sph.updateTime();
    }
 }
 
@@ -180,7 +187,7 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
       // update time step
-      sph.timeStepping.updateTimeStep();
+      sph.timeStepping.updateTime();
    }
 }
 
@@ -220,15 +227,10 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate: predictor...", "Done." );
 
-       // output particle data
-       if( sph.timeStepping.checkOutputTimer( "save_results" ) ) {
-          // compute pressure from density
-          sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-          sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+      // output particle data
+      sph.makeSnapshot( log );
 
-          sph.save( log );
-       }
-      sph.timeStepping.updateTimeStep();
+      sph.timeStepping.updateTime();
    }
 }
 
