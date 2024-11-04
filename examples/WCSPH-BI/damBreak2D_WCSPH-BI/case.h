@@ -80,16 +80,16 @@ template< typename Simulation,
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
-   /*
    // search for neighbros
    sph.timeMeasurement.start( "search" );
    sph.performNeighborSearch( log, true );
    sph.timeMeasurement.stop( "search" );
    sph.writeLog( log, "Search...", "Done." );
 
+   /*
    // perform interaction with given model
    sph.timeMeasurement.start( "interact" );
-   sph.interact(); //TODO: What about BC conditions?
+   sph.interact();
    sph.timeMeasurement.stop( "interact" );
    sph.writeLog( log, "Interact...", "Done." );
    */

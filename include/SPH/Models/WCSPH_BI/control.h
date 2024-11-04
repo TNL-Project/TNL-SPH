@@ -227,6 +227,12 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
+   if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
+                                 DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   {
+      logger.writeParameter( "Diffusive term:", "TNL::SPH::FourtakasDiffusiveTerm", 1 );
+      logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
+   }
    if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
                                  BIViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
    {
@@ -292,6 +298,9 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Residual minimal decay: ", modelParams.midpointResidualMinimalDecay, 1 );
       logger.writeParameter( "Midpoint relax coef, icrement: ", modelParams.midpointRelaxCoefIncrement, 1 );
    }
+   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
+                                 IntegrationSchemes::RK45Scheme< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::RK45Scheme", 1 );
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );

@@ -72,7 +72,7 @@ public:
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::BI_numeric;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
    //using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;

@@ -198,6 +198,10 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
+   if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig> > ){
+      logger.writeParameter( "Diffusive term:", "TNL::SPH::FourtakasDiffusiveTerm", 1 );
+      logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
+   }
    if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig> > ){
       logger.writeParameter( "Viscous term:", "TNL::SPH::ArtificialViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );

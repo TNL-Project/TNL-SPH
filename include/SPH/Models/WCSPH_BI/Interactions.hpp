@@ -68,7 +68,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType gradW = r_ij * F;
          const RealType V_j = m / rho_j;
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm = psi * ( r_ij, gradW ) * V_j;
          *drho_i += rho_i * ( v_ij, gradW ) * V_j - diffTerm;
 
@@ -467,7 +467,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
          const VectorType gradW = r_ij * F;
          const RealType V_j = m / rho_j;
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm = psi * ( r_ij, gradW ) * V_j;
          *drho_i += rho_i * ( v_ij, gradW ) * V_j - diffTerm;
 

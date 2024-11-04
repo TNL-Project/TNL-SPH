@@ -188,6 +188,9 @@ public:
    save( TNL::Logger& save, bool writeParticleCellIndex = false  );
 
    void
+   makeSnapshot( TNL::Logger& logger );
+
+   void
    writeProlog( TNL::Logger& logger, bool writeSystemInformation = true ) const noexcept;
 
    template< typename ParameterType >

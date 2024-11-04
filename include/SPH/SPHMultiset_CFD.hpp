@@ -622,6 +622,21 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
 
 template< typename Model >
 void
+SPHMultiset_CFD< Model >::makeSnapshot( TNL::Logger& logger )
+{
+   const bool savePressure = true;
+   if( timeStepping.checkOutputTimer( "save_results" ) ){
+     if( savePressure ){
+        model.computePressureFromDensity( fluid, modelParams );
+        model.computePressureFromDensity( boundary, modelParams );
+     }
+      save( logger );
+      writeLog( logger, "Save results...", "Done." );
+   }
+}
+
+template< typename Model >
+void
 SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInformation ) const noexcept
 {
    logger.writeHeader( "SPH simulation configuration." );
