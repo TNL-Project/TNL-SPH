@@ -77,6 +77,8 @@ class ParticleSet
       //removed: // initialize grid origin
       //removed: this->particles->setGridInteriorDimension( gridDimension );
       //removed: this->particles->setGridInteriorOrigin( gridOrigin );
+      const VectorType zeroVector = 0;
+      this->particles->setGridOriginGlobalCoords( zeroVector );
    }
 
 #ifdef HAVE_MPI
