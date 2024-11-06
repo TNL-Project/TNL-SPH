@@ -66,6 +66,10 @@ class MidpointIntegrationSchemeVariables
       //FIXME: disgusting out-place swap
       swapScalar.setSize( size );
       swapVector.setSize( size );
+
+      //FIXME: disgusting out-place swap
+      rho_old.setSize( size );
+      v_old.setSize( size );
    }
 
    /*
@@ -151,6 +155,10 @@ class MidpointIntegrationSchemeVariables
    //FIXME: disgusting out-place swap
    ScalarArrayType swapScalar;
    VectorArrayType swapVector;
+
+   //FIXME: ugly temp work around to deal with inlet buffer feading previous time steps
+   ScalarArrayType rho_old;
+   VectorArrayType v_old;
 };
 
 template< typename SPHConfig >
