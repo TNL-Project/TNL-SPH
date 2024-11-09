@@ -35,7 +35,7 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
     saveParticlesVTK.save_polydata( fluid_to_write, "sources/dambreak_fluid.vtk" )
 
     # compute potential energy
-    mass = density * ( dp * dp )
+    mass = rho0 * ( dp * dp )
     Epot0 = mass * 9.81 * np.sum( fluid_ry )
     print( Epot0 )
 

@@ -13,7 +13,7 @@ def plot_time_step( results_dir ):
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/time_step.png"
+        output_plot_name = f"{results_dir}/postprocessing/time_step.png"
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
 if __name__ == "__main__":

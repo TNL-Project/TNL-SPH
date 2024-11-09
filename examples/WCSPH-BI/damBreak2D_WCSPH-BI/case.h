@@ -187,7 +187,7 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
       // update time step
-      sph.timeStepping.updateTime();
+      sph.updateTime();
    }
 }
 
@@ -230,7 +230,7 @@ exec( Simulation& sph, TNL::Logger& log )
       // output particle data
       sph.makeSnapshot( log );
 
-      sph.timeStepping.updateTime();
+      sph.updateTime();
    }
 }
 
