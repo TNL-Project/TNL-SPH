@@ -655,8 +655,7 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
 
    auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
-      //const RealType gamma_i = view_gamma_bound[ i ];
-      const RealType gamma_i = 1;
+      const RealType gamma_i = view_gamma_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
 
       if( gamma_i > 0.01f ) {
