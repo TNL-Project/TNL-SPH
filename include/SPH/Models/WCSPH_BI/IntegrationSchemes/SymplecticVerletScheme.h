@@ -209,8 +209,8 @@ public:
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
-         r_view[ i ] = r_old_view[ i ] + ( v_view[ i ] + v_old_view[ i ] ) * dt05;
          v_view[ i ] = v_old_view[ i ] + a_view[ i ] * dt;
+         r_view[ i ] = r_old_view[ i ] + ( v_view[ i ] + v_old_view[ i ] ) * dt05;
          const RealType epsilon =  ( -1.f ) * ( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
