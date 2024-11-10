@@ -246,7 +246,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    auto view_rho_bound = boundary->variables->rho.getView();
    auto view_gamma_bound = boundary->variables->gamma.getView();
 
-   auto BoundFluid = [ = ] __cuda_callable__( LocalIndexType i,
+   auto BoundFluidConsistent = [ = ] __cuda_callable__( LocalIndexType i,
                                               LocalIndexType j,
                                               VectorType& r_i,
                                               RealType*
@@ -286,19 +286,34 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       }
    };
 
-   auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   auto particleLoopBoundaryConsistent = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points_bound[ i ];
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
 
-      //Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
+      Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluidConsistent, &rho_i, &gamma_i );
+
+      view_rho_bound[ i ] = rho_i;
+      view_gamma_bound[ i ] = gamma_i;
+   };
+
+   auto particleLoopBoundaryConservative = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   {
+      const VectorType r_i = view_points_bound[ i ];
+      RealType rho_i = 0.f;
+      RealType gamma_i = 0.f;
+
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluidConservative, &rho_i, &gamma_i );
 
       view_rho_bound[ i ] = rho_i;
       view_gamma_bound[ i ] = gamma_i;
    };
-   boundary->particles->forAll( particleLoopBoundary );
+
+   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
+      fluid->particles->forAll( particleLoopBoundaryConsistent );
+   else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
+      fluid->particles->forAll( particleLoopBoundaryConservative );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ) {
@@ -313,7 +328,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
             RealType rho_i = 0.f;
             RealType gamma_i = 0.f;
 
-            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInFluid, BoundFluid, &rho_i, &gamma_i );
+            Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInFluid, BoundFluidConsistent, &rho_i, &gamma_i );
 
             view_rho_bound[ p ] += rho_i;
             view_gamma_bound[ p ] += gamma_i;
