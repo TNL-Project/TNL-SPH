@@ -311,9 +311,9 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    };
 
    if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
-      fluid->particles->forAll( particleLoopBoundaryConsistent );
+      boundary->particles->forAll( particleLoopBoundaryConsistent );
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
-      fluid->particles->forAll( particleLoopBoundaryConservative );
+      boundary->particles->forAll( particleLoopBoundaryConservative );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ) {
