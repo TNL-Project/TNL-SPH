@@ -144,7 +144,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
          const RealType F = KernelFunction::F( drs, h );
          const VectorType gradW = r_ij * F;
 
-         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, drs, diffusiveTermsParams );
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
          *drho_i += ( v_ij, gradW ) * m - diffTerm;
       }
