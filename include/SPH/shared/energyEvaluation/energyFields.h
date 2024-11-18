@@ -131,6 +131,12 @@ public:
       const auto rho_view = fluid->variables->rho.getConstView();
       const auto drhodt_view = fluid->variables->drho.getConstView();
 
+      // reset energy derivatives
+      dekindt_view = 0.f;
+      depotdt_view = 0.f;
+      decompdt_view = 0.f;
+
+      // compute current rates
       auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
       {
          const RealType rho_i = rho_view[ i ];
@@ -160,13 +166,18 @@ public:
       const VectorType gravity = modelParams.gravity;
       typename EOS::ParamsType eosParams( modelParams );
 
-      auto ekindt_view = ekin.getView();
-      auto epotdt_view = epot.getView();
-      auto ecompdt_view = ecomp.getView();
+      auto ekin_view = ekin.getView();
+      auto epot_view = epot.getView();
+      auto ecomp_view = ecomp.getView();
 
       const auto r_view = fluid->particles->getPoints().getConstView();
       const auto v_view = fluid->variables->v.getConstView();
       const auto rho_view = fluid->variables->rho.getConstView();
+
+      // reset energy derivatives
+      ekin_view = 0.f;
+      epot_view = 0.f;
+      ecomp_view = 0.f;
 
       auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
       {
@@ -175,9 +186,9 @@ public:
          const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
          const VectorType v_i = v_view[ i ];
 
-         ekindt_view[ i ] = 0.5 * m * ( v_i, v_i );
-         epotdt_view[ i ] = ( -1.f ) * m * ( gravity, r_i );
-         ecompdt_view[ i ] = m * m * p_i / rho_i;
+         ekin_view[ i ] = 0.5 * m * ( v_i, v_i );
+         epot_view[ i ] = ( -1.f ) * m * ( gravity, r_i );
+         ecomp_view[ i ] = m * m * p_i / rho_i;
       };
       fluid->particles->forAll( particleLoop );
 
