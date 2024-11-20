@@ -87,6 +87,9 @@ template< typename Simulation,
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
+   EnergyFields energyMonitor;
+   energyMonitor.init( sph.fluid );
+
    // search for neighbros
    sph.timeMeasurement.start( "search" );
    sph.performNeighborSearch( log, true );
@@ -167,6 +170,10 @@ exec( Simulation& sph, TNL::Logger& log )
       }
       //std::cout  << "Midpoint iteractions residua: " << residualPrevious << " relax coef: " << midpointRelaxCoef << std::endl;
 
+      // compute and outpute energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+
       sph.timeMeasurement.start( "integrate" );
       if( sph.timeStepping.getStep() == 0 )
          sph.integrator->corrector( 0, sph.fluid );
@@ -183,6 +190,7 @@ exec( Simulation& sph, TNL::Logger& log )
 
          sph.save( log );
       }
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
       // check timers and if measurement or interpolation should be performed, is performed
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
