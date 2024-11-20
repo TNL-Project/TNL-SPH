@@ -15,10 +15,28 @@ void
 exec( Simulation& sph, TNL::Logger& log )
 {
    EnergyFields energyMonitor;
-   energyMonitor.init( sph.fluid );
+   energyMonitor.init( sph.fluid, true );
 
    while( sph.timeStepping.runTheSimulation() )
    {
+      // search for neighbros
+      sph.timeMeasurement.start( "search" );
+      sph.performNeighborSearch( log );
+      sph.timeMeasurement.stop( "search" );
+      sph.writeLog( log, "Search...", "Done." );
+
+      // perform interaction with given model
+      sph.timeMeasurement.start( "interact" );
+      sph.interact();
+      sph.timeMeasurement.stop( "interact" );
+      sph.writeLog( log, "Interact...", "Done." );
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
+      // compute new time step
+      sph.computeTimeStep();
+      sph.timeStepping.outputTimeStep( sph.outputDirectory + "/timeStep.dat" );
+
       //integrate predictor step
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->integratePredictorStep( sph.fluid, sph.boundary, sph.timeStepping );
@@ -32,18 +50,16 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.writeLog( log, "Search...", "Done." );
 
       // perform interaction with given model
-      //TODO: After the predictor step, there is apparently no reason to update BC
       sph.timeMeasurement.start( "interact" );
       sph.interact();
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
-
       // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
-      // compute new time step
-      sph.computeTimeStep();
-      sph.timeStepping.outputTimeStep( sph.outputDirectory + "/timeStep.dat" );
+      // compute and outpute energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
@@ -52,27 +68,11 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.writeLog( log, "Integrate - corrector step...", "Done." );
 
       // compute and outpute energy levels
-      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
-      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
-      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
-
-      // search for neighbros
-      sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log );
-      sph.timeMeasurement.stop( "search" );
-      sph.writeLog( log, "Search...", "Done." );
-
-      // perform interaction with given model
-      sph.timeMeasurement.start( "interact" );
-      sph.interact();
-      sph.timeMeasurement.stop( "interact" );
-      sph.writeLog( log, "Interact...", "Done." );
-
-      // custom: no-penetration bc
-      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+      energyMonitor.computeEnergyLevels( sph.fluid, sph.modelParams );
 
       // output particle data
       sph.makeSnapshot( log );
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
       // check timers and if measurement or interpolation should be performed, is performed
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 

@@ -120,5 +120,6 @@ if __name__ == "__main__":
     plot_water_level_sensors()
 
     # Global postprocessing tools: plot time step log and energy
-    plotTimeStep.plot_time_step( results_dir )
+    #plotTimeStep.plot_time_step( results_dir )
     plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
+    plotEnergy.plot_energy_snapshots( results_dir, Epot0 = 264.87 )
