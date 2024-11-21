@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../SPHTraits.h"
+#include <memory>
 
 namespace TNL {
 namespace SPH {
@@ -274,11 +275,11 @@ class PhysicalViscosity_MGVT
      template< typename SPHState >
      __cuda_callable__
      ParamsType( SPHState sphState )
-     : h( sphState.h ),
+     : dp( sphState.dp ),
        dynamicViscosity( sphState.dynamicViscosity ),
        preventZero( sphState.h * sphState.h * sphState.eps ) {}
 
-     const RealType h;
+     const RealType dp;
      const RealType dynamicViscosity;
      const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
      const RealType preventZero;
@@ -289,14 +290,41 @@ class PhysicalViscosity_MGVT
    Pi( const RealType& drs,
        const VectorType& r_ij,
        const VectorType& v_ij,
+       const RealType& rho_i,
+       const RealType& rho_j,
        const VectorType& gradW,
        const RealType& V_j,
        const ParamsType& params )
    {
-      const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity;
-      return viscoCoef * ( r_ij, v_ij ) / ( drs * drs + params.preventZero ) * gradW * V_j;
+      const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity / rho_i;
+      const RealType pi = ( r_ij, v_ij ) / ( drs * drs + params.preventZero );
+
+      return viscoCoef * pi * gradW * V_j;
    }
 
+   __cuda_callable__
+   static VectorType
+   BI_Pi( const RealType& drs,
+          const VectorType& r_ik,
+          const VectorType v_ik,
+          const RealType& rho_i,
+          const RealType& rho_j,
+          const RealType& W_ik,
+          const VectorType& n_k,
+          const RealType& s_k,
+          const ParamsType& params )
+   {
+      const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity / rho_i;
+
+      const RealType pi = ( r_ik, v_ik ) / ( drs * drs + params.preventZero );
+      const RealType r_ik_n = TNL::max( TNL::abs( r_ik, n_k ), params.dp );
+      const VectorType v_ik_t = v_ik - ( v_ik, n_k ) * n_k;
+
+      const VectorType lap_v_n = pi * rho_j * n_k * W_ik * s_k;
+      const VectorType lap_v_t = 2.f * v_ik_t / ( r_ik_n ) * W_ik * s_k;
+
+      return viscoCoef * ( lap_v_n + lap_v_t );
+   }
 };
 
 } // BIViscousTerms
