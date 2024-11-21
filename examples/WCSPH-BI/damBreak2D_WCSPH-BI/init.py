@@ -4,6 +4,7 @@ import numpy as np
 import sys
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
+import math
 
 def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density ):
     fluid_rx = []; fluid_ry = []
@@ -12,16 +13,17 @@ def generate_dam_break_fluid_particles( dp, fluid_lenght, fluid_height, density 
     fluid_height_n = round( fluid_height / dp )
 
     channel_height = 0.3
-    speed_of_sound = 34
-    rho0 = 1000
+    speed_of_sound = 17.155174146594955
+    rho0 = 997
 
     for x in range( fluid_lenght_n ):
         for y in range( fluid_height_n ):
             fluid_rx.append( dp * ( x + 1 ) - dp / 2 ) #Ensure that the interface is at 0
             fluid_ry.append( dp * ( y + 1 ) - dp / 2 )
 
-            hydrostaticPressure = rho0 * 9.81 * ( channel_height - fluid_ry[ -1 ] )
-            hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            hydrostaticPressure = rho0 * 9.81 * ( channel_height - fluid_ry[ -1 ] ) * math.cos(0.5 * math.pi * ( fluid_rx[ -1 ] ) / fluid_lenght )
+            #hydrostaticDensity = ( ( hydrostaticPressure / ( speed_of_sound** 2 * rho0 / 7 ) + 1 )**( 1./7. ) )  * rho0
+            hydrostaticDensity = rho0 + hydrostaticPressure / speed_of_sound**2
             fluid_density.append( hydrostaticDensity )
 
     fluid_n = len( fluid_rx )
@@ -138,8 +140,8 @@ def generate_dam_break_boundary_particles_light( dp, box_lenght, box_height, den
     box_height_n = round( box_height / dp )
 
     channel_height = 0.3
-    speed_of_sound = 34
-    rho0 = 1000
+    speed_of_sound = 17.155174146594955
+    rho0 = 997
 
     # left wall
     for y in range( box_height_n - 1 ):

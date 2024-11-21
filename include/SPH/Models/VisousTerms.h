@@ -102,6 +102,53 @@ class CombinedViscosity
 namespace BIViscousTerms {
 
 template< typename SPHCaseConfig >
+class None
+{
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
+   using RealType = typename SPHCaseConfig::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     __cuda_callable__
+     ParamsType( SPHState sphState ) {}
+   };
+
+   __cuda_callable__
+   static VectorType
+   Pi( const RealType& drs,
+       const VectorType& r_ij,
+       const VectorType& v_ij,
+       const RealType& rho_i,
+       const RealType& rho_j,
+       const VectorType& gradW,
+       const RealType& V_j,
+       const ParamsType& params )
+   {
+      const VectorType zeroVector = 0.f;
+      return zeroVector;
+   }
+
+   __cuda_callable__
+   static VectorType
+   BI_Pi( const RealType& drs,
+          const VectorType& r_ik,
+          const VectorType v_ik,
+          const RealType& rho_i,
+          const RealType& rho_j,
+          const RealType& W_ik,
+          const VectorType& n_k,
+          const RealType& s_k,
+          const ParamsType& params )
+   {
+      const VectorType zeroVector = 0.f;
+      return zeroVector;
+   }
+};
+
+template< typename SPHCaseConfig >
 class ArtificialViscosity
 {
    public:
