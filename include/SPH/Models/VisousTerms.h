@@ -317,7 +317,7 @@ class PhysicalViscosity_MGVT
       const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity / rho_i;
 
       const RealType pi = ( r_ik, v_ik ) / ( drs * drs + params.preventZero );
-      const RealType r_ik_n = TNL::max( TNL::abs( r_ik, n_k ), params.dp );
+      const RealType r_ik_n = std::max( std::abs( ( r_ik, n_k ) ), params.dp );
       const VectorType v_ik_t = v_ik - ( v_ik, n_k ) * n_k;
 
       const VectorType lap_v_n = pi * rho_j * n_k * W_ik * s_k;
