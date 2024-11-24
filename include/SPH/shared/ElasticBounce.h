@@ -232,7 +232,8 @@ public:
                                              VectorType* r_i_mod ) mutable
       {
          const VectorType r_j = view_points_bound[ j ];
-         const VectorType r_ji = r_j - ( *r_i_mod );
+         //const VectorType r_ji = r_j - ( *r_i_mod );
+         const VectorType r_ji = r_j - view_points[ i ];
          const RealType drs = l2Norm( r_ji );
          if (drs <= searchRadius )
          {
@@ -255,7 +256,8 @@ public:
             if( ( r_ji_t, r_ji_t ) >= Rj * Rj )
                return;
 
-            *r_i_mod += ( r_ji_n - Ri ) * n_j;
+            //*r_i_mod += ( r_ji_n - Ri ) * n_j;
+            view_points[ i ] += ( r_ji_n - Ri ) * n_j;
          }
       };
 
