@@ -270,7 +270,7 @@ public:
 
          ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, pstLoop, Ri, &r_i_mod );
 
-         view_points[ i ] = r_i_mod;
+         //view_points[ i ] = r_i_mod;
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
    }
