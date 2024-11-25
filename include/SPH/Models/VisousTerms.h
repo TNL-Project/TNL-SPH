@@ -242,7 +242,7 @@ class PhysicalViscosity_MVT
        const ParamsType& params )
    {
       const RealType viscoCoef = params.dynamicViscosity / rho_i;
-      return viscoCoef * v_ij * ( r_ij, gradW ) / ( drs * drs + params.preventZero ) * V_j;
+      return 2.f * viscoCoef * v_ij * ( r_ij, gradW ) / ( drs * drs + params.preventZero ) * V_j;
    }
 
    __cuda_callable__
@@ -258,7 +258,7 @@ class PhysicalViscosity_MVT
           const ParamsType& params )
    {
       const RealType viscoCoef = params.dynamicViscosity / rho_i;
-      return viscoCoef * v_ik / ( r_ik, n_k ) * W_ik * s_k;
+      return 2.f * viscoCoef * v_ik / ( r_ik, n_k ) * W_ik * s_k;
    }
 };
 
