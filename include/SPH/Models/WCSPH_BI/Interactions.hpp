@@ -63,8 +63,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType v_ij = v_i - v_j;
 
          // there is reason why is the gradient and volume merged and written this way
-         const RealType V_j = m / rho_j;
-         const VectorType gradWV_j = V_j * KernelFunction::F( drs, h ) * r_ij;
+         const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm = psi * ( r_ij, gradWV_j );
@@ -74,7 +73,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradWV_j, viscousTermsParams );
          *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
 
-         *gamma_i += V_j * KernelFunction::W( drs, h );
+         *gamma_i +=  KernelFunction::W( drs, h ) * m / rho_j;
       }
    };
 
@@ -473,8 +472,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
          const VectorType v_ij = v_i - v_j;
 
          // there is reason why is the gradient and volume merged and written this way
-         const RealType V_j = m / rho_j;
-         const VectorType gradWV_j = V_j * KernelFunction::F( drs, h ) * r_ij;
+         const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm = psi * ( r_ij, gradWV_j );
@@ -484,7 +482,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
          const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradWV_j, viscousTermsParams );
          *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
 
-         *gamma_i += V_j * KernelFunction::W( drs, h );
+         *gamma_i +=  KernelFunction::W( drs, h ) * m / rho_j;
       }
    };
 
