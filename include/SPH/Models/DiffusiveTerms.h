@@ -50,16 +50,18 @@ class MolteniDiffusiveTerm
      template< typename SPHState >
      __cuda_callable__
      ParamsType( SPHState sphState )
-     : coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ) {}
+     : coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ),
+       preventZero( sphState.h * sphState.h * sphState.eps ){}
 
      const RealType coefDT;
+     const RealType preventZero;
    };
 
    __cuda_callable__
    static RealType
    Psi( const RealType& rhoI, const RealType& rhoJ, const VectorType& r_ij, const RealType& drs, const ParamsType& params )
    {
-      return params.coefDT * ( rhoJ - rhoI ) / ( drs * drs );
+      return params.coefDT * ( rhoJ - rhoI ) / ( drs * drs + params.preventZero );
    }
 };
 
@@ -84,12 +86,14 @@ class FourtakasDiffusiveTerm
      : gravity( sphState.gravity ),
        rho0( sphState.rho0 ),
        coefB( sphState.coefB ),
-       coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ) {}
+       coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ),
+       preventZero( sphState.h * sphState.h * sphState.eps ){}
 
      const VectorType gravity;
      const RealType rho0;
      const RealType coefDT;
      const RealType coefB;
+     const RealType preventZero;
    };
 
    __cuda_callable__
@@ -104,7 +108,7 @@ class FourtakasDiffusiveTerm
       const RealType p_hydrostatic_ij = 1.f + r_z_ij * params.rho0 * gravMagnitude / params.coefB;
       const RealType rho_hydrostatic_ij = params.rho0 * powf( p_hydrostatic_ij, 1.f / gamma ) - params.rho0;
 
-      return params.coefDT * ( ( rhoJ - rhoI ) - rho_hydrostatic_ij ) / ( drs * drs );
+      return params.coefDT * ( ( rhoJ - rhoI ) - rho_hydrostatic_ij ) / ( drs * drs + params.preventZero );
    }
 };
 
