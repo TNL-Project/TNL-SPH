@@ -181,7 +181,7 @@ class ArtificialViscosity
    {
       const RealType drdv = ( r_ij, v_ij );
       const RealType mu = params.h * drdv / ( drs * drs + params.preventZero );
-      const RealType gradWm_j = rho_j * gradWV_j;
+      const VectorType gradWm_j = rho_j * gradWV_j;
       const VectorType zeroVector = 0.f;
       return ( drdv < 0.f ) ? ( params.coefAV * mu / ( rho_i + rho_j ) * gradWm_j ) : ( zeroVector );
    }
