@@ -18,6 +18,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
 
    auto view_rho_interpolation = this->variables->rho.getView();
    auto view_v_interpolation = this->variables->v.getView();
+   auto view_gamma_interpolation = this->gamma.getView();
 
    // loaded constants
    const RealType h = sphState.h;
@@ -66,6 +67,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
          view_v_interpolation[ idx ] = 0.f;
          view_rho_interpolation[ idx ] = 0.f;
       }
+      view_gamma_interpolation[ idx ] = gamma;
    };
 
    if( this->interpolatedGridEntity == 0 )
@@ -196,10 +198,12 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFil
    // write data
    if( this->interpolatedGridEntity >  0 ){
       writer.template writeCellData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
+      writer.template writeCellData< typename Variables::ScalarArrayType >( gamma, "Gamma", 1 );
       writer.template writeCellData( buffer, "Velocity", 3 );
    }
    else{
       writer.template writePointData< typename Variables::ScalarArrayType >( variables->rho, "Density", 1 );
+      writer.template writePointData< typename Variables::ScalarArrayType >( gamma, "Gamma", 1 );
       writer.template writePointData( buffer, "Velocity", 3 );
    }
 

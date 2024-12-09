@@ -24,7 +24,7 @@ public:
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
-
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -65,6 +65,7 @@ public:
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
 
       variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
+      gamma.setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
    }
 
    template< typename SPHKernelFunction, typename SPHState >
@@ -89,6 +90,7 @@ protected:
    GridType interpolationGrid;
    CoordinatesType gridDimension;
    VariablesPointer variables;
+   ScalarArrayType gamma;
 
    VectorType gridStep;
 
