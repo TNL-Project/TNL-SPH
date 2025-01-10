@@ -99,7 +99,6 @@ public:
       auto epot_inlet_view = epot_inlet.getView();
       auto ecomp_inlet_view = ecomp_inlet.getView();
 
-      const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
       const IndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
       const VectorType inletOrientation = openBoundary->parameters.orientation;
       const VectorType bufferPosition = openBoundary->parameters.position;
