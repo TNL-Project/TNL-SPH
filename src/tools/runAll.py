@@ -118,7 +118,7 @@ def write_results():
                 'Ref. comp. time' : referential_computational_time,
                 'Comp. time dif.' : computational_time_difference_formatted }
     summary_df = pd.DataFrame( summary )
-    with open(f'log_{strftime("%Y-%m-%d_%H:%M:%S"), gmtime()}.md', 'w') as f:
+    with open(f'log_{strftime("%Y-%m-%d_%H:%M:%S")}.md', 'w') as f:
         f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S", gmtime())}\n' )
         f.write( summary_df.to_markdown( ) )
 
