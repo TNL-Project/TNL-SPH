@@ -55,6 +55,9 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
 
+      // in case of variable time step, compute the step
+      sph.computeTimeStep();
+
       //integrate
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping, SPHDefs::BCType::integrateInTime() );
@@ -62,27 +65,12 @@ int main( int argc, char* argv[] )
       sph.writeLog( log, "Integrate...", "Done." );
 
       // output particle data
-      if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      {
-         /**
-          * Compute pressure from density.
-          * This is not necessary since we do this localy, if pressure is needed.
-          * It's useful for output anyway.
-          */
-         sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-         sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-         sph.save( log );
-      }
-
+      sph.makeSnapshot( log );
       // check timers and if measurement or interpolation should be performed, is performed
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
-      // check timers and if snapshot should be done, is done
-      //sph.save( log );
-
       // update time step
-      sph.timeStepping.updateTimeStep();
+      sph.updateTime();
    }
 
    sph.writeEpilog( log );
