@@ -39,4 +39,5 @@ if __name__ == "__main__":
 
     #plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
     plotEnergy.plot_not_normalized_energy( results_dir )
+    plotEnergy.plot_energy_snapshots( results_dir )
     plotEnergy.plot_not_normalized_open_boundary_energy_snapshots( results_dir )

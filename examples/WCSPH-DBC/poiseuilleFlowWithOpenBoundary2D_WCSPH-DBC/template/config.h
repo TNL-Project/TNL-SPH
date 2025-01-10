@@ -95,3 +95,9 @@ using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
 #include <SPH/SPHMultiset_CFD.h>
 using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 
+// Custom post processing tools
+#include <SPH/shared/energyEvaluation/energyFields.h>
+using EnergyFields = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+#include <SPH/shared/energyEvaluation/energyFieldsInletOutlet.h>
+using EnergyFieldsInletOutlet = TNL::SPH::WCSPHOpenBoundaryEnergyFields< SPHDefs >;
+
