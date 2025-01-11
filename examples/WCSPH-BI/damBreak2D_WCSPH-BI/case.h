@@ -182,6 +182,8 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate: corrector...", "Done." );
 
+      BoundaryCorrection::boundaryCorrectionPST( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
       // output particle data
       if( sph.timeStepping.checkOutputTimer( "save_results" ) ){
          // compute pressure from density

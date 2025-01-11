@@ -67,7 +67,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm = psi * ( r_ij, gradWV_j );
-         *drho_i += rho_i * ( v_ij, gradWV_j )  - diffTerm;
+         *drho_i += rho_i * ( v_ij, gradWV_j ) - diffTerm;
 
          const VectorType grad_p = ( p_i + p_j ) * gradWV_j;
          const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradWV_j, viscousTermsParams );
