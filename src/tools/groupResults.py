@@ -23,14 +23,14 @@ def create_series_file( identifier, results_dir, snapshot_names, snapshot_timers
         "files" : files_list
         }
 
-   series_output_name = "results/" + identifier + ".vtk.series"
+   series_output_name = results_dir / Path( identifier + ".vtk.series" )
    # due to list of files, pprint looks better inside the file
    with open( series_output_name, "w") as file:
        json.dump( series_file_dict, file, indent = 4 )
 
 # Read config files to know what we need to group
-def load_case_config( path = "" ):
-    config_file_path =  path + 'sources/config.ini'
+def load_case_config( path ):
+    config_file_path =  path / 'sources/config.ini'
     config = cfp.ConfigParser()
     # configparser is unable to read file without headers
     with open( config_file_path ) as stream:
@@ -38,8 +38,8 @@ def load_case_config( path = "" ):
 
     return config
 
-def load_case_measuretool_config( path = "" ):
-    measuretool_config_file_path = path + 'sources/config-measuretool.ini'
+def load_case_measuretool_config( path ):
+    measuretool_config_file_path = path / 'sources/config-measuretool.ini'
     measuretool_config = cfp.ConfigParser()
     # configparser is unable to read file without headers
     with open( measuretool_config_file_path ) as stream:
@@ -49,12 +49,16 @@ def load_case_measuretool_config( path = "" ):
 
 def select_data_and_build_series( files, results_dir, output_identifier ):
         # NOTE: This is numpy array only due to sorting
-        plane_file_names_subroup = np.array( [ f for f in files if output_identifier in f ] )
+        # There is small workaroud to capture correct workplanes identifier.
+        enhanced_output_identifier = output_identifier + "_"
+        plane_file_names_subroup = np.array( [ f for f in files if enhanced_output_identifier in f ] )
         if np.size( plane_file_names_subroup ) == 0:
             return
 
+        print(output_identifier)
+        print(plane_file_names_subroup)
         # NOTE: Version to find only decimals: r'[\d]*[.][\d]+'
-        plane_timers_subgroup = np.array( [ findall( r'[-+]?(?:\d*\.*\d+)', f.replace( output_identifier, "" ) ) for f in plane_file_names_subroup ], dtype=float )
+        plane_timers_subgroup = np.array( [ findall( r'[\d]*[.][\d]+', f.replace( output_identifier, "" ) ) for f in plane_file_names_subroup ], dtype=float ) #WORKS FOR MEASURETOOL
 
         # sort the array based on saved timers
         idx_sort = plane_timers_subgroup.ravel().argsort()
@@ -86,8 +90,8 @@ def make_data_series( example_dir ):
     if not os.path.exists( results_raw_data_dir ):
         os.makedirs( results_raw_data_dir )
 
-    config = load_case_config()
-    measuretool_config = load_case_measuretool_config()
+    config = load_case_config( example_dir )
+    measuretool_config = load_case_measuretool_config( example_dir )
 
     make_data_series_from_particles( files, results_dir, config )
     make_data_series_from_interpolation_planes( files, results_dir, config, measuretool_config )

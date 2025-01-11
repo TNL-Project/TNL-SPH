@@ -589,18 +589,19 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
       writeInfo( logger );
 
    const int step = timeStepping.getStep();
+   const RealType time = timeStepping.getTime();
 #ifdef HAVE_MPI
-   std::string outputFileNameFluid = outputDirectory + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_fluid.vtk";
+   std::string outputFileNameFluid = outputDirectory + "/fluid_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( time ) + "_particles.vtk";
 #else
-   std::string outputFileNameFluid = outputDirectory + "/particles" + std::to_string( step ) + "_fluid.vtk";
+   std::string outputFileNameFluid = outputDirectory + "/fluid_" + std::to_string( time ) + "_particles.vtk";
 #endif
    fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameFluid );
 
 #ifdef HAVE_MPI
-   std::string outputFileNameBound = outputDirectory + "/particles_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( step ) + "_boundary.vtk";
+   std::string outputFileNameBound = outputDirectory + "/boundary_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( time ) + "_particles.vtk";
 #else
-   std::string outputFileNameBound = outputDirectory + "/particles" + std::to_string( step ) + "_boundary.vtk";
+   std::string outputFileNameBound = outputDirectory + "/boundary_" + std::to_string( time ) + "_particles.vtk";
 #endif
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameBound );
@@ -608,16 +609,16 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          std::string outputFileNameOpenBound =
-            outputDirectory + "/particles" + std::to_string( step ) + "_" + openBoundaryPatch->parameters.identifier + ".vtk";
+            outputDirectory + "/" + openBoundaryPatch->parameters.identifier + "_" + std::to_string( time ) + "_particles.vtk";
          openBoundaryPatch->template writeParticlesAndVariables< Writer >( outputFileNameOpenBound, writeParticleCellIndex );
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
       }
    }
 
 #ifdef HAVE_MPI
-   std::string outputFileNameGrid = outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( step ) + ".vtk";
+   std::string outputFileNameGrid = outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( time ) + ".vtk";
 #else
-   std::string outputFileNameGrid = outputDirectory + "/grid" + std::to_string( step ) + ".vtk";
+   std::string outputFileNameGrid = outputDirectory + "/grid_" + std::to_string( time ) + ".vtk";
 #endif
    TNL::Writers::writeBackgroundGrid( outputFileNameGrid, fluid->particles->getGridDimensions(), fluid->particles->getGridOrigin(), fluid->particles->getSearchRadius() );
    logger.writeParameter( "Saved:", outputFileNameGrid );
