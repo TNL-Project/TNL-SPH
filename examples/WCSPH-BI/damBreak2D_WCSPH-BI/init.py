@@ -144,7 +144,7 @@ def generate_dam_break_boundary_particles_light( dp, box_lenght, box_height, den
     rho0 = 997
 
     # left wall
-    for y in range( box_height_n - 1 ):
+    for y in range( box_height_n ):
         box_rx.append( 0. )
         box_ry.append( ( y + 1 ) * dp - dp / 2)
         normal_x.append( 1. )
@@ -155,7 +155,7 @@ def generate_dam_break_boundary_particles_light( dp, box_lenght, box_height, den
         box_density.append( hydrostaticDensity )
 
     # bottom wall
-    for x in range( box_length_n - 0 ):
+    for x in range( box_length_n ):
         box_rx.append( ( x + 1 ) * dp - dp / 2 )
         box_ry.append( 0. )
         normal_x.append( 0. )
@@ -168,7 +168,7 @@ def generate_dam_break_boundary_particles_light( dp, box_lenght, box_height, den
     x_last = box_rx[ -1 ] + dp / 2 #due to discretisation, we need to save last value of bottom wall
 
     # right wall
-    for y in range( box_height_n - 1 ):
+    for y in range( box_height_n ):
         box_rx.append( x_last )
         box_ry.append( ( y + 1 ) * dp - dp / 2 )
         normal_x.append( -1. )
@@ -181,7 +181,7 @@ def generate_dam_break_boundary_particles_light( dp, box_lenght, box_height, den
     y_last = box_ry[ -1 ] + dp / 2 #due to discretisation, we need to save last value of bottom wall
 
     # top wall
-    for x in range( box_length_n - 0 ):
+    for x in range( box_length_n ):
         box_rx.append( ( x + 1 ) * dp - dp / 2 )
         box_ry.append( y_last )
         normal_x.append( 0. )
@@ -283,7 +283,7 @@ if __name__ == "__main__":
     g.add_argument("--h-coef", type=float, default=2, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--box-length", type=float, default=1.61, help="length of dam break box")
-    g.add_argument("--box-height", type=float, default=1.0, help="height of dam break box")
+    g.add_argument("--box-height", type=float, default=0.6, help="height of dam break box")
     g.add_argument("--fluid-length", type=float, default=0.6, help="length of fluid block")
     g.add_argument("--fluid-height", type=float, default=0.3, help="height of fluid block")
     g.add_argument("--n-boundary-layers", type=int, default=3, help="number of boundary layers")
