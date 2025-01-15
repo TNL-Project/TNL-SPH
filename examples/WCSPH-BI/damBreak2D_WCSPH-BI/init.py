@@ -2,7 +2,7 @@
 
 import numpy as np
 import sys
-sys.path.append('/home/tomas/Work/sph-projects/tnl-sph/src/tools/')
+sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import math
 
