@@ -125,22 +125,28 @@ class OpenBoundaryConfig
       //TODO: Ugly, ugly code:
       if( orientation[ 0 ] != 0 ) {
          if( orientation[ 0 ] >= 0. ){
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+            //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + searchRadius * orientation;
          }
          if( orientation[ 0 ] <= 0. ){
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+            //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + searchRadius * orientation;
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
          }
       }
       if( orientation[ 0 ] == 0 ) {
          if( orientation[ 1 ] >= 0. ){
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
+            //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + searchRadius * orientation;
          }
          if( orientation[ 1 ] <= 0. ){
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + searchRadius * orientation;
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
          }
       }
    }
