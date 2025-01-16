@@ -10,11 +10,11 @@
 
 int main( int argc, char* argv[] )
 {
-   // prepare client parameters
+   // get CLI parameters
    TNL::Config::ParameterContainer cliParams;
    TNL::Config::ConfigDescription cliConfig;
 
-   // prepare sph parameters
+   // get config parameters
    TNL::Config::ParameterContainer parameters;
    TNL::Config::ConfigDescription config;
 
@@ -25,27 +25,22 @@ int main( int argc, char* argv[] )
       return EXIT_FAILURE;
    }
 
-   //std::string logFileName = "results/simulation.log";
-   //std::ofstream logFile( logFileName );
-   //TNL::Logger log( 100, logFile );
-   TNL::Logger log( 100, std::cout );
+   std::string logFileName = "results/simulation.log";
+   std::ofstream logFile( logFileName );
+   TNL::Logger log( 100, logFile );
    Simulation sph;
    sph.init( parameters, log );
    sph.writeProlog( log );
 
-   // Solver model:
-
-   //sph.init( parameters );
-   //sph.writeProlog( parameters );
-   //sph.exec();
-   //sph.writeEpilog( parameters );
-   //sph.exec();
-
    sph.timeMeasurement.addTimer( "extrapolate-openbc" );
    sph.timeMeasurement.addTimer( "apply-openbc" );
 
-
    // Library model:
+   EnergyFields energyMonitor;
+   energyMonitor.init( sph.fluid, true );
+   EnergyFieldsInletOutlet energyMonitorInletOutlet;
+   energyMonitorInletOutlet.addInlet( sph.openBoundaryPatches[ 0 ] );
+   energyMonitorInletOutlet.addOutlet( sph.openBoundaryPatches[ 1 ] );
 
    while( sph.timeStepping.runTheSimulation() )
    {
@@ -67,11 +62,9 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
 
-      // custom: no-penetration bc
-      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
-
-      // compute new time step
-      sph.computeTimeStep();
+      // compute and outpute energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
@@ -79,14 +72,23 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
-      // output particle data
-      sph.makeSnapshot( log );
+      // compute energy flow through open boudnaries
+      energyMonitorInletOutlet.computeInflowEnergyLevels( sph.fluid, sph.openBoundaryPatches[ 0 ], sph.modelParams, sph.timeStepping.getTimeStep() );
+      energyMonitorInletOutlet.computeOutletEnergyLevels( sph.fluid, sph.openBoundaryPatches[ 1 ], sph.modelParams, sph.timeStepping.getTimeStep() );
+      energyMonitorInletOutlet.output( sph.outputDirectory + "/energyOpenBoundary.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
       // apply open boundary condition
       sph.timeMeasurement.start( "apply-openbc" );
       sph.applyOpenBC();
       sph.timeMeasurement.stop( "apply-openbc" );
       sph.writeLog( log, "Update open BC...", "Done." );
+
+      // compute and outpute energy levels
+      energyMonitor.computeEnergyLevels( sph.fluid, sph.modelParams );
+
+      // output particle data
+      sph.makeSnapshot( log );
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
       //update time step
       sph.timeStepping.updateTimeStep();

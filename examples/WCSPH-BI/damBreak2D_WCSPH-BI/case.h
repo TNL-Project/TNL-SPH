@@ -10,15 +10,17 @@
 
 template< typename Simulation,
           typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
-          typename std::enable_if_t< std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename Simulation::SPHConfig > >, bool > Enabled = true >
+          typename std::enable_if_t<
+             std::is_same_v< IntegrationScheme,
+                             TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename Simulation::SPHConfig > >,
+             bool > Enabled = true >
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
    EnergyFields energyMonitor;
    energyMonitor.init( sph.fluid, true );
 
-   while( sph.timeStepping.runTheSimulation() )
-   {
+   while( sph.timeStepping.runTheSimulation() ) {
       // search for neighbros
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log );
@@ -81,9 +83,12 @@ exec( Simulation& sph, TNL::Logger& log )
    }
 }
 
-template< typename Simulation,
-          typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
-          typename std::enable_if_t< std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::MidpointScheme< typename Simulation::SPHConfig > >, bool > Enabled = true >
+template<
+   typename Simulation,
+   typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
+   typename std::enable_if_t<
+      std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::MidpointScheme< typename Simulation::SPHConfig > >,
+      bool > Enabled = true >
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
@@ -104,8 +109,7 @@ exec( Simulation& sph, TNL::Logger& log )
    sph.writeLog( log, "Interact...", "Done." );
    */
 
-   while( sph.timeStepping.runTheSimulation() ){
-
+   while( sph.timeStepping.runTheSimulation() ) {
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->predictor( sph.timeStepping.getTimeStep(), sph.fluid );
       sph.timeMeasurement.stop( "integrate" );
@@ -116,7 +120,6 @@ exec( Simulation& sph, TNL::Logger& log )
       float midpointRelaxCoef = sph.modelParams.midpointRelaxCoef;
 
       while( midpointIteration < sph.modelParams.midpointMaxInterations ) {
-
          // backup derivatives
          sph.fluid->integratorVariables->drhodt_in = sph.fluid->variables->drho;
          sph.fluid->integratorVariables->dvdt_in = sph.fluid->variables->a;
@@ -148,7 +151,8 @@ exec( Simulation& sph, TNL::Logger& log )
          const float residual = sph.integrator->midpointResiduals( sph.fluid, sph.modelParams );
          sph.timeMeasurement.stop( "integrate" );
          sph.writeLog( log, "Integrate: compute residuals...", "Done." );
-         std::cout  << "Step: " << sph.timeStepping.getStep() << " midpoint iteractions: " << midpointIteration << " residua: " << residual << " relax coef: " << midpointRelaxCoef << std::endl;
+         std::cout << "Step: " << sph.timeStepping.getStep() << " midpoint iteractions: " << midpointIteration
+                   << " residua: " << residual << " relax coef: " << midpointRelaxCoef << std::endl;
 
          // stop midpoint iterations
          if( residual < sph.modelParams.midpointResidualTolerance )
@@ -156,7 +160,8 @@ exec( Simulation& sph, TNL::Logger& log )
          // constrol residua decay
          if( midpointIteration > 0 )
             if( residual / residualPrevious > sph.modelParams.midpointResidualMinimalDecay )
-                midpointRelaxCoef = sph.modelParams.midpointRelaxCoefIncrement + ( 1.0 - sph.modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
+               midpointRelaxCoef = sph.modelParams.midpointRelaxCoefIncrement
+                                 + ( 1.0 - sph.modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
          // backup residua
          residualPrevious = residual;
 
@@ -185,7 +190,7 @@ exec( Simulation& sph, TNL::Logger& log )
       BoundaryCorrection::boundaryCorrectionPST( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // output particle data
-      if( sph.timeStepping.checkOutputTimer( "save_results" ) ){
+      if( sph.timeStepping.checkOutputTimer( "save_results" ) ) {
          // compute pressure from density
          sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
          sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
@@ -203,12 +208,14 @@ exec( Simulation& sph, TNL::Logger& log )
 
 template< typename Simulation,
           typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
-          typename std::enable_if_t< std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::RK45Scheme< typename Simulation::SPHConfig > >, bool > Enabled = true >
+          typename std::enable_if_t<
+             std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::RK45Scheme< typename Simulation::SPHConfig > >,
+             bool > Enabled = true >
 void
 exec( Simulation& sph, TNL::Logger& log )
 {
-   while( sph.timeStepping.runTheSimulation() ){
-      for( int predictorStep = 0; predictorStep < 4; predictorStep++ ){
+   while( sph.timeStepping.runTheSimulation() ) {
+      for( int predictorStep = 0; predictorStep < 4; predictorStep++ ) {
          // predictor step
          sph.timeMeasurement.start( "integrate" );
          sph.integrator->predictor( sph.timeStepping.getTimeStep(), sph.fluid, predictorStep );
@@ -223,7 +230,7 @@ exec( Simulation& sph, TNL::Logger& log )
 
          // perform interaction with given model
          sph.timeMeasurement.start( "interact" );
-         sph.interact(); //TODO: What about BC conditions?
+         sph.interact();  //TODO: What about BC conditions?
          sph.timeMeasurement.stop( "interact" );
          sph.writeLog( log, "Interact...", "Done." );
 
@@ -244,7 +251,8 @@ exec( Simulation& sph, TNL::Logger& log )
    }
 }
 
-int main( int argc, char* argv[] )
+int
+main( int argc, char* argv[] )
 {
    // prepare client parameters
    TNL::Config::ParameterContainer cliParams;
@@ -257,7 +265,7 @@ int main( int argc, char* argv[] )
    try {
       TNL::SPH::template initialize< Simulation >( argc, argv, cliParams, cliConfig, parameters, config );
    }
-   catch ( ... ) {
+   catch( ... ) {
       return EXIT_FAILURE;
    }
 

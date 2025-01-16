@@ -19,12 +19,12 @@ class ParticleSystemConfig
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr int spaceDimension = 3;
+   static constexpr int spaceDimension = 2;
 
    using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
-   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
+   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 1, 0 > >;
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
 };
 
 template< typename Device >
@@ -38,7 +38,7 @@ class SPHConfig
    using CellIndexType = int;
    using RealType = float;
 
-   static constexpr int spaceDimension = 3;
+   static constexpr int spaceDimension = 2;
    static constexpr int numberOfBoundaryBuffers = 2;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
@@ -51,6 +51,7 @@ class SPHConfig
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
+//#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -63,17 +64,16 @@ class SPHConfig
 template< typename Device >
 class SPHParams
 {
-public:
+   public:
    using SPHConfig = SPHConfig< Device >;
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MVT< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
-   //using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
    //using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
@@ -81,7 +81,6 @@ public:
 };
 
 using SPHDefs = SPHParams< Device >;
-
 using ParticlesConfig = ParticleSystemConfig< Device >;
 
 /**
@@ -94,14 +93,17 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
-using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
-
-#include <SPH/shared/ElasticBounce.h>
-using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHConfig >;
+using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHDefs >;
 
 /**
  * Include type of SPH simulation.
  */
 #include <SPH/SPHMultiset_CFD.h>
 using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
+
+// Custom post processing tools
+#include <SPH/shared/energyEvaluation/energyFields.h>
+using EnergyFields = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+#include <SPH/shared/energyEvaluation/energyFieldsInletOutlet.h>
+using EnergyFieldsInletOutlet = TNL::SPH::WCSPHOpenBoundaryEnergyFields< SPHDefs >;
 

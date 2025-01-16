@@ -14,7 +14,6 @@ def create_series_file( identifier, results_dir, snapshot_names, snapshot_timers
    for i in range( 0, n_snapshots ):
        #snapshot_path = str( results_dir / "results_data" / snapshot_names[ i ])
        snapshot_path = "results_data/" + ( snapshot_names[ i ] )
-       print( snapshot_path )
        files_list[ i ][ "name" ] = snapshot_path
        files_list[ i ][ "time" ] = snapshot_timers[ i ]
 
@@ -32,20 +31,28 @@ def create_series_file( identifier, results_dir, snapshot_names, snapshot_timers
 def load_case_config( path ):
     config_file_path =  path / 'sources/config.ini'
     config = cfp.ConfigParser()
-    # configparser is unable to read file without headers
-    with open( config_file_path ) as stream:
-        config.read_string( "[main]\n" + stream.read() )
+    try:
+        # configparser is unable to read file without headers
+        with open( config_file_path ) as stream:
+            config.read_string( "[main]\n" + stream.read() )
+        return config
 
-    return config
+    except Exception as e:
+        print( f"Error occured reading case config: {e}" )
+        return None
 
 def load_case_measuretool_config( path ):
     measuretool_config_file_path = path / 'sources/config-measuretool.ini'
     measuretool_config = cfp.ConfigParser()
     # configparser is unable to read file without headers
-    with open( measuretool_config_file_path ) as stream:
-        measuretool_config.read_string( "[main]\n" + stream.read() )
+    try:
+        with open( measuretool_config_file_path ) as stream:
+            measuretool_config.read_string( "[main]\n" + stream.read() )
+        return measuretool_config
 
-    return measuretool_config
+    except Exception as e:
+        print( f"Error occured reading measuretool config: {e}" )
+        return None
 
 def select_data_and_build_series( files, results_dir, output_identifier ):
         # NOTE: This is numpy array only due to sorting
@@ -55,8 +62,6 @@ def select_data_and_build_series( files, results_dir, output_identifier ):
         if np.size( plane_file_names_subroup ) == 0:
             return
 
-        print(output_identifier)
-        print(plane_file_names_subroup)
         # NOTE: Version to find only decimals: r'[\d]*[.][\d]+'
         plane_timers_subgroup = np.array( [ findall( r'[\d]*[.][\d]+', f.replace( output_identifier, "" ) ) for f in plane_file_names_subroup ], dtype=float ) #WORKS FOR MEASURETOOL
 
@@ -91,10 +96,12 @@ def make_data_series( example_dir ):
         os.makedirs( results_raw_data_dir )
 
     config = load_case_config( example_dir )
-    measuretool_config = load_case_measuretool_config( example_dir )
+    if config:
+        make_data_series_from_particles( files, results_dir, config )
 
-    make_data_series_from_particles( files, results_dir, config )
-    make_data_series_from_interpolation_planes( files, results_dir, config, measuretool_config )
+    measuretool_config = load_case_measuretool_config( example_dir )
+    if measuretool_config:
+        make_data_series_from_interpolation_planes( files, results_dir, config, measuretool_config )
 
 if __name__ == "__main__":
     make_data_series()
