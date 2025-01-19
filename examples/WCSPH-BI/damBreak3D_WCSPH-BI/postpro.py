@@ -9,7 +9,7 @@ import sys
 sys.path.append('../../../src/tools')
 import groupResults
 
-case_tag = "damBreak3D_WCSPH-DBC"
+case_tag = "damBreak3D_WCSPH-BI"
 example_dir = Path(__file__).parent
 resources_dir = (example_dir / ".." / ".." / "resources" / "damBreak3D" / "damBreak3D_experimentalDataSphericIssaVioleau2006" ).resolve()
 results_dir = ( example_dir / "results" ).resolve()

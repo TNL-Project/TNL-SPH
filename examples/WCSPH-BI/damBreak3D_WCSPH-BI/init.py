@@ -47,7 +47,7 @@ def process_dam_break_boundary_particles( setup ):
     box_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
     box_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
     box_p = np.zeros( box_n )
-    box_elemetnSizes = dp * np.ones( box_n )
+    box_elementSizes = ( setup[ "dp" ]**2 ) * np.ones( box_n )
     box_ptype = np.zeros( box_n )
 
     # generate ghost nodes from normals
@@ -139,6 +139,13 @@ def write_simulation_params( setup ):
     with open( 'sources/config.ini', 'w' ) as file:
       file.write( config_file )
 
+def configure_and_write_measuretool_parameters():
+    # write parameters to config file
+    with open( 'template/config-measuretool_template.ini', 'r' ) as file :
+      config_file = file.read()
+    with open( 'sources/config-measuretool.ini', 'w' ) as file:
+      file.write( config_file )
+
 if __name__ == "__main__":
     import sys
     import argparse
@@ -152,7 +159,7 @@ if __name__ == "__main__":
     g = argparser.add_argument_group("simulation parameters")
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.2, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.1, help="referential density of the fluid")
     g = argparser.add_argument_group("control initialization")
     g.add_argument( '--generate-geometry', default=True, action=argparse.BooleanOptionalAction, help="generate new geometry with gencase" )
 
@@ -195,3 +202,6 @@ if __name__ == "__main__":
     # write simulation params
     pprint( dambreak_setup )
     write_simulation_params( dambreak_setup )
+
+    # setup measuretool
+    configure_and_write_measuretool_parameters()
