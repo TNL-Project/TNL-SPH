@@ -248,7 +248,8 @@ public:
             integrateVerletBoundary( timeStepping.getTimeStep(), boundary );
       }
 
-      //correctBoundaryDensity( boundary );
+      //TODO: Should I use this?
+      correctBoundaryDensity( boundary );
    }
 
 };

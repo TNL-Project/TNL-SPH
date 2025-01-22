@@ -17,6 +17,8 @@ examples_dir = project_dir / "examples"
 cases_list = [
         'RSPH/damBreak2D_RSPH',
         'WCSPH-BI/damBreak2D_WCSPH-BI',
+        'WCSPH-BI/damBreak3D_WCSPH-BI',
+        'WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI',
         'WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI',
         'WCSPH-DBC/damBreak2D_WCSPH-DBC',
         'WCSPH-DBC/damBreak3D_WCSPH-DBC',

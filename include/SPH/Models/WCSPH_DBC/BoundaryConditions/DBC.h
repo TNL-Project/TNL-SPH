@@ -54,7 +54,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
-         *drho_i += ( v_ij, gradW ) * m - diffTerm;
+         *drho_i += ( v_ij, gradW ) * m * ( rho_i / rho_j ); //- diffTerm;
       }
    };
 
@@ -146,7 +146,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
 
          const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          const RealType diffTerm =  psi * ( r_ij, gradW ) * m / rho_j;
-         *drho_i += ( v_ij, gradW ) * m - diffTerm;
+         *drho_i += ( v_ij, gradW ) * m * ( rho_i / rho_j ); //- diffTerm;
       }
    };
 
