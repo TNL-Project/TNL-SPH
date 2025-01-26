@@ -1,3 +1,7 @@
+import sys
+sys.path.append('evaluateExamplesMetrics')
+import evaluateExamplesMetrics
+
 wcsph_rsph_configurations = [
         # dam break 2D
         {
@@ -17,6 +21,13 @@ wcsph_dbc_configurations = [
         {
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
+            "h-coef" :  2**0.5,
+            "viscos-term" : "PhysicalViscosity",
+            "evaluation-function" : None
+        },
+        {
+            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "bc-type" : "DBC",
             "h-coef" :  2,
             "evaluation-function" : None
         },
@@ -26,23 +37,16 @@ wcsph_dbc_configurations = [
             "h-coef" :  2**0.5,
             "evaluation-function" : None
         },
-        {
-            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
-            "bc-type" : "MDBC",
-            "h-coef" :  2,
-            "evaluation-function" : None
-        },
+        #{
+        #    "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+        #    "bc-type" : "MDBC",
+        #    "h-coef" :  2,
+        #    "evaluation-function" : None
+        #},
         # dam break 3D
         {
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "DBC",
-            "dp" : 0.01,
-            "h-coef" :  2,
-            "evaluation-function" : None
-        },
-        {
-            "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
-            "bc-type" : "MDBC",
             "dp" : 0.01,
             "h-coef" :  2,
             "evaluation-function" : None
@@ -57,10 +61,9 @@ wcsph_dbc_configurations = [
         },
         {
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
-            "bc-type" : "DBC",
+            "bc-type" : "MDBC",
             "dp" : 0.01,
             "h-coef" :  2,
-            "diffusive_term" : "FourtakasDiffusiveTerm",
             "evaluation-function" : None
         },
         {
@@ -83,14 +86,14 @@ wcsph_bi_configurations = [
             "evaluation-function" : None
         },
         # dam break 3D
-        {
-            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConsistent_numeric",
-            "viscos-term" : "None",
-            "dp" : 0.01,
-            "h-coef" :  2,
-            "evaluation-function" : None
-        },
+        #{
+        #    "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+        #    "bc-type" : "BIConsistent_numeric",
+        #    "viscos-term" : "None",
+        #    "dp" : 0.01,
+        #    "h-coef" :  2,
+        #    "evaluation-function" : None
+        #},
         {
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
@@ -119,14 +122,6 @@ wcsph_bi_configurations = [
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
             "viscos-term" : "PhysicalViscosity_MGVT",
-            "dp" : 0.01,
-            "h-coef" :  2,
-            "evaluation-function" : None
-        },
-        {
-            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConservative_numeric",
-            "viscos-term" : "ArtificialViscosity",
             "dp" : 0.01,
             "h-coef" :  2,
             "evaluation-function" : None
@@ -143,14 +138,21 @@ wcsph_bi_configurations = [
 
 
 test_configurations = [
+        # dam break 2D
         {
-            "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
+            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
-            "dp" : 0.01,
-            "h-coef" :  2,
-            "viscous-term" : "PhysicalViscosity",
-            "evaluation-function" : None
+            "h-coef" :  2**0.5,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
         }
+        #{
+        #    "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
+        #    "bc-type" : "DBC",
+        #    "dp" : 0.01,
+        #    "h-coef" :  2,
+        #    "viscous-term" : "PhysicalViscosity",
+        #    "evaluation-function" : None
+        #}
 ]
 
 
