@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import stats
 from pathlib import Path
 
 # initialize directories
