@@ -1,11 +1,11 @@
 {
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC": "10",
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT": "10",
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC:h-coef-2": "10",
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC": "10",
-   "WCSPH-DBC/damBreak3D_WCSPH-DBC": "10",
-   "WCSPH-DBC/damBreak3D_WCSPH-DBC:MGVT": "10",
-   "WCSPH-DBC/damBreak3D_WCSPH-DBC:MDBC": "10",
-   "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC": "10",
-   "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC": "10"
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC": "0",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT": "0",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC:h-coef-2": "0",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC": "0",
+   "WCSPH-DBC/damBreak3D_WCSPH-DBC": "255.372",
+   "WCSPH-DBC/damBreak3D_WCSPH-DBC:MGVT": "248.716",
+   "WCSPH-DBC/damBreak3D_WCSPH-DBC:MDBC": "0",
+   "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC": "0",
+   "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC": "0"
 }
