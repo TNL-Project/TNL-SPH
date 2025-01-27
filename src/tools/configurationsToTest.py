@@ -35,7 +35,7 @@ wcsph_dbc_configurations = [
             "viscous-term" : "ArtificialViscosity",
             "h-coef" :  2,
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
-        }
+        },
         {
             "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
@@ -46,7 +46,7 @@ wcsph_dbc_configurations = [
         #{
         # dam break 3D
         {
-            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "case-tag" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "DBC",
             "dp" : 0.01,
@@ -54,7 +54,7 @@ wcsph_dbc_configurations = [
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_DBC
         },
         {
-            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT",
+            "case-tag" : "WCSPH-DBC/damBreak3D_WCSPH-DBC:MGVT",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "DBC",
             "dp" : 0.01,
@@ -63,7 +63,7 @@ wcsph_dbc_configurations = [
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_DBC
         },
         {
-            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC",
+            "case-tag" : "WCSPH-DBC/damBreak3D_WCSPH-DBC:MDBC",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "MDBC",
             "dp" : 0.01,
@@ -73,12 +73,12 @@ wcsph_dbc_configurations = [
         {
             "case-tag" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
-            "evaluation-function" : poiseuilleFlowWithOpenBoundary2D_WCSPH
+            "evaluation-function" : evaluateExamplesMetrics.poiseuilleFlowWithOpenBoundary2D_WCSPH
         },
         {
             "case-tag" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
-            "evaluation-function" : poiseuilleFlowWithPeriodicBoundary2D_WCSPH
+            "evaluation-function" : evaluateExamplesMetrics.poiseuilleFlowWithPeriodicBoundary2D_WCSPH
         }
 ]
 
