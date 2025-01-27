@@ -13,66 +13,72 @@ wcsph_rsph_configurations = [
 wcsph_dbc_configurations = [
         # dam break 2D
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "bc-type" : "DBC",
+            "viscous-term" : "ArtificialViscosity",
+            "h-coef" :  2**0.5,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
+        },
+        {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
             "h-coef" :  2**0.5,
-            "evaluation-function" : None
+            "viscous-term" : "PhysicalViscosity",
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
         },
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:h-coef-2",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
-            "h-coef" :  2**0.5,
-            "viscos-term" : "PhysicalViscosity",
-            "evaluation-function" : None
-        },
-        {
-            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
-            "bc-type" : "DBC",
+            "viscous-term" : "ArtificialViscosity",
             "h-coef" :  2,
-            "evaluation-function" : None
-        },
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
+        }
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "MDBC",
             "h-coef" :  2**0.5,
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_MDBC
         },
         #{
-        #    "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
-        #    "bc-type" : "MDBC",
-        #    "h-coef" :  2,
-        #    "evaluation-function" : None
-        #},
         # dam break 3D
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "DBC",
             "dp" : 0.01,
             "h-coef" :  2,
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_DBC
         },
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "DBC",
             "dp" : 0.01,
             "h-coef" :  2,
-            "viscos-term" : "PhysicalViscosity",
-            "evaluation-function" : None
+            "viscous-term" : "PhysicalViscosity",
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_DBC
         },
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "bc-type" : "MDBC",
             "dp" : 0.01,
             "h-coef" :  2,
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_MDBC
         },
         {
+            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
-            "evaluation-function" : None
+            "evaluation-function" : poiseuilleFlowWithOpenBoundary2D_WCSPH
         },
         {
+            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
-            "evaluation-function" : None
+            "evaluation-function" : poiseuilleFlowWithPeriodicBoundary2D_WCSPH
         }
 ]
 
@@ -89,7 +95,7 @@ wcsph_bi_configurations = [
         #{
         #    "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
         #    "bc-type" : "BIConsistent_numeric",
-        #    "viscos-term" : "None",
+        #    "viscous-term" : "None",
         #    "dp" : 0.01,
         #    "h-coef" :  2,
         #    "evaluation-function" : None
@@ -97,7 +103,7 @@ wcsph_bi_configurations = [
         {
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
-            "viscos-term" : "PhysicalViscosity_MGVT",
+            "viscous-term" : "PhysicalViscosity_MGVT",
             "dp" : 0.01,
             "h-coef" :  2,
             "evaluation-function" : None
@@ -105,7 +111,7 @@ wcsph_bi_configurations = [
         {
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
-            "viscos-term" : "ArtificialViscosity",
+            "viscous-term" : "ArtificialViscosity",
             "dp" : 0.01,
             "h-coef" :  2,
             "evaluation-function" : None
@@ -113,7 +119,7 @@ wcsph_bi_configurations = [
         {
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
-            "viscos-term" : "None",
+            "viscous-term" : "None",
             "dp" : 0.01,
             "h-coef" :  2,
             "evaluation-function" : None
@@ -121,7 +127,7 @@ wcsph_bi_configurations = [
         {
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
-            "viscos-term" : "PhysicalViscosity_MGVT",
+            "viscous-term" : "PhysicalViscosity_MGVT",
             "dp" : 0.01,
             "h-coef" :  2,
             "evaluation-function" : None
@@ -140,6 +146,7 @@ wcsph_bi_configurations = [
 test_configurations = [
         # dam break 2D
         {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
             "h-coef" :  2**0.5,
@@ -163,6 +170,6 @@ test_configurations = [
 #            "h-coef" :  2,
 #            "diffusive_term" : "MolteniDiffusiveTerm",
 #            "delta" : 0.1,
-#            "viscos-term" : "ArtificialViscosity"
+#            "viscous-term" : "ArtificialViscosity"
 #            "alpha" : 0.02,
 #        },

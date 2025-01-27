@@ -8,12 +8,13 @@ from time import strftime, gmtime
 
 # list of tests
 import configurationsToTest
-conf_list = configurationsToTest.test_configurations
+conf_list = configurationsToTest.wcsph_dbc_configurations
 
 # initialize directories
 tools_dir = Path(__file__).parent
 project_dir = ( tools_dir / ".." / ".." ).resolve()
 examples_dir = project_dir / "examples"
+build_dir = project_dir / "build" / "examples"
 
 # storage arrays
 results = []
@@ -22,15 +23,18 @@ results_returncode = []
 computational_time = []
 referential_computational_time = []
 computational_time_difference_formatted = []
+cases_tags_list = []
 cases_list = []
 tests_passed_list = []
 tests_total_list = []
+tests_output_formatted = []
+tests_summary_formatted = []
 
 def init( case_dir, conf ):
     args = []
     args += [ case_dir / "init.py" ]
     for key, value in conf.items():
-        if key not in [ "case", "evaluation-function" ]:
+        if key not in [ "case", "case-tag", "evaluation-function" ]:
             args += [ f"--{key}", str( value ) ]
 
     print( args )
@@ -39,6 +43,17 @@ def init( case_dir, conf ):
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.STDOUT,
                     cwd=case_dir )
+
+def make( bin_dir ):
+    args = [ "make" ]
+
+    p = subprocess.run( args,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.STDOUT,
+                        cwd=bin_dir,
+                        text=True )
+    if p.returncode != 0:
+        raise subprocess.CalledProcessError(p.returncode, p.args)
 
 def run( case_dir ):
     args = []
@@ -50,11 +65,11 @@ def run( case_dir ):
     #    for line in p.stdout:
     #        print(line, end="")
 
-    p =  subprocess.run( args,
-                         stdout=subprocess.DEVNULL,
-                         stderr=subprocess.STDOUT,
-                         cwd=case_dir,
-                         text=True )
+    p = subprocess.run( args,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.STDOUT,
+                        cwd=case_dir,
+                        text=True )
     results_returncode.append( subprocess.CalledProcessError( p.returncode, p.args ) )
     results.append( p.returncode )
 
@@ -76,11 +91,15 @@ def run_cases():
     for conf in conf_list:
         case = conf[ "case" ]
         cases_list.append( case )
+        cases_tags_list.append( conf[ "case-tag" ] )
         case_dir = examples_dir / case
 
         print( f"Initializing case: {case} in {case_dir}." )
         init( case_dir, conf )
         print( f"Initialization finished." )
+        bin_dir = build_dir / case
+        print( f"Compiling case: {case} in {bin_dir}" )
+        make( bin_dir )
         print( f"Executing case: {case} in {case_dir}." )
         run( case_dir )
         print( f"Execution finished with return code: {results[ -1 ]}." )
@@ -109,6 +128,7 @@ def process_results( gpu_type ):
             referential_computational_time.append( float( value ) )
 
         for i in range( len( cases_list ) ):
+            # process computational time
             t_live = computational_time[ i ]
             t_ref = referential_computational_time[ i ]
             t_dif_precentage = 100 * ( t_live - t_ref ) / t_ref
@@ -122,15 +142,30 @@ def process_results( gpu_type ):
 
             computational_time_difference_formatted.append( t_diff_percentage_string )
 
+            # process test results
+            tests_passed = tests_passed_list[ i ]
+            tests_total = tests_total_list[ i ]
+            if tests_passed == tests_total:
+                tests_output_string = f'<span style="color:green">__{tests_passed}/{tests_total}__</span>'
+                tests_summary_string = f'<span style="color:green">__Passed__</span>'
+            else:
+                tests_output_string = f'<span style="color:red">__{tests_passed}/{tests_total}__</span>'
+                tests_summary_string = f'<span style="color:red">__Failed__</span>'
+
+            tests_summary_formatted.append( tests_summary_string )
+            tests_output_formatted.append( tests_output_string )
+
 def write_results():
     for i in range( len( cases_list ) ):
         print( f"Case: { cases_list[ i ] }\n{ results[ i ] }\nComputational time: { computational_time[ i ] }\n" )
 
-    summary = { 'Cases' : cases_list,
+    summary = { 'Cases' : cases_tags_list,
                 'Result' : results_fancy,
                 'Comp. time' : computational_time,
                 'Ref. comp. time' : referential_computational_time,
-                'Comp. time dif.' : computational_time_difference_formatted }
+                'Comp. time dif.' : computational_time_difference_formatted,
+                'Tests' : tests_output_formatted,
+                'Tests results' : tests_summary_formatted }
     summary_df = pd.DataFrame( summary )
     with open(f'log_{strftime("%Y-%m-%d_%H:%M:%S")}.md', 'w') as f:
         f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S", gmtime())}\n' )

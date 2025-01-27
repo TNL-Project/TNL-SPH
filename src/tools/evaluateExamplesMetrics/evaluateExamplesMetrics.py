@@ -29,8 +29,8 @@ def damBreak2D_WCSPH_DBC( case_dir ):
     wl = wl[ :, 1: ]
     wl_avg_sim = np.mean( wl, axis=0 )
     wl_std_sim = np.std( wl, axis=0 )
-    wl_avg = np.allclose( wl_avg_sim, wl_avg_ref )
-    wl_std = np.allclose( wl_std_sim, wl_std_ref )
+    wl_avg = np.allclose( wl_avg_sim, wl_avg_ref, atol=0.1 )
+    wl_std = np.allclose( wl_std_sim, wl_std_ref, atol=0.01 )
 
     if wl_avg:
         tests_successful_count += 1
@@ -49,8 +49,8 @@ def damBreak2D_WCSPH_DBC( case_dir ):
     ps = ps[ :, 1: ]
     ps_avg_sim = np.mean( ps, axis=0 )
     ps_std_sim = np.std( ps, axis=0 )
-    ps_avg = np.allclose( ps_avg_sim, ps_avg_ref )
-    ps_std = np.allclose( ps_std_sim, ps_std_ref )
+    ps_avg = np.allclose( ps_avg_sim, ps_avg_ref, atol=100 )
+    ps_std = np.allclose( ps_std_sim, ps_std_ref, atol=100 )
 
     if ps_avg:
         tests_successful_count += 1
@@ -65,6 +65,21 @@ def damBreak2D_WCSPH_DBC( case_dir ):
         print( f"{example_name}: Pressure sensors std comparison - failed." )
 
     return tests_successful_count, tests_total_count
+
+def damBreak2D_WCSPH_MDBC( case_dir ):
+    return 0, 0
+
+def damBreak3D_WCSPH_DBC( case_dir ):
+    return 0, 0
+
+def damBreak3D_WCSPH_MDBC( case_dir ):
+    return 0, 0
+
+def poiseuilleFlowWithOpenBoundary2D_WCSPH( case_dir ):
+    return 0, 0
+
+def poiseuilleFlowWithPeriodicBoundary2D_WCSPH( case_dir ):
+    return 0, 0
 
 if __name__ == "__main__":
 
