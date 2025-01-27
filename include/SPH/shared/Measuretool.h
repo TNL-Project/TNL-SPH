@@ -141,7 +141,7 @@ class SensorInterpolation
    init( std::vector< VectorType >& points, const int numberOfSensors, const int numberOfSavedSteps, bool includeBoundary )
    {
       this->numberOfSensors = numberOfSensors;
-      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
+      sensors.setSizes( 2 * numberOfSavedSteps, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
       this->numberOfSavedSteps = numberOfSavedSteps + 1;
@@ -226,7 +226,7 @@ class SensorWaterLevel
          RealType endLevel )
    {
       this->numberOfSensors = points.size();
-      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
+      sensors.setSizes( 2 * numberOfSavedSteps, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
 
