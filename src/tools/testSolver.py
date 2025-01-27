@@ -87,7 +87,7 @@ def parse_tnl_sph_output( case_dir ):
             json_str = json.dumps( lines )
             timers_dictionary = json.loads( json_str )
             return float( timers_dictionary[ "total" ] )
-    except e:
+    except:
         print( f"parse_tnl_sph_output: File {filename} not found." )
         return 0
 
