@@ -16,7 +16,6 @@ wcsph_dbc_configurations = [
             "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
-            "viscous-term" : "ArtificialViscosity",
             "h-coef" :  2**0.5,
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
         },
@@ -32,7 +31,6 @@ wcsph_dbc_configurations = [
             "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC:h-coef-2",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "bc-type" : "DBC",
-            "viscous-term" : "ArtificialViscosity",
             "h-coef" :  2,
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
         },

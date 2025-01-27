@@ -29,6 +29,7 @@ tests_passed_list = []
 tests_total_list = []
 tests_output_formatted = []
 tests_summary_formatted = []
+tests_logs_list = []
 
 def init( case_dir, conf ):
     args = []
@@ -150,11 +151,16 @@ def process_results( gpu_type ):
             tests_passed = tests_passed_list[ i ]
             tests_total = tests_total_list[ i ]
             if tests_passed == tests_total:
-                tests_output_string = f'<span style="color:green">__{tests_passed}/{tests_total}__</span>'
-                tests_summary_string = f'<span style="color:green">__Passed__</span>'
+                if tests_total > 0:
+                    tests_output_string = f'<span style="color:green">__{tests_passed}/{tests_total}__</span>'
+                    tests_summary_string = f'<span style="color:green">__Passed__</span>'
+                else:
+                    tests_output_string = '-'
+                    tests_summary_string = '-'
             else:
                 tests_output_string = f'<span style="color:red">__{tests_passed}/{tests_total}__</span>'
                 tests_summary_string = f'<span style="color:red">__Failed__</span>'
+
 
             tests_summary_formatted.append( tests_summary_string )
             tests_output_formatted.append( tests_output_string )
@@ -172,7 +178,7 @@ def write_results():
                 'Tests results' : tests_summary_formatted }
     summary_df = pd.DataFrame( summary )
     with open(f'log_{strftime("%Y-%m-%d_%H:%M:%S")}.md', 'w') as f:
-        f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S", gmtime())}\n' )
+        f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S")}\n' )
         f.write( summary_df.to_markdown( ) )
 
 if __name__ == "__main__":
