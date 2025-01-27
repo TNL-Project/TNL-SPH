@@ -81,11 +81,15 @@ def evaluate_test_metrics( case_dir, conf ):
 
 def parse_tnl_sph_output( case_dir ):
     filename = case_dir / "results" / "time_measurements.json"
-    with open( filename ) as f:
-        lines = json.load( f )
-        json_str = json.dumps( lines )
-        timers_dictionary = json.loads( json_str )
-        return float( timers_dictionary[ "total" ] )
+    try:
+        with open( filename ) as f:
+            lines = json.load( f )
+            json_str = json.dumps( lines )
+            timers_dictionary = json.loads( json_str )
+            return float( timers_dictionary[ "total" ] )
+    except e:
+        print( f"parse_tnl_sph_output: File {filename} not found." )
+        return 0
 
 def run_cases():
     for conf in conf_list:
