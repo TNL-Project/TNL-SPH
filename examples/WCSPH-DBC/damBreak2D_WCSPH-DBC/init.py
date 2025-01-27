@@ -204,7 +204,7 @@ if __name__ == "__main__":
     g.add_argument("--h-coef", type=float, default=2**0.5, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--box-length", type=float, default=1.61, help="length of dam break box")
-    g.add_argument("--box-height", type=float, default=0.8, help="height of dam break box")
+    g.add_argument("--box-height", type=float, default=1.0, help="height of dam break box")
     g.add_argument("--fluid-length", type=float, default=0.6, help="length of fluid block")
     g.add_argument("--fluid-height", type=float, default=0.3, help="height of fluid block")
     g = argparser.add_argument_group("simulation parameters")
