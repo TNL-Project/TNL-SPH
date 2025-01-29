@@ -128,9 +128,11 @@ def process_results( gpu_type ):
         json_str = json.dumps( lines )
         timers_dictionary = json.loads( json_str )
 
-        for key, value in timers_dictionary.items():
-            # TODO Check with: if key not in cases_list:
-            referential_computational_time.append( float( value ) )
+        #for key, value in timers_dictionary.items():
+        #    # TODO Check with: if key not in cases_list:
+        #    referential_computational_time.append( float( value ) )
+        for case_tag in cases_tags_list:
+            referential_computational_time.append( float( timers_dictionary[ case_tag ] ) )
 
         for i in range( len( cases_list ) ):
             # process computational time

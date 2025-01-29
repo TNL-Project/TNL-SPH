@@ -80,6 +80,18 @@ def poiseuilleFlowWithOpenBoundary2D_WCSPH( case_dir ):
 def poiseuilleFlowWithPeriodicBoundary2D_WCSPH( case_dir ):
     return 0, 0
 
+def damBreak2D_WCSPH_BI( case_dir ):
+    return 0, 0
+
+def damBreak3D_WCSPH_BI( case_dir ):
+    return 0, 0
+
+def poiseuilleFlowWithOpenBoundary2D_WCSPH_BI( case_dir ):
+    return 0, 0
+
+def poiseuilleFlowWithPeriodicBoundary2D_WCSPH_BI( case_dir ):
+    return 0, 0
+
 if __name__ == "__main__":
 
     print( "Evaluate metrics - main." )

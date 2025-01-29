@@ -84,59 +84,92 @@ wcsph_bi_configurations = [
         # TODO:
         # dam break 2D
         {
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
-            "bc-type" : "DBC",
-            "h-coef" :  2**0.5,
-            "evaluation-function" : None
+            "bc-type" : "BIConsistent_numeric",
+            "h-coef" :  2,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
-        # dam break 3D
-        #{
-        #    "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-        #    "bc-type" : "BIConsistent_numeric",
-        #    "viscous-term" : "None",
-        #    "dp" : 0.01,
-        #    "h-coef" :  2,
-        #    "evaluation-function" : None
-        #},
         {
-            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI::MGVT",
+            "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
-            "dp" : 0.01,
             "h-coef" :  2,
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
         {
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI:hr-conservative",
+            "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
+            "bc-type" : "BIConservative_numeric",
+            "dp" : 0.0075,
+            "h-coef" : 4,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
+        },
+        {
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI:hr-conservative-MGVT-DTNone",
+            "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
+            "bc-type" : "BIConservative_numeric",
+            "viscous-term" : "PhysicalViscosity_MGVT",
+            "diffusive-term" : "None",
+            "h-coef" : 2,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
+        },
+        {
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI:hr-conservative-MGVT",
+            "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
+            "bc-type" : "BIConservative_numeric",
+            "viscous-term" : "PhysicalViscosity_MGVT",
+            "diffusive-term" : "MolteniDiffusiveTerm",
+            "h-coef" : 2,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
+        },
+        # dam break 3D
+        {
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:hr-inviscid",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
-            "viscous-term" : "ArtificialViscosity",
-            "dp" : 0.01,
-            "h-coef" :  2,
-            "evaluation-function" : None
-        },
-        {
-            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConservative_numeric",
             "viscous-term" : "None",
             "dp" : 0.01,
             "h-coef" :  2,
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
         {
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:hr-MGVT",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConservative_numeric",
+            "bc-type" : "BIConsistent_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
             "dp" : 0.01,
             "h-coef" :  2,
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
         {
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:hr-conservative",
+            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+            "bc-type" : "BIConservative_numeric",
+            "viscous-term" : "None",
+            "diffusive-term" : "None",
+            "dp" : 0.01,
+            "h-coef" :  2,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
+        },
+        {
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:conservative-MGVT",
+            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+            "bc-type" : "BIConservative_numeric",
+            "viscous-term" : "PhysicalViscosity_MGVT",
+            "h-coef" :  2,
+            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
+        },
+        {
+            "case-tag" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
             "case" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.poiseuilleFlowWithOpenBoundary2D_WCSPH_BI
         },
         {
+            "case-tag" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
             "case" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
-            "evaluation-function" : None
+            "evaluation-function" : evaluateExamplesMetrics.poiseuilleFlowWithPeriodicBoundary2D_WCSPH
         }
 ]
 
