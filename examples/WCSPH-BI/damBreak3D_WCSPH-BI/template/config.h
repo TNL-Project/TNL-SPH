@@ -24,7 +24,7 @@ class ParticleSystemConfig
    using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
-   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
 template< typename Device >
@@ -51,7 +51,7 @@ class SPHConfig
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
-//#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -73,10 +73,8 @@ public:
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
-   //using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
-   //using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
    //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };

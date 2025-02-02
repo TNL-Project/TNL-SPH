@@ -115,28 +115,43 @@ def write_simulation_params( setup ):
     with open( 'template/config_template.ini', 'r' ) as file :
       config_file = file.read()
 
-    config_file = config_file.replace( 'placeholderSearchRadius', str( round( setup[ "search_radius" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-x', str( round( setup[ "domain_origin_x" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-y', str( round( setup[ "domain_origin_y" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-z', str( round( setup[ "domain_origin_z" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-x', str( round( setup[ "domain_size_x" ], 5  ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-y', str( round( setup[ "domain_size_y" ], 5  ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-z', str( round( setup[ "domain_size_z" ], 5  ) ) )
+    config_file = config_file.replace( 'placeholderSearchRadius', f'{ setup[ "search_radius" ] }' )
+    config_file = config_file.replace( 'placeholderDomainOrigin-x', f'{setup[ "domain_origin_x" ]:.5f}' )
+    config_file = config_file.replace( 'placeholderDomainOrigin-y', f'{setup[ "domain_origin_y" ]:.5f}' )
+    config_file = config_file.replace( 'placeholderDomainOrigin-z', f'{setup[ "domain_origin_z" ]:.5f}' )
+    config_file = config_file.replace( 'placeholderDomainSize-x', f'{setup[ "domain_size_x" ]:.5f}' )
+    config_file = config_file.replace( 'placeholderDomainSize-y', f'{setup[ "domain_size_y" ]:.5f}' )
+    config_file = config_file.replace( 'placeholderDomainSize-z', f'{setup[ "domain_size_z" ]:.5f}' )
 
-    config_file = config_file.replace( 'placeholderInitParticleDistance', str( setup[ "dp" ] ) )
-    config_file = config_file.replace( 'placeholderSmoothingLength', str( round( setup[ "smoothing_length" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderMass', str( round( setup[ "particle_mass" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderSpeedOfSound', str( setup[ "speed_of_sound" ] ) )
-    config_file = config_file.replace( 'placeholderDensity', str( setup[ "density" ] ) )
-    config_file = config_file.replace( 'placeholderBoundaryElementSize', str( setup[ "boundary_element_size" ]  ) )
-    config_file = config_file.replace( 'placeholderTimeStep', str( round( setup[ "time_step" ], 8 ) ) )
-    config_file = config_file.replace( 'placeholderCFL', str( setup[ "cfl" ] ) )
-    config_file = config_file.replace( 'placeholderFluidParticles', str( setup[ "fluid_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( setup[ "fluid_n" ] ) )
-    config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
+    config_file = config_file.replace( 'placeholderInitParticleDistance', f'{ setup[ "dp" ] }' )
+    config_file = config_file.replace( 'placeholderSmoothingLength', f'{ setup[ "smoothing_length" ] }' )
+    config_file = config_file.replace( 'placeholderMass', f'{ setup[ "particle_mass" ] }' )
+    config_file = config_file.replace( 'placeholderSpeedOfSound', f'{ setup[ "speed_of_sound" ] }' )
+    config_file = config_file.replace( 'placeholderDensity', f'{ setup[ "density" ] }' )
+    config_file = config_file.replace( 'placeholderBoundaryElementSize', f'{ setup[ "boundary_element_size" ] }' )
+    config_file = config_file.replace( 'placeholderTimeStep', f'{ setup[ "time_step" ] }' )
+    config_file = config_file.replace( 'placeholderCFL', f'{ setup[ "cfl" ] }' )
+    config_file = config_file.replace( 'placeholderAlpha', f'{ setup[ "alpha" ] }' )
+    config_file = config_file.replace( 'placeholderDynamicVicosity', f'{ setup[ "dynamic_viscosity" ] }' )
+
+    config_file = config_file.replace( 'placeholderFluidParticles', f'{ setup[ "fluid_n" ] }' )
+    config_file = config_file.replace( 'placeholderAllocatedFluidParticles', f'{ setup[ "fluid_n" ] }' )
+    config_file = config_file.replace( 'placeholderBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
+    config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
 
     with open( 'sources/config.ini', 'w' ) as file:
+      file.write( config_file )
+
+    # write parameters to config header file
+    with open( 'template/config_template.h', 'r' ) as file :
+      config_file = file.read()
+
+    config_file = config_file.replace( '#placeholderBoundaryConditionsType',  setup[ "bc_type" ] )
+    config_file = config_file.replace( '#placeholderDiffusiveTerm', setup[ "diffusive_term" ] )
+    config_file = config_file.replace( '#placeholderViscosTerm', setup[ "viscous_term" ] )
+    config_file = config_file.replace( '#placeholderTimeIntegration', setup[ "time_integration" ] )
+
+    with open( 'template/config.h', 'w' ) as file:
       file.write( config_file )
 
 def configure_and_write_measuretool_parameters():
@@ -160,6 +175,12 @@ if __name__ == "__main__":
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
     g.add_argument("--cfl", type=float, default=0.1, help="referential density of the fluid")
+    g.add_argument("--bc-type", type=str, default="BIConservative_numeric", help="type of solid walls boundary conditions")
+    g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm", help="type of solid walls boundary conditions")
+    g.add_argument("--viscous-term", type=str, default="ArtificialViscosity", help="type of solid walls boundary conditions")
+    g.add_argument("--alpha", type=float, default=0.02, help="artificial vicosity parameter")
+    g.add_argument("--dynamic-viscosity", type=float, default=0.001, help="dynamic viscosity")
+    g.add_argument("--time-integration", type=str, default="VerletScheme", help="time integration scheme")
     g = argparser.add_argument_group("control initialization")
     g.add_argument( '--generate-geometry', default=True, action=argparse.BooleanOptionalAction, help="generate new geometry with gencase" )
 
@@ -176,7 +197,14 @@ if __name__ == "__main__":
         "boundary_element_size" : args.dp * args.dp,
         "smoothing_length" : args.h_coef * args.dp,
         "search_radius" : 2 * args.h_coef * args.dp,
-        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound
+        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
+        "alpha" : args.alpha,
+        "dynamic_viscosity" : args.dynamic_viscosity,
+        # terms and formulations
+        "bc_type" : args.bc_type,
+        "diffusive_term" : args.diffusive_term,
+        "viscous_term" : args.viscous_term,
+        "time_integration" : args.time_integration
     }
 
     # create necessary folders
