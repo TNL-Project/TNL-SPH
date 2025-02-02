@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from os import rename
 from pathlib import Path
 import subprocess
 import json
@@ -112,6 +113,12 @@ def run_cases():
 
         # get computational time
         computational_time.append( parse_tnl_sph_output( case_dir ) )
+
+        # backup the results
+        results_dir = case_dir / "results"
+        results_with_tag = "results" + conf[ "case" ]
+        results_dir_renamed = case_dir / results_with_tag
+        rename( results_dir, results_dir_renamed )
 
 def process_results( gpu_type ):
     # parse return codes to fancy output
