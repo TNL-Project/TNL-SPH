@@ -109,27 +109,8 @@ public:
                           SPHState& sphState,
                           const RealType& dt )
    {
-      GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
-      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
-
-      const RealType m = sphState.mass;
-      const RealType r_boxFactor = sphState.r_boxFactor;
-
-      auto view_points = fluid->particles->getPoints().getView();
-      const auto view_rho = fluid->variables->rho.getConstView();
-      const auto view_points_bound = boundary->particles->getPoints().getView();
-      const auto view_n_bound = boundary->variables->n.getConstView();
-      const auto view_elementSize_bound = boundary->variables->elementSize.getConstView();
-
-      auto pstLoop = [=] __cuda_callable__ ( LocalIndexType i,
-                                             LocalIndexType j,
-                                             VectorType& r_i,
-                                             RealType& Ri,
-                                             VectorType* r_i_mod ) mutable
-      {
-         // do nothing
-      };
+      // do nothing
+   }
 
 };
 
