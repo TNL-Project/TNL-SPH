@@ -100,6 +100,12 @@ public:
    void
    performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 
+   /**
+    *
+    */
+   void
+   removeParitclesOutOfDomain( TNL::Logger& log );
+
    //void
    //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 

@@ -1,6 +1,7 @@
 #include "SPHMultiset_CFD.h"
 #include "SPH/OpenBoundaryConfig.h"
 #include "SPH/TimeMeasurement.h"
+#include <TNL/Logger.h>
 #include <iterator>
 #include <ostream>
 #include <string>
@@ -406,6 +407,23 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
                //   std::cout << boundary->particles->getNeighborListStorage().getElement( j * numberOfPtcsBoundary + offsetParticleBoundary ) << " ";
                //}
                //std::cout << std::endl;
+   }
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::removeParitclesOutOfDomain( TNL::Logger& log )
+{
+   const int numberOfParticlesToRemove = fluid->particles->getNumberOfParticlesToRemove();
+   fluid->particles->removeParitclesOutOfDomain();
+
+   if( fluid->particles->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
+      const int numberOfParticlesOutOfDomain = fluid->particles->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
+      log.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      // search for neighbros
+      timeMeasurement.start( "search" );
+      this->performNeighborSearch( log );
+      timeMeasurement.stop( "search" );
    }
 }
 
