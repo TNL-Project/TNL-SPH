@@ -81,33 +81,40 @@ wcsph_dbc_configurations = [
 ]
 
 wcsph_bi_configurations = [
-        # TODO:
         # dam break 2D
         {
-            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_SVs-AV",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
+            "time-integration" : "SymplecticVerletScheme",
             "h-coef" :  2,
+            "cfl" : 0.05,
+            "bc-correction" : "ElasticBounce",
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
         {
-            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI::MGVT",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_SVs-MGVT",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
+            "time-integration" : "SymplecticVerletScheme",
             "h-coef" :  2,
+            "cfl" : 0.05,
+            "bc-correction" : "ElasticBounce",
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
         {
-            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI:hr-conservative",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_hr-conservative",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
-            "dp" : 0.0075,
+            "viscous-term" : "None",
+            "diffusive-term" : "None",
+            "dp" : 0.00075,
             "h-coef" : 4,
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
         {
-            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI:hr-conservative-MGVT-DTNone",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_hr-conservative-MGVT-DTNone",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
@@ -116,7 +123,7 @@ wcsph_bi_configurations = [
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
         {
-            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI:hr-conservative-MGVT",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_hr-conservative-MGVT",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
@@ -126,7 +133,7 @@ wcsph_bi_configurations = [
         },
         # dam break 3D
         {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:hr-inviscid",
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-inviscid",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
             "viscous-term" : "None",
@@ -134,31 +141,39 @@ wcsph_bi_configurations = [
             "h-coef" :  2,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
+        # NOTE: The previous works as it is, but using BIConsistent_numeric and including PV-MGVT,
+        #       lower CLF is required in order to mantain stability. 
         {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:hr-MGVT",
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-MGVT",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConsistent_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
             "dp" : 0.01,
             "h-coef" :  2,
+            "cfl" : 0.05,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
+        # NOTE: Doesn't work even with smaller CFL. Use midpoint scheme?
         {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:hr-conservative",
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-conservative",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
             "viscous-term" : "None",
             "diffusive-term" : "None",
             "dp" : 0.01,
             "h-coef" :  2,
+            "cfl" : 0.05,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
+        # NOTE: With dp=0.01, this works even with default CFL, but for default dp=0.02,
+        #       it requires lower CFL
         {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI:conservative-MGVT",
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_conservative-MGVT",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "bc-type" : "BIConservative_numeric",
             "viscous-term" : "PhysicalViscosity_MGVT",
             "h-coef" :  2,
+            "cfl" : 0.05,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
         {

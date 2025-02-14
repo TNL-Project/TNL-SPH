@@ -175,6 +175,7 @@ def write_simulation_params( setup ):
       config_file = file.read()
 
     config_file = config_file.replace( '#placeholderBoundaryConditionsType',  setup[ "bc_type" ] )
+    config_file = config_file.replace( '#placeholderBoundaryCorrection',  setup[ "bc_correction" ] )
     config_file = config_file.replace( '#placeholderDiffusiveTerm', setup[ "diffusive_term" ] )
     config_file = config_file.replace( '#placeholderViscosTerm', setup[ "viscous_term" ] )
     config_file = config_file.replace( '#placeholderTimeIntegration', setup[ "time_integration" ] )
@@ -210,6 +211,7 @@ if __name__ == "__main__":
     g.add_argument("--speed-of-sound", type=float, default=17.155174146594955, help="speed of sound")
     g.add_argument("--cfl", type=float, default=0.10, help="referential density of the fluid")
     g.add_argument("--bc-type", type=str, default="BIConservative_numeric", help="type of solid walls boundary conditions")
+    g.add_argument("--bc-correction", type=str, default="ElasticBounceLight", help="non-penetrable bc correction")
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm", help="type of solid walls boundary conditions")
     g.add_argument("--viscous-term", type=str, default="ArtificialViscosity", help="type of solid walls boundary conditions")
     g.add_argument("--alpha", type=float, default=0.02, help="artificial vicosity parameter")
@@ -239,6 +241,7 @@ if __name__ == "__main__":
         "dynamic_viscosity" : args.dynamic_viscosity,
         # terms and formulations
         "bc_type" : args.bc_type,
+        "bc_correction" : args.bc_correction,
         "diffusive_term" : args.diffusive_term,
         "viscous_term" : args.viscous_term,
         "time_integration" : args.time_integration
