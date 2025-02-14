@@ -104,7 +104,7 @@ public:
     *
     */
    void
-   removeParitclesOutOfDomain( TNL::Logger& log );
+   removeParticlesOutOfDomain( TNL::Logger& log );
 
    //void
    //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );

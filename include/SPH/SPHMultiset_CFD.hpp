@@ -412,7 +412,7 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::removeParitclesOutOfDomain( TNL::Logger& log )
+SPHMultiset_CFD< Model >::removeParticlesOutOfDomain( TNL::Logger& log )
 {
    const int numberOfParticlesToRemove = fluid->particles->getNumberOfParticlesToRemove();
    fluid->particles->removeParitclesOutOfDomain();
