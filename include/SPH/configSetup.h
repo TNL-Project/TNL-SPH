@@ -56,6 +56,7 @@ configSetup( TNL::Config::ConfigDescription& config,
     // distributed simulation parameters
     config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
     config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
+    //config.addEntry< int >( "subdomains-z", "Number of subdomains in the y direstion.", 0 );
     config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
     config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
     config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "numberOfParticles" );

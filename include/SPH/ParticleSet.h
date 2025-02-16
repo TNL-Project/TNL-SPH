@@ -59,52 +59,56 @@ class ParticleSet
      integratorVariables( sizeAllocated ) {};
 
    void
-   initialize( unsigned int numberOfParticles,
-               unsigned int numberOfAllocatedParticles,
-               RealType searchRadius,
-               IndexVectorType gridDimension,
-               VectorType gridOrigin )
+   initialize( const unsigned int numberOfParticles,
+               const unsigned int numberOfAllocatedParticles,
+               const RealType& searchRadius,
+               const IndexVectorType& gridDimension,
+               const VectorType& gridOrigin )
    {
-      this->particles->setSize( numberOfAllocatedParticles );
-      this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridDimensions( gridDimension );
-      this->particles->setGridOrigin( gridOrigin );
-      this->particles->setNumberOfParticles( numberOfParticles );
-      //removed: this->particles->setFirstActiveParticle( 0 );
-      //removed: this->particles->setLastActiveParticle( numberOfParticles - 1 );
+      this->getParticles()->setSize( numberOfAllocatedParticles );
+      this->getParticles()->setSearchRadius( searchRadius );
+      this->getParticles()->setGridDimensions( gridDimension );
+      this->getParticles()->setGridOrigin( gridOrigin );
+      this->getParticles()->setNumberOfParticles( numberOfParticles );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
-      //removed: // initialize grid origin
-      //removed: this->particles->setGridInteriorDimension( gridDimension );
-      //removed: this->particles->setGridInteriorOrigin( gridOrigin );
       const VectorType zeroVector = 0;
-      this->particles->setGridOriginGlobalCoords( zeroVector );
+      this->getParticles()->setGridOriginGlobalCoords( zeroVector );
    }
 
 #ifdef HAVE_MPI
    void
-   initializeAsDistributed( unsigned int numberOfParticles,
-                            unsigned int numberOfAllocatedParticles,
-                            RealType searchRadius,
-                            IndexVectorType gridDimension,
-                            VectorType gridOrigin,
-                            IndexVectorType gridOriginGlobalCoords,
-                            VectorType globalGridOrigin,
-                            TNL::Logger& logger,
-                            GlobalIndexType numberOfOverlapsLayers = 1 )
+   initializeAsDistributed( const unsigned int numberOfParticles,
+                            const unsigned int numberOfAllocatedParticles,
+                            const RealType& searchRadius,
+                            const IndexVectorType& domainGridDimension,
+                            const VectorType& domainOrigin,
+                            const IndexVectorType& subdomainGridDimension,
+                            const IndexVectorType& subdomainGridOriginGlobalCoords,
+                            const int& numberOfOverlapLayers,
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains,
+                            TNL::Logger& logger )
    {
-      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
+      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
-      this->particles->setSize( numberOfAllocatedParticles );
-      this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridDimensions( gridDimension );
-      this->particles->setGridOrigin( gridOrigin );
-      this->particles->setOverlapWidth( 1 );
-      this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //NOTE: Load?
-      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
+      this->getParticles()->setSize( numberOfAllocatedParticles );
+      this->getParticles()->setSearchRadius( searchRadius );
+      this->getParticles()->setGridDimensions( domainGridDimension );
+      this->getParticles()->setGridOrigin( domainOrigin );
+      this->getParticles()->setOverlapWidth( numberOfOverlapLayers );
+      this->getParticles()->setNumberOfParticles( numberOfParticles );
+      this->getParticles()->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      this->getParticles()->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
+
+      this->distributedParticles->setDistributedGridParameters( searchRadius,
+                                                                domainGridDimension,
+                                                                domainOrigin,
+                                                                subdomainGridDimension,
+                                                                subdomainGridOriginGlobalCoords,
+                                                                numberOfOverlapLayers,
+                                                                numberOfSubdomains );
    }
 #endif
 
@@ -146,7 +150,11 @@ class ParticleSet
    ParticlePointerType&
    getParticles()
    {
-      return this->particles;
+      #ifdef HAVE_MPI
+         return this->distributedParticles->getLocalParticles();
+      #else
+         return this->particles;
+      #endif
    }
 
    const ParticlePointerType&
