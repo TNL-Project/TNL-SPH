@@ -28,13 +28,13 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
 
-   auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
-   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getView();
-   auto view_rhoGradRhoGhostNode_bound = boundary->variables->rhoGradRho_gn.getView();
-   auto view_correctionMatrices_bound = boundary->variables->cMatrix_gn.getView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
+   const auto view_ghostNode_bound = boundary->getVariables()->ghostNodes.getView();
+   auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getView();
+   auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getView();
 
    auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
@@ -128,14 +128,14 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points_openBound = openBoundary->particles->getPoints().getView();
-   const auto view_rho_openBound = openBoundary->variables->rho.getView();
+   const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
    const auto view_points_bound = boundary->particles->getPoints().getView();
-   auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
-   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getView();
-   auto view_rhoGradRhoGhostNode_bound = boundary->variables->rhoGradRho_gn.getView();
-   auto view_correctionMatrices_bound = boundary->variables->cMatrix_gn.getView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
+   const auto view_ghostNode_bound = boundary->getVariables()->ghostNodes.getView();
+   auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getView();
+   auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getView();
 
    auto BoundOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
@@ -192,11 +192,11 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& 
    const RealType rho0 = modelParams.rho0;
    const RealType mdbcExtrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;
 
-   auto view_rho_bound = boundary->variables->rho.getView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
    const auto view_points_bound = boundary->particles->getPoints().getConstView();
-   const auto view_ghostNode_bound = boundary->variables->ghostNodes.getConstView();
-   const auto view_rhoGradRhoGhostNode_bound = boundary->variables->rhoGradRho_gn.getConstView();
-   const auto view_correctionMatrices_bound = boundary->variables->cMatrix_gn.getConstView();
+   const auto view_ghostNode_bound = boundary->getVariables()->ghostNodes.getConstView();
+   const auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getConstView();
+   const auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getConstView();
 
    auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
    {

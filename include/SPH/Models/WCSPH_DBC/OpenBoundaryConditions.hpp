@@ -10,11 +10,11 @@ typename OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::GlobalIndexTyp
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::moveInletBufferParticles( RealType dt,
                                                                                    OpenBoundaryPointer& openBoundary )
 {
-   const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
+   const GlobalIndexType numberOfBufferParticles = openBoundary->getPoints()->getNumberOfParticles();
 
-   auto view_r_buffer = openBoundary->particles->getPoints().getView();
-   auto view_v_buffer = openBoundary->variables->v.getView();
-   auto view_inletMark = openBoundary->variables->particleMark.getView();
+   auto view_r_buffer = openBoundary->getPoints()->getPoints().getView();
+   auto view_v_buffer = openBoundary->getVariables()->v.getView();
+   auto view_inletMark = openBoundary->getVariables()->particleMark.getView();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferPosition = openBoundary->parameters.position;
@@ -45,11 +45,11 @@ typename OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::GlobalIndexTyp
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::moveOutletBufferParticles( RealType dt,
                                                                                     OpenBoundaryPointer& openBoundary )
 {
-   GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
+   GlobalIndexType numberOfBufferParticles = openBoundary->getPoints()->getNumberOfParticles();
 
-   auto view_r_buffer = openBoundary->particles->getPoints().getView();
-   auto view_v_buffer = openBoundary->variables->v.getView();
-   auto view_inletMark = openBoundary->variables->particleMark.getView();
+   auto view_r_buffer = openBoundary->getPoints()->getPoints().getView();
+   auto view_v_buffer = openBoundary->getVariables()->v.getView();
+   auto view_inletMark = openBoundary->getVariables()->particleMark.getView();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
@@ -79,12 +79,12 @@ template< typename OpenBoundaryPointer >
 void
 OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::sortBufferParticlesByMark( OpenBoundaryPointer& openBoundary )
 {
-   const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
+   const GlobalIndexType numberOfBufferParticles = openBoundary->getPoints()->getNumberOfParticles();
 
-   auto view_r_buffer = openBoundary->particles->getPoints().getView();
-   auto view_v_buffer = openBoundary->variables->v.getView();
-   auto view_rho_buffer = openBoundary->variables->rho.getView();
-   auto view_inletMark = openBoundary->variables->particleMark.getView();
+   auto view_r_buffer = openBoundary->getPoints()->getPoints().getView();
+   auto view_v_buffer = openBoundary->getVariables()->v.getView();
+   auto view_rho_buffer = openBoundary->getVariables()->rho.getView();
+   auto view_inletMark = openBoundary->getVariables()->particleMark.getView();
 
    //sort particles by mark
    using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
@@ -105,20 +105,20 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
                                                                                OpenBoundaryConfig& openBoundaryParams,
                                                                                const GlobalIndexType numberOfRetyped )
 {
-   const GlobalIndexType numberOfParticle = fluid->particles->getNumberOfParticles();
+   const GlobalIndexType numberOfParticle = fluid->getPoints()->getNumberOfParticles();
 
-   auto view_r_buffer = openBoundary->particles->getPoints().getView();
-   auto view_v_buffer = openBoundary->variables->v.getView();
-   auto view_rho_buffer = openBoundary->variables->rho.getView();
+   auto view_r_buffer = openBoundary->getPoints()->getPoints().getView();
+   auto view_v_buffer = openBoundary->getVariables()->v.getView();
+   auto view_rho_buffer = openBoundary->getVariables()->rho.getView();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
    //const VectorType inletConstVelocity = openBoundaryParams.velocity;
    //const RealType inletConstDensity = openBoundaryParams.density;
 
-   auto view_r_fluid = fluid->particles->getPoints().getView();
-   auto view_v_fluid = fluid->variables->v.getView();
-   auto view_rho_fluid = fluid->variables->rho.getView();
+   auto view_r_fluid = fluid->getPoints()->getPoints().getView();
+   auto view_v_fluid = fluid->getVariables()->v.getView();
+   auto view_rho_fluid = fluid->getVariables()->rho.getView();
    auto view_rho_old = fluid->integratorVariables->rho_old.getView();
    auto view_v_old = fluid->integratorVariables->v_old.getView();
 
@@ -142,7 +142,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
    Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
 
    //Update number of particles
-   fluid->particles->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+   fluid->getPoints()->setNumberOfParticles( numberOfParticle + numberOfRetyped );
 }
 
 template< typename SPHConfig, typename ModelConfig >
@@ -152,17 +152,17 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::getFluidParticlesEnteri
                                                                                           OpenBoundaryPointer& openBoundary )
 {
 
-   const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
+   const GlobalIndexType numberOfBufferParticles = openBoundary->getPoints()->getNumberOfParticles();
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferPosition = openBoundary->parameters.position;
 
-   auto view_r_fluid = fluid->particles->getPoints().getView();
+   auto view_r_fluid = fluid->getPoints()->getPoints().getView();
 
    const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
 
-   auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
+   auto receivingParticleMark_view = openBoundary->getVariables()->receivingParticleMark.getView();
    receivingParticleMark_view = INT_MAX;
 
    auto checkFluidParticles = [=] __cuda_callable__ ( int i ) mutable
@@ -197,16 +197,16 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertFluidToBuffer( F
                                                                                OpenBoundaryPointer& openBoundary,
                                                                                const GlobalIndexType fluidToBufferCount )
 {
-   const GlobalIndexType numberOfBufferParticles = openBoundary->particles->getNumberOfParticles();
-   auto receivingParticleMark_view = openBoundary->variables->receivingParticleMark.getView();
+   const GlobalIndexType numberOfBufferParticles = openBoundary->getPoints()->getNumberOfParticles();
+   auto receivingParticleMark_view = openBoundary->getVariables()->receivingParticleMark.getView();
 
-   auto view_r_buffer = openBoundary->particles->getPoints().getView();
-   auto view_v_buffer = openBoundary->variables->v.getView();
-   auto view_rho_buffer = openBoundary->variables->rho.getView();
+   auto view_r_buffer = openBoundary->getPoints()->getPoints().getView();
+   auto view_v_buffer = openBoundary->getVariables()->v.getView();
+   auto view_rho_buffer = openBoundary->getVariables()->rho.getView();
 
-   auto view_r_fluid = fluid->particles->getPoints().getView();
-   auto view_v_fluid = fluid->variables->v.getView();
-   auto view_rho_fluid = fluid->variables->rho.getView();
+   auto view_r_fluid = fluid->getPoints()->getPoints().getView();
+   auto view_v_fluid = fluid->getVariables()->v.getView();
+   auto view_rho_fluid = fluid->getVariables()->rho.getView();
 
    auto retypeFluidToOutlet = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -220,8 +220,8 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertFluidToBuffer( F
    };
    Algorithms::parallelFor< DeviceType >( 0, fluidToBufferCount, retypeFluidToOutlet );
 
-   openBoundary->particles->setNumberOfParticles( numberOfBufferParticles + fluidToBufferCount );
-   fluid->particles->setNumberOfParticlesToRemove( fluid->particles->getNumberOfParticlesToRemove() + fluidToBufferCount );
+   openBoundary->getPoints()->setNumberOfParticles( numberOfBufferParticles + fluidToBufferCount );
+   fluid->getPoints()->setNumberOfParticlesToRemove( fluid->getPoints()->getNumberOfParticlesToRemove() + fluidToBufferCount );
 
 }
 
@@ -275,7 +275,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::applyOuletBoundaryCondi
    const GlobalIndexType bufferToVoidCount = moveOutletBufferParticles( dt, openBoundary );
 
    sortBufferParticlesByMark( openBoundary );
-   openBoundary->particles->setNumberOfParticles( openBoundary->particles->getNumberOfParticles() - bufferToVoidCount );
+   openBoundary->getPoints()->setNumberOfParticles( openBoundary->getPoints()->getNumberOfParticles() - bufferToVoidCount );
 
    //Convert fluid to buffer;
    const GlobalIndexType fluidToBufferCount = getFluidParticlesEnteringOutlet( fluid, openBoundary );
@@ -293,7 +293,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::periodicityParticleTran
    const auto zoneParticleIndices_view = periodicPatch->particleZone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = periodicPatch->particleZone.getNumberOfParticles();
 
-   auto view_r_fluid = fluid->particles->getPoints().getView();
+   auto view_r_fluid = fluid->getPoints()->getPoints().getView();
 
    const VectorType posShift = periodicPatch->config.shift;
    const VectorType bufferPosition = periodicPatch->config.position;

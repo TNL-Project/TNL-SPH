@@ -18,21 +18,21 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    auto searchInFluid = boundary->getParticles()->getSearchToken( fluid->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   const auto view_v = fluid->variables->v.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   const auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_Drho_bound = boundary->variables->drho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   const auto view_rho_bound = boundary->getVariables()->rho.getView();
+   auto view_Drho_bound = boundary->getVariables()->drho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
 
    auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
@@ -69,7 +69,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInFluid, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] = drho_i;
    };
-   boundary->particles->forAll( particleLoopBoundary );
+   boundary->getParticles()->forAll( particleLoopBoundary );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ){
@@ -110,21 +110,21 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = openBoundary->particles->getSearchRadius();
+   const RealType searchRadius = openBoundary->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points_openBound = openBoundary->particles->getPoints().getView();
-   const auto view_rho_openBound = openBoundary->variables->rho.getView();
-   const auto view_v_openBound = openBoundary->variables->v.getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
+   const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
+   const auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   const auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_Drho_bound = boundary->variables->drho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   const auto view_rho_bound = boundary->getVariables()->rho.getView();
+   auto view_Drho_bound = boundary->getVariables()->drho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
 
    auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i ) mutable
@@ -161,7 +161,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInOpenBoundary, BoundFluid, v_i, rho_i, p_i, &drho_i );
       view_Drho_bound[ i ] += drho_i;
    };
-   boundary->particles->forAll( particleLoopBoundary );
+   boundary->getParticles()->forAll( particleLoopBoundary );
 
 }
 
