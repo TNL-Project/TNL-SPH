@@ -33,9 +33,9 @@ class ShepardFilter
    {
       typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
 
-      const auto view_points = fluid->particles->getPoints().getConstView();
-      auto view_rho = fluid->variables->rho.getView();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
+      const auto view_points = fluid->getParticles()->getPoints().getConstView();
+      auto view_rho = fluid->getVariables()->rho.getView();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
       const RealType m = modelParams.mass;
       const RealType h = modelParams.h;
       const RealType rho0 = modelParams.rho0;
@@ -82,10 +82,10 @@ class ShepardFilter
    {
       typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
 
-      const auto view_points = fluid->particles->getPoints().getConstView();
-      auto view_rho = fluid->variables->rho.getView();
-      auto view_gamma = fluid->variables->gamma.getView();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
+      const auto view_points = fluid->getParticles()->getPoints().getConstView();
+      auto view_rho = fluid->getVariables()->rho.getView();
+      auto view_gamma = fluid->getVariables()->gamma.getView();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
       const RealType m = modelParams.mass;
       const RealType h = modelParams.h;
       const RealType rho0 = modelParams.rho0;

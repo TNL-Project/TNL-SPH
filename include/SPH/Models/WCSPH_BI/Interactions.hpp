@@ -11,12 +11,12 @@ void
 WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
+   GlobalIndexType numberOfParticles_bound = boundary->getParticles()->getNumberOfParticles();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename Particles::NeighborsLoopParams searchInBound( boundary->particles );
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename Particles::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    /* CONSTANT VARIABLES */
    const RealType h = modelParams.h;
@@ -30,18 +30,18 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   auto view_Drho = fluid->variables->drho.getView();
-   const auto view_v = fluid->variables->v.getView();
-   auto view_a = fluid->variables->a.getView();
-   auto view_gamma = fluid->variables->gamma.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   auto view_Drho = fluid->getVariables()->drho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
+   auto view_a = fluid->getVariables()->a.getView();
+   auto view_gamma = fluid->getVariables()->gamma.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
-   const auto view_n_bound = boundary->variables->n.getView();
-   const auto view_elementSize_bound = boundary->variables->elementSize.getConstView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
+   const auto view_n_bound = boundary->getVariables()->n.getView();
+   const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
    auto FluidFluid = [ = ] __cuda_callable__( LocalIndexType i,
                                               LocalIndexType j,
@@ -184,9 +184,9 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    };
 
    if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
-      fluid->particles->forAll( particleLoopConsistent );
+      fluid->getParticles()->forAll( particleLoopConsistent );
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
-      fluid->particles->forAll( particleLoopConservative );
+      fluid->getParticles()->forAll( particleLoopConservative );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ) {
@@ -225,21 +225,21 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
                                                          ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
    const RealType rho0 = modelParams.rho0;
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_gamma_bound = boundary->variables->gamma.getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
+   auto view_gamma_bound = boundary->getVariables()->gamma.getView();
 
    auto BoundFluidConsistent = [ = ] __cuda_callable__( LocalIndexType i,
                                                         LocalIndexType j,
@@ -306,9 +306,9 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    };
 
    if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
-      boundary->particles->forAll( particleLoopBoundaryConsistent );
+      boundary->getParticles()->forAll( particleLoopBoundaryConsistent );
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
-      boundary->particles->forAll( particleLoopBoundaryConservative );
+      boundary->getParticles()->forAll( particleLoopBoundaryConservative );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ) {
@@ -341,21 +341,21 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoin
                                                                      ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
+   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = openBoundary->particles->getSearchRadius();
+   const RealType searchRadius = openBoundary->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
    const RealType rho0 = modelParams.rho0;
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points_openBound = openBoundary->particles->getPoints().getView();
-   const auto view_rho_openBound = openBoundary->variables->rho.getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
+   const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_gamma_bound = boundary->variables->gamma.getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
+   auto view_gamma_bound = boundary->getVariables()->gamma.getView();
 
    auto BoundOpenBoundary =
       [ = ] __cuda_callable__(
@@ -386,7 +386,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoin
       view_rho_bound[ i ] += rho_i;
       view_gamma_bound[ i ] += gamma_i;
    };
-   boundary->particles->forAll( particleLoopBoundary );
+   boundary->getParticles()->forAll( particleLoopBoundary );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -404,7 +404,7 @@ WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPo
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   physicalObject->particles->forAll( evalPressure ); //TODO: forloop?
+   physicalObject->getParticles()->forAll( evalPressure ); //TODO: forloop?
 }
 
 template< typename Particles, typename ModelConfig >
@@ -425,11 +425,11 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
                                                                  ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
 
@@ -438,16 +438,16 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   auto view_Drho = fluid->variables->drho.getView();
-   const auto view_v = fluid->variables->v.getView();
-   auto view_a = fluid->variables->a.getView();
-   auto view_gamma = fluid->variables->gamma.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   auto view_Drho = fluid->getVariables()->drho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
+   auto view_a = fluid->getVariables()->a.getView();
+   auto view_gamma = fluid->getVariables()->gamma.getView();
 
-   const auto view_points_openBound = openBoundary->particles->getPoints().getView();
-   auto view_rho_openBound = openBoundary->variables->rho.getView();
-   auto view_v_openBound = openBoundary->variables->v.getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
+   auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
+   auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
    const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
@@ -517,10 +517,10 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches( FluidPointer
                                                                     ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
+   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType ds = modelParams.boundaryElementSize;
    const RealType m = modelParams.mass;
@@ -530,16 +530,16 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches( FluidPointer
    typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   auto view_Drho = fluid->variables->drho.getView();
-   const auto view_v = fluid->variables->v.getView();
-   auto view_a = fluid->variables->a.getView();
-   auto view_gamma = fluid->variables->gamma.getView();
-   const auto view_points_openBound = openBoundary->particles->getPoints().getView();
-   auto view_rho_openBound = openBoundary->variables->rho.getView();
-   auto view_v_openBound = openBoundary->variables->v.getView();
-   const auto view_n_bound = openBoundary->variables->n.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   auto view_Drho = fluid->getVariables()->drho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
+   auto view_a = fluid->getVariables()->a.getView();
+   auto view_gamma = fluid->getVariables()->gamma.getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
+   auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
+   auto view_v_openBound = openBoundary->getVariables()->v.getView();
+   const auto view_n_bound = openBoundary->getVariables()->n.getView();
 
    const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
@@ -612,9 +612,9 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
    //finalize fluid-boundary interactions
    const VectorType gravity = modelParams.gravity;
 
-   auto view_Drho = fluid->variables->drho.getView();
-   auto view_a = fluid->variables->a.getView();
-   auto view_gamma = fluid->variables->gamma.getView();
+   auto view_Drho = fluid->getVariables()->drho.getView();
+   auto view_a = fluid->getVariables()->a.getView();
+   auto view_gamma = fluid->getVariables()->gamma.getView();
 
    auto finalizeInteractionConsistent = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
@@ -635,9 +635,9 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
    };
 
    if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
-      fluid->particles->forAll( finalizeInteractionConsistent );
+      fluid->getParticles()->forAll( finalizeInteractionConsistent );
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
-      fluid->particles->forAll( finalizeInteractionConservative );
+      fluid->getParticles()->forAll( finalizeInteractionConservative );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -650,8 +650,8 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
    //finalize boundary-fluid interactions
    const RealType rho0 = modelParams.rho0;
 
-   auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_gamma_bound = boundary->variables->gamma.getConstView();
+   auto view_rho_bound = boundary->getVariables()->rho.getView();
+   const auto view_gamma_bound = boundary->getVariables()->gamma.getConstView();
 
    auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
@@ -665,7 +665,7 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
          view_rho_bound[ i ] = rho0;
       }
    };
-   boundary->particles->forAll( particleLoopBoundary );
+   boundary->getParticles()->forAll( particleLoopBoundary );
 }
 
 }  //namespace SPH

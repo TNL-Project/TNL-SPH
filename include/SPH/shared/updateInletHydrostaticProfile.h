@@ -23,7 +23,7 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
       return;
 
    ////obtain point water level - using max z particle component
-   //const auto view_points_fluid = fluid->particles->getPoints().getConstView();
+   //const auto view_points_fluid = fluid->getParticles()->getPoints().getConstView();
    //auto fetch = [=] __cuda_callable__ ( int i )
    //{
    //   return ( view_points_fluid[ i ], direction );
@@ -54,8 +54,8 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
    const RealType kineticDensity = EOS::pressureToDensity( kineticPressure, eosParams ) - rho0;
    std::cout << "direction/nptcs: " << direction << "/" << fluid->getNumberOfParticles() << " waterLevel: " << waterLevel << " kineticDensity: " << kineticDensity << std::endl;
 
-   const auto view_points_openBound = openBoundary->particles->getPoints().getConstView();
-   auto view_rho_openBound = openBoundary->variables->rho.getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getConstView();
+   auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
    // update only if water level is above defined trashold
    if( waterLevel > waterLevelTrashold ){
@@ -68,7 +68,7 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
 
          view_rho_openBound[ i ] = hydrostaticDensity + kineticDensity;
       };
-      openBoundary->particles->forAll( updateParticleDensity );
+      openBoundary->getParticles()->forAll( updateParticleDensity );
    }
    //else{
    //   view_rho_openBound = rho0 + kineticDensity;

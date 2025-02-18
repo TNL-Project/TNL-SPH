@@ -104,8 +104,8 @@ public:
       const VectorType bufferPosition = openBoundary->parameters.position;
 
       const auto r_view = openBoundary->getParticles()->getPoints().getConstView();
-      const auto v_view = openBoundary->variables->v.getConstView();
-      const auto rho_view = openBoundary->variables->rho.getConstView();
+      const auto v_view = openBoundary->getVariables()->v.getConstView();
+      const auto rho_view = openBoundary->getVariables()->rho.getConstView();
 
       // reset energy levels
       ekin_inlet_view = 0.f;
@@ -129,7 +129,7 @@ public:
             ecomp_inlet_view[ i ] = m * m * p_i / rho_i;
          }
       };
-      openBoundary->particles->forAll( particleLoop );
+      openBoundary->getParticles()->forAll( particleLoop );
    }
 
    template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams >
@@ -154,8 +154,8 @@ public:
       const VectorType bufferPosition = openBoundary->parameters.position;
 
       const auto r_view = fluid->getParticles()->getPoints().getConstView();
-      const auto v_view = fluid->variables->v.getConstView();
-      const auto rho_view = fluid->variables->rho.getConstView();
+      const auto v_view = fluid->getVariables()->v.getConstView();
+      const auto rho_view = fluid->getVariables()->rho.getConstView();
 
       // reset energy levels
       ekin_outlet_view = 0.f;

@@ -139,14 +139,14 @@ public:
    void
    predictorStep( RealType dt, FluidPointer& fluid )
    {
-      auto v_view = fluid->variables->v.getView();
-      auto r_view = fluid->particles->getPoints().getView();
-      auto r_old_view = fluid->integratorVariables->r_old.getView();
-      auto rho_view = fluid->variables->rho.getView();
-      auto rho_old_view = fluid->integratorVariables->rho_old.getView();
-      auto v_old_view = fluid->integratorVariables->v_old.getView();
-      const auto drho_view = fluid->variables->drho.getConstView();
-      const auto a_view = fluid->variables->a.getConstView();
+      auto v_view = fluid->getVariables()->v.getView();
+      auto r_view = fluid->getParticles()->getPoints().getView();
+      auto r_old_view = fluid->getIntegratorVariables()->r_old.getView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      auto rho_old_view = fluid->getIntegratorVariables()->rho_old.getView();
+      auto v_old_view = fluid->getIntegratorVariables()->v_old.getView();
+      const auto drho_view = fluid->getVariables()->drho.getConstView();
+      const auto a_view = fluid->getVariables()->a.getConstView();
 
       const RealType dt05 = 0.5f * dt;
 
@@ -166,20 +166,20 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt05;
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
 
       //TODO: For some reason, fluid swap is insane slow, due to this, the integrator is build with a workaround
-      //fluid->variables->v.swap( fluid->integratorVariables->v_old );
-      //fluid->variables->rho.swap( fluid->integratorVariables->rho_old );
-      //fluid->particles->getPoints().swap( fluid->integratorVariables->r_old );
+      //fluid->getVariables()->v.swap( fluid->getIntegratorVariables()->v_old );
+      //fluid->getVariables()->rho.swap( fluid->getIntegratorVariables()->rho_old );
+      //fluid->getParticles()->getPoints().swap( fluid->getIntegratorVariables()->r_old );
    }
 
    template< typename BoundaryPointer >
    void
    predictorStepBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_old_view = boundary->integratorVariables->rho_old.getView();
-      const auto drho_view = boundary->variables->drho.getConstView();
+      auto rho_old_view = boundary->getIntegratorVariables()->rho_old.getView();
+      const auto drho_view = boundary->getVariables()->drho.getConstView();
 
       const RealType dt05 = 0.5f * dt;
 
@@ -187,23 +187,23 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt05;
       };
-      boundary->particles->forAll( init );
+      boundary->getParticles()->forAll( init );
 
-      boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
+      boundary->getVariables()->rho.swap( boundary->getIntegratorVariables()->rho_old );
    }
 
    template< typename FluidPointer >
    void
    correctorStep( RealType dt, FluidPointer& fluid )
    {
-      auto r_view = fluid->particles->getPoints().getView();
-      auto r_old_view = fluid->integratorVariables->r_old.getView();
-      auto v_view = fluid->variables->v.getView();
-      const auto v_old_view = fluid->integratorVariables->v_old.getConstView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_old_view = fluid->integratorVariables->rho_old.getConstView();
-      const auto drho_view = fluid->variables->drho.getConstView();
-      const auto a_view = fluid->variables->a.getConstView();
+      auto r_view = fluid->getParticles()->getPoints().getView();
+      auto r_old_view = fluid->getIntegratorVariables()->r_old.getView();
+      auto v_view = fluid->getVariables()->v.getView();
+      const auto v_old_view = fluid->getIntegratorVariables()->v_old.getConstView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      const auto rho_old_view = fluid->getIntegratorVariables()->rho_old.getConstView();
+      const auto drho_view = fluid->getVariables()->drho.getConstView();
+      const auto a_view = fluid->getVariables()->a.getConstView();
 
       const RealType dt05 = 0.5f * dt;
 
@@ -214,16 +214,16 @@ public:
          const RealType epsilon =  ( -1.f ) * ( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
    }
 
    template< typename BoundaryPointer >
    void
    correctorStepBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_view = boundary->variables->rho.getView();
-      const auto rho_old_view = boundary->integratorVariables->rho_old.getConstView();
-      const auto drho_view = boundary->variables->drho.getConstView();
+      auto rho_view = boundary->getVariables()->rho.getView();
+      const auto rho_old_view = boundary->getIntegratorVariables()->rho_old.getConstView();
+      const auto drho_view = boundary->getVariables()->drho.getConstView();
 
       const RealType dt05 = 0.5 * dt;
 
@@ -232,7 +232,7 @@ public:
          const RealType epsilon =  - ( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
-      boundary->particles->forAll( init );
+      boundary->getParticles()->forAll( init );
    }
 
 
@@ -240,14 +240,14 @@ public:
    void
    correctBoundaryDensity( BoundaryPointer& boundary )
    {
-      auto rho_view = boundary->variables->rho.getView();
+      auto rho_view = boundary->getVariables()->rho.getView();
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
          if( rho_view[ i ] < 1000.f )
             rho_view[ i ] = 1000.f; //TODO: Use referential density or move this to different part
       };
-      boundary->particles->forAll( init );
+      boundary->getParticles()->forAll( init );
    }
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >

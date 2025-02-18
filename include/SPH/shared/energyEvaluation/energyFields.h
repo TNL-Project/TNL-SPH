@@ -126,10 +126,10 @@ public:
       auto depotdt_view = depotdt.getView();
       auto decompdt_view = decompdt.getView();
 
-      const auto v_view = fluid->variables->v.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      const auto rho_view = fluid->variables->rho.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
+      const auto v_view = fluid->getVariables()->v.getConstView();
+      const auto dvdt_view = fluid->getVariables()->a.getConstView();
+      const auto rho_view = fluid->getVariables()->rho.getConstView();
+      const auto drhodt_view = fluid->getVariables()->drho.getConstView();
 
       // reset energy derivatives
       dekindt_view = 0.f;
@@ -149,7 +149,7 @@ public:
          depotdt_view[ i ] = ( -1.f ) * m * ( gravity, v_i );
          decompdt_view[ i ] = m * p_i / ( rho_i * rho_i ) * drhodt_i;
       };
-      fluid->particles->forAll( particleLoop );
+      fluid->getParticles()->forAll( particleLoop );
 
       dEkindt = TNL::sum( dekindt );
       dEpotdt = TNL::sum( depotdt );
@@ -170,9 +170,9 @@ public:
       auto epot_view = epot.getView();
       auto ecomp_view = ecomp.getView();
 
-      const auto r_view = fluid->particles->getPoints().getConstView();
-      const auto v_view = fluid->variables->v.getConstView();
-      const auto rho_view = fluid->variables->rho.getConstView();
+      const auto r_view = fluid->getParticles()->getPoints().getConstView();
+      const auto v_view = fluid->getVariables()->v.getConstView();
+      const auto rho_view = fluid->getVariables()->rho.getConstView();
 
       // reset energy derivatives
       ekin_view = 0.f;
@@ -190,7 +190,7 @@ public:
          epot_view[ i ] = ( -1.f ) * m * ( gravity, r_i );
          ecomp_view[ i ] = m * m * p_i / rho_i;
       };
-      fluid->particles->forAll( particleLoop );
+      fluid->getParticles()->forAll( particleLoop );
 
       EkinSum = TNL::sum( ekin );
       EpotSum = TNL::sum( epot );
@@ -231,7 +231,7 @@ public:
          depotdt_view[ p ] = 0.f;
          decomdt[ p ] = 0.f;
       };
-      fluid->particles->forAll( particleLoop );
+      fluid->getParticles()->forAll( particleLoop );
    }
    */
 

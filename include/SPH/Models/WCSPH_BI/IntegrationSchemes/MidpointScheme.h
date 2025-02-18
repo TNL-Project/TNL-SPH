@@ -178,24 +178,24 @@ public:
    void
    predictor( RealType dt, FluidPointer& fluid )
    {
-      fluid->integratorVariables->dvdt_in = fluid->variables->a;
-      fluid->integratorVariables->drhodt_in = fluid->variables->drho;
+      fluid->getIntegratorVariables()->dvdt_in = fluid->getVariables()->a;
+      fluid->getIntegratorVariables()->drhodt_in = fluid->getVariables()->drho;
 
-      fluid->integratorVariables->r_in = fluid->getParticles()->getPoints();
-      fluid->integratorVariables->v_in = fluid->variables->v;
-      fluid->integratorVariables->rho_in = fluid->variables->rho;
+      fluid->getIntegratorVariables()->r_in = fluid->getParticles()->getPoints();
+      fluid->getIntegratorVariables()->v_in = fluid->getVariables()->v;
+      fluid->getIntegratorVariables()->rho_in = fluid->getVariables()->rho;
    }
 
    template< typename FluidPointer >
    void
    midpointUpdateVariables( RealType dt, FluidPointer& fluid )
    {
-      auto v_view = fluid->variables->v.getView();
-      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
+      auto v_view = fluid->getVariables()->v.getView();
+      const auto v_in_view = fluid->getIntegratorVariables()->v_in.getConstView();
+      const auto dvdt_view = fluid->getVariables()->a.getConstView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      const auto rho_in_view = fluid->getIntegratorVariables()->rho_in.getConstView();
+      const auto drhodt_view = fluid->getVariables()->drho.getConstView();
 
       const RealType dt05 = 0.5f * dt;
 
@@ -204,7 +204,7 @@ public:
          v_view[ i ] = v_in_view[ i ] + dt05 * dvdt_view[ i ];
          rho_view[ i ] = rho_in_view[ i ] + dt05 * drhodt_view[ i ];
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
    }
 
    template< typename FluidPointer >
@@ -212,8 +212,8 @@ public:
    midpointUpdatePositions( RealType dt, FluidPointer& fluid )
    {
       auto r_view = fluid->getParticles()->getPoints().getView();
-      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
-      const auto v_view = fluid->variables->v.getConstView();
+      const auto r_in_view = fluid->getIntegratorVariables()->r_in.getConstView();
+      const auto v_view = fluid->getVariables()->v.getConstView();
 
       const RealType dt05 = 0.5f * dt;
 
@@ -221,7 +221,7 @@ public:
       {
          r_view[ i ] = r_in_view[ i ] + 0.5f * v_view[ i ];
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -236,8 +236,8 @@ public:
       else
          relaxMidpoint = midpointRelaxCoef;
 
-      fluid->variables->a = relaxMidpoint * fluid->integratorVariables->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->variables->a;
-      fluid->variables->drho = relaxMidpoint * fluid->integratorVariables->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->variables->drho;
+      fluid->getVariables()->a = relaxMidpoint * fluid->getIntegratorVariables()->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->a;
+      fluid->getVariables()->drho = relaxMidpoint * fluid->getIntegratorVariables()->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->drho;
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -249,13 +249,13 @@ public:
       const RealType m = modelParams.mass;
       typename EOS::ParamsType eosParams( modelParams );
 
-      auto residua_view = fluid->integratorVariables->residua.getView();
-      const auto v_view = fluid->variables->v.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      const auto dvdt_in_view = fluid->integratorVariables->dvdt_in.getConstView();
-      const auto rho_view = fluid->variables->rho.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
-      const auto drhodt_in_view = fluid->integratorVariables->drhodt_in.getConstView();
+      auto residua_view = fluid->getIntegratorVariables()->residua.getView();
+      const auto v_view = fluid->getVariables()->v.getConstView();
+      const auto dvdt_view = fluid->getVariables()->a.getConstView();
+      const auto dvdt_in_view = fluid->getIntegratorVariables()->dvdt_in.getConstView();
+      const auto rho_view = fluid->getVariables()->rho.getConstView();
+      const auto drhodt_view = fluid->getVariables()->drho.getConstView();
+      const auto drhodt_in_view = fluid->getIntegratorVariables()->drhodt_in.getConstView();
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
@@ -267,9 +267,9 @@ public:
          const RealType res_drho_dt = m * std::abs( ( p_i / rho2_i ) * ( drhodt_view[ i ] - drhodt_in_view[ i ] ) );
          residua_view[ i ] = res_dv_dt + res_drho_dt;
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
 
-      return TNL::sum( fluid->integratorVariables->residua );
+      return TNL::sum( fluid->getIntegratorVariables()->residua );
    }
 
    template< typename FluidPointer >
@@ -277,13 +277,13 @@ public:
    corrector( RealType dt, FluidPointer& fluid )
    {
       auto r_view = fluid->getParticles()->getPoints().getView();
-      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
-      auto v_view = fluid->variables->v.getView();
-      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
+      const auto r_in_view = fluid->getIntegratorVariables()->r_in.getConstView();
+      auto v_view = fluid->getVariables()->v.getView();
+      const auto v_in_view = fluid->getIntegratorVariables()->v_in.getConstView();
+      const auto dvdt_view = fluid->getVariables()->a.getConstView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      const auto rho_in_view = fluid->getIntegratorVariables()->rho_in.getConstView();
+      const auto drhodt_view = fluid->getVariables()->drho.getConstView();
 
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
@@ -294,7 +294,7 @@ public:
          v_view[ i ] = v_in_view[ i ] + dt * dvdt_view[ i ];
          rho_view[ i ] = rho_in_view[ i ] + dt * drhodt_view[ i ];
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
    }
 };
 

@@ -15,7 +15,7 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
 
@@ -24,18 +24,18 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
    auto view_Drho = fluid->getVariables()->drho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
    auto view_a = fluid->getVariables()->a.getView();
 
-   const auto view_points_bound = boundary->getPoints()->getPoints().getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
    const auto view_rho_bound = boundary->getVariables()->rho.getView();
    auto view_Drho_bound = boundary->getVariables()->drho.getView();
    const auto view_v_bound = boundary->getVariables()->v.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 

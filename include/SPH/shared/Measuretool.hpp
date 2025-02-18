@@ -8,13 +8,13 @@ void
 InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    // neighbor search objects
-   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    // loaded arrays
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   const auto view_v = fluid->variables->v.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
 
    auto view_rho_interpolation = this->variables->rho.getView();
    auto view_v_interpolation = this->variables->v.getView();
@@ -23,7 +23,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
    // loaded constants
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
    // interpolation grid constatns
    const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
@@ -96,21 +96,21 @@ void
 InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    // neighbor search objects
-   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    // loaded arrays
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   const auto view_v = fluid->variables->v.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
 
-   auto view_rho_interpolation = this->variables->rho.getView();
-   auto view_v_interpolation = this->variables->v.getView();
+   auto view_rho_interpolation = this->getVariables()->rho.getView();
+   auto view_v_interpolation = this->getVariables()->v.getView();
 
    // loaded constants
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
    // specify the offset to distinguish cell-based and vertex-based interpolation
    const VectorType gridOriginOffsetFactor = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 0.5f );
@@ -217,17 +217,17 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
                                                               SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getConstView();
-   const auto view_rho = fluid->variables->rho.getConstView();
-   const auto view_points_boundary = boundary->particles->getPoints().getConstView();
-   const auto view_rho_boundary = boundary->variables->rho.getConstView();
+   const auto view_points = fluid->getParticles()->getPoints().getConstView();
+   const auto view_rho = fluid->getVariables()->rho.getConstView();
+   const auto view_points_boundary = boundary->getParticles()->getPoints().getConstView();
+   const auto view_rho_boundary = boundary->getVariables()->rho.getConstView();
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
    const bool includeBoundary = this->includeBoundary;
@@ -332,19 +332,19 @@ SensorInterpolation< SPHConfig, SPHSimulation >::save( const std::string outputF
 //                                                                     SPHState& sphState,
 //                                                                     bool includeBoundary )
 //{
-//   GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-//   GlobalIndexType numberOfParticles_bound = boundary->particles->getNumberOfParticles();
-//   const RealType searchRadius = fluid->particles->getSearchRadius();
+//   GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
+//   GlobalIndexType numberOfParticles_bound = boundary->getParticles()->getNumberOfParticles();
+//   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 //
-//   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->particles );
-//   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+//   typename ParticleSystem::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+//   typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 //
 //   /* VARIABLES AND FIELD ARRAYS */
-//   const auto view_points = fluid->particles->getPoints().getView();
-//   const auto view_rho = fluid->variables->rho.getView();
+//   const auto view_points = fluid->getParticles()->getPoints().getView();
+//   const auto view_rho = fluid->getVariables()->rho.getView();
 //
-//   const auto view_points_boundary = boundary->particles->getPoints().getView();
-//   const auto view_rho_boundary = boundary->variables->rho.getView();
+//   const auto view_points_boundary = boundary->getParticles()->getPoints().getView();
+//   const auto view_rho_boundary = boundary->getVariables()->rho.getView();
 //
 //   const auto view_field = field.getView();
 //
@@ -441,15 +441,15 @@ void
 SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->particles );
+   typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename ParticlesType::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getConstView();
-   const auto view_rho = fluid->variables->rho.getConstView();
+   const auto view_points = fluid->getParticles()->getPoints().getConstView();
+   const auto view_rho = fluid->getVariables()->rho.getConstView();
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
    const RealType levelIncrement = this->levelIncrement;

@@ -27,10 +27,10 @@ public:
                        const RealType& dt )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-      GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
+      GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
-      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
       /* CONSTANT VARIABLES */
       const RealType dp = sphState.dp;
@@ -39,13 +39,13 @@ public:
       const RealType elasticFactor = sphState.elasticFactor;
 
       /* VARIABLES AND FIELD ARRAYS */
-      const auto view_points = fluid->particles->getPoints().getView();
-      auto view_v = fluid->variables->v.getView();
-      auto view_a = fluid->variables->a.getView();
+      const auto view_points = fluid->getParticles()->getPoints().getView();
+      auto view_v = fluid->getVariables()->v.getView();
+      auto view_a = fluid->getVariables()->a.getView();
 
-      const auto view_points_bound = boundary->particles->getPoints().getView();
-      const auto view_v_bound = boundary->variables->v.getView();
-      const auto view_n_bound = boundary->variables->n.getView();
+      const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+      const auto view_v_bound = boundary->getVariables()->v.getView();
+      const auto view_n_bound = boundary->getVariables()->n.getView();
 
       auto elasticBounce = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
             VectorType& r_i, VectorType* ve_i, VectorType* ae_i ) mutable
@@ -135,10 +135,10 @@ public:
                        const RealType& dt )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-      GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
+      GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
-      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
       /* CONSTANT VARIABLES */
       const RealType dp = sphState.dp;
@@ -147,14 +147,14 @@ public:
       const RealType elasticFactor = sphState.elasticFactor;
 
       /* VARIABLES AND FIELD ARRAYS */
-      const auto view_points = fluid->particles->getPoints().getView();
-      auto view_v = fluid->variables->v.getView();
-      auto view_a = fluid->variables->a.getView();
+      const auto view_points = fluid->getParticles()->getPoints().getView();
+      auto view_v = fluid->getVariables()->v.getView();
+      auto view_a = fluid->getVariables()->a.getView();
 
-      const auto view_points_bound = boundary->particles->getPoints().getView();
-      const auto view_v_bound = boundary->variables->v.getView();
-      const auto view_n_bound = boundary->variables->n.getView();
-      const auto view_elementSize_bound = boundary->variables->elementSize.getConstView();
+      const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+      const auto view_v_bound = boundary->getVariables()->v.getView();
+      const auto view_n_bound = boundary->getVariables()->n.getView();
+      const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
       auto elasticBounce = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
             VectorType& r_i,  VectorType& v_i, VectorType* ve_i, VectorType* dvdte_i ) mutable
@@ -222,18 +222,18 @@ public:
                           SPHState& sphState,
                           const RealType& dt )
    {
-      GlobalIndexType numberOfParticles = fluid->particles->getNumberOfParticles();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
-      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->particles );
+      GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
+      typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
       const RealType m = sphState.mass;
       const RealType r_boxFactor = sphState.r_boxFactor;
 
-      auto view_points = fluid->particles->getPoints().getView();
-      const auto view_rho = fluid->variables->rho.getConstView();
-      const auto view_points_bound = boundary->particles->getPoints().getView();
-      const auto view_n_bound = boundary->variables->n.getConstView();
-      const auto view_elementSize_bound = boundary->variables->elementSize.getConstView();
+      auto view_points = fluid->getParticles()->getPoints().getView();
+      const auto view_rho = fluid->getVariables()->rho.getConstView();
+      const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+      const auto view_n_bound = boundary->getVariables()->n.getConstView();
+      const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
       auto pstLoop = [=] __cuda_callable__ ( LocalIndexType i,
                                              LocalIndexType j,

@@ -38,8 +38,8 @@ int main( int argc, char* argv[] )
    //sph.writeEpilog( parameters );
 
    // Library model:
-   sph.fluid->integratorVariables->rho_old = sph.fluid->variables->rho;
-   sph.fluid->integratorVariables->rho_old_swap = sph.fluid->variables->rho;
+   sph.fluid->getIntegratorVariables()->rho_old = sph.fluid->getVariables()->rho;
+   sph.fluid->getIntegratorVariables()->rho_old_swap = sph.fluid->getVariables()->rho;
 
    while( sph.timeStepping.runTheSimulation() )
    {

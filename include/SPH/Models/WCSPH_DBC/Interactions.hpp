@@ -159,13 +159,13 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
    typename EOS::ParamsType eosParams( modelParams );
 
    // load variables
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
    auto view_Drho = fluid->getVariables()->drho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
    auto view_a = fluid->getVariables()->a.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 

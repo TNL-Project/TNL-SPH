@@ -169,16 +169,16 @@ public:
    predictor( RealType dt, FluidPointer& fluid, const int predictorStep )
    {
       auto r_view = fluid->getParticles()->getPoints().getView();
-      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
-      auto v_view = fluid->variables->v.getView();
-      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      auto dvdt_view_in = fluid->integratorVariables->dvdt_in.getView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
-      auto drhodt_view_in = fluid->integratorVariables->drhodt_in.getView();
-      auto v_staged_view = fluid->integratorVariables->v_staged.getView();
+      const auto r_in_view = fluid->getIntegratorVariables()->r_in.getConstView();
+      auto v_view = fluid->getVariables()->v.getView();
+      const auto v_in_view = fluid->getIntegratorVariables()->v_in.getConstView();
+      const auto dvdt_view = fluid->getVariables()->a.getConstView();
+      auto dvdt_view_in = fluid->getIntegratorVariables()->dvdt_in.getView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      const auto rho_in_view = fluid->getIntegratorVariables()->rho_in.getConstView();
+      const auto drhodt_view = fluid->getVariables()->drho.getConstView();
+      auto drhodt_view_in = fluid->getIntegratorVariables()->drhodt_in.getView();
+      auto v_staged_view = fluid->getIntegratorVariables()->v_staged.getView();
 
       auto step1 = [=] __cuda_callable__ ( int i ) mutable
       {
@@ -216,22 +216,22 @@ public:
 
       if( predictorStep == 0 ){
          //w^(0) = w^n
-         fluid->integratorVariables->dvdt_in = fluid->variables->a;
-         fluid->integratorVariables->drhodt_in = fluid->variables->drho;
-         fluid->integratorVariables->r_in = fluid->getParticles()->getPoints();
-         fluid->integratorVariables->v_in = fluid->variables->v;
-         fluid->integratorVariables->rho_in = fluid->variables->rho;
+         fluid->getIntegratorVariables()->dvdt_in = fluid->getVariables()->a;
+         fluid->getIntegratorVariables()->drhodt_in = fluid->getVariables()->drho;
+         fluid->getIntegratorVariables()->r_in = fluid->getParticles()->getPoints();
+         fluid->getIntegratorVariables()->v_in = fluid->getVariables()->v;
+         fluid->getIntegratorVariables()->rho_in = fluid->getVariables()->rho;
 
-         fluid->integratorVariables->v_staged = fluid->variables->v;
+         fluid->getIntegratorVariables()->v_staged = fluid->getVariables()->v;
       }
       else if( predictorStep == 1 ){
-         fluid->particles->forAll( step1 );
+         fluid->getParticles()->forAll( step1 );
       }
       else if( predictorStep == 2 ){
-         fluid->particles->forAll( step2 );
+         fluid->getParticles()->forAll( step2 );
       }
       else if( predictorStep == 3 ){
-         fluid->particles->forAll( step3 );
+         fluid->getParticles()->forAll( step3 );
       }
 
    }
@@ -241,16 +241,16 @@ public:
    corrector( const RealType dt, FluidPointer& fluid )
    {
       auto r_view = fluid->getParticles()->getPoints().getView();
-      const auto r_in_view = fluid->integratorVariables->r_in.getConstView();
-      auto v_view = fluid->variables->v.getView();
-      const auto v_in_view = fluid->integratorVariables->v_in.getConstView();
-      const auto dvdt_view = fluid->variables->a.getConstView();
-      auto dvdt_view_in = fluid->integratorVariables->dvdt_in.getView();
-      auto rho_view = fluid->variables->rho.getView();
-      const auto rho_in_view = fluid->integratorVariables->rho_in.getConstView();
-      const auto drhodt_view = fluid->variables->drho.getConstView();
-      auto drhodt_view_in = fluid->integratorVariables->drhodt_in.getView();
-      const auto v_staged_view = fluid->integratorVariables->v_staged.getConstView();
+      const auto r_in_view = fluid->getIntegratorVariables()->r_in.getConstView();
+      auto v_view = fluid->getVariables()->v.getView();
+      const auto v_in_view = fluid->getIntegratorVariables()->v_in.getConstView();
+      const auto dvdt_view = fluid->getVariables()->a.getConstView();
+      auto dvdt_view_in = fluid->getIntegratorVariables()->dvdt_in.getView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      const auto rho_in_view = fluid->getIntegratorVariables()->rho_in.getConstView();
+      const auto drhodt_view = fluid->getVariables()->drho.getConstView();
+      auto drhodt_view_in = fluid->getIntegratorVariables()->drhodt_in.getView();
+      const auto v_staged_view = fluid->getIntegratorVariables()->v_staged.getConstView();
 
       const RealType dtdt05 = 0.5f * dt * dt;
 
@@ -261,7 +261,7 @@ public:
          v_view[ i ] = v_in_view[ i ] + ( dt / 6.f ) * ( dvdt_view_in[ i ] + dvdt_view[ i ] );
          rho_view[ i ] = rho_in_view[ i ] + ( dt / 6.f ) * ( drhodt_view_in[ i ] + drhodt_view[ i ] );
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
    }
 
 };

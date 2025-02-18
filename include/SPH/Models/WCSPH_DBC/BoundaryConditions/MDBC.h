@@ -15,11 +15,11 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
                                                           ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename Particles::NeighborsLoopParams searchInBound( boundary->particles );
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename Particles::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
    const RealType rho0 = modelParams.rho0;
@@ -27,7 +27,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
 
    auto view_rho_bound = boundary->getVariables()->rho.getView();
@@ -74,7 +74,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       view_rhoGradRhoGhostNode_bound[ i ] = b_gn;
       view_correctionMatrices_bound[ i ] = A_gn;
    };
-   boundary->particles->forAll( particleLoopBoundary );
+   boundary->getParticles()->forAll( particleLoopBoundary );
 
    if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ){
@@ -116,10 +116,10 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
                                                                       ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
+   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = openBoundary->particles->getSearchRadius();
+   const RealType searchRadius = openBoundary->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
    const RealType rho0 = modelParams.rho0;
@@ -127,10 +127,10 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points_openBound = openBoundary->particles->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
    auto view_rho_bound = boundary->getVariables()->rho.getView();
    const auto view_v_bound = boundary->getVariables()->v.getView();
    const auto view_ghostNode_bound = boundary->getVariables()->ghostNodes.getView();
@@ -175,7 +175,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       view_rhoGradRhoGhostNode_bound[ i ] += b_gn;
       view_correctionMatrices_bound[ i ] += A_gn;
    };
-   boundary->particles->forAll( particleLoopBoundary ); //FIXME: This should use zone with boundary particles
+   boundary->getParticles()->forAll( particleLoopBoundary ); //FIXME: This should use zone with boundary particles
 }
 
 template< typename Particles, typename ModelConfig >
@@ -193,7 +193,7 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& 
    const RealType mdbcExtrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;
 
    auto view_rho_bound = boundary->getVariables()->rho.getView();
-   const auto view_points_bound = boundary->particles->getPoints().getConstView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getConstView();
    const auto view_ghostNode_bound = boundary->getVariables()->ghostNodes.getConstView();
    const auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getConstView();
    const auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getConstView();
@@ -224,7 +224,7 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& 
 
       view_rho_bound[ i ] = rho_bound;
    };
-   boundary->particles->forAll( particleLoop ); //TODO: forloop?
+   boundary->getParticles()->forAll( particleLoop ); //TODO: forloop?
 }
 
 } // SPH

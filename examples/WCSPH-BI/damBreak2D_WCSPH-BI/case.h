@@ -121,8 +121,8 @@ exec( Simulation& sph, TNL::Logger& log )
 
       while( midpointIteration < sph.modelParams.midpointMaxInterations ) {
          // backup derivatives
-         sph.fluid->integratorVariables->drhodt_in = sph.fluid->variables->drho;
-         sph.fluid->integratorVariables->dvdt_in = sph.fluid->variables->a;
+         sph.fluid->getIntegratorVariables()->drhodt_in = sph.fluid->getVariables()->drho;
+         sph.fluid->getIntegratorVariables()->dvdt_in = sph.fluid->getVariables()->a;
 
          // update inner loop variables
          sph.timeMeasurement.start( "integrate" );

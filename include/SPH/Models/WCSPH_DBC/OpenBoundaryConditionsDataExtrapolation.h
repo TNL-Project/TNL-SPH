@@ -46,7 +46,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData2D( FluidPointer& f
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
@@ -55,11 +55,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData2D( FluidPointer& f
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
@@ -167,7 +167,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPointer
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
@@ -176,10 +176,10 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity2D( FluidPointer
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
    //temp
@@ -260,7 +260,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity2D( FluidPointe
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
@@ -269,11 +269,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity2D( FluidPointe
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
@@ -367,7 +367,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& f
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
@@ -376,11 +376,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryData3D( FluidPointer& f
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
@@ -501,7 +501,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
@@ -510,10 +510,10 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryDensity3D( FluidPointer
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
    //temp
@@ -594,7 +594,7 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointe
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->getPoints()->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType rho0 = modelParams.rho0;
    const RealType m = modelParams.mass;
@@ -603,11 +603,11 @@ WCSPH_DBC< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointe
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->getPoints()->getPoints().getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
    const auto view_rho = fluid->getVariables()->rho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
 
-   const auto view_points_openBound = openBoundary->getPoints()->getPoints().getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
