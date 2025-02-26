@@ -127,6 +127,7 @@ int main( int argc, char* argv[] )
    while( sph.timeStepping.runTheSimulation() )
    //while( sph.timeStepping.getStep() < 2 )
    {
+      std::cout << "Step: " << sph.timeStepping.getStep() << std::endl;
       if( ( sph.timeStepping.getStep() % 50  == 0 )  )
          sph.writeInfo( log );
 
