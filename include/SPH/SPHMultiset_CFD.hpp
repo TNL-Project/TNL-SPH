@@ -181,6 +181,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                    subdomainGridOriginGlobalCoords,
                                    domainOrigin,
                                    logger );
+*/
   fluid->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
                                                              domainOrigin,
                                                              subdomainGridDimension,
@@ -190,7 +191,6 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                                              numberOfSubdomains,
                                                              this->communicator );
 
-*/
    // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
    fluid->getDistributedParticles()->writeProlog( logger );
    fluid->setCommunicator( this->communicator );
@@ -219,6 +219,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                        subdomainGridOriginGlobalCoords,
                                        domainOrigin,
                                        logger );
+*/
    boundary->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
                                                                  domainOrigin,
                                                                  subdomainGridDimension,
@@ -227,7 +228,6 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                                                  searchRadius,
                                                                  numberOfSubdomains,
                                                                  this->communicator );
-*/
    // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
    boundary->getDistributedParticles()->writeProlog( logger );
    boundary->setCommunicator( this->communicator );
