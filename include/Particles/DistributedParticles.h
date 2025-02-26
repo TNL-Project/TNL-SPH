@@ -151,6 +151,13 @@ public:
       return communicator;
    }
 
+   void
+   //setCommunicator( const MPI::Comm& communicator )
+   setCommunicator( MPI::Comm& communicator )
+   {
+      this->communicator = communicator;
+   }
+
 
    //TODO: 1D and 2D decompositions should be separated, currently we asume only 1D
    //initialize innerOverlpas

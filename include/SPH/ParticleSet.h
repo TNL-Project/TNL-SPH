@@ -109,8 +109,8 @@ class ParticleSet
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
       //initialize synchronizer
-      synchronizer.initialize( this->distributedParticles );
-      synchronizer.setCommunicator( distributedParticles->getCommunicator() );
+      //synchronizer.initialize( this->distributedParticles );
+      //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
    }
 #endif
 
@@ -163,6 +163,14 @@ class ParticleSet
       return this->distributedParticles;
    }
 
+   //---- TEMP - remove
+   DistributedParticleSynchronizer&
+   getDistributedParticlesSynchronizer()
+   {
+      return this->synchronizer;
+   }
+   //-------------------------------------
+
    const GlobalIndexType
    getNumberOfParticles() const
    {
@@ -213,7 +221,8 @@ class ParticleSet
 
    // in case we use multiple particle sets and external communicator needs to be used
    void
-   setCommunicator( const MPI::Comm& communicator )
+   //setCommunicator( const MPI::Comm& communicator )
+   setCommunicator( MPI::Comm& communicator )
    {
       this->distributedParticles->setCommunicator( communicator );
       this->synchronizer.setCommunicator( communicator );

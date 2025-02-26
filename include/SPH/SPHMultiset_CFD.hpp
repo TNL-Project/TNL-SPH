@@ -195,6 +195,10 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
   fluid->getDistributedParticles()->writeProlog( logger );
   //fluid->synchronizer.initialize( fluid->distributedParticles );
   //fluid->synchronizer.setCommunicator( this->communicator );
+   // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
+   fluid->getDistributedParticles()->writeProlog( logger );
+   fluid->setCommunicator( this->communicator );
+   fluid->getDistributedParticlesSynchronizer().initialize( fluid->getDistributedParticles() ); //FIXME
 
   boundary->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
                                                                 domainOrigin,
@@ -207,6 +211,10 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
   boundary->getDistributedParticles()->writeProlog( logger );
   //boundary->synchronizer.initialize( boundary->distributedParticles );
   //boundary->synchronizer.setCommunicator( this->communicator );
+   // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
+   boundary->getDistributedParticles()->writeProlog( logger );
+   boundary->setCommunicator( this->communicator );
+   boundary->getDistributedParticlesSynchronizer().initialize( boundary->getDistributedParticles() ); //FIXME
 }
 #endif
 
