@@ -85,32 +85,42 @@ class ParticleSet
 
 #ifdef HAVE_MPI
    void
-   initializeAsDistributed( unsigned int numberOfParticles,
-                            unsigned int numberOfAllocatedParticles,
-                            RealType searchRadius,
-                            IndexVectorType gridDimension,
-                            VectorType gridOrigin,
-                            IndexVectorType gridOriginGlobalCoords,
-                            VectorType globalGridOrigin,
-                            TNL::Logger& logger,
-                            GlobalIndexType numberOfOverlapsLayers = 1 )
+   initializeAsDistributed( const unsigned int numberOfParticles,
+                            const unsigned int numberOfAllocatedParticles,
+                            const RealType& searchRadius,
+                            const IndexVectorType& domainGridDimension,
+                            const VectorType& domainOrigin,
+                            const IndexVectorType& subdomainGridDimension,
+                            const IndexVectorType& subdomainGridOriginGlobalCoords,
+                            const int& numberOfOverlapLayers,
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains,
+                            TNL::Logger& logger )
    {
-      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
+      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
-      this->particles->setSize( numberOfAllocatedParticles );
-      this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridDimensions( gridDimension );
-      this->particles->setGridOrigin( gridOrigin );
-      this->particles->setOverlapWidth( 1 );
-      this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //NOTE: Load?
-      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
+      this->getParticles()->setSize( numberOfAllocatedParticles );
+      this->getParticles()->setSearchRadius( searchRadius );
+      this->getParticles()->setGridDimensions( domainGridDimension );
+      this->getParticles()->setGridOrigin( domainOrigin );
+      this->getParticles()->setOverlapWidth( numberOfOverlapLayers );
+      this->getParticles()->setNumberOfParticles( numberOfParticles );
+      this->getParticles()->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      this->getParticles()->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
+      this->distributedParticles->setDistributedGridParameters( searchRadius,
+                                                                domainGridDimension,
+                                                                domainOrigin,
+                                                                subdomainGridDimension,
+                                                                subdomainGridOriginGlobalCoords,
+                                                                numberOfOverlapLayers,
+                                                                numberOfSubdomains );
+
       //initialize synchronizer
-      synchronizer.initialize( this->distributedParticles );
-      synchronizer.setCommunicator( distributedParticles->getCommunicator() );
+      //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
+      //synchronizer.initialize( this->distributedParticles );
+      //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
    }
 #endif
 
@@ -163,6 +173,14 @@ class ParticleSet
       return this->distributedParticles;
    }
 
+   //---- TEMP - remove
+   DistributedParticleSynchronizer&
+   getDistributedParticlesSynchronizer()
+   {
+      return this->synchronizer;
+   }
+   //--------------------------------------
+
    const GlobalIndexType
    getNumberOfParticles() const
    {
@@ -178,13 +196,15 @@ class ParticleSet
    typename ParticleSystem::PointArrayType&
    getPoints()
    {
-      return this->getParticles()->getPoints();
+      //return this->getParticles()->getPoints();
+      return this->particles->getPoints();
    }
 
    const typename ParticleSystem::PointArrayType&
    getPoints() const
    {
-      return this->getParticles()->getPoints();
+      //return this->getParticles()->getPoints();
+      return this->particles->getPoints();
    }
 
    virtual VariablesPointerType&
@@ -213,7 +233,8 @@ class ParticleSet
 
    // in case we use multiple particle sets and external communicator needs to be used
    void
-   setCommunicator( const MPI::Comm& communicator )
+   //setCommunicator( const MPI::Comm& communicator )
+   setCommunicator( MPI::Comm& communicator )
    {
       this->distributedParticles->setCommunicator( communicator );
       this->synchronizer.setCommunicator( communicator );
@@ -318,12 +339,12 @@ class ParticleSet
 
       // sychronize
       this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
-      this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
-      this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
+      //:this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
+      //:this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
 
-      // update the number of particles inside subdomain
-      const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
-      particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
+      //:// update the number of particles inside subdomain
+      //:const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
+      //:particles->setNumberOfParticles( particles->getNumberOfParticles() + numberOfRecvParticles );
    }
 
    void
