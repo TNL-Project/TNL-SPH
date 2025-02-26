@@ -32,7 +32,6 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
-   initOverlaps( parameters, this->parametersDistributed, logger );
 #else
    // initialize particle sets
    initParticleSets( parameters, logger );
@@ -150,7 +149,7 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
-   const GlobalIndexType numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
+   const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
@@ -161,22 +160,24 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
 
    // init fluid
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
-   //fluid->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
-   //                                parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
-   //                                searchRadius,
-   //                                domainGridDimension,
-   //                                domainOrigin,
-   //                                subdomainGridDimension,
-   //                                subdomainGridOriginGlobalCoords,
-   //                                numberOfOverlapLayers,
-   //                                numberOfSubdomains,
-   //                                logger );
-
    fluid->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
                                    parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
                                    searchRadius,
+                                   domainGridDimension,
+                                   domainOrigin, //
                                    subdomainGridDimension,
-                                   subdomainOrigin,
+                                   subdomainGridOriginGlobalCoords,
+                                   numberOfOverlapLayers,
+                                   numberOfSubdomains,
+                                   subdomainOrigin, //REMOVE
+                                   logger );
+
+/*
+  fluid->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
+                                   parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+                                   searchRadius,
+                                   subdomainGridDimension,
+                                   subdomainOrigin, //
                                    subdomainGridOriginGlobalCoords,
                                    domainOrigin,
                                    logger );
@@ -188,6 +189,8 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
                                                              searchRadius,
                                                              numberOfSubdomains,
                                                              this->communicator );
+
+*/
    // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
    fluid->getDistributedParticles()->writeProlog( logger );
    fluid->setCommunicator( this->communicator );
@@ -195,133 +198,40 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
 
    // init boundary
    logger.writeParameter( "initDistributed:", "boundary->initialize" );
-   //boundary->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
-   //                                   parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
-   //                                   searchRadius,
-   //                                   domainGridDimension,
-   //                                   domainOrigin,
-   //                                   subdomainGridDimension,
-   //                                   subdomainGridOriginGlobalCoords,
-   //                                   numberOfOverlapLayers,
-   //                                   numberOfSubdomains,
-   //                                   logger );
-
    boundary->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
                                       parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
                                       searchRadius,
-                                      subdomainGridDimension,
-                                      subdomainOrigin,
-                                      subdomainGridOriginGlobalCoords,
+                                      domainGridDimension,
                                       domainOrigin,
+                                      subdomainGridDimension,
+                                      subdomainGridOriginGlobalCoords,
+                                      numberOfOverlapLayers,
+                                      numberOfSubdomains,
+                                      subdomainOrigin, //REMOVE
                                       logger );
-  boundary->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
-                                                                domainOrigin,
-                                                                subdomainGridDimension,
-                                                                subdomainOrigin,
-                                                                numberOfOverlapLayers,
-                                                                searchRadius,
-                                                                numberOfSubdomains,
-                                                                this->communicator );
+
+/*
+    boundary->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
+                                       parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+                                       searchRadius,
+                                       subdomainGridDimension,
+                                       subdomainOrigin,
+                                       subdomainGridOriginGlobalCoords,
+                                       domainOrigin,
+                                       logger );
+   boundary->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
+                                                                 domainOrigin,
+                                                                 subdomainGridDimension,
+                                                                 subdomainOrigin,
+                                                                 numberOfOverlapLayers,
+                                                                 searchRadius,
+                                                                 numberOfSubdomains,
+                                                                 this->communicator );
+*/
    // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
    boundary->getDistributedParticles()->writeProlog( logger );
    boundary->setCommunicator( this->communicator );
    boundary->getDistributedParticlesSynchronizer().initialize( boundary->getDistributedParticles() ); //FIXME
-}
-#endif
-
-#ifdef HAVE_MPI
-template< typename Model >
-void
-SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& parameters,
-                                        TNL::Config::ParameterContainer& parametersDistributed,
-                                        TNL::Logger& logger )
-{
-
-   //TODO: This whole header can be hidden to distributed utils
-   int rank = TNL::MPI::GetRank();
-   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
-   const std::string subdomainKey = distributed::getSubdomainKey( TNL::MPI::GetRank(), numberOfSubdomains );
-
-   // global domain properties
-   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   //const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   //const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
-
-   // subdomain properties
-   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   //const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   //const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
-   const IndexVectorType subdomainGridSize = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
-
-   int overlapCellsCount = 0;
-   IndexVectorType resizedSubdomainGridSize = 0;
-   VectorType resizedSubdomainGridOrigin = 0.f;
-
-   //TODO: Consider whether the overlap is in all dimensions
-   if constexpr( Model::SPHConfig::spaceDimension == 2 ) {
-      overlapCellsCount = ( subdomainGridSize[ 0 ] + subdomainGridSize[ 1 ] + 4 ) * 2;
-
-      //TODO: Maybe modify directly
-      resizedSubdomainGridSize = { subdomainGridSize[ 0 ] + 2, subdomainGridSize[ 1 ] + 2 };
-      resizedSubdomainGridOrigin = { subdomainOrigin[ 0 ] - searchRadius,  subdomainOrigin[ 1 ] - searchRadius };
-   }
-   else if constexpr( Model::SPHConfig::spaceDimension == 3 ) {
-      const int xy = ( subdomainGridSize[ 0 ] + 2 ) * ( subdomainGridSize[ 1 ] + 2 );
-      const int xz = ( subdomainGridSize[ 0 ] + 2 ) * ( subdomainGridSize[ 2 ] );
-      const int yz = ( subdomainGridSize[ 1 ] ) * ( subdomainGridSize[ 2 ] );
-      overlapCellsCount = 2 * xy + 2 * xz + 2 * yz;
-
-      resizedSubdomainGridSize = { subdomainGridSize[ 0 ] + 2, subdomainGridSize[ 1 ] + 2, subdomainGridSize[ 2 ] + 2 };
-      resizedSubdomainGridOrigin = { subdomainOrigin[ 0 ] - searchRadius,
-                                     subdomainOrigin[ 1 ] - searchRadius,
-                                     subdomainOrigin[ 2 ] - searchRadius };
-   }
-   int numberOfParticlesPerCell = parameters.getParameter< int >( "numberOfParticlesPerCell" );
-
-   //://// FIXME: Here, the arguments are probably fcked
-   //:fluidOverlap->initializeAsDistributed( 0,
-   //:                                       numberOfParticlesPerCell * overlapCellsCount,
-   //:                                       searchRadius,
-   //:                                       resizedSubdomainGridSize,
-   //:                                       resizedSubdomainGridOrigin,
-   //:                                       domainOrigin,
-   //:                                       subdomainGridOriginGlobalCoords,
-   //:                                       1,
-   //:                                       numberOfSubdomains,
-   //:                                       logger );
-
-   //://// FIXME: Here, the arguments are probably fcked
-   //:boundaryOverlap->initializeAsDistributed( 0,
-   //:                                          numberOfParticlesPerCell * overlapCellsCount,
-   //:                                          searchRadius,
-   //:                                          resizedSubdomainGridSize,
-   //:                                          resizedSubdomainGridOrigin,
-   //:                                          domainOrigin,
-   //:                                          subdomainGridOriginGlobalCoords,
-   //:                                          1,
-   //:                                          numberOfSubdomains,
-   //:                                          logger );
-
-   fluidOverlap->initializeAsDistributed( 0,
-                                          numberOfParticlesPerCell * overlapCellsCount,
-                                          searchRadius,
-                                          resizedSubdomainGridSize,
-                                          resizedSubdomainGridOrigin,
-                                          subdomainGridOriginGlobalCoords,
-                                          domainOrigin,
-                                          logger );
-
-   // FIXME: Here, the arguments are probably fcked
-   boundaryOverlap->initializeAsDistributed( 0,
-                                             numberOfParticlesPerCell * overlapCellsCount,
-                                             searchRadius,
-                                             resizedSubdomainGridSize,
-                                             resizedSubdomainGridOrigin,
-                                             subdomainGridOriginGlobalCoords,
-                                             domainOrigin,
-                                             logger );
 }
 #endif
 

@@ -84,45 +84,60 @@ class ParticleSet
    }
 
 #ifdef HAVE_MPI
-   //void
-   //initializeAsDistributed( const unsigned int numberOfParticles,
-   //                         const unsigned int numberOfAllocatedParticles,
-   //                         const RealType& searchRadius,
-   //                         const IndexVectorType& domainGridDimension,
-   //                         const VectorType& domainOrigin,
-   //                         const IndexVectorType& subdomainGridDimension,
-   //                         const IndexVectorType& subdomainGridOriginGlobalCoords,
-   //                         const int& numberOfOverlapLayers,
-   //                         const Containers::StaticVector< 2, int >& numberOfSubdomains,
-   //                         TNL::Logger& logger )
-   //{
-   //   const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
+   void
+   initializeAsDistributed( const unsigned int numberOfParticles,
+                            const unsigned int numberOfAllocatedParticles,
+                            const RealType& searchRadius,
+                            const IndexVectorType& domainGridDimension,
+                            const VectorType& domainOrigin,
+                            const IndexVectorType& subdomainGridDimension,
+                            const IndexVectorType& subdomainGridOriginGlobalCoords,
+                            const int numberOfOverlapLayers,
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains,
+                            const VectorType& subdomainOrigin, //REMOVE
+                            TNL::Logger& logger )
+   {
+      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
-   //   this->getParticles()->setSize( numberOfAllocatedParticles );
-   //   this->getParticles()->setSearchRadius( searchRadius );
-   //   this->getParticles()->setGridDimensions( domainGridDimension );
-   //   this->getParticles()->setGridOrigin( domainOrigin );
-   //   this->getParticles()->setOverlapWidth( numberOfOverlapLayers );
-   //   this->getParticles()->setNumberOfParticles( numberOfParticles );
-   //   this->getParticles()->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
-   //   this->getParticles()->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
-   //   this->variables->setSize( numberOfAllocatedParticles );
-   //   this->integratorVariables->setSize( numberOfAllocatedParticles );
+      this->particles->setSize( numberOfAllocatedParticles );
+      this->particles->setNumberOfParticles( numberOfParticles );
+      this->particles->setSearchRadius( searchRadius );
 
-   //   this->distributedParticles->setDistributedGridParameters( searchRadius,
-   //                                                             domainGridDimension,
-   //                                                             domainOrigin,
-   //                                                             subdomainGridDimension,
-   //                                                             subdomainGridOriginGlobalCoords,
-   //                                                             numberOfOverlapLayers,
-   //                                                             numberOfSubdomains );
+      this->particles->setGridDimensions( subdomainGridDimension );
+      this->particles->setGridOrigin( subdomainOrigin ); //REMOVE
+      this->particles->setOverlapWidth( numberOfOverlapLayers );
+      this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      this->particles->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
 
-   //   //initialize synchronizer
-   //   //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
-   //   //synchronizer.initialize( this->distributedParticles );
-   //   //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
-   //}
+      this->variables->setSize( numberOfAllocatedParticles );
+      this->integratorVariables->setSize( numberOfAllocatedParticles );
 
+      /*
+      this->distributedParticles->setDistributedGridParameters( searchRadius,
+                                                                domainGridDimension,
+                                                                domainOrigin,
+                                                                subdomainGridDimension,
+                                                                subdomainGridOriginGlobalCoords,
+                                                                numberOfOverlapLayers,
+                                                                numberOfSubdomains );
+      */
+
+      this->distributedParticles->setDistributedGridParameters( domainGridDimension,
+                                                                domainOrigin,
+                                                                subdomainGridDimension,
+                                                                subdomainGridOriginGlobalCoords * searchRadius + domainOrigin,
+                                                                numberOfOverlapLayers,
+                                                                searchRadius,
+                                                                numberOfSubdomains,
+                                                                this->distributedParticles->getCommunicator() );
+
+      //initialize synchronizer
+      //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
+      //synchronizer.initialize( this->distributedParticles );
+      //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
+   }
+
+   /*
    void
    initializeAsDistributed( unsigned int numberOfParticles,
                             unsigned int numberOfAllocatedParticles,
@@ -137,16 +152,19 @@ class ParticleSet
       const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
 
       this->particles->setSize( numberOfAllocatedParticles );
+      this->particles->setNumberOfParticles( numberOfParticles );
       this->particles->setSearchRadius( searchRadius );
+
       this->particles->setGridDimensions( gridDimension );
       this->particles->setGridOrigin( gridOrigin );
       this->particles->setOverlapWidth( 1 );
-      this->particles->setNumberOfParticles( numberOfParticles );
       this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //NOTE: Load?
       this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
+
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
    }
+   */
 #endif
 
    void
