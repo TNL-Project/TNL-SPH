@@ -488,7 +488,7 @@ void
 SPHMultiset_CFD< Model >::synchronizeDistributedSimulation( TNL::Logger& logger )
 {
    fluid->synchronizeObject( fluidOverlap, logger );
-   //boundary->synchronizeObject( boundaryOverlap, logger );
+   boundary->synchronizeObject( boundaryOverlap, logger );
 }
 
 template< typename Model >
