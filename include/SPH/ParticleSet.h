@@ -112,7 +112,6 @@ class ParticleSet
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
-      /*
       this->distributedParticles->setDistributedGridParameters( searchRadius,
                                                                 domainGridDimension,
                                                                 domainOrigin,
@@ -120,9 +119,8 @@ class ParticleSet
                                                                 subdomainGridOriginGlobalCoords,
                                                                 numberOfOverlapLayers,
                                                                 numberOfSubdomains );
-      */
 
-      /*
+ /*
       this->distributedParticles->setDistributedGridParameters( domainGridDimension,
                                                                 domainOrigin,
                                                                 subdomainGridDimension,
@@ -131,7 +129,7 @@ class ParticleSet
                                                                 searchRadius,
                                                                 numberOfSubdomains,
                                                                 this->distributedParticles->getCommunicator() );
-      */
+ */
 
       //initialize synchronizer
       //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS

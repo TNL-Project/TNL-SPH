@@ -224,6 +224,7 @@ public:
       }
    }
 
+   /*
     void
     setDistributedGridParameters( const IndexVectorType& globalGridSize,
                                   const PointType& globalGridOrigin,
@@ -267,8 +268,8 @@ public:
        distributedGrid.localGrid.setOrigin( localGridOrigin );
        distributedGrid.localGrid.setDimensions( localGridSize );
        distributedGrid.localGrid.setSpaceSteps( distributedGrid.globalGrid.getSpaceSteps() );
+*/
 
-/*
    void
    setDistributedGridParameters( const RealType& searchRadius,
                                  const IndexVectorType& globalGridDimension,
@@ -299,7 +300,6 @@ public:
       distributedGrid.localGrid.setOrigin( localGridOrigin );
       distributedGrid.localGrid.setDimensions( localGridDimensions );
       distributedGrid.localGrid.setSpaceSteps( distributedGrid.globalGrid.getSpaceSteps() );
-*/
 
       //NOTE: This is probably not necessay unless its used in initializeInnerOverlaps
       using CoordinatesType = typename DistributedGridType::CoordinatesType;
