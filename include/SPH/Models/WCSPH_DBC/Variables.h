@@ -119,14 +119,13 @@ class FluidVariables
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronizer, typename FluidVariablesPointer, typename DistributedParticlesPointer >
+   template< typename Synchronizer, typename DistributedParticlesPointer >
    void
    synchronizeVariables( Synchronizer& synchronizer,
-                         FluidVariablesPointer& overlapVariables,
                          DistributedParticlesPointer& distributedParticles )
    {
-      synchronizer.synchronize( rho, overlapVariables->rho, distributedParticles );
-      synchronizer.synchronize( v, overlapVariables->v, distributedParticles );
+      synchronizer.synchronize( rho, distributedParticles );
+      synchronizer.synchronize( v, distributedParticles );
    }
 #endif
 

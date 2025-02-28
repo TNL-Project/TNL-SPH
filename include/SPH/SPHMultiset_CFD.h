@@ -221,11 +221,6 @@ public:
    BoundaryPointer boundary;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
 
-#ifdef HAVE_MPI
-   FluidPointer fluidOverlap;
-   BoundaryPointer boundaryOverlap;
-#endif
-
    Model model;
    ModelParams modelParams;
    OpenBoundaryModel openBoundaryModel;

@@ -321,7 +321,6 @@ public:
       IndexVectorType gridDimensionsAdjustment = 0;
       IndexVectorType gridOriginAdjustment = 0.;
       const int* neighbors = this->getDistributedGrid().getNeighbors();
-      std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") subdomainsParticlesCount = " <<  subdomainsParticlesCount << ", subdomainParticlesCount: " << subdomainParticlesCount  << std::endl;
 
       if( neighbors[ ZzYzXm ] != -1 ){
          const GlobalIndexType particlesCountDifference = subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXm ];
@@ -329,13 +328,11 @@ public:
             //pCD > pCRT -> interface mm => gridDimension.x++, gridOrigin--
             gridDimensionsAdjustment[ 0 ]--;
             gridOriginAdjustment[ 0 ]++;
-            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXm ] ) = " << particlesCountDifference << " > pCRT."  << std::endl;
          }
          if( particlesCountDifference < ( ( -1 ) * this->particlesCountResizeTrashold ) ){
             //pCD > pCRT -> interface mm => gridDimension.x--, gridOrigin++
             gridDimensionsAdjustment[ 0 ]++;
             gridOriginAdjustment[ 0 ]--;
-            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXm ] ) = " << particlesCountDifference << " < ( -1 ) * pCRT."  << std::endl;
          }
 
       }
@@ -345,12 +342,10 @@ public:
          if( particlesCountDifference > this->particlesCountResizeTrashold  ){
             //pCD > pCRT -> interface pp => gridDimensions.x++, gridOring unchanged
             gridDimensionsAdjustment[ 0 ]--;
-            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXp ] ) = " <<  particlesCountDifference << " > pCRT."  << std::endl;
          }
          if( particlesCountDifference < ( ( -1 ) * this->particlesCountResizeTrashold ) ){
             //pCD > pCRT -> interface pm => gridDimensions.x--, gridOrigin unchanged
             gridDimensionsAdjustment[ 0 ]++;
-            std::cout << "(RANK: " << TNL::MPI::GetRank()  << ") Balancing option: ( subdomainParticlesCount - subdomainsParticlesCount[ ZzYzXp ] ) = " <<  particlesCountDifference << " < ( -1 ) * pCRT."  << std::endl;
          }
       }
 

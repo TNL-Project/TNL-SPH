@@ -232,44 +232,39 @@ public:
 
    template< typename Array, typename DistributedParticlesPointer >
    void
-   synchronize( Array& sendArray, Array& recvArray, DistributedParticlesPointer& distributedParticles )
+   synchronize( Array& array, DistributedParticlesPointer& distributedParticles )
    {
       // wrapped only because nvcc is fucked up and does not like __cuda_callable__ lambdas in enable_if methods
-      synchronizeArray( sendArray, recvArray, distributedParticles );
+      synchronizeArray( array, distributedParticles );
    }
 
    template< typename Array, typename DistributedParticlesPointer >
    void
-   synchronizeArray( Array& sendArray,
-                     Array& recvArray,
+   synchronizeArray( Array& array,
                      DistributedParticlesPointer& distributedParticles,
                      int valuesPerElement = 1 )
    {
       static_assert( std::is_same_v< typename Array::DeviceType, DeviceType >, "mismatched DeviceType of the array" );
       using ValueType = typename Array::ValueType;
 
-      ByteArrayView sendView;
-      ByteArrayView recvView;
-      sendView.bind( reinterpret_cast< std::uint8_t* >( sendArray.getData() ), sizeof( ValueType ) * sendArray.getSize() );
-      recvView.bind( reinterpret_cast< std::uint8_t* >( recvArray.getData() ), sizeof( ValueType ) * recvArray.getSize() );
-      synchronizeByteArray( sendView, recvView, sizeof( ValueType ) * valuesPerElement, distributedParticles );
+      ByteArrayView arrayView;
+      arrayView.bind( reinterpret_cast< std::uint8_t* >( array.getData() ), sizeof( ValueType ) * array.getSize() );
+      synchronizeByteArray( arrayView, sizeof( ValueType ) * valuesPerElement, distributedParticles );
    }
 
    template< typename DistributedParticlesPointer >
    void
    synchronizeByteArray( ByteArrayView sendArray,
-                         ByteArrayView recvArray,
                          int bytesPerValue,
                          DistributedParticlesPointer& distributedParticles )
    {
-      auto requests = synchronizeByteArrayAsyncWorker( sendArray, recvArray, bytesPerValue, distributedParticles );
+      auto requests = synchronizeByteArrayAsyncWorker( sendArray, bytesPerValue, distributedParticles );
       MPI::Waitall( requests.data(), requests.size() );
    }
 
    template< typename DistributedParticlesPointer >
    [[nodiscard]] RequestsVector
    synchronizeByteArrayAsyncWorker( ByteArrayView sendArray,
-                                    ByteArrayView recvArray,
                                     int bytesPerValue,
                                     DistributedParticlesPointer& distributedParticles )
    {

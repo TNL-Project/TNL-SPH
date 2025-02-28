@@ -3,6 +3,7 @@
 #include <TNL/Logger.h>
 
 #include <SPH/configSetup.h>
+#include <SPH/configInit.h>
 #include "template/config.h"
 
 #include <SPH/Models/WCSPH_DBC/control.h>
@@ -13,85 +14,20 @@ int main( int argc, char* argv[] )
 
    TNL::MPI::ScopedInitializer mpi( argc, argv );
 
-//test;
-#ifdef HAVE_MPI
-   std::cout << "Running with MPI." << std::endl;
-#endif
-
-   // get CLI parameters
+   // prepare client parameters
    TNL::Config::ParameterContainer cliParams;
    TNL::Config::ConfigDescription cliConfig;
 
-   cliConfig.addRequiredEntry< std::string >( "config", "Path to the configuration file." );
-   cliConfig.addEntry< bool >( "config-help", "Print the configuration file description and exit.", false );
-   cliConfig.addEntry< bool >( "print-static-configuration", "Print the static configuration (e.g. solver and model types) and exit.", false );
-   cliConfig.addEntry< std::string >( "output-directory", "Path to the output directory (overrides the corresponding option in the configuration file)." );
-   cliConfig.addEntry< int >( "verbose", "Set the verbose mode. The higher number the more messages are generated.", 2 );
-   cliConfig.addEntry< std::string >( "log-file", "Log file for the computation.", "log.txt" );
-   cliConfig.addEntry< int >( "log-width", "Number of columns of the log table.", 80 );
-   cliConfig.addEntry< bool >( "catch-exceptions",
-                               "Catch C++ exceptions. Disabling it allows the program to drop into the debugger "
-                               "and track the origin of the exception.",
-                               true );
-
-   if( ! TNL::Config::parseCommandLine( argc, argv, cliConfig, cliParams ) )
-       return EXIT_FAILURE;
-
-   // get config parameters
+   // prepare sph parameters
    TNL::Config::ParameterContainer parameters;
    TNL::Config::ConfigDescription config;
 
-   // set SPH parameters
-   TNL::SPH::configSetup( config );
-
-   // set model parameters
-   //Model::configSetup( config );
-   TNL::SPH::template configSetupModel< SPHConfig< Device > >( config );
-   //TNL::SPH::configSetupModel( config );
-
-   if( cliParams.getParameter< bool >( "config-help" ) ) {
-       // TODO: re-format the message for the config (drop the program name and "--")
-       std::cout << "Priting usage." << std::endl;
-       TNL::Config::printUsage( config, argv[0] );
-       return EXIT_SUCCESS;
-   }
-   if( cliParams.getParameter< bool >( "print-static-configuration" ) ) {
-       const int logWidth = cliParams.getParameter< int >( "log-width" );
-       TNL::Logger consoleLogger( logWidth, std::cout );
-       //TNL::MHFEM::writeProlog< Problem >( consoleLogger, false );
-       TNL::SPH::writeProlog< Simulation>( consoleLogger, false );
-       return EXIT_SUCCESS;
-   }
-
-   const std::string configPath = cliParams.getParameter< std::string >( "config" );
    try {
-       parameters = TNL::Config::parseINIConfigFile( configPath, config );
+      TNL::SPH::template initialize< Simulation >( argc, argv, cliParams, cliConfig, parameters, config );
    }
-   catch ( const std::exception& e ) {
-       std::cerr << "Failed to parse the configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
-       return EXIT_FAILURE;
+   catch ( ... ) {
+      return EXIT_FAILURE;
    }
-   catch (...) {
-       std::cerr << "Failed to parse the configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
-       throw;
-   }
-
-   // --output-directory from the CLI overrides output-directory from the config
-   if( cliParams.checkParameter( "output-directory" ) )
-       parameters.setParameter< std::string >( "output-directory", cliParams.getParameter< std::string >( "output-directory" ) );
-   if( ! parameters.checkParameter("output-directory")) {
-       std::cerr << "The output-directory parameter was not found in the config and "
-                    "--output-directory was not given on the command line." << std::endl;
-       return EXIT_FAILURE;
-   }
-
-   //TNL::Logger log( 100, std::cout );
-   //Simulation sph;
-   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-   //sph.init( parameters, log );
-   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-   //if( TNL::MPI::GetRank() == 0 )
-   //   sph.writeProlog( log );
 
    //DEBUG:
    std::string logFileName = "results/simulationLog_rank" + std::to_string( TNL::MPI::GetRank() );
@@ -101,16 +37,6 @@ int main( int argc, char* argv[] )
 
    Simulation sph;
    TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
-   //if( TNL::MPI::GetRank() == 0 )
-   //   sph.init( parameters, log );
-   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-   //if( TNL::MPI::GetRank() == 1 )
-   //   sph.init( parameters, log );
-   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
-   //if( TNL::MPI::GetRank() == 2 )
-   //   sph.init( parameters, log );
-   //TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
    sph.init( parameters, log );
    TNL::MPI::Barrier( sph.communicator ); //To have clear output

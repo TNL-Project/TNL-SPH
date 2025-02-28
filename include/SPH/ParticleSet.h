@@ -332,18 +332,17 @@ class ParticleSet
    }
 
 #ifdef HAVE_MPI
-   template< typename OverlapSetPointer >
    void
-   synchronizeObject( OverlapSetPointer& overlapSet, TNL::Logger& logger )
+   synchronizeObject()
    {
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
-      // check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
+      //TODO: check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
 
       // sychronize
-      this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
-      this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
-      this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
+      this->synchronizer.synchronize( this->getPoints(), distributedParticles );
+      this->variables->synchronizeVariables( synchronizer, distributedParticles );
+      this->integratorVariables->synchronizeVariables( synchronizer,  distributedParticles );
 
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
