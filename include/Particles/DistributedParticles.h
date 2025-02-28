@@ -224,52 +224,6 @@ public:
       }
    }
 
-   /*
-    void
-    setDistributedGridParameters( const IndexVectorType& globalGridSize,
-                                  const PointType& globalGridOrigin,
-                                  const IndexVectorType& localGridSize,
-                                  const PointType& localGridOrigin,
-                                  const GlobalIndexType& numberOfOverlapsLayers,
-                                  const RealType& searchRadius,
-                                  const SubdomainCoordinates& domainDecomposition,
-                                  MPI::Comm& comm )
-    {
-       this->communicator = comm;
-
-       std::cout << "rank: <" << TNL::MPI::GetRank() << " globalGridSize: " << globalGridSize << \
-                                                        " globalGridOrigin: " << globalGridOrigin << \
-                                                        " localGridSize: " << localGridSize << \
-                                                        " localGridOrigin: " << localGridOrigin << \
-                                                        " localGridOriginINCELLS: " << TNL::ceil( ( localGridOrigin - globalGridOrigin ) / searchRadius ) << \
-                                                        " numberOfOverlapsLayers " << numberOfOverlapsLayers << \
-                                                        " searchRadius " << searchRadius << std::endl;
-
-       //TODO: Pass as globalGrid
-       GridType globalGrid;
-       globalGrid.setDimensions( globalGridSize );
-       globalGrid.setDomain( globalGridOrigin, globalGridSize );
-       const PointType spaceStepsVector = searchRadius;
-       globalGrid.setSpaceSteps( spaceStepsVector );
-
-
-       //FIXME: Ugly workaround
-       const IndexVectorType domainDecompositionVect = { domainDecomposition[ 0 ], domainDecomposition[ 1 ], 1 };
-       //distributedGrid.setDomainDecomposition( domainDecomposition );
-       distributedGrid.setDomainDecomposition( domainDecompositionVect );
-       distributedGrid.setGlobalGrid( globalGrid );
-
-       typename DistributedGridType::SubdomainOverlapsType lowerOverlap, upperOverlap;
-       Meshes::DistributedMeshes::SubdomainOverlapsGetter< GridType >::getOverlaps( &distributedGrid, lowerOverlap, upperOverlap, 1 );
-       distributedGrid.setOverlaps( lowerOverlap, upperOverlap );
-
-
-       // Since the global is not distributed unifromly, we need to update parameters of local grid
-       distributedGrid.localGrid.setOrigin( localGridOrigin );
-       distributedGrid.localGrid.setDimensions( localGridSize );
-       distributedGrid.localGrid.setSpaceSteps( distributedGrid.globalGrid.getSpaceSteps() );
-*/
-
    void
    setDistributedGridParameters( const RealType& searchRadius,
                                  const IndexVectorType& globalGridDimension,
