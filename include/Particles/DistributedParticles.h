@@ -15,8 +15,9 @@ class DistributedParticleSystem
 {
 public:
 
-   using ParticleSystemType = ParticleSystem;
    using DeviceType = typename ParticleSystem::Device;
+   using ParticleSystemType = ParticleSystem;
+   using ParticlesPointerType = typename Pointers::SharedPointer< ParticleSystemType, DeviceType >;
    using GlobalIndexType = typename ParticleSystem::GlobalIndexType;
    using RealType = typename ParticleSystem::RealType;
    using PointType = typename ParticleSystem::PointType;
@@ -70,6 +71,19 @@ public:
    getDistributedGrid() const
    {
       return this->distributedGrid;
+   }
+
+   // local particles
+   [[nodiscard]] const ParticlesPointerType&
+   getLocalParticles() const
+   {
+      return localParticles;
+   }
+
+   [[nodiscard]] ParticlesPointerType&
+   getLocalParticles()
+   {
+      return localParticles;
    }
 
    [[nodiscard]] const Containers::Array< ParticleZoneType, Devices::Host, int >&
@@ -374,7 +388,8 @@ public:
 
 protected:
 
-   ParticleSystem localParticles;
+   //ParticleSystem localParticles;
+   ParticlesPointerType localParticles; //TODO: this should not be a pointer
    DistributedGridType distributedGrid;
    //Containers::Array< GlobalIndexType, Devices::Host, int > innerOverlaps; //TODO: What was this idee?
 
@@ -385,10 +400,12 @@ protected:
    Containers::StaticArray< DistributedGridType::getNeighborsCount(), int > innerOverlapsOffests;
    IndexArrayType innerOverlapsLinearized;
 
+   /* Load balancing measure based on number of particles. */
    Containers::StaticArray< DistributedGridType::getNeighborsCount(), int > subdomainsParticlesCount;
    GlobalIndexType subdomainParticlesCount;
    int particlesCountResizeTrashold;
 
+   /* Load balancing measure based on computation time. */
    Containers::StaticArray< DistributedGridType::getNeighborsCount(), float > subdomainsCompTime;
    RealType subdomainCompTime;
    RealType computationalTimeResizeTrashold;

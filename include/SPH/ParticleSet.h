@@ -97,6 +97,7 @@ class ParticleSet
                             const VectorType& subdomainOrigin, //REMOVE
                             TNL::Logger& logger )
    {
+      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
       const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
       this->particles->setSize( numberOfAllocatedParticles );
@@ -335,6 +336,7 @@ class ParticleSet
    void
    synchronizeObject()
    {
+      // communicate number of particles to synchronize
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
       //TODO: check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
@@ -374,7 +376,7 @@ protected:
    DistributedParticleSynchronizer synchronizer;
 
    // pointer to local particles so it can be accessed directly
-   ParticlePointerType particles;
+   ParticlePointerType particles = nullptr;
    // variables corresponding to local particles
    VariablesPointerType variables;
    // variables corresponding to local particles requred by selected integration scheme

@@ -71,7 +71,15 @@ public:
 
    // protected
    void
+   initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  );
+
+   // protected
+   void
    readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+   // protected
+   void
+   readOpenBoundaryFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
 
 #ifdef HAVE_MPI
@@ -242,6 +250,10 @@ public:
    TNL::Config::ConfigDescription configDistributed;
    TNL::Config::ParameterContainer parametersDistributed;
 #endif
+
+   // Configurations and parameter configs (mostly required by initialization)
+   TNL::Config::ConfigDescription configOpenBoundary;
+   TNL::Config::ParameterContainer parametersOpenBoundary;
 
 };
 

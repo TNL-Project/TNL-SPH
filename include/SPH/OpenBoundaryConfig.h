@@ -84,19 +84,21 @@ class OpenBoundaryConfig
    VectorType zoneSecondPoint = 0. ;
 
    void
-   init( TNL::Config::ParameterContainer& parameters, std::string prefix )
+   init( TNL::Config::ParameterContainer& parameters,
+         TNL::Config::ParameterContainer& parametersOpenBoundary,
+         std::string prefix )
    {
-      identifier = parameters.getParameter< std::string >( prefix + "identifier" );
-      orientation = parameters.getXyz< VectorType >( prefix + "orientation" );
-      position = parameters.getXyz< VectorType >( prefix + "position-1" );
-      bufferWidth = parameters.getXyz< VectorType >( prefix + "bufferWidth" );
+      identifier = parametersOpenBoundary.getParameter< std::string >( prefix + "identifier" );
+      orientation = parametersOpenBoundary.getXyz< VectorType >( prefix + "orientation" );
+      position = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-1" );
+      bufferWidth = parametersOpenBoundary.getXyz< VectorType >( prefix + "bufferWidth" );
       //bufferHeight =
-      pairedPeriodicBuffer = parameters.getParameter< int >( prefix + "paired-periodic-buffer" );
-      shift = parameters.getXyz< VectorType >( prefix + "shiftVector" );
-      numberOfParticlesPerCell = parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" );
+      pairedPeriodicBuffer = parametersOpenBoundary.getParameter< int >( prefix + "paired-periodic-buffer" );
+      shift = parametersOpenBoundary.getXyz< VectorType >( prefix + "shiftVector" );
+      numberOfParticlesPerCell = parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticlesPerCell" );
 
       //TODO: Check what is the shape of the buffer, following lines are valid for planar buffer
-      computeZonePoints( parameters, prefix );
+      computeZonePoints( parameters, parametersOpenBoundary, prefix );
    }
 
    void
@@ -115,11 +117,13 @@ class OpenBoundaryConfig
    private:
 
    void
-   computeZonePoints( TNL::Config::ParameterContainer& parameters, std::string prefix )
+   computeZonePoints( TNL::Config::ParameterContainer& parameters,
+                      TNL::Config::ParameterContainer& parametersOpenBoundary,
+                      std::string prefix )
    {
       const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-      const VectorType firstPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-1" );
-      const VectorType secondPointOfBufferArea = parameters.getXyz< VectorType >( prefix + "position-2" );
+      const VectorType firstPointOfBufferArea = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-1" );
+      const VectorType secondPointOfBufferArea = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-2" );
       const VectorType bufferAreaDiagonal = secondPointOfBufferArea - firstPointOfBufferArea;
       const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
       //TODO: Ugly, ugly code:
