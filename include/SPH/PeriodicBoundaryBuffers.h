@@ -23,7 +23,7 @@ class PeriodicBoundary
                VectorType domainOrigin,
                GlobalIndexType numberOfParticlesPerCell = 15 ) //TODO: Move this to config params.
    {
-      config.init( parameters, prefix );
+      config.init( parameters, parameters, prefix ); //FIXME: OpenBoundary configs uses two DIFERENT parameters containers
 
       //initialize the zone
       particleZone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );

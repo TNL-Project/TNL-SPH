@@ -255,6 +255,9 @@ public:
    TNL::Config::ConfigDescription configOpenBoundary;
    TNL::Config::ParameterContainer parametersOpenBoundary;
 
+   TNL::Config::ConfigDescription configPeriodicBoundary;
+   TNL::Config::ParameterContainer parametersPeriodicBoundary;
+
 };
 
 } // SPH

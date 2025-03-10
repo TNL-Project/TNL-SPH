@@ -6,8 +6,8 @@ using Device = TNL::Devices::Cuda;
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include <Particles/CellIndexer.h>
-#include <Particles/ParticlesTraits.h>
+#include <TNL/Particles/CellIndexer.h>
+#include <TNL/Particles/ParticlesTraits.h>
 
 template< typename Device >
 class ParticleSystemConfig
@@ -55,9 +55,9 @@ class SPHConfig
 /**
  * Particle system reader.
  */
-#include <Readers/VTKReader.h>
-#include <Writers/VTKWriter.h>
-#include <Readers/readSPHSimulation.h>
+#include <TNL/Particles/Readers/VTKReader.h>
+#include <TNL/Particles/Writers/VTKWriter.h>
+#include <TNL/Particles/Readers/readSPHSimulation.h>
 
 template< typename Device >
 class SPHParams
@@ -81,9 +81,9 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
 /**
  * Include type of particle system.
  */
-#include <Particles/ParticlesLinkedList.h>
+#include <TNL/Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
-//#include <Particles/ParticlesLinkedListWithList.h>
+//#include <TNL/Particles/ParticlesLinkedListWithList.h>
 //using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**

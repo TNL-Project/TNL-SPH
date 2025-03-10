@@ -11,7 +11,6 @@
 #include "PeriodicBoundaryBuffers.h"
 
 #if HAVE_MPI
-#include "DistributedSPHSynchronizer.h"
 #include "shared/utils.h"
 #endif
 

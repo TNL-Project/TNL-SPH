@@ -83,7 +83,7 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  */
 #include <TNL/Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
-//#include <Particles/ParticlesLinkedListWithList.h>
+//#include <TNL/Particles/ParticlesLinkedListWithList.h>
 //using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**
@@ -95,6 +95,8 @@ using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/SolverMultiSet.h>
-using Simulation = TNL::SPH::SolverMultiSet< Model >;
+#include <SPH/SPHMultiset_CFD.h>
+using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
+//#include <SPH/SolverMultiSet.h>
+//using Simulation = TNL::SPH::SolverMultiSet< Model >;
 

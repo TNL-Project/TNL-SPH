@@ -83,7 +83,7 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  */
 #include <TNL/Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
-//#include <Particles/ParticlesLinkedListWithList.h>
+//#include <TNL/Particles/ParticlesLinkedListWithList.h>
 //using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**
