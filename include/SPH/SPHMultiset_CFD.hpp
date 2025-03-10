@@ -11,7 +11,7 @@
 #include <string>
 
 #include "distributedUtils.h"
-#include "../Writers/writeBackgroundGrid.h"
+#include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
 namespace TNL {
 namespace SPH {
@@ -328,15 +328,6 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
             logger.writeParameter( "Boundary-boundary search procedure:", "Done." );
       }
 
-               // D:
-               //const int numberOfPtcs = fluid->getNumberOfParticles();
-               //const int offsetParticle = 0;
-               //for( int j = 0; j < 50; j++ ){
-               //   std::cout << fluid->getParticles()->getNeighborListStorage().getElement( j * numberOfPtcs + offsetParticle ) << " ";
-
-               //}
-               //std::cout << std::endl;
-
       fluid->getParticles()->addToParticleList( fluid->getParticles() );
       if( verbose == "full" )
          logger.writeParameter( "Fluid-boundary search procedure:", "Done." );
@@ -348,20 +339,6 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
       boundary->getParticles()->addToParticleList( fluid->getParticles() );
       if( verbose == "full" )
          logger.writeParameter( "Boundary-fluid search procedure:", "Done." );
-
-               // D:
-               //for( int j = 0; j < 50; j++ ){
-               //   std::cout << fluid->getParticles()->getNeighborListStorage().getElement( j * numberOfPtcs + offsetParticle ) << " ";
-               //}
-               //std::cout << std::endl;
-
-               // D:
-               //const int numberOfPtcsBoundary = boundary->getNumberOfParticles();
-               //const int offsetParticleBoundary = 0;
-               //for( int j = 0; j < 50; j++ ){
-               //   std::cout << boundary->getParticles()->getNeighborListStorage().getElement( j * numberOfPtcsBoundary + offsetParticleBoundary ) << " ";
-               //}
-               //std::cout << std::endl;
    }
 }
 

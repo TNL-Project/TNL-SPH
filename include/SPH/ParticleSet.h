@@ -15,8 +15,8 @@
 #include "shared/utils.h"
 #endif
 
-#include <Particles/DistributedParticles.h>
-#include <Particles/DistributedParticlesSynchronizer.h>
+#include <TNL/Particles/DistributedParticles.h>
+#include <TNL/Particles/DistributedParticlesSynchronizer.h>
 
 namespace TNL {
 namespace SPH {

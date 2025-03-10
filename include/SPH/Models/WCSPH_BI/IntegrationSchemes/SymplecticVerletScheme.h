@@ -4,12 +4,11 @@
 #include <TNL/Containers/ArrayView.h>
 #include <TNL/Pointers/SharedPointer.h>
 
-#include "../../../shared/thrustExecPolicySelector.h"
+#include <TNL/Particles/details/thrustExecPolicySelector.h>
 #include <thrust/sort.h>
 #include <thrust/gather.h>
 
 #include "../../../SPHTraits.h"
-#include "../../../../Particles/ParticlesTraits.h"
 
 namespace TNL {
 namespace SPH {

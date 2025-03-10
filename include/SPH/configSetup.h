@@ -55,6 +55,9 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
     config.addEntry< std::string >( "periodic-boundary-config", "Configuration file for periodic boundary.", "" );
 
+    config.addEntry< int >( "numberOfSubdomains", "Number of particles subdomains.", 0 );
+    config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
+
     // distributed simulation parameters
     config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
     config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );

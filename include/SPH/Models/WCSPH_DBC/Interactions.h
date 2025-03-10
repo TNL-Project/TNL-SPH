@@ -5,7 +5,6 @@
 #include "OpenBoundaryConfig.h"
 #include "SPH/Models/WCSPH_DBC/OpenBoundaryConditions.h"
 #include "Variables.h"
-#include "../../../Particles/neighborSearchLoop.h"
 #include <TNL/Matrices/StaticMatrix.h>
 
 /**

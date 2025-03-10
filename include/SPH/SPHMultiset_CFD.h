@@ -4,8 +4,6 @@
 #include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
 
-#include "../Particles/ParticlesTraits.h"
-
 #include "Fluid.h"
 #include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
@@ -244,7 +242,9 @@ public:
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
 
-   //TEMP: And btw the names are AWFUL
+   // Init parameters
+
+   // TEMP: And btw the names are AWFUL
 #ifdef HAVE_MPI
    MPI::Comm communicator = MPI_COMM_WORLD;
    TNL::Config::ConfigDescription configDistributed;

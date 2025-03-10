@@ -2,7 +2,7 @@
 
 #include <string>
 #include "ParticleSet.h"
-#include "../Particles/GhostZone.h"
+#include <TNL/Particles/GhostZone.h>
 #include "OpenBoundaryConfig.h"
 
 namespace TNL {

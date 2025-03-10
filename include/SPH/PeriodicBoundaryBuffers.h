@@ -1,4 +1,4 @@
-#include "../Particles/GhostZone.h"
+#include <TNL/Particles/GhostZone.h>
 
 namespace TNL {
 namespace SPH {

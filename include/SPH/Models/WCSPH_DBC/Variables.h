@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../SPHTraits.h"
-#include "../../shared/thrustExecPolicySelector.h"
+#include <TNL/Particles/details/thrustExecPolicySelector.h>
 #include <thrust/gather.h>
 #include "BoundaryConditionsTypes.h"
 
