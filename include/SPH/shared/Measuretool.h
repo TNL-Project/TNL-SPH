@@ -1,3 +1,5 @@
+#pragma once
+
 #include <TNL/Meshes/Writers/VTKWriter.h>
 #include <TNL/Containers/NDArray.h>
 #include <TNL/Pointers/SharedPointer.h>
@@ -22,7 +24,7 @@ public:
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
-
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -63,6 +65,7 @@ public:
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
 
       variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
+      gamma.setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
    }
 
    template< typename SPHKernelFunction, typename SPHState >
@@ -87,6 +90,7 @@ protected:
    GridType interpolationGrid;
    CoordinatesType gridDimension;
    VariablesPointer variables;
+   ScalarArrayType gamma;
 
    VectorType gridStep;
 
@@ -137,7 +141,7 @@ class SensorInterpolation
    init( std::vector< VectorType >& points, const int numberOfSensors, const int numberOfSavedSteps, bool includeBoundary )
    {
       this->numberOfSensors = numberOfSensors;
-      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
+      sensors.setSizes( 2 * numberOfSavedSteps, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
       this->numberOfSavedSteps = numberOfSavedSteps + 1;
@@ -222,7 +226,7 @@ class SensorWaterLevel
          RealType endLevel )
    {
       this->numberOfSensors = points.size();
-      sensors.setSizes( numberOfSavedSteps + 1, numberOfSensors );
+      sensors.setSizes( 2 * numberOfSavedSteps, numberOfSensors );
       sensorPositions.setSize( numberOfSensors );
       sensorPositions = points;
 
@@ -235,6 +239,9 @@ class SensorWaterLevel
       this->startLevel = startLevel;
       this->endLevel = endLevel;
    }
+
+   [[nodiscard]] const SensorsDataArray&
+   getSensorData() const;
 
    template< typename SPHKernelFunction, typename EOS, typename SPHState >
    void

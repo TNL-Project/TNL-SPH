@@ -4,6 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+# Include globaly used postpro scripts
+import sys
+sys.path.append('../../../src/tools')
+import groupResults
+
 #TODO: Rename the default sensors labels providet by Lobovsky et. al.
 case_tag = "damBreak2D_WCSPH-DBC"
 example_dir = Path(__file__).parent
@@ -67,7 +72,7 @@ def plot_water_level_sensors():
 
     #TODO: Read the parameters for normalisation from config.
     # nondim_time_coef = ( norm(g) * H )**0.5 * sensor_snapshot_time,
-    nondim_time_coef = ( 9.81 / 0.3 )**0.5 *  0.002
+    nondim_time_coef = ( 9.81 / 0.3 )**0.5 * 0.002
     # nondim_pressure_coef = 1 / H
     nondim_height_coef = 1. / 0.3
 
@@ -92,7 +97,6 @@ def plot_water_level_sensors():
         output_plot_name = f"results/postprocessing/{case_tag}_water_level_sensor_{ i + 1 }.png"
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
-
 if __name__ == "__main__":
     import argparse
     import os
@@ -106,6 +110,9 @@ if __name__ == "__main__":
     postproPath = r'./results/postprocessing'
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
+
+    # group results
+    groupResults.make_data_series( example_dir )
 
     # plot results from pressure sensors
     plot_pressure_sensors()

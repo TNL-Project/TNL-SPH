@@ -4,6 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+# Include globaly used postpro scripts
+import sys
+sys.path.append('../../../src/tools')
+import plotTimeStep
+import plotEnergy
+
 #TODO: Rename the default sensors labels providet by Lobovsky et. al.
 case_tag = "damBreak2D_WCSPH-BI"
 example_dir = Path(__file__).parent
@@ -112,3 +118,8 @@ if __name__ == "__main__":
 
     # plot results from pressure sensors
     plot_water_level_sensors()
+
+    # Global postprocessing tools: plot time step log and energy
+    #plotTimeStep.plot_time_step( results_dir )
+    plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
+    plotEnergy.plot_energy_snapshots( results_dir, Epot0 = 264.87 )

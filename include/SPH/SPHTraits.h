@@ -3,6 +3,7 @@
 #include <TNL/Containers/StaticVector.h>
 #include <TNL/Matrices/StaticMatrix.h>
 #include <TNL/Containers/Array.h>
+#include <TNL/Containers/Vector.h>
 
 namespace TNL {
 namespace SPH {
@@ -21,11 +22,11 @@ class SPHFluidTraits
 
    /* particle related */
    using ParticleType = unsigned short int;
-   using ParticleTypeArrayType = Containers::Array< ParticleType, DeviceType, GlobalIndexType >;
+   using ParticleTypeArrayType = Containers::Vector< ParticleType, DeviceType, GlobalIndexType >;
    using ScalarType = RealType;
-   using ScalarArrayType = Containers::Array< ScalarType, DeviceType, GlobalIndexType >;
+   using ScalarArrayType = Containers::Vector< ScalarType, DeviceType, GlobalIndexType >;
    using VectorType = Containers::StaticVector< spaceDimension, RealType >;
-   using VectorArrayType = Containers::Array< VectorType, DeviceType, GlobalIndexType >;
+   using VectorArrayType = Containers::Vector< VectorType, DeviceType, GlobalIndexType >;
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
    using IndexVectorType = Containers::StaticVector< spaceDimension, GlobalIndexType >;
 

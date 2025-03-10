@@ -100,6 +100,12 @@ public:
    void
    performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 
+   /**
+    *
+    */
+   void
+   removeParticlesOutOfDomain( TNL::Logger& log );
+
    //void
    //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 
@@ -124,7 +130,7 @@ public:
     * particles into and from simulations (inflows and outlows).
     */
    void
-   applyOpenBC();
+   applyOpenBC( const RealType timeStepFact = 1.f );
 
    /**
     * \brief Apply periodic boundary conditions - first part. For all periodic
@@ -157,7 +163,13 @@ public:
     *
     */
    void
-   updateTimeStep();
+   computeTimeStep();
+
+   /**
+    *
+    */
+   void
+   updateTime();
 
    /**
     * \brief Check if is time to perform measurement and if is time to perform
@@ -186,6 +198,9 @@ public:
     */
    void
    save( TNL::Logger& save, bool writeParticleCellIndex = false  );
+
+   void
+   makeSnapshot( TNL::Logger& logger );
 
    void
    writeProlog( TNL::Logger& logger, bool writeSystemInformation = true ) const noexcept;

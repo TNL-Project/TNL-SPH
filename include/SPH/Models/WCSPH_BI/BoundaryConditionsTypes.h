@@ -7,6 +7,16 @@ namespace WCSPH_BCTypes {
 struct BI_numeric
 {};
 
+struct BIConsistent_numeric
+{
+   static constexpr bool renormalize = true;
+};
+
+struct BIConservative_numeric
+{
+   static constexpr bool renormalize = false;
+};
+
 struct None
 {};
 

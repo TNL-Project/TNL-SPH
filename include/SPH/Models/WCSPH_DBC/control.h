@@ -118,7 +118,7 @@ public:
       mdbcExtrapolationDetTreshold = parameters.getParameter< RealType >( "mdbcExtrapolationDetTreshold" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
-      dtMin = 0.05f * h / speedOfSound;
+      dtMin = 0.05f * dtInit;
    }
 
    //dp - initial particle distance [m]
@@ -196,6 +196,10 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Model parameters", "" );
    if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig> > ){
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
+      logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
+   }
+   if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig> > ){
+      logger.writeParameter( "Diffusive term:", "TNL::SPH::FourtakasDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
    if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig> > ){

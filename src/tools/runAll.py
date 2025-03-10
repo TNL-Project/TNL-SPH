@@ -17,6 +17,8 @@ examples_dir = project_dir / "examples"
 cases_list = [
         'RSPH/damBreak2D_RSPH',
         'WCSPH-BI/damBreak2D_WCSPH-BI',
+        'WCSPH-BI/damBreak3D_WCSPH-BI',
+        'WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI',
         'WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI',
         'WCSPH-DBC/damBreak2D_WCSPH-DBC',
         'WCSPH-DBC/damBreak3D_WCSPH-DBC',
@@ -118,7 +120,7 @@ def write_results():
                 'Ref. comp. time' : referential_computational_time,
                 'Comp. time dif.' : computational_time_difference_formatted }
     summary_df = pd.DataFrame( summary )
-    with open('log.md', 'w') as f:
+    with open(f'log_{strftime("%Y-%m-%d_%H:%M:%S")}.md', 'w') as f:
         f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S", gmtime())}\n' )
         f.write( summary_df.to_markdown( ) )
 

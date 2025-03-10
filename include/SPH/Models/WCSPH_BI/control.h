@@ -7,6 +7,8 @@
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK45Scheme.h>
 
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 
@@ -19,45 +21,6 @@
 
 namespace TNL {
 namespace SPH {
-
-template< typename SPHConfig >
-void
-configSetupModel( TNL::Config::ConfigDescription& config )
-{
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using RealType = typename SPHTraitsType::RealType;
-   using VectorType = typename SPHTraitsType::VectorType;
-
-   config.addDelimiter( "WCSPH-BI model parameters" );
-
-   config.addEntry< float >( "dp", "Initial particle distance.", 0 );
-   config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
-   config.addEntry< float >( "boundaryElementSize", "Size of bounadry inegrals element.", 0 );
-   config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
-   config.addEntry< float >( "massBoundary", "Mass of particle, constant for all particles.", 0 );
-   config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
-   config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
-   config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
-   config.addEntry< float >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
-   config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
-   config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-   config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
-   config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-   config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
-   config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-
-   for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   }
-   for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   }
-}
 
 /**
  * \brief Class used to store core parameters of SPH scheme.
@@ -93,6 +56,18 @@ public:
       config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
       config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      // parameters of elastic bounce boundary correction
+      config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
+      config.addEntry< RealType >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
+      config.addEntry< RealType >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
+      config.addEntry< RealType >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
+      // parameters of midpoint integration scheme
+      config.addEntry< int >( "midpointMaxInterations", "Number of alowed midpoint iterations.", 30 );
+      config.addEntry< RealType >( "midpointResidualTolerance", "Midpoint iteration residual threshold.", 1e-5 );
+      config.addEntry< RealType >( "midpointRelaxCoef", "Midpoint relaxation coefficient.", 0.f );
+      config.addEntry< RealType >( "midpointRelaxCoef_0", "Midpoint relaxation coefficient in first iteration.", 0.f );
+      config.addEntry< RealType >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
+      config.addEntry< RealType >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
 
       for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -126,9 +101,21 @@ public:
       dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
       eps = parameters.getParameter< RealType >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
+      // parameters of elastic bounce boundary correction
+      enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
+      elasticFactor = parameters.getParameter< RealType >( "elasticFactor" );
+      r_boxFactor = parameters.getParameter< RealType >( "r_boxFactor" );
+      minimalDistanceFactor = parameters.getParameter< RealType >( "minimalDistanceFactor" );
+      // parameters of midpoint integration scheme
+      midpointMaxInterations = parameters.getParameter< int >( "midpointMaxInterations" );
+      midpointResidualTolerance = parameters.getParameter< RealType >( "midpointResidualTolerance" );
+      midpointRelaxCoef = parameters.getParameter< RealType >( "midpointRelaxCoef" );
+      midpointRelaxCoef_0 = parameters.getParameter< RealType >( "midpointRelaxCoef_0" );
+      midpointResidualMinimalDecay = parameters.getParameter< RealType >( "midpointResidualMinimalDecay" );
+      midpointRelaxCoefIncrement = parameters.getParameter< RealType >( "midpointRelaxCoefIncrement" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
-      dtMin = 0.05f * h / speedOfSound;
+      dtMin = 0.05f * dtInit;
    }
 
    //dp - initial particle distance [m]
@@ -180,7 +167,7 @@ public:
 
    // Define elastic bounce boundary correction
    // enableElasticBounce - enable elastic bounce boundary correction [bool]
-   bool enableElasticBounce = false;
+   bool enableElasticBounce = true;
    //elasticFactor -
    RealType elasticFactor = 1.f;
    //r_box  r_box = r_boxFactor * dp;
@@ -198,6 +185,20 @@ public:
    RealType cfl = 0.f;
    //dtMin - minimal allowed time step [s];
    RealType dtMin = 0.f;
+
+   //Parameters of implicit midpoint integration scheme
+   //midpointMaxInterations - max number of midpoint iterations [-]
+   int midpointMaxInterations = 50;
+   //midpointResidualTolerance - midpoint iteration tolerance to reach [-]
+   RealType midpointResidualTolerance = 1.e-7;
+   //midpointRelaxCoef - midpoint relaxation coefficient [-]
+   RealType midpointRelaxCoef = 0;
+   //midpointRelaxCoef_0 - midpoint relaxation coefficinet in first iteration [-]
+   RealType midpointRelaxCoef_0 = 0;
+   //midpointResidalMinimualDecay - midpoint minimal decay of residual [-]
+   RealType midpointResidualMinimalDecay = 0.2f;
+   //midpointRelaxCoefIncrement - midpoint increment of realxation coefficinet [-]
+   RealType midpointRelaxCoefIncrement = 0;
 
    //gravity - external forces [m^2 / s].
    VectorType gravity = 0.f;
@@ -226,16 +227,29 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
+   if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
+                                 DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   {
+      logger.writeParameter( "Diffusive term:", "TNL::SPH::FourtakasDiffusiveTerm", 1 );
+      logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
+   }
    if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
+                                 BIViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Viscous term:", "TNL::SPH::ArtificialViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
    }
    if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 ViscousTerms::PhysicalViscosity< typename ModelParams::SPHConfig > > )
+                                 BIViscousTerms::PhysicalViscosity_MVT< typename ModelParams::SPHConfig > > )
    {
-      logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity", 1 );
+      logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity_MVT", 1 );
+      logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
+
+   }
+   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
+                                 BIViscousTerms::PhysicalViscosity_MGVT< typename ModelParams::SPHConfig > > )
+   {
+      logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity_MGVT", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
 
    }
@@ -268,6 +282,12 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
       boundaryConditionsTypes = "TNL::SPH::WCSPH_BI::BI_numeric";
    logger.writeParameter( "Boundary condition type", boundaryConditionsTypes );
+   if( modelParams.enableElasticBounce == true ){
+      logger.writeParameter( "Elastic bounce boundary correction:", "Enabled" );
+      logger.writeParameter( "Elastic bounce fact. (elasticFactor):", modelParams.elasticFactor, 1 );
+      logger.writeParameter( "Bounce efect area fact. (r_boxFactor):", modelParams.r_boxFactor, 1 );
+      logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
+   }
    logger.writeParameter( "Time integration", "" );
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
                                  IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
@@ -275,6 +295,19 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
                                  IntegrationSchemes::SymplecticVerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::SymplecticVerletScheme", 1 );
+   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
+                                 IntegrationSchemes::MidpointScheme< typename ModelParams::SPHConfig > > ){
+      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::MidpointScheme", 1 );
+      logger.writeParameter( "Max. midpoint iteractions: ", modelParams.midpointMaxInterations, 1 );
+      logger.writeParameter( "Residual tolerance: ", modelParams.midpointResidualTolerance, 1 );
+      logger.writeParameter( "Relaxation coef.: ", modelParams.midpointRelaxCoef, 1 );
+      logger.writeParameter( "Relaxation coef. in first iteration: ", modelParams.midpointRelaxCoef_0, 1 );
+      logger.writeParameter( "Residual minimal decay: ", modelParams.midpointResidualMinimalDecay, 1 );
+      logger.writeParameter( "Midpoint relax coef, icrement: ", modelParams.midpointRelaxCoefIncrement, 1 );
+   }
+   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
+                                 IntegrationSchemes::RK45Scheme< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::RK45Scheme", 1 );
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );

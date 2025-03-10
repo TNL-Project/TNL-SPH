@@ -49,9 +49,6 @@ int main( int argc, char* argv[] )
 
    while( sph.timeStepping.runTheSimulation() )
    {
-      // debug
-      std::cout << "Step: " << sph.timeStepping.getStep() << " npts: " << sph.fluid->getNumberOfParticles() << std::endl;
-
       // search for neighbros
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log );
@@ -73,32 +70,23 @@ int main( int argc, char* argv[] )
       // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
+      // compute new time step
+      sph.computeTimeStep();
+
       //integrate
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping );
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
+      // output particle data
+      sph.makeSnapshot( log );
+
       // apply open boundary condition
       sph.timeMeasurement.start( "apply-openbc" );
       sph.applyOpenBC();
       sph.timeMeasurement.stop( "apply-openbc" );
       sph.writeLog( log, "Update open BC...", "Done." );
-
-      // output particle data
-      if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      {
-         /**
-          * Compute pressure from density.
-          * This is not necessary since we do this localy, if pressure is needed.
-          * It's useful for output anyway.
-          */
-         //sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-         //sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
-
-         sph.save( log );
-         sph.writeLog( log, "Save results...", "Done." );
-      }
 
       //update time step
       sph.timeStepping.updateTimeStep();

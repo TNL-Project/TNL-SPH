@@ -9,11 +9,11 @@ void
 RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& sphState )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
-   typename Particles::NeighborsLoopParams searchInBound( boundary->particles );
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename Particles::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = sphState.h;
    const RealType m = sphState.mass;
    const VectorType gravity = sphState.gravity;
@@ -22,16 +22,16 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
    typename EOS::ParamsType eosParams( sphState );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   auto view_Drho = fluid->variables->drho.getView();
-   const auto view_v = fluid->variables->v.getView();
-   auto view_a = fluid->variables->a.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   auto view_Drho = fluid->getVariables()->drho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
+   auto view_a = fluid->getVariables()->a.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   const auto view_rho_bound = boundary->variables->rho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
-   const auto view_n_bound = boundary->variables->n.getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   const auto view_rho_bound = boundary->getVariables()->rho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
+   const auto view_n_bound = boundary->getVariables()->n.getView();
 
    auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
          VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
@@ -120,7 +120,7 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
       a_i += gravity;
       view_a[ i ] = a_i;
    };
-   fluid->particles->forAll( particleLoop );
+   fluid->getParticles()->forAll( particleLoop );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -143,7 +143,7 @@ RSPH< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPointe
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   physicalObject->particles->forAll( evalPressure ); //TODO: forloop?
+   physicalObject->getParticles()->forAll( evalPressure ); //TODO: forloop?
 }
 
 } // SPH

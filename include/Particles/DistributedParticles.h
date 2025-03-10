@@ -72,6 +72,19 @@ public:
       return this->distributedGrid;
    }
 
+   //get local particles
+   [[nodiscard]] const ParticleSystemType&
+   getLocalParticles() const
+   {
+      return localParticles;
+   }
+
+   [[nodiscard]] ParticleSystemType&
+   getLocalParticles()
+   {
+      return localParticles;
+   }
+
    [[nodiscard]] const Containers::Array< ParticleZoneType, Devices::Host, int >&
    getInnerOverlaps() const
    {
@@ -136,6 +149,13 @@ public:
    getCommunicator()
    {
       return communicator;
+   }
+
+   void
+   //setCommunicator( const MPI::Comm& communicator )
+   setCommunicator( MPI::Comm& communicator )
+   {
+      this->communicator = communicator;
    }
 
 
@@ -546,8 +566,6 @@ protected:
    RealType computationalTimeResizeTrashold;
 
    MPI::Comm communicator = MPI_COMM_WORLD;
-
-
 };
 
 }  //namespace ParticleSystem

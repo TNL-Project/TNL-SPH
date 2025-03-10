@@ -32,10 +32,10 @@ class ShepardFilter
    {
       typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
 
-      const auto view_points = fluid->particles->getPoints().getConstView();
-      auto view_v = fluid->variables->v.getView();
-      const auto view_rho = fluid->variables->v.getRhoView();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
+      const auto view_points = fluid->getParticles()->getPoints().getConstView();
+      auto view_v = fluid->getVariables()->v.getView();
+      const auto view_rho = fluid->getVariables()->v.getRhoView();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
       const RealType m = modelParams.mass;
       const RealType h = modelParams.h;
       const RealType rho0 = modelParams.rho0;
@@ -71,7 +71,7 @@ class ShepardFilter
          if( gamma_i > 0.01f )
             view_v[ i ] = v_i / gamma_i;
       };
-      fluid->particles->forAll( particleLoop );
+      fluid->getParticles()->forAll( particleLoop );
    }
 
    template< typename Particles, typename FluidPointer, typename ModelParams >
@@ -80,13 +80,13 @@ class ShepardFilter
    {
       typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
 
-      const auto view_points = fluid->particles->getPoints().getConstView();
-      const auto view_rho = fluid->variables->rho.getView();
-      auto view_v = fluid->variables->v.getView();
+      const auto view_points = fluid->getParticles()->getPoints().getConstView();
+      const auto view_rho = fluid->getVariables()->rho.getView();
+      auto view_v = fluid->getVariables()->v.getView();
       //TEMP: Store velocity into acceleration due this overlap incident
-      auto view_a = fluid->variables->a.getView();
-      auto view_gamma = fluid->variables->gamma.getView();
-      const RealType searchRadius = fluid->particles->getSearchRadius();
+      auto view_a = fluid->getVariables()->a.getView();
+      auto view_gamma = fluid->getVariables()->gamma.getView();
+      const RealType searchRadius = fluid->getParticles()->getSearchRadius();
       const RealType m = modelParams.mass;
       const RealType h = modelParams.h;
       const RealType rho0 = modelParams.rho0;
@@ -122,7 +122,7 @@ class ShepardFilter
          view_a[ i ] = v_i;
          view_gamma[ i ] = gamma_i;
       };
-      fluid->particles->forAll( particleLoop );
+      fluid->getParticles()->forAll( particleLoop );
 
       //TODO: Remove this ridiculous periodic update
       if constexpr( SPHCaseConfig::numberOfPeriodicBuffers > 0 ) {

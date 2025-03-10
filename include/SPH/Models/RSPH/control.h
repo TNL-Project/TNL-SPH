@@ -69,7 +69,7 @@ public:
       gravity = parameters.getXyz< VectorType >( "external-force" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
-      dtMin = 0.05f * h / speedOfSound;
+      dtMin = 0.05f * dtInit;
    }
 
    //dp - initial particle distance [m]

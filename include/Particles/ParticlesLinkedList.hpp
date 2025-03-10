@@ -200,6 +200,9 @@ ParticlesLinkedList< ParticleConfig, Device >::removeParitclesOutOfDomain()
    auto checkParticlePosition = [=] __cuda_callable__ ( int i ) mutable
    {
       const PointType point = view_points[ i ];
+      // if we already removed the particle, skip
+      if( point[ 0 ] == FLT_MAX )
+         return 0;
       const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) / searchRadius );
       //const IndexVectorType cellCoords = cellGlobalCoords - gridRefOriginCoords;
       const IndexVectorType cellCoords = cellGlobalCoords - gridOriginGlobalCoordsWithOverlap;

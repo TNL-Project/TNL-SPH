@@ -74,9 +74,9 @@ public:
    {
       const VectorType coordinatesDifference = particlesParams.periodicBoundaryDistance;
 
-      firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      firstAndLastParticleInFirstBlock = physicalObject->getParticles()->getFirstLastParticleInColumnOfCells(
       particlesParams.indexOfColumnWithLeftPeriodicity );
-      firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      firstAndLastParticleInLastBlock = physicalObject->getParticles()->getFirstLastParticleInColumnOfCells(
       particlesParams.indexOfColumnWithRightPeriodicity );
 
       firstActiveParticle = physicalObject->getFirstActiveParticle();
@@ -109,10 +109,10 @@ public:
                         sizeToCopyLastBlock,
                         ( -1.f ) * coordinatesDifference );
 
-      physicalObject->particles->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
-      physicalObject->particles->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock );
+      physicalObject->getParticles()->setFirstActiveParticle( firstActiveParticle - sizeToCopyLastBlock );
+      physicalObject->getParticles()->setLastActiveParticle( lastActiveParticle + sizeToCopyFirstBlock );
       const GlobalIndexType newNumberOfParticles = ( lastActiveParticle + sizeToCopyFirstBlock ) - ( firstActiveParticle - sizeToCopyLastBlock ) + 1;
-      physicalObject->particles->setNumberOfParticles( newNumberOfParticles );
+      physicalObject->getParticles()->setNumberOfParticles( newNumberOfParticles );
 
       this->synchronizingPeriodic = true;
 
@@ -149,7 +149,7 @@ public:
    initialize( PhysicalObjectPointer& physicalObject, ParticlesConfig& particlesParams )
    {
       const GlobalIndexType numberOfParticles = physicalObject->getNumberOfParticles();
-      const GlobalIndexType numberOfAllocatedParticles = physicalObject->particles->getNumberOfAllocatedParticles();
+      const GlobalIndexType numberOfAllocatedParticles = physicalObject->getParticles()->getNumberOfAllocatedParticles();
       const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticles ) / 2 );
 
       arrangeArray( physicalObject->getParticles()->getPoints(),
@@ -160,8 +160,8 @@ public:
 
       physicalObject->setFirstActiveParticle( shiftInMemory );
       physicalObject->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 );
-      physicalObject->particles->setFirstActiveParticle( shiftInMemory );
-      physicalObject->particles->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 );
+      physicalObject->getParticles()->setFirstActiveParticle( shiftInMemory );
+      physicalObject->getParticles()->setLastActiveParticle( shiftInMemory + numberOfParticles - 1 );
    }
 
    //TODO: Remove this.
@@ -170,7 +170,7 @@ public:
    initializeParticleField( PhysicalObjectPointer& physicalObject, Array& array, Array& arraySwap )
    {
       const GlobalIndexType numberOfParticles = physicalObject->getNumberOfParticles();
-      const GlobalIndexType numberOfAllocatedParticles = physicalObject->particles->getNumberOfAllocatedParticles();
+      const GlobalIndexType numberOfAllocatedParticles = physicalObject->getParticles()->getNumberOfAllocatedParticles();
       const GlobalIndexType shiftInMemory = static_cast< int >( ( numberOfAllocatedParticles - numberOfParticles ) / 2 );
 
       arrangeArray( array,
@@ -189,9 +189,9 @@ public:
 
       auto points_view = physicalObject->getPoints().getView();
 
-      const PairIndexType firstAndLastParticleInFirstBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      const PairIndexType firstAndLastParticleInFirstBlock = physicalObject->getParticles()->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithLeftPeriodicity );
-      const PairIndexType firstAndLastParticleInLastBlock = physicalObject->particles->getFirstLastParticleInColumnOfCells(
+      const PairIndexType firstAndLastParticleInLastBlock = physicalObject->getParticles()->getFirstLastParticleInColumnOfCells(
             particlesParams.indexOfColumnWithRightPeriodicity );
 
       auto last = [=] __cuda_callable__ ( int i ) mutable

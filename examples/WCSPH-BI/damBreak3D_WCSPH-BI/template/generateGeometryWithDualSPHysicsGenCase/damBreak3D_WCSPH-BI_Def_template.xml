@@ -17,7 +17,7 @@
         <geometry>
             <definition dp="resolutionPlaceholder" units_comment="metres (m)">
                 <pointmin x="-1" y="-1" z="-1" />
-                <pointmax x="3.3" y="1.1" z="1.1" />
+                <pointmax x="3.3" y="1.1" z="1.8" />
             </definition>
             <commands>
                 <list name="GeometryForNormals">
@@ -69,7 +69,7 @@
                     <!-- Defines actual dimensions of tank -->
                     <newvarcte Dpm="Dp/2" />
                     <newvarcte DefTankpx="0" DefTankpy="0" DefTankpz="0" />
-                    <newvarcte DefTanksx="3.220" DefTanksy="1.0" DefTanksz="1.0" />
+                    <newvarcte DefTanksx="3.220" DefTanksy="1.0" DefTanksz="1.8" />
                     <newvarcte DefBoxpx="0.660" DefBoxpy="0.300" />
                     <newvarcte DefBoxsx="0.160" DefBoxsy="0.400" DefBoxsz="0.160" />
                     <!-- Defines dimensions and positions according to pointmin and dp -->

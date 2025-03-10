@@ -27,6 +27,8 @@ configSetup( TNL::Config::ConfigDescription& config,
         config.addEntryEnum( "full" );
         config.addEntryEnum( "with-snapshot" );
         config.addEntryEnum( "none" );
+    config.addEntry< bool >( "save-fluid-particles", "Save fluid particles (bool).", true );
+    config.addEntry< bool >( "save-boundary-particles", "Save fluid particles (bool).", true );
 
     config.addDelimiter( sectionPrefix + " time discretisation" );
     config.addEntry< std::string >( "initial-condition", "File name with the initial condition." );

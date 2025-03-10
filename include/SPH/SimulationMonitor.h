@@ -226,13 +226,10 @@ public:
             TNL::Logger& logger,
             const std::string& verbose )
    {
-      if( timeStepping.checkOutputTimer( "interpolate" ) )
-      {
-         for ( auto& [ key, val ] : this->interpolations )
-         {
+      if( timeStepping.checkOutputTimer( "interpolate" ) ){
+         for ( auto& [ key, val ] : this->interpolations ) {
             val.template interpolate< KernelFunction >( fluid, boundary, modelParams );
             std::string outputFileNameInterpolation = outputDirecotry + "/" + key + "_" +
-                                                      //std::to_string( timeStepping.getStep() ) + "_interpolation.vtk";
                                                       std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
             val.save( outputFileNameInterpolation );
             logger.writeParameter( "Saved:", outputFileNameInterpolation );
@@ -240,8 +237,7 @@ public:
                logger.writeParameter( "Interpolation -" + key + ":", "Done." );
          }
       }
-      if( timeStepping.checkOutputTimer( "sensor_pressure" ) )
-      {
+      if( timeStepping.checkOutputTimer( "sensor_pressure" ) ) {
          if( this->numberOfPressureSensors > 0 ){
             pressureSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
             if( verbose == "full" )
@@ -249,8 +245,7 @@ public:
          }
       }
 
-      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) )
-      {
+      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) ) {
          if( this->numberOfWaterLevelSensors > 0 ){
             waterLevelSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
             if( verbose == "full" )

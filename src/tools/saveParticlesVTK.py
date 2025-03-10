@@ -99,9 +99,7 @@ def create_pointcloud_polydata( points, velocity=None, density=None, pressure=No
 
     return vpoly
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-
-def save_polydata( polydata, file_name, binary=False ):
+def save_polydata( polydata, file_name, binary=True ):
     file_extension = file_name.split( "." )[ -1 ].lower()
 
     # TODO: better generic load
@@ -128,8 +126,6 @@ def save_polydata( polydata, file_name, binary=False ):
         writer.SetFileTypeToBinary()
     writer.Update()
     writer.Write()
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

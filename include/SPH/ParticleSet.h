@@ -45,11 +45,11 @@ class ParticleSet
    using PeriodicBoundary = PeriodicBoundary< ParticleSystem, OpenBoundaryConfig >;
    using PeriodicBoundaryPointer = typename Pointers::SharedPointer< PeriodicBoundary, DeviceType >;
 
-#ifdef  HAVE_MPI
+//#ifdef  HAVE_MPI
    using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
    using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
-   using Synchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< DistributedParticlesType >;
-#endif
+   using DistributedParticleSynchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< DistributedParticlesType >;
+//#endif
 
    ParticleSet() : particles(), variables(), integratorVariables() {}
 
@@ -65,6 +65,8 @@ class ParticleSet
                IndexVectorType gridDimension,
                VectorType gridOrigin )
    {
+      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
+
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setSearchRadius( searchRadius );
       this->particles->setGridDimensions( gridDimension );
@@ -77,6 +79,8 @@ class ParticleSet
       //removed: // initialize grid origin
       //removed: this->particles->setGridInteriorDimension( gridDimension );
       //removed: this->particles->setGridInteriorOrigin( gridOrigin );
+      const VectorType zeroVector = 0;
+      this->particles->setGridOriginGlobalCoords( zeroVector );
    }
 
 #ifdef HAVE_MPI
@@ -103,6 +107,10 @@ class ParticleSet
       this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
+
+      //initialize synchronizer
+      //synchronizer.initialize( this->distributedParticles );
+      //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
    }
 #endif
 
@@ -129,40 +137,62 @@ class ParticleSet
       }
    }
 
-   const GlobalIndexType
-   getNumberOfParticles() const
-   {
-      return this->particles->getNumberOfParticles();
-   }
-
-   const GlobalIndexType
-   getNumberOfAllocatedParticles() const
-   {
-      return this->particles->getNumberOfAllocatedParticles();
-   }
-
    ParticlePointerType&
    getParticles()
    {
+      //return this->distributedParticles->getLocalParticles();
       return this->particles;
    }
 
    const ParticlePointerType&
    getParticles() const
    {
+      //return this->distributedParticles->getLocalParticles();
       return this->particles;
+   }
+
+   DistributedParticlesPointerType&
+   getDistributedParticles()
+   {
+      return this->distributedParticles;
+   }
+
+   const DistributedParticlesPointerType&
+   getDistributedParticles() const
+   {
+      return this->distributedParticles;
+   }
+
+   //---- TEMP - remove
+   DistributedParticleSynchronizer&
+   getDistributedParticlesSynchronizer()
+   {
+      return this->synchronizer;
+   }
+   //-------------------------------------
+
+   const GlobalIndexType
+   getNumberOfParticles() const
+   {
+      return this->getParticles()->getNumberOfParticles();
+   }
+
+   const GlobalIndexType
+   getNumberOfAllocatedParticles() const
+   {
+      return this->getParticles()->getNumberOfAllocatedParticles();
    }
 
    typename ParticleSystem::PointArrayType&
    getPoints()
    {
-      return this->particles->getPoints();
+      return this->getParticles()->getPoints();
    }
 
    const typename ParticleSystem::PointArrayType&
    getPoints() const
    {
-      return this->particles->getPoints();
+      return this->getParticles()->getPoints();
    }
 
    virtual VariablesPointerType&
@@ -177,12 +207,39 @@ class ParticleSet
       return this->variables;
    }
 
+   virtual IntegratorVariablesPointerType&
+   getIntegratorVariables()
+   {
+      return this->integratorVariables;
+   }
+
+   virtual const IntegratorVariablesPointerType&
+   getIntegratorVariables() const
+   {
+      return this->integratorVariables;
+   }
+
+   // in case we use multiple particle sets and external communicator needs to be used
+   void
+   //setCommunicator( const MPI::Comm& communicator )
+   setCommunicator( MPI::Comm& communicator )
+   {
+      this->distributedParticles->setCommunicator( communicator );
+      this->synchronizer.setCommunicator( communicator );
+   }
+
+   [[nodiscard]] const MPI::Comm&
+   getCommunicator() const
+   {
+      return distributedParticles->getCommunicator();
+   }
+
    void
    sortParticles()
    {
-      particles->sortParticles();
-      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
-      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      this->getParticles()->sortParticles();
+      this->variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
+      this->integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
    }
 
    void
@@ -292,17 +349,22 @@ class ParticleSet
       particles->writeProlog( logger );
    }
 
-   //Properties of physical object
-   ParticlePointerType particles;
-#ifdef HAVE_MPI
-   DistributedParticlesPointerType distributedParticles;
-   Synchronizer synchronizer;
-#endif
-   VariablesPointerType variables;
-   IntegratorVariablesPointerType integratorVariables;
-
+   //TODO: Move this to particles
    std::vector< PeriodicBoundaryPointer > periodicPatches;
 
+protected:
+
+   // particles object
+   DistributedParticlesPointerType distributedParticles;
+   // particles synchronizer
+   DistributedParticleSynchronizer synchronizer;
+
+   // pointer to local particles so it can be accessed directly
+   ParticlePointerType particles;
+   // variables corresponding to local particles
+   VariablesPointerType variables;
+   // variables corresponding to local particles requred by selected integration scheme
+   IntegratorVariablesPointerType integratorVariables;
 
 };
 

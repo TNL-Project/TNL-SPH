@@ -25,7 +25,7 @@ class ParticleSystemConfig
    using UseWithDomainDecomposition = std::false_type;
    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1 > >;
-   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
+   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
 
 template< typename Device >
@@ -70,14 +70,12 @@ public:
    using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
-   //using BCType = TNL::SPH::WCSPH_BCTypes::MDBC;
    //using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
 
 using SPHDefs = SPHParams< Device >;
-
 using ParticlesConfig = ParticleSystemConfig< Device >;
 
 /**
@@ -85,7 +83,6 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
  */
 #include <Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
-
 //#include <Particles/ParticlesLinkedListWithList.h>
 //using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 

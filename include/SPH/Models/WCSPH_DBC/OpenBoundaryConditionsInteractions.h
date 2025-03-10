@@ -12,10 +12,10 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
                                                                   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
+   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
 
    /* CONSTANT VARIABLES */
-   const RealType searchRadius = fluid->particles->getSearchRadius();
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType h = modelParams.h;
    const RealType m = modelParams.mass;
 
@@ -24,20 +24,20 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
    typename EOS::ParamsType eosParams( modelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
-   const auto view_points = fluid->particles->getPoints().getView();
-   const auto view_rho = fluid->variables->rho.getView();
-   auto view_Drho = fluid->variables->drho.getView();
-   const auto view_v = fluid->variables->v.getView();
-   auto view_a = fluid->variables->a.getView();
+   const auto view_points = fluid->getParticles()->getPoints().getView();
+   const auto view_rho = fluid->getVariables()->rho.getView();
+   auto view_Drho = fluid->getVariables()->drho.getView();
+   const auto view_v = fluid->getVariables()->v.getView();
+   auto view_a = fluid->getVariables()->a.getView();
 
-   const auto view_points_bound = boundary->particles->getPoints().getView();
-   const auto view_rho_bound = boundary->variables->rho.getView();
-   auto view_Drho_bound = boundary->variables->drho.getView();
-   const auto view_v_bound = boundary->variables->v.getView();
+   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
+   const auto view_rho_bound = boundary->getVariables()->rho.getView();
+   auto view_Drho_bound = boundary->getVariables()->drho.getView();
+   const auto view_v_bound = boundary->getVariables()->v.getView();
 
-   const auto view_points_openBound = openBoundary->particles->getPoints().getView();
-   auto view_rho_openBound = openBoundary->variables->rho.getView();
-   auto view_v_openBound = openBoundary->variables->v.getView();
+   const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
+   auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
+   auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
    const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();

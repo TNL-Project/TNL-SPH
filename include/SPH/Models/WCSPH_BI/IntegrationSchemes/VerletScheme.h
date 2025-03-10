@@ -108,12 +108,12 @@ public:
    void
    integrateVerlet( RealType dt, FluidPointer& fluid )
    {
-      auto v_view = fluid->variables->v.getView();
-      auto r_view = fluid->particles->getPoints().getView();
-      auto rho_old_view = fluid->integratorVariables->rho_old.getView();
-      auto v_old_view = fluid->integratorVariables->v_old.getView();
-      const auto drho_view = fluid->variables->drho.getConstView();
-      const auto a_view = fluid->variables->a.getConstView();
+      auto v_view = fluid->getVariables()->v.getView();
+      auto r_view = fluid->getParticles()->getPoints().getView();
+      auto rho_old_view = fluid->getIntegratorVariables()->rho_old.getView();
+      auto v_old_view = fluid->getIntegratorVariables()->v_old.getView();
+      const auto drho_view = fluid->getVariables()->drho.getConstView();
+      const auto a_view = fluid->getVariables()->a.getConstView();
 
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
@@ -124,18 +124,18 @@ public:
          v_old_view[ i ] += a_view[ i ] * dt2;
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
 
-      fluid->variables->v.swap( fluid->integratorVariables->v_old );
-      fluid->variables->rho.swap( fluid->integratorVariables->rho_old );
+      fluid->getVariables()->v.swap( fluid->getIntegratorVariables()->v_old );
+      fluid->getVariables()->rho.swap( fluid->getIntegratorVariables()->rho_old );
    }
 
    template< typename BoundaryPointer >
    void
    integrateVerletBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_old_view = boundary->integratorVariables->rho_old.getView();
-      const auto drho_view = boundary->variables->drho.getConstView();
+      auto rho_old_view = boundary->getIntegratorVariables()->rho_old.getView();
+      const auto drho_view = boundary->getVariables()->drho.getConstView();
 
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
@@ -144,22 +144,22 @@ public:
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
-      boundary->particles->forAll( init );
+      boundary->getParticles()->forAll( init );
 
-      boundary->variables->rho.swap( boundary->integratorVariables->rho_old );
+      boundary->getVariables()->rho.swap( boundary->getIntegratorVariables()->rho_old );
    }
 
    template< typename FluidPointer >
    void
    integrateEuler( RealType dt, FluidPointer& fluid )
    {
-      auto rho_view = fluid->variables->rho.getView();
-      auto v_view = fluid->variables->v.getView();
-      auto r_view = fluid->particles->getPoints().getView();
-      auto rho_old_view = fluid->integratorVariables->rho_old.getView();
-      auto v_old_view = fluid->integratorVariables->v_old.getView();
-      const auto drho_view = fluid->variables->drho.getConstView();
-      const auto a_view = fluid->variables->a.getConstView();
+      auto rho_view = fluid->getVariables()->rho.getView();
+      auto v_view = fluid->getVariables()->v.getView();
+      auto r_view = fluid->getParticles()->getPoints().getView();
+      auto rho_old_view = fluid->getIntegratorVariables()->rho_old.getView();
+      auto v_old_view = fluid->getIntegratorVariables()->v_old.getView();
+      const auto drho_view = fluid->getVariables()->drho.getConstView();
+      const auto a_view = fluid->getVariables()->a.getConstView();
 
       const RealType dtdt05 = 0.5 * dt * dt;
 
@@ -171,16 +171,16 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      fluid->particles->forAll( init );
+      fluid->getParticles()->forAll( init );
    }
 
    template< typename BoundaryPointer >
    void
    integrateEulerBoundary( RealType dt, BoundaryPointer& boundary )
    {
-      auto rho_view = boundary->variables->rho.getView();
-      auto rho_old_view = boundary->integratorVariables->rho_old.getView();
-      const auto drho_view = boundary->variables->drho.getView();
+      auto rho_view = boundary->getVariables()->rho.getView();
+      auto rho_old_view = boundary->getIntegratorVariables()->rho_old.getView();
+      const auto drho_view = boundary->getVariables()->drho.getView();
 
       const RealType dtdt05 = 0.5 * dt * dt;
 
@@ -189,21 +189,21 @@ public:
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
       };
-      boundary->particles->forAll( init );
+      boundary->getParticles()->forAll( init );
    }
 
    template< typename BoundaryPointer >
    void
    correctBoundaryDensity( BoundaryPointer& boundary )
    {
-      auto rho_view = boundary->variables->rho.getView();
+      auto rho_view = boundary->getVariables()->rho.getView();
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
          if( rho_view[ i ] < 1000.f )
             rho_view[ i ] = 1000.f; //TODO: Use referential density or move this to different part
       };
-      boundary->particles->forAll( init );
+      boundary->getParticles()->forAll( init );
    }
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
