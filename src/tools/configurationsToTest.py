@@ -139,6 +139,7 @@ wcsph_bi_configurations = [
             "viscous-term" : "None",
             "dp" : 0.01,
             "h-coef" :  2,
+            "cfl" : 0.05,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
         # NOTE: The previous works as it is, but using BIConsistent_numeric and including PV-MGVT,
