@@ -41,6 +41,17 @@ public:
       this->timers[ keyword ].first.stop();
    }
 
+   const float
+   getTotalTime() const
+   {
+      float totalTime = 0.f;
+      for ( auto const& [ key, val ] : this->timers ) {
+         if ( val.second == true )
+            totalTime += val.first.getRealTime();
+      }
+      return totalTime;
+   }
+
    void
    writeInfo( TNL::Logger& logger, const int stepsTotal ) const noexcept
    {
