@@ -486,15 +486,16 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
 {
    //setup tresholds:
    fluid->getDistributedParticles()->setParticlesCountResizeTrashold( 1000 );
-   //fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
+   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
 
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() ); //TODO: Remove ptcs duplicity
-   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( 0. ); //FIXME
+   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() );
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
+   //std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
    const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->getParticles()->getSearchRadius();
 
