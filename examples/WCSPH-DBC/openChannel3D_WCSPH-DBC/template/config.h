@@ -39,7 +39,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 3;
-   static constexpr int numberOfBoundaryBuffers = 2;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
 

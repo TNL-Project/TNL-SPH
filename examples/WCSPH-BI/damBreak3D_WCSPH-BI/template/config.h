@@ -39,7 +39,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 3;
-   static constexpr int numberOfBoundaryBuffers = 0;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
 
@@ -69,10 +68,10 @@ public:
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;

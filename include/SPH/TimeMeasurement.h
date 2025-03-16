@@ -41,7 +41,7 @@ public:
       this->timers[ keyword ].first.stop();
    }
 
-   const float
+   float
    getTotalTime() const
    {
       float totalTime = 0.f;

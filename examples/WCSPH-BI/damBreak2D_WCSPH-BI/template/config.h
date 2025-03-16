@@ -39,7 +39,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfBoundaryBuffers = 0;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
 
@@ -97,7 +96,6 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
 using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
 
 #include <SPH/shared/ElasticBounce.h>
-//using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHConfig >;
 using BoundaryCorrection = TNL::SPH::ElasticBounceLight< ParticlesSys, SPHDefs::SPHConfig >;
 
 /**
