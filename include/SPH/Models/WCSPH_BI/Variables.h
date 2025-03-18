@@ -120,29 +120,6 @@ public:
 };
 
 template< typename SPHState >
-class OpenBoundaryVariables : public FluidVariables< SPHState >
-{
-public:
-   using BaseType = FluidVariables< SPHState >;
-   using SPHTraitsType = typename BaseType::SPHTraitsType;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
-
-   //SPHOpenBoundaryVariables( GlobalIndexType size )
-   //: SPHFluidVariables< SPHState >( size ), particleMark( size ), receivingParticleMark( size ) {};
-   void
-   setSize( const GlobalIndexType& size )
-   {
-      BaseType::setSize( size );
-      particleMark.setSize( size );
-      receivingParticleMark.setSize( size );
-   }
-
-   IndexArrayType particleMark;
-   IndexArrayType receivingParticleMark;
-};
-
-template< typename SPHState >
 class BoundaryVariables : public FluidVariables< SPHState >
 {
 public:
@@ -204,6 +181,30 @@ public:
          reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
    }
 };
+
+template< typename SPHState >
+class OpenBoundaryVariables : public BoundaryVariables< SPHState >
+{
+public:
+   using BaseType = BoundaryVariables< SPHState >;
+   using SPHTraitsType = typename BaseType::SPHTraitsType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+
+   //SPHOpenBoundaryVariables( GlobalIndexType size )
+   //: SPHFluidVariables< SPHState >( size ), particleMark( size ), receivingParticleMark( size ) {};
+   void
+   setSize( const GlobalIndexType& size )
+   {
+      BaseType::setSize( size );
+      particleMark.setSize( size );
+      receivingParticleMark.setSize( size );
+   }
+
+   IndexArrayType particleMark;
+   IndexArrayType receivingParticleMark;
+};
+
 
 }  //namespace SPH
 }  //namespace TNL
