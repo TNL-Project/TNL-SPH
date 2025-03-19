@@ -17,27 +17,21 @@ TNL-SPH is a high-performance Smoothed Particle Hydrodynamics code for simulatio
 
 1. Install [Git](https://git-scm.com/) and [Git LFS](https://git-lfs.com/).
 
-2. Clone the repository, making sure that Git submodules are initialized:
+2. Clone the repository:
 
-       git clone --recurse-submodules <this_repo_url>
-
-   If you cloned the repository without the `--recurse-submodules` option,
-   the submodules can be initialized subsequently:
-
-       git submodule update --init --recursive
+       git clone https://gitlab.com/tnl-project/tnl-sph
 
 3. Install the necessary tools and dependencies:
 
     - [CMake](https://cmake.org/) build system (version 3.24 or newer)
     - [CUDA](https://docs.nvidia.com/cuda/index.html) toolkit (version 11 or newer)
+    - [CUDA-aware](https://developer.nvidia.com/blog/introduction-cuda-aware-mpi/) MPI library – for distributed computing
     - compatible host compiler (e.g. [GCC](https://gcc.gnu.org/) or
       [Clang](https://clang.llvm.org/))
     - [Python 3](https://www.python.org/) (including development header files)
     - Python modules [NumPy](https://numpy.org/) and [Python VTK](https://pypi.org/project/vtk/)
     - [zlib](https://www.zlib.net/) (available in most Linux distributions)
     - [tinyxml2](https://github.com/leethomason/tinyxml2)
-    - (optional) MPI library – for distributed computing
-      (tested with [OpenMPI](https://www.open-mpi.org/))
 
 4. Configure the build using `cmake` in the root path of the Git repository:
 
@@ -48,7 +42,6 @@ TNL-SPH is a high-performance Smoothed Particle Hydrodynamics code for simulatio
    You may use additional options to configure the build:
 
    - `-DCMAKE_BUILD_TYPE=<type>` where `<type>` is one of `Debug`, `Release`
-   - `-DSYSTEM_TNL` – to use TNL installed on the system instead of the Git submodule
    - `-DTNL-SPH_BUILD_TESTS` – to build unit tests
 
 5. Build the targets using `cmake`:
@@ -59,7 +52,7 @@ TNL-SPH is a high-performance Smoothed Particle Hydrodynamics code for simulatio
 
        ./examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/run.py --device cuda
 
-   This will use the default configuration prepared in the [template](examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/template)
+   This will initialize the example using the default configuration prepared in the [template](examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/template)
    file. Use the `--help` option to see the options available in `init.py` and `run.py`.
 
 ## License
