@@ -4,8 +4,6 @@
 #include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
 
-#include "../Particles/ParticlesTraits.h"
-
 #include "Fluid.h"
 #include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
@@ -71,7 +69,15 @@ public:
 
    // protected
    void
+   initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  );
+
+   // protected
+   void
    readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+   // protected
+   void
+   readOpenBoundaryFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
 
 #ifdef HAVE_MPI
@@ -221,11 +227,6 @@ public:
    BoundaryPointer boundary;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
 
-#ifdef HAVE_MPI
-   FluidPointer fluidOverlap;
-   BoundaryPointer boundaryOverlap;
-#endif
-
    Model model;
    ModelParams modelParams;
    OpenBoundaryModel openBoundaryModel;
@@ -241,12 +242,21 @@ public:
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
 
-   //TEMP: And btw the names are AWFUL
+   // Init parameters
+
+   // TEMP: And btw the names are AWFUL
 #ifdef HAVE_MPI
    MPI::Comm communicator = MPI_COMM_WORLD;
    TNL::Config::ConfigDescription configDistributed;
    TNL::Config::ParameterContainer parametersDistributed;
 #endif
+
+   // Configurations and parameter configs (mostly required by initialization)
+   TNL::Config::ConfigDescription configOpenBoundary;
+   TNL::Config::ParameterContainer parametersOpenBoundary;
+
+   TNL::Config::ConfigDescription configPeriodicBoundary;
+   TNL::Config::ParameterContainer parametersPeriodicBoundary;
 
 };
 

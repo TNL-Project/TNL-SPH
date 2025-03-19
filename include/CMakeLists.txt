@@ -1,3 +1,3 @@
-install( DIRECTORY Particles Readers SPH Writers
+install( DIRECTORY SPH
          TYPE INCLUDE
          FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" )

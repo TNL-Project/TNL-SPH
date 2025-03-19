@@ -4,7 +4,7 @@
 #include <TNL/Containers/ArrayView.h>
 #include <TNL/Pointers/SharedPointer.h>
 
-#include "../../../shared/thrustExecPolicySelector.h"
+#include <TNL/Particles/details/thrustExecPolicySelector.h>
 #include <thrust/sort.h>
 #include <thrust/gather.h>
 
@@ -92,14 +92,13 @@ class IntegrationSchemeVariables
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronizer, typename FluidVariablesPointer, typename DistributedParticlesPointer >
+   template< typename Synchronizer, typename DistributedParticlesPointer >
    void
    synchronizeVariables( Synchronizer& synchronizer,
-                         FluidVariablesPointer& overlapVariables,
                          DistributedParticlesPointer& distributedParticles )
    {
-      synchronizer.synchronize( rho_old, overlapVariables->rho_old, distributedParticles );
-      synchronizer.synchronize( v_old, overlapVariables->v_old, distributedParticles );
+      synchronizer.synchronize( rho_old, distributedParticles );
+      synchronizer.synchronize( v_old, distributedParticles );
    }
 #endif
 

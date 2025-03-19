@@ -1,13 +1,17 @@
+#include "SPH/configSetup.h"
 #include "SPHMultiset_CFD.h"
 #include "SPH/OpenBoundaryConfig.h"
 #include "SPH/TimeMeasurement.h"
+#include <TNL/Config/ConfigDelimiter.h>
+#include <TNL/Config/ConfigDescription.h>
+#include <TNL/Config/ParameterContainer.h>
 #include <TNL/Logger.h>
 #include <iterator>
 #include <ostream>
 #include <string>
 
 #include "distributedUtils.h"
-#include "../Writers/writeBackgroundGrid.h"
+#include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
 namespace TNL {
 namespace SPH {
@@ -32,11 +36,15 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
-   initOverlaps( parameters, this->parametersDistributed, logger );
 #else
    // initialize particle sets
    initParticleSets( parameters, logger );
 #endif
+
+   // initialize open boundary conditions
+   if( parameters.getParameter< std::string >( "open-boundary-config" ) != "" ){
+      initOpenBoundaryPatches( parameters, logger );
+   }
 
    // init periodic boundary conditions
    //TODO: I don't like that open boundary buffer are selected in compile time.
@@ -67,6 +75,7 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 #else
    readParticlesFiles( parameters, logger );
 #endif
+
 
    // initialize the measuretool
    logger.writeSeparator();
@@ -111,21 +120,55 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       boundary->getParticles()->setParticleSetLabel( 1 );
 
-   // init open boundary patches
+   //// init open boundary patches
+   //const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
+   ////TODO: I don't like that open boundary buffer are selected in compile time.
+   //if( openBoundaryPatch.size() > 0 ) {
+   //   openBoundaryPatches.resize( numberOfBoundaryPatches );
+   //   for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+   //      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+   //      openBoundaryPatches[ i ]->config.init( parameters, prefix );
+   //      openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
+   //                                            parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+   //                                            searchRadius,
+   //                                            gridSize,
+   //                                            domainOrigin );
+   //   }
+   //}
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  )
+{
+   logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
-   //TODO: I don't like that open boundary buffer are selected in compile time.
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
-      openBoundaryPatches.resize( numberOfBoundaryPatches );
-      for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         openBoundaryPatches[ i ]->config.init( parameters, prefix );
-         openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
-                                               parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
-                                               searchRadius,
-                                               gridSize,
-                                               domainOrigin );
-      }
+   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
+
+   // setup and parse open boundary config
+   for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+
+   // get global domain properetis
+   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
+   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
+   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+
+   openBoundaryPatches.resize( numberOfBoundaryPatches );
+   for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      openBoundaryPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
+      openBoundaryPatches[ i ]->initialize( parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
+                                            parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+                                            searchRadius,
+                                            gridSize,
+                                            domainOrigin );
+   }
+   logger.writeParameter( "Initialization of open boundary patches.", "Done." );
 }
 
 #ifdef HAVE_MPI
@@ -150,12 +193,10 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
-   const GlobalIndexType numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
+   const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    // subdomain + ghost properties
-   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   //const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >( subdomainKey + "size" ) ;
-   //const IndexVectorType subdomainGridDimension = TNL::ceil( subdomainSize / searchRadius );
+   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" ); //REMOVE
    const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
    const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
 
@@ -164,130 +205,36 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
    fluid->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
                                    parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
                                    searchRadius,
-                                   subdomainGridDimension,
-                                   subdomainOrigin,
-                                   subdomainGridOriginGlobalCoords,
+                                   domainGridDimension,
                                    domainOrigin,
+                                   subdomainGridDimension,
+                                   subdomainGridOriginGlobalCoords,
+                                   numberOfOverlapLayers,
+                                   numberOfSubdomains,
+                                   subdomainOrigin, //REMOVE
                                    logger );
-   //fluid->getParticles()->interiorSize = subdomainSize; //FIXME Getter, Setter
+   // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
+   fluid->getDistributedParticles()->writeProlog( logger );
+   fluid->setCommunicator( this->communicator );
+   fluid->getDistributedParticlesSynchronizer().initialize( fluid->getDistributedParticles() ); //FIXME
 
    // init boundary
    logger.writeParameter( "initDistributed:", "boundary->initialize" );
    boundary->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
                                       parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
                                       searchRadius,
-                                      subdomainGridDimension,
-                                      subdomainOrigin,
-                                      subdomainGridOriginGlobalCoords,
+                                      domainGridDimension,
                                       domainOrigin,
+                                      subdomainGridDimension,
+                                      subdomainGridOriginGlobalCoords,
+                                      numberOfOverlapLayers,
+                                      numberOfSubdomains,
+                                      subdomainOrigin, //REMOVE
                                       logger );
-   //boundary->getParticles()->interiorSize = subdomainSize; //FIXME Getter, Setter
-
-   // set distributed particle system: FIXME: All this lines are ugly
-  fluid->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
-                                                             domainOrigin,
-                                                             subdomainGridDimension,
-                                                             subdomainOrigin,
-                                                             numberOfOverlapLayers,
-                                                             searchRadius,
-                                                             numberOfSubdomains,
-                                                             this->communicator );
-  fluid->getDistributedParticles()->writeProlog( logger );
-  //fluid->synchronizer.initialize( fluid->distributedParticles );
-  //fluid->synchronizer.setCommunicator( this->communicator );
-   // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
-   fluid->getDistributedParticles()->writeProlog( logger );
-   fluid->setCommunicator( this->communicator );
-   fluid->getDistributedParticlesSynchronizer().initialize( fluid->getDistributedParticles() ); //FIXME
-
-  boundary->getDistributedParticles()->setDistributedGridParameters( domainGridDimension,
-                                                                domainOrigin,
-                                                                subdomainGridDimension,
-                                                                subdomainOrigin,
-                                                                numberOfOverlapLayers,
-                                                                searchRadius,
-                                                                numberOfSubdomains,
-                                                                this->communicator );
-  boundary->getDistributedParticles()->writeProlog( logger );
-  //boundary->synchronizer.initialize( boundary->distributedParticles );
-  //boundary->synchronizer.setCommunicator( this->communicator );
    // since we use multiple set, we need to rewrite the default communicator with the one provided by distributed solver
    boundary->getDistributedParticles()->writeProlog( logger );
    boundary->setCommunicator( this->communicator );
    boundary->getDistributedParticlesSynchronizer().initialize( boundary->getDistributedParticles() ); //FIXME
-}
-#endif
-
-#ifdef HAVE_MPI
-template< typename Model >
-void
-SPHMultiset_CFD< Model >::initOverlaps( TNL::Config::ParameterContainer& parameters,
-                                        TNL::Config::ParameterContainer& parametersDistributed,
-                                        TNL::Logger& logger )
-{
-
-   //TODO: This whole header can be hidden to distributed utils
-   int rank = TNL::MPI::GetRank();
-   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
-   const std::string subdomainKey = distributed::getSubdomainKey( TNL::MPI::GetRank(), numberOfSubdomains );
-
-   // global domain properties
-   const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   //const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   //const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
-
-   // subdomain properties
-   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   //const VectorType subdomainSize = parametersDistributed.getXyz< VectorType >(  subdomainKey + "size" );
-   //const IndexVectorType subdomainGridSize = TNL::ceil( subdomainSize / searchRadius );
-   const IndexVectorType subdomainGridSize = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
-
-   int overlapCellsCount = 0;
-   IndexVectorType resizedSubdomainGridSize = 0;
-   VectorType resizedSubdomainGridOrigin = 0.f;
-
-   //TODO: Consider whether the overlap is in all dimensions
-   if constexpr( Model::SPHConfig::spaceDimension == 2 ) {
-      overlapCellsCount = ( subdomainGridSize[ 0 ] + subdomainGridSize[ 1 ] + 4 ) * 2;
-
-      //TODO: Maybe modify directly
-      resizedSubdomainGridSize = { subdomainGridSize[ 0 ] + 2, subdomainGridSize[ 1 ] + 2 };
-      resizedSubdomainGridOrigin = { subdomainOrigin[ 0 ] - searchRadius,  subdomainOrigin[ 1 ] - searchRadius };
-   }
-   else if constexpr( Model::SPHConfig::spaceDimension == 3 ) {
-      const int xy = ( subdomainGridSize[ 0 ] + 2 ) * ( subdomainGridSize[ 1 ] + 2 );
-      const int xz = ( subdomainGridSize[ 0 ] + 2 ) * ( subdomainGridSize[ 2 ] );
-      const int yz = ( subdomainGridSize[ 1 ] ) * ( subdomainGridSize[ 2 ] );
-      overlapCellsCount = 2 * xy + 2 * xz + 2 * yz;
-
-      resizedSubdomainGridSize = { subdomainGridSize[ 0 ] + 2, subdomainGridSize[ 1 ] + 2, subdomainGridSize[ 2 ] + 2 };
-      resizedSubdomainGridOrigin = { subdomainOrigin[ 0 ] - searchRadius,
-                                     subdomainOrigin[ 1 ] - searchRadius,
-                                     subdomainOrigin[ 2 ] - searchRadius };
-   }
-   int numberOfParticlesPerCell = parameters.getParameter< int >( "numberOfParticlesPerCell" );
-
-   // FIXME: Here, the arguments are probably fcked
-   fluidOverlap->initializeAsDistributed( 0,
-                                          numberOfParticlesPerCell * overlapCellsCount,
-                                          searchRadius,
-                                          resizedSubdomainGridSize,
-                                          resizedSubdomainGridOrigin,
-                                          subdomainGridOriginGlobalCoords,
-                                          domainOrigin,
-                                          logger );
-
-   // FIXME: Here, the arguments are probably fcked
-   boundaryOverlap->initializeAsDistributed( 0,
-                                             numberOfParticlesPerCell * overlapCellsCount,
-                                             searchRadius,
-                                             resizedSubdomainGridSize,
-                                             resizedSubdomainGridOrigin,
-                                             subdomainGridOriginGlobalCoords,
-                                             domainOrigin,
-                                             logger );
 }
 #endif
 
@@ -307,12 +254,12 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    // init open boundary patches
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    //TODO: I don't like that open boundary buffer are selected in compile time.
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+   if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         logger.writeParameter( "Reading open boundary particles:", parameters.getParameter< std::string >( prefix + "particles" ) );
+         logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
          openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
-            parameters.getParameter< std::string >( prefix + "particles" ) );
+            parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
       }
    }
 }
@@ -337,7 +284,7 @@ SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterCo
       parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
 
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {  //TODO: I dont like this.
+   if( openBoundaryPatches.size() > 0 ) {  //TODO: I dont like this.
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = subdomainKey + "buffer-" + std::to_string( i + 1 ) + "-";
          openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
@@ -362,7 +309,7 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
             logger.writeParameter( "Boundary search procedure:", "Done." );
       }
 
-      if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 )
+      if( openBoundaryPatches.size() > 0 )
          for( auto& openBoundaryPatch : openBoundaryPatches ){
             openBoundaryPatch->searchForNeighbors();
             if( verbose == "full" )
@@ -381,15 +328,6 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
             logger.writeParameter( "Boundary-boundary search procedure:", "Done." );
       }
 
-               // D:
-               //const int numberOfPtcs = fluid->getNumberOfParticles();
-               //const int offsetParticle = 0;
-               //for( int j = 0; j < 50; j++ ){
-               //   std::cout << fluid->getParticles()->getNeighborListStorage().getElement( j * numberOfPtcs + offsetParticle ) << " ";
-
-               //}
-               //std::cout << std::endl;
-
       fluid->getParticles()->addToParticleList( fluid->getParticles() );
       if( verbose == "full" )
          logger.writeParameter( "Fluid-boundary search procedure:", "Done." );
@@ -401,20 +339,6 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
       boundary->getParticles()->addToParticleList( fluid->getParticles() );
       if( verbose == "full" )
          logger.writeParameter( "Boundary-fluid search procedure:", "Done." );
-
-               // D:
-               //for( int j = 0; j < 50; j++ ){
-               //   std::cout << fluid->getParticles()->getNeighborListStorage().getElement( j * numberOfPtcs + offsetParticle ) << " ";
-               //}
-               //std::cout << std::endl;
-
-               // D:
-               //const int numberOfPtcsBoundary = boundary->getNumberOfParticles();
-               //const int offsetParticleBoundary = 0;
-               //for( int j = 0; j < 50; j++ ){
-               //   std::cout << boundary->getParticles()->getNeighborListStorage().getElement( j * numberOfPtcsBoundary + offsetParticleBoundary ) << " ";
-               //}
-               //std::cout << std::endl;
    }
 }
 
@@ -495,7 +419,7 @@ SPHMultiset_CFD< Model >::interact()
 {
    // update solid boundary conditions
    model.updateSolidBoundary( fluid, boundary, modelParams );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+   if( openBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
          //FIXME: At this point, updateSolidBoundaryOpenBoundary doesn't use ghost zones.
          //       Here, we should update boundary ghost zones similarly to fluid procedure.
@@ -506,7 +430,7 @@ SPHMultiset_CFD< Model >::interact()
 
    // updat fluid
    model.interaction( fluid, boundary, modelParams );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+   if( openBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
          openBoundaryPatches[ i ]->zone.updateParticlesInZone( fluid->getParticles() );
          model.interactionWithOpenBoundary( fluid, openBoundaryPatches[ i ], modelParams );
@@ -543,8 +467,8 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::synchronizeDistributedSimulation( TNL::Logger& logger )
 {
-   fluid->synchronizeObject( fluidOverlap, logger );
-   boundary->synchronizeObject( boundaryOverlap, logger );
+   fluid->synchronizeObject();
+   boundary->synchronizeObject();
 }
 
 template< typename Model >
@@ -562,15 +486,16 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
 {
    //setup tresholds:
    fluid->getDistributedParticles()->setParticlesCountResizeTrashold( 1000 );
-   //fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
+   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
 
    //synchronize comp. time
-   fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() );
-   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( 0. ); //FIXME
+   fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() ); //TODO: Remove ptcs duplicity
+   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() );
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
+   //std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
    const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->getParticles()->getSearchRadius();
 
@@ -600,8 +525,14 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
 
    //update distributed particles and overlaps
    //TODO: 1 stands for overlapWidth, pass as parameter
-   fluid->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions, updatedGridOrigin, 1, fluid->getParticles()->getSearchRadius() );
-   boundary->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions, updatedGridOrigin, 1, boundary->getParticles()->getSearchRadius() );
+   fluid->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+                                                                     updatedGridOrigin,
+                                                                     1,
+                                                                     fluid->getParticles()->getSearchRadius() );
+   boundary->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+                                                                        updatedGridOrigin,
+                                                                        1,
+                                                                        boundary->getParticles()->getSearchRadius() );
 
 }
 
@@ -632,7 +563,7 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
    boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
    logger.writeParameter( "Saved:", outputFileNameBound );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+   if( openBoundaryPatches.size() ) {
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          std::string outputFileNameOpenBound =
             outputDirectory + "/" + openBoundaryPatch->parameters.identifier + "_" + std::to_string( time ) + "_particles.vtk";
@@ -700,7 +631,7 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
    fluid->writeProlog( logger );
    logger.writeHeader( "Boundary object information:" );
    boundary->writeProlog( logger );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+   if( openBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ ) {
          logger.writeHeader( "Open boundary buffer" + std::to_string( i + 1 ) + "." );
          openBoundaryPatches[ i ]->writeProlog( logger );
@@ -752,12 +683,12 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
    logger.writeParameter( "Number of allocated fluid particles:", fluid->getNumberOfAllocatedParticles() );
    logger.writeParameter( "Number of boundary particles:", boundary->getNumberOfParticles() );
    logger.writeParameter( "Number of allocated fluid particles:", boundary->getNumberOfAllocatedParticles() );
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfBoundaryBuffers > 0 ) {
+   if( openBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ )
          logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " particles:",
                                 openBoundaryPatches[ i ]->getNumberOfParticles() );
    }
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
+   if( openBoundaryPatches.size() > 0 ) {
       if( verbose == "full" ) {
          for( long unsigned int i = 0; i < fluid->periodicPatches.size(); i++ )
             logger.writeParameter( "Number of fluid particles in periodic patch " + std::to_string( i + 1 ) + ": ",

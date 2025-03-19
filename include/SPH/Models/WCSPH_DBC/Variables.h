@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../SPHTraits.h"
-#include "../../shared/thrustExecPolicySelector.h"
+#include <TNL/Particles/details/thrustExecPolicySelector.h>
 #include <thrust/gather.h>
 #include "BoundaryConditionsTypes.h"
 
@@ -119,14 +119,13 @@ class FluidVariables
    }
 
 #ifdef HAVE_MPI
-   template< typename Synchronizer, typename FluidVariablesPointer, typename DistributedParticlesPointer >
+   template< typename Synchronizer, typename DistributedParticlesPointer >
    void
    synchronizeVariables( Synchronizer& synchronizer,
-                         FluidVariablesPointer& overlapVariables,
                          DistributedParticlesPointer& distributedParticles )
    {
-      synchronizer.synchronize( rho, overlapVariables->rho, distributedParticles );
-      synchronizer.synchronize( v, overlapVariables->v, distributedParticles );
+      synchronizer.synchronize( rho, distributedParticles );
+      synchronizer.synchronize( v, distributedParticles );
    }
 #endif
 

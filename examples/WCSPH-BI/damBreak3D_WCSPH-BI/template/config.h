@@ -5,8 +5,8 @@ using Device = TNL::Devices::Cuda;
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
 
-#include <Particles/CellIndexer.h>
-#include <Particles/ParticlesTraits.h>
+#include <TNL/Particles/CellIndexer.h>
+#include <TNL/Particles/ParticlesTraits.h>
 
 template< typename Device >
 class ParticleSystemConfig
@@ -39,7 +39,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 3;
-   static constexpr int numberOfBoundaryBuffers = 0;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
 
@@ -57,9 +56,9 @@ class SPHConfig
 /**
  * Particle system reader.
  */
-#include <Readers/VTKReader.h>
-#include <Writers/VTKWriter.h>
-#include <Readers/readSPHSimulation.h>
+#include <TNL/Particles/Readers/VTKReader.h>
+#include <TNL/Particles/Writers/VTKWriter.h>
+#include <TNL/Particles/Readers/readSPHSimulation.h>
 
 template< typename Device >
 class SPHParams
@@ -69,10 +68,10 @@ public:
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
@@ -85,9 +84,9 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
 /**
  * Include type of particle system.
  */
-#include <Particles/ParticlesLinkedList.h>
+#include <TNL/Particles/ParticlesLinkedList.h>
 using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
-//#include <Particles/ParticlesLinkedListWithList.h>
+//#include <TNL/Particles/ParticlesLinkedListWithList.h>
 //using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**

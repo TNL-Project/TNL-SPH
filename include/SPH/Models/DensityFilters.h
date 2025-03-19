@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../Particles/neighborSearchLoop.h"
 #include "../SPHTraits.h"
 
 namespace TNL {

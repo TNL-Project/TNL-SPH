@@ -5,8 +5,8 @@
 #include <TNL/Pointers/SharedPointer.h>
 
 #include "../SPHTraits.h"
-#include "TNL/Config/ParameterContainer.h"
-#include <Particles/CellIndexer.h>
+#include <TNL/Config/ParameterContainer.h>
+#include <TNL/Particles/CellIndexer.h>
 
 namespace TNL {
 namespace SPH {

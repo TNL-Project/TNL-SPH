@@ -75,12 +75,14 @@ class DBCOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
    RealType extrapolationDetTreshold = 0.f;
 
    void
-   init( TNL::Config::ParameterContainer& parameters, std::string prefix )
+   init( TNL::Config::ParameterContainer& parameters,
+         TNL::Config::ParameterContainer& parametersOpenBoundary,
+         std::string prefix )
    {
-      Base::init( parameters, prefix );
+      Base::init( parameters, parametersOpenBoundary, prefix );
 
       //identify buffer type
-      const std::string openBoundaryPatchType = parameters.getParameter< std::string >( prefix + "type" );
+      const std::string openBoundaryPatchType = parametersOpenBoundary.getParameter< std::string >( prefix + "type" );
       if( openBoundaryPatchType == "periodic" )
          type = WCSPH_BCTypes::OpenBoundaryConditionsType::PeriodicBoundary;
       else if( openBoundaryPatchType == "inlet" )
@@ -100,11 +102,11 @@ class DBCOpenBoundaryConfig : public OpenBoundaryConfig< SPHConfig >
       //: else
       //:    std::cerr << "Open boundary patch " << prefix << " has invalid type " << openBoundaryPatchType << "." << std::endl;
 
-      this->rho_bc = parameters.getParameter< std::string >( prefix + "rho_bc" );
-      density = parameters.getParameter< RealType >( prefix + "density" );
-      this->v_bc = parameters.getParameter< std::string >( prefix + "v_bc" );
-      velocity = parameters.getXyz< VectorType >( prefix + "velocity" );
-      this->extrapolationDetTreshold = parameters.getParameter< RealType >( prefix + "extrapolationDetTreshold" );
+      this->rho_bc = parametersOpenBoundary.getParameter< std::string >( prefix + "rho_bc" );
+      density = parametersOpenBoundary.getParameter< RealType >( prefix + "density" );
+      this->v_bc = parametersOpenBoundary.getParameter< std::string >( prefix + "v_bc" );
+      velocity = parametersOpenBoundary.getXyz< VectorType >( prefix + "velocity" );
+      this->extrapolationDetTreshold = parametersOpenBoundary.getParameter< RealType >( prefix + "extrapolationDetTreshold" );
 
    }
 

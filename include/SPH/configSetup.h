@@ -51,7 +51,12 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< double >( "domainSize-z", "The size of domain in y direction.", 0. );
 
     config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
+    config.addEntry< std::string >( "open-boundary-config", "Configuration file for open boundary.", "" );
     config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
+    config.addEntry< std::string >( "periodic-boundary-config", "Configuration file for periodic boundary.", "" );
+
+    config.addEntry< int >( "numberOfSubdomains", "Number of particles subdomains.", 0 );
+    config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
 
     // distributed simulation parameters
     config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
@@ -119,6 +124,28 @@ void writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
         else
             logger.writeParameter( "OMP enabled:", "no", 1 );
     }
+}
+
+void
+parseOpenBoundaryConfig( const std::string& configOpenBoundaryPath,
+                         TNL::Config::ParameterContainer& parametersOpenBoundary,
+                         TNL::Config::ConfigDescription& configOpenBoundary,
+                         TNL::Logger& logger )
+{
+   if( configOpenBoundaryPath != "" ) {
+      logger.writeParameter( "Parsing open boundaries simulation config.", "" );
+      try {
+          parametersOpenBoundary = TNL::Config::parseINIConfigFile( configOpenBoundaryPath, configOpenBoundary );
+      }
+      catch ( const std::exception& e ) {
+          std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath << " due to the following error:\n" << e.what() << std::endl;
+      }
+      catch (...) {
+          std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath << " due to an unknown C++ exception." << std::endl;
+          throw;
+      }
+      logger.writeParameter( "Parsing open boundaries config.", "Done." );
+   }
 }
 
 void

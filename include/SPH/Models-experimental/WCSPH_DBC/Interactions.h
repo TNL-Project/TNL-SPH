@@ -2,7 +2,6 @@
 
 #include "../../SPHTraits.h"
 #include "Variables.h"
-#include "../../../Particles/neighborSearchLoop.h"
 
 /**
  * Modules used as default.

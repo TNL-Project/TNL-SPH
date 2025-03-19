@@ -11,12 +11,11 @@
 #include "PeriodicBoundaryBuffers.h"
 
 #if HAVE_MPI
-#include "DistributedSPHSynchronizer.h"
 #include "shared/utils.h"
 #endif
 
-#include <Particles/DistributedParticles.h>
-#include <Particles/DistributedParticlesSynchronizer.h>
+#include <TNL/Particles/DistributedParticles.h>
+#include <TNL/Particles/DistributedParticlesSynchronizer.h>
 
 namespace TNL {
 namespace SPH {
@@ -85,30 +84,44 @@ class ParticleSet
 
 #ifdef HAVE_MPI
    void
-   initializeAsDistributed( unsigned int numberOfParticles,
-                            unsigned int numberOfAllocatedParticles,
-                            RealType searchRadius,
-                            IndexVectorType gridDimension,
-                            VectorType gridOrigin,
-                            IndexVectorType gridOriginGlobalCoords,
-                            VectorType globalGridOrigin,
-                            TNL::Logger& logger,
-                            GlobalIndexType numberOfOverlapsLayers = 1 )
+   initializeAsDistributed( const unsigned int numberOfParticles,
+                            const unsigned int numberOfAllocatedParticles,
+                            const RealType& searchRadius,
+                            const IndexVectorType& domainGridDimension,
+                            const VectorType& domainOrigin,
+                            const IndexVectorType& subdomainGridDimension,
+                            const IndexVectorType& subdomainGridOriginGlobalCoords,
+                            const int numberOfOverlapLayers,
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains,
+                            const VectorType& subdomainOrigin, //REMOVE
+                            TNL::Logger& logger )
    {
-      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapsLayers;
+      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
+      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
       this->particles->setSize( numberOfAllocatedParticles );
-      this->particles->setSearchRadius( searchRadius );
-      this->particles->setGridDimensions( gridDimension );
-      this->particles->setGridOrigin( gridOrigin );
-      this->particles->setOverlapWidth( 1 );
       this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setGridReferentialOrigin( globalGridOrigin - shiftOriginDueToOverlaps ); //NOTE: Load?
-      this->particles->setGridOriginGlobalCoords( gridOriginGlobalCoords );
+      this->particles->setSearchRadius( searchRadius );
+
+      this->particles->setGridDimensions( subdomainGridDimension );
+      this->particles->setGridOrigin( subdomainOrigin ); //REMOVE
+      this->particles->setOverlapWidth( numberOfOverlapLayers );
+      this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      this->particles->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
+
       this->variables->setSize( numberOfAllocatedParticles );
       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
+      this->distributedParticles->setDistributedGridParameters( searchRadius,
+                                                                domainGridDimension,
+                                                                domainOrigin,
+                                                                subdomainGridDimension,
+                                                                subdomainGridOriginGlobalCoords,
+                                                                numberOfOverlapLayers,
+                                                                numberOfSubdomains );
+
       //initialize synchronizer
+      //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
       //synchronizer.initialize( this->distributedParticles );
       //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
    }
@@ -169,7 +182,7 @@ class ParticleSet
    {
       return this->synchronizer;
    }
-   //-------------------------------------
+   //--------------------------------------
 
    const GlobalIndexType
    getNumberOfParticles() const
@@ -186,13 +199,15 @@ class ParticleSet
    typename ParticleSystem::PointArrayType&
    getPoints()
    {
-      return this->getParticles()->getPoints();
+      //return this->getParticles()->getPoints();
+      return this->particles->getPoints();
    }
 
    const typename ParticleSystem::PointArrayType&
    getPoints() const
    {
-      return this->getParticles()->getPoints();
+      //return this->getParticles()->getPoints();
+      return this->particles->getPoints();
    }
 
    virtual VariablesPointerType&
@@ -317,18 +332,18 @@ class ParticleSet
    }
 
 #ifdef HAVE_MPI
-   template< typename OverlapSetPointer >
    void
-   synchronizeObject( OverlapSetPointer& overlapSet, TNL::Logger& logger )
+   synchronizeObject()
    {
+      // communicate number of particles to synchronize
       this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
-      // check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
+      //TODO: check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
 
       // sychronize
-      this->synchronizer.synchronize( this->getPoints(), overlapSet->getPoints(), distributedParticles );
-      this->variables->synchronizeVariables( synchronizer, overlapSet->getVariables(), distributedParticles );
-      this->integratorVariables->synchronizeVariables( synchronizer, overlapSet->integratorVariables, distributedParticles );
+      this->synchronizer.synchronize( this->getPoints(), distributedParticles );
+      this->variables->synchronizeVariables( synchronizer, distributedParticles );
+      this->integratorVariables->synchronizeVariables( synchronizer,  distributedParticles );
 
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
@@ -360,7 +375,7 @@ protected:
    DistributedParticleSynchronizer synchronizer;
 
    // pointer to local particles so it can be accessed directly
-   ParticlePointerType particles;
+   ParticlePointerType particles = nullptr;
    // variables corresponding to local particles
    VariablesPointerType variables;
    // variables corresponding to local particles requred by selected integration scheme

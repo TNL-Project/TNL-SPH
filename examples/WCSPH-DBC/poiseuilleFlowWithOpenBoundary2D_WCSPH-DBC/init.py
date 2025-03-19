@@ -141,6 +141,14 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( 2 * setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
+
+    with open( 'sources/config.ini', 'w' ) as file:
+      file.write( config_file )
+
+    # write parameters to config file
+    with open( 'template/config-open-boundary_template.ini', 'r' ) as file :
+      config_file = file.read()
+
     config_file = config_file.replace( 'placeholderInletParticles', str( setup[ "inlet_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedInletParticles', str( setup[ "inlet_n" ] ) ) #TODO 3 *
     config_file = config_file.replace( 'placeholderOutletParticles', str( setup[ "outlet_n" ] ) )
@@ -170,7 +178,7 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderOutletWidth_x', str( round( setup[ "outlet_width" ], 7 ) ) )
     config_file = config_file.replace( 'placeholderOutletWidth_y', str( 0. ) )
 
-    with open( 'sources/config.ini', 'w' ) as file:
+    with open( 'sources/config-open-boundary.ini', 'w' ) as file:
       file.write( config_file )
 
 def write_domain_background_grid( setup ):

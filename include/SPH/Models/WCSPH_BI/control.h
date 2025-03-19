@@ -69,14 +69,14 @@ public:
       config.addEntry< RealType >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
       config.addEntry< RealType >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
 
-      for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-      }
-      for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-      }
+      //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
+      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      //}
+      //for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
+      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      //}
    }
 
    void

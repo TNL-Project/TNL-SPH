@@ -45,14 +45,14 @@ configSetupModel( TNL::Config::ConfigDescription& config )
    config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
    config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
 
-   for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   }
-   for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   }
+   //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
+   //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+   //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+   //}
+   //for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
+   //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+   //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+   //}
 }
 
 /**
@@ -89,14 +89,14 @@ public:
       config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
       config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
 
-      for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-      }
-      for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-      }
+      //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
+      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      //}
+      //for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
+      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
+      //}
    }
 
    void
