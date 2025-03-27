@@ -196,6 +196,10 @@ public:
    void
    performLoadBalancing( TNL::Logger& logger );
 
+   //TODO: Update to general dimensions
+   void
+   writeLoadBalancingInfo( const int gridResize );
+
 #endif
 
    /**

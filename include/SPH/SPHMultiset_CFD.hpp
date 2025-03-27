@@ -533,7 +533,26 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
                                                                         updatedGridOrigin,
                                                                         1,
                                                                         boundary->getParticles()->getSearchRadius() );
+   writeLoadBalancingInfo( gridDimensionsAdjustment[ 0 ] );
 
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
+{
+   const std::string outputPath = outputDirectory + "/locadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
+   std::ofstream outfile;
+   outfile.open(outputPath, std::ios_base::app );
+   outfile << timeStepping.getStep() << " "
+           << timeStepping.getTime() << " "
+           << fluid->getNumberOfParticles() << " "
+           << fluid->getNumberOfAllocatedParticles() << " "
+           << boundary->getNumberOfParticles() << " "
+           << boundary->getNumberOfAllocatedParticles() << " "
+           << timeMeasurement.getTotalTime() << " "
+           << fluid->getParticles()->getCellFirstLastParticleList().getSize() << " "
+           << gridResize << std::endl;
 }
 
 #endif
