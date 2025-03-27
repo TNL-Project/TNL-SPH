@@ -546,12 +546,12 @@ SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
    std::ofstream outfile;
    outfile.open(outputPath, std::ios_base::app );
    outfile << timeStepping.getStep() << " "
-           << timeStepping.getTime() - subdomainCompTimeBackup << " "
+           << timeStepping.getTime() << " "
            << fluid->getNumberOfParticles() << " "
            << fluid->getNumberOfAllocatedParticles() << " "
            << boundary->getNumberOfParticles() << " "
            << boundary->getNumberOfAllocatedParticles() << " "
-           << timeMeasurement.getTotalTime() << " "
+           << timeMeasurement.getTotalTime() - subdomainCompTimeBackup << " "
            << fluid->getParticles()->getCellFirstLastParticleList().getSize() << " "
            << gridResize << std::endl;
 }
