@@ -490,7 +490,7 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
 
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() ); //TODO: Remove ptcs duplicity
-   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() );
+   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
@@ -534,6 +534,7 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
                                                                         1,
                                                                         boundary->getParticles()->getSearchRadius() );
    writeLoadBalancingInfo( gridDimensionsAdjustment[ 0 ] );
+   this->subdomainCompTimeBackup = timeMeasurement.getTotalTime();
 
 }
 
@@ -545,7 +546,7 @@ SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
    std::ofstream outfile;
    outfile.open(outputPath, std::ios_base::app );
    outfile << timeStepping.getStep() << " "
-           << timeStepping.getTime() << " "
+           << timeStepping.getTime() - subdomainCompTimeBackup << " "
            << fluid->getNumberOfParticles() << " "
            << fluid->getNumberOfAllocatedParticles() << " "
            << boundary->getNumberOfParticles() << " "

@@ -253,6 +253,7 @@ public:
    MPI::Comm communicator = MPI_COMM_WORLD;
    TNL::Config::ConfigDescription configDistributed;
    TNL::Config::ParameterContainer parametersDistributed;
+   RealType subdomainCompTimeBackup = 0;
 #endif
 
    // Configurations and parameter configs (mostly required by initialization)
