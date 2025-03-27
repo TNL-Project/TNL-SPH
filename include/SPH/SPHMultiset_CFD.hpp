@@ -542,7 +542,7 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
 {
-   const std::string outputPath = outputDirectory + "/locadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
+   const std::string outputPath = outputDirectory + "/loadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
    std::ofstream outfile;
    outfile.open(outputPath, std::ios_base::app );
    outfile << timeStepping.getStep() << " "
