@@ -113,7 +113,7 @@ def plot_log_balancing_metrics( mpi_ranks ):
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 2 ], label=f'rank: {rank}' )
+        plt.plot( metrics[ :, 0 ], metrics[ :, 2 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
@@ -126,7 +126,7 @@ def plot_log_balancing_metrics( mpi_ranks ):
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 4 ], label=f'rank: {rank}' )
+        plt.plot( metrics[ :, 0 ], metrics[ :, 4 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
@@ -139,7 +139,7 @@ def plot_log_balancing_metrics( mpi_ranks ):
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 6 ], label=f'rank: {rank}' )
+        plt.plot( metrics[ :, 0 ], metrics[ :, 6 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
@@ -152,7 +152,7 @@ def plot_log_balancing_metrics( mpi_ranks ):
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 7 ], label=f'rank: {rank}' )
+        plt.plot( metrics[ :, 0 ], metrics[ :, 7 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
@@ -165,7 +165,7 @@ def plot_log_balancing_metrics( mpi_ranks ):
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.scatter( metrics[ :, 0 ], metrics[ :, 8 ], label=f'rank: {rank}' )
+        plt.scatter( metrics[ :, 0 ], metrics[ :, 8 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
