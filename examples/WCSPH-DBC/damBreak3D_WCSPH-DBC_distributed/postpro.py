@@ -94,83 +94,109 @@ def plot_water_level_sensors():
 
 def plot_log_balancing_metrics( mpi_ranks ):
 
+
     # create folder for postprocessing results
-    postproPath = r'./results/loadBalancingMetics'
+    postproPath = r'./results/loadBalancingMetrics'
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
 
     metrics_storage = {}
     for rank in range( mpi_ranks ):
 
-        input_data_name =  f"results/locadBalancingMetrics_rank{ rank }.dat"
+        input_data_name =  f"results/loadBalancingMetrics_rank{ rank }.dat"
         loaded_metrics = np.genfromtxt( input_data_name, delimiter=' ' )
         metrics_storage[ f"rank_{rank}" ] = loaded_metrics
 
+    # array to make duplicit plots (with and without legend)
+    duplicit_plots = [ "", "_no-label" ]
 
+    # make duplicit plots (with and without legend)
+    for duplicit_plot in duplicit_plots:
 
-    # plot number of particles in time
-    fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
+        # plot number of particles in time
+        fig, ax = plt.subplots( 1, 1, figsize=( 11, 7 ) )
 
-    for rank in range( mpi_ranks ):
-        metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 2 ], label=f'GPU: {rank}' )
+        for rank in range( mpi_ranks ):
+            metrics = metrics_storage[ f"rank_{rank}" ]
+            plt.plot( metrics[ :, 1 ], metrics[ :, 2 ], label=f'GPU: {rank}' )
 
-        leg = ax.legend()
-        leg.get_frame().set_edgecolor('k')
+            if duplicit_plot == "":
+                leg = ax.legend()
+                leg.get_frame().set_edgecolor('k')
 
-    output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_nptcs-per-rank.png"
-    plt.savefig( output_plot_name, bbox_inches='tight' )
+        output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_nptcs-per-rank{duplicit_plot}.png"
+
+        ax.set_xlabel( r'$t$ [s]')
+        ax.set_ylabel( r'$N_\mathrm{particles}$ ')
+        plt.grid()
+        plt.savefig( output_plot_name, bbox_inches='tight' )
 
     # plot number of boundary particles in time
-    fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
+    fig, ax = plt.subplots( 1, 1, figsize=( 11, 7 ) )
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 4 ], label=f'GPU: {rank}' )
+        plt.plot( metrics[ :, 1 ], metrics[ :, 4 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
 
     output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_nptcs-boundary-per-rank.png"
+    ax.set_xlabel( r'$t$ [s]')
+    ax.set_ylabel( r'$N_\mathrm{boundary\;elem.}$ ')
+    plt.grid()
     plt.savefig( output_plot_name, bbox_inches='tight' )
 
-    # plot computational time
-    fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
+    # make duplicit plots (with and without legend)
+    for duplicit_plot in duplicit_plots:
 
-    for rank in range( mpi_ranks ):
-        metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 6 ], label=f'GPU: {rank}' )
+        # plot computational time
+        fig, ax = plt.subplots( 1, 1, figsize=( 11, 7 ) )
 
-        leg = ax.legend()
-        leg.get_frame().set_edgecolor('k')
+        for rank in range( mpi_ranks ):
+            metrics = metrics_storage[ f"rank_{rank}" ]
+            plt.plot( metrics[ :, 1 ], metrics[ :, 6 ], label=f'GPU: {rank}' )
 
-    output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_comp-time-per-rank.png"
-    plt.savefig( output_plot_name, bbox_inches='tight' )
+            if duplicit_plot == "":
+                leg = ax.legend()
+                leg.get_frame().set_edgecolor('k')
+
+        output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_comp-time-per-rank{duplicit_plot}.png"
+        ax.set_xlabel( r'$t$ [s]')
+        ax.set_ylabel( r'$t_\mathrm{comp./interval}$ ')
+        plt.grid()
+        plt.savefig( output_plot_name, bbox_inches='tight' )
 
     # plot grid size in time
-    fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
+    fig, ax = plt.subplots( 1, 1, figsize=( 11, 6 ) )
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.plot( metrics[ :, 0 ], metrics[ :, 7 ], label=f'GPU: {rank}' )
+        plt.plot( metrics[ :, 1 ], metrics[ :, 7 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
 
     output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_grid-size-per-rank.png"
+    ax.set_xlabel( r'$t$ [s]')
+    ax.set_ylabel( r'$N_\mathrm{grid}$ ')
+    plt.grid()
     plt.savefig( output_plot_name, bbox_inches='tight' )
 
     # plot domain size change in time
-    fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
+    fig, ax = plt.subplots( 1, 1, figsize=( 11, 7 ) )
 
     for rank in range( mpi_ranks ):
         metrics = metrics_storage[ f"rank_{rank}" ]
-        plt.scatter( metrics[ :, 0 ], metrics[ :, 8 ], label=f'GPU: {rank}' )
+        plt.scatter( metrics[ :, 1 ], metrics[ :, 8 ], label=f'GPU: {rank}' )
 
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
 
     output_plot_name = f"results/loadBalancingMetics/loadBalancingMetrics_resize-per-rank.png"
+    ax.set_xlabel( r'$t$ [s]')
+    ax.set_ylabel( r'resize mark')
+    plt.grid()
     plt.savefig( output_plot_name, bbox_inches='tight' )
 
 
