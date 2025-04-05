@@ -9,7 +9,7 @@ namespace SPH {
 
 //TODO: Merge configSetupDistributedSubdomain and configSubdomain, since these are basically the same
 void
-configSubdomans( int subdomain, TNL::Config::ConfigDescription& config )
+configSubdomain( int subdomain, TNL::Config::ConfigDescription& config )
 {
    std::string subdomainKey = "subdomain-" + std::to_string( subdomain ) + "-";
    config.addRequiredEntry< std::string >( subdomainKey + "fluid-particles", "Input fluid particles file path." );

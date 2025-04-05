@@ -40,9 +40,9 @@ int main( int argc, char* argv[] )
 
    // Library model:
 
-   /*
-   while( sph.timeStepping.runTheSimulation() )
+   while( sph.timeStepping.getStep() < 1 )
    {
+      /*
       // search for neighbros
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log );
@@ -71,8 +71,8 @@ int main( int argc, char* argv[] )
 
       // update time step
       sph.updateTime();
+      */
    }
-   */
 
    sph.writeEpilog( log );
 }

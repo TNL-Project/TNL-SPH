@@ -24,6 +24,8 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
 {
    logger.writeHeader( "SPH simulation initialization." );
 
+   // FIXME: Parse config and args here!
+
 #ifdef HAVE_MPI
    // build config for distributed domain
    logger.writeParameter( "Configuration of distributed simulation:", "" );
@@ -39,10 +41,12 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
 #else
-   //const int numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
    this->numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
+   const std::string configSubdomainsPath = parameters.getParameter< std::string >( "subdomains-config" );
    for( int subset = 0; subset < numberOfSubsets; subset++ )
-      TNL::SPH::configSubdomans( subset, this->configSubdomains );
+      TNL::SPH::configSubdomain( subset, this->configSubdomains );
+   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger ); //FIXME: Wrong function
+
    // initialize particle sets
    initParticleSets( parameters, parametersSubdomains, logger );
 #endif
