@@ -82,7 +82,7 @@ class ParticleSet
       this->particles->setGridOriginGlobalCoords( zeroVector );
    }
 
-#ifdef HAVE_MPI
+//#ifdef HAVE_MPI
    void
    initializeAsDistributed( const unsigned int numberOfParticles,
                             const unsigned int numberOfAllocatedParticles,
@@ -125,7 +125,7 @@ class ParticleSet
       //synchronizer.initialize( this->distributedParticles );
       //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
    }
-#endif
+//#endif
 
    void
    initializePeriodicity( TNL::Config::ParameterContainer& parameters )
