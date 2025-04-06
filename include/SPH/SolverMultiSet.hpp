@@ -273,7 +273,7 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
 
    for( int i = 0; i < numberOfSubsets; i++ ){
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
-      if( parameters.getParameter< int >( "numberOfParticles" ) != 0 ){
+      if( parametersSubdomains.getParameter< int >( subdomainKey + "fluid_n" ) != 0 ){
          const std::string fluidFileName = parametersSubdomains.getParameter< std::string >( subdomainKey + "fluid-particles" );
          logger.writeParameter( "Reading fluid particles:", fluidFileName );
          fluidSets[ i ]->template readParticlesAndVariables< SimulationReaderType >( fluidFileName );
@@ -658,11 +658,14 @@ SolverMultiSet< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfor
    logger.writeParameter( "Particles format", particlesFormat );
    writePrologModel( logger, modelParams );
 
+   std::cout << "NUMBER OF SETS:" << numberOfSubsets << std::endl;
    for( int i = 0; i < numberOfSubsets; i++ ){
+      std::cout << "Print objects!" << std::endl;
       logger.writeHeader( "Fluid " + std::to_string( i ) + " object information." );
       fluidSets[ i ]->writeProlog( logger );
       logger.writeHeader( "Boundary " + std::to_string( i ) + " object information:" );
       boundarySets[ i ]->writeProlog( logger );
+      std::cout << "Print done!" << std::endl;
    }
 
    if( openBoundaryPatches.size() > 0 ) {

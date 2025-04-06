@@ -167,7 +167,7 @@ int main( int argc, char* argv[] )
       //}
 
       // check timers and if measurement or interpolation should be performed, is performed
-      sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
+      //sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
       // check timers and if snapshot should be done, is done
       //sph.save( log );

@@ -238,8 +238,8 @@ def write_distributed_domain_params( setup ):
             key_prefix = f"subdomain-{subdomain}-"
             #file.write( f'subdomain-x = { subdomain_x }\n' )
             #file.write( f'subdomain-y = { subdomain_y }\n' )
-            file.write( f"{key_prefix}fluid-particles = sources/dambreak_subdomain-{subdomain}-fluid.vtk\n" )
-            file.write( f"{key_prefix}boundary-particles = sources/dambreak_subdomain-{subdomain}-boundary.vtk\n" )
+            file.write( f"{key_prefix}fluid-particles = sources/subdomain-{subdomain}-dambreak_fluid.vtk\n" )
+            file.write( f"{key_prefix}boundary-particles = sources/subdomain-{subdomain}-dambreak_boundary.vtk\n" )
             file.write( f'{key_prefix}fluid_n = { setup[ f"{key_prefix}fluid_n" ] }\n' )
             file.write( f'{key_prefix}boundary_n = { setup[ f"{key_prefix}boundary_n" ] }\n' )
             file.write( f'{key_prefix}fluid_n_allocated = { 2*setup[ f"{key_prefix}fluid_n" ] }\n' )
