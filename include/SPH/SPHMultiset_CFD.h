@@ -254,6 +254,7 @@ public:
    TNL::Config::ConfigDescription configDistributed;
    TNL::Config::ParameterContainer parametersDistributed;
    RealType subdomainCompTimeBackup = 0;
+   std::string loadBalancingMeasure;
 #endif
 
    // Configurations and parameter configs (mostly required by initialization)

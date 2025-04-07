@@ -36,6 +36,14 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
+
+   // set balancing tresholds
+   loadBalancingMeasure = parameters.getParameter< std::string >( "load-balancing-measure" );
+   fluid->getDistributedParticles()->setParticlesCountResizeTrashold(
+         parameters.getParameter< float >( "number-of-particles-balancing-coef" ) );
+   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+         parameters.getParameter< float >( "computational-time-balancing-coef" ) );
+   std::cout << "Printf: comp time balancing coef:" << parameters.getParameter< float >( "computational-time-balancing-coef" ) << std::endl;
 #else
    // initialize particle sets
    initParticleSets( parameters, logger );
@@ -484,9 +492,6 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
 {
-   //setup tresholds:
-   fluid->getDistributedParticles()->setParticlesCountResizeTrashold( 1000 );
-   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
 
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() ); //TODO: Remove ptcs duplicity
@@ -494,8 +499,14 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
-   //std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   std::pair< IndexVectorType, VectorType > subdomainAdjustment;
+   if( loadBalancingMeasure == "computationalTime" )
+      subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
+   else if( loadBalancingMeasure == "numberOfParticles" )
+      subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   else
+      std::cerr << "Invalid load balancing metrics. Load balancing metrics is: " << loadBalancingMeasure << "." << std::endl;
+
    const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->getParticles()->getSearchRadius();
 
@@ -646,6 +657,15 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
    logger.writeParameter( "Verbose:", verbose );
    logger.writeParameter( "Output directory:", outputDirectory );
    logger.writeParameter( "Particles format", particlesFormat );
+   if( TNL::MPI::isInitialized() ){
+      logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
+      if( loadBalancingMeasure == "computationalTime" )
+         logger.writeParameter( "Comp. time fraction difference to balance [-]:",
+             fluid->getDistributedParticles()->getCompTimeResizePercentageTrashold() );
+      else if( loadBalancingMeasure == "numberOfParticles" )
+         logger.writeParameter( "Particles count fraction difference to balance [-]:",
+             fluid->getDistributedParticles()->getParticlesCountResizeTrashold() );
+   }
    writePrologModel( logger, modelParams );
    logger.writeHeader( "Fluid object information." );
    fluid->writeProlog( logger );
