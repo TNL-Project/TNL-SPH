@@ -657,6 +657,7 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
    logger.writeParameter( "Verbose:", verbose );
    logger.writeParameter( "Output directory:", outputDirectory );
    logger.writeParameter( "Particles format", particlesFormat );
+#ifdef HAVE_MPI
    if( TNL::MPI::isInitialized() ){
       logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
       if( loadBalancingMeasure == "computationalTime" )
@@ -666,6 +667,7 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
          logger.writeParameter( "Particles count fraction difference to balance [-]:",
              fluid->getDistributedParticles()->getParticlesCountResizeTrashold() );
    }
+#endif
    writePrologModel( logger, modelParams );
    logger.writeHeader( "Fluid object information." );
    fluid->writeProlog( logger );
