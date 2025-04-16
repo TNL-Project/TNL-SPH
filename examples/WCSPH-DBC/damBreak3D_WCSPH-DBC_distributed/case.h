@@ -49,6 +49,8 @@ int main( int argc, char* argv[] )
    //sph.writeProlog( parameters );
    //sph.exec();
    //sph.writeEpilog( parameters );
+   sph.timeMeasurement.addTimer( "synchronize" );
+   sph.timeMeasurement.addTimer( "rebalance" );
 
    while( sph.timeStepping.runTheSimulation() )
    //while( sph.timeStepping.getStep() < 2 )
@@ -71,7 +73,9 @@ int main( int argc, char* argv[] )
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
       sph.writeLog( log, "Starting synchronization.", "" );
+      sph.timeMeasurement.start( "synchronize" );
       sph.synchronizeDistributedSimulation( log );
+      sph.timeMeasurement.stop( "synchronize" );
       sph.writeLog( log, "Synchronize...", "Done." );
 
       TNL::MPI::Barrier( sph.communicator ); //To have clear output
@@ -87,7 +91,9 @@ int main( int argc, char* argv[] )
 
          log.writeSeparator();
          sph.writeLog( log, "Starting load balancing.", "" );
+         sph.timeMeasurement.start( "rebalance" );
          sph.performLoadBalancing( log );
+         sph.timeMeasurement.stop( "rebalance" );
          sph.writeLog( log, "Load balancing...", "Done." );
          log.writeSeparator();
 
@@ -108,7 +114,9 @@ int main( int argc, char* argv[] )
          TNL::MPI::Barrier( sph.communicator ); //To have clear output
 
          sph.writeLog( log, "Starting synchronization.", "" );
+         sph.timeMeasurement.start( "synchronize" );
          sph.synchronizeDistributedSimulation( log );
+         sph.timeMeasurement.stop( "synchronize" );
          sph.writeLog( log, "Synchronize...", "Done." );
          TNL::MPI::Barrier( sph.communicator ); //To have clear output
       }
