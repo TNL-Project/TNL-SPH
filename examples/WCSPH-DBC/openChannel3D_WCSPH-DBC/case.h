@@ -18,7 +18,7 @@ int main( int argc, char* argv[] )
       sph.interact();
 
       // make integration step with Verlet scheme
-      sph.integrateVerletStep();
+      sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
 
       // apply open boundary condition
       sph.applyOpenBC();

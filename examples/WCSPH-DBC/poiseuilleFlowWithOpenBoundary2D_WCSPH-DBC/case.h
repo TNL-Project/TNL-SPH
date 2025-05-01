@@ -30,7 +30,7 @@ exec( Simulation& sph )
       sph.computeTimeStep();
 
       // integrate
-      sph.integrateVerletStep();
+      sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
 
       // compute energy flow through open boudnaries
       energyMonitorInletOutlet.computeInflowEnergyLevels( sph.fluid, sph.openBoundaryPatches[ 0 ], sph.modelParams, sph.timeStepping.getTimeStep() );

@@ -18,7 +18,7 @@ int main( int argc, char* argv[] )
       sph.interact();
 
       //integrate
-      sph.integrateVerletStep();
+      sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
 
       // transform particles inside periodic boundary conditions
       sph.applyPeriodicBCTransfer();

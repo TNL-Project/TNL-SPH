@@ -513,13 +513,10 @@ SPHMultiset_CFD< Model >::measure()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::integrateVerletStep()
+SPHMultiset_CFD< Model >::integrateVerletStep( const bool integrateBoundary )
 {
    timeMeasurement.start( "integrate" );
-   //if constexpr( std::is_same< ModelType , WCSPH_DBC< ParticlesType, typename Model::ModelConfigType > >::value )
-   //   integrator->integratStepVerlet( fluid, boundary, timeStepping, ModelParams::BCType::integrateInTime() );
-   //else
-      integrator->integratStepVerlet( fluid, boundary, timeStepping );
+   integrator->integratStepVerlet( fluid, boundary, timeStepping, integrateBoundary );
    timeMeasurement.stop( "integrate" );
    writeLog( "Integrate...", "Done." );
 }

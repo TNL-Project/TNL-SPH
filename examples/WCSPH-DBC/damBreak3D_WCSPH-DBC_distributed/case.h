@@ -42,7 +42,7 @@ int main( int argc, char* argv[] )
       sph.resetOverlaps();
 
       // make integration step with Verlet scheme
-      sph.integrateVerletStep();
+      sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
 
       // check timers and if measurement or interpolation should be performed, it is performed
       sph.measure();

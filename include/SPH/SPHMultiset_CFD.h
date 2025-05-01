@@ -192,7 +192,7 @@ public:
     * \brief Perform integration setp - wrapper for Verlet integration scheme step.
     */
    void
-   integrateVerletStep();
+   integrateVerletStep( const bool integrateBoundary = false );
 
    /**
     * \brief Perform integration setp - wrapper for Verlet integration scheme step.
