@@ -58,10 +58,14 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
-   SPHMultiset_CFD() = default;
+   //SPHMultiset_CFD() = default;
+
+   //SPHMultiset_CFD() : logger( 100, std::cout ) {};
+
+   SPHMultiset_CFD( std::ostream& out = std::cout ) : logger( 100, out ) {};
 
    void
-   init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+   init( int argc, char* argv[] );
 
    // protected
    void
@@ -104,7 +108,7 @@ public:
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
    void
-   performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
+   performNeighborSearch( bool performBoundarySearch = false );
 
    /**
     *
@@ -181,24 +185,37 @@ public:
     * \brief Check if is time to perform measurement and if is time to perform
     * measurement, perform measurement.
     */
-   template< typename SPHKernelFunction, typename EOS >
    void
-   measure( TNL::Logger& logger );
+   measure();
+
+   /**
+    * \brief Perform integration setp - wrapper for Verlet integration scheme step.
+    */
+   void
+   integrateVerletStep();
+
 
 #ifdef HAVE_MPI
 
    void
-   synchronizeDistributedSimulation( TNL::Logger& logger );
+   synchronizeDistributedSimulation();
 
    void
    resetOverlaps();
 
    void
-   performLoadBalancing( TNL::Logger& logger );
+   performLoadBalancing();
 
    //TODO: Update to general dimensions
    void
    writeLoadBalancingInfo( const int gridResize );
+
+   /**
+    * \brief Wrapper around load balancing procedure.
+    */
+   void
+   balanceSubdomains();
+
 
 #endif
 
@@ -207,23 +224,23 @@ public:
     * available fileds.
     */
    void
-   save( TNL::Logger& save, bool writeParticleCellIndex = false  );
+   save( bool writeParticleCellIndex = false  );
 
    void
-   makeSnapshot( TNL::Logger& logger );
+   makeSnapshot();
 
    void
-   writeProlog( TNL::Logger& logger, bool writeSystemInformation = true ) const noexcept;
+   writeProlog( bool writeSystemInformation = true ) noexcept;
 
    template< typename ParameterType >
    void
-   writeLog( TNL::Logger& logger, const std::string& label, const ParameterType& value, int parameterLevel = 0 );
+   writeLog( const std::string& label, const ParameterType& value, int parameterLevel = 0 );
 
    void
-   writeInfo( TNL::Logger& logger ) const noexcept;
+   writeInfo() noexcept;
 
    void
-   writeEpilog( TNL::Logger& logger ) noexcept;
+   writeEpilog() noexcept;
 
 //protected:
 
@@ -246,7 +263,14 @@ public:
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
 
-   // Init parameters
+   // Initand control parameters
+   TNL::Config::ParameterContainer cliParams;
+   TNL::Config::ConfigDescription cliConfig;
+
+   TNL::Config::ParameterContainer parameters;
+   TNL::Config::ConfigDescription config;
+
+   TNL::Logger logger;
 
    // TEMP: And btw the names are AWFUL
 #ifdef HAVE_MPI
@@ -255,6 +279,7 @@ public:
    TNL::Config::ParameterContainer parametersDistributed;
    RealType subdomainCompTimeBackup = 0;
    std::string loadBalancingMeasure;
+   int loadBalancingStepInterval = 1;
 #endif
 
    // Configurations and parameter configs (mostly required by initialization)

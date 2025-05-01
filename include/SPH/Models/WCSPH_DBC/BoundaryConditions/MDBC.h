@@ -130,7 +130,6 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
    const auto view_points_openBound = openBoundary->getParticles()->getPoints().getView();
    const auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
-   const auto view_points_bound = boundary->getParticles()->getPoints().getView();
    auto view_rho_bound = boundary->getVariables()->rho.getView();
    const auto view_v_bound = boundary->getVariables()->v.getView();
    const auto view_ghostNode_bound = boundary->getVariables()->ghostNodes.getView();

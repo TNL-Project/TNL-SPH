@@ -40,7 +40,7 @@ public:
    using GridVertex = typename GridType::Vertex;
 
    // typenames used in interpolateUsingParallelFor
-   using CellIndexer = SimpleCellIndex< SPHConfig::spaceDimension, typename SPHSimulation::ParticlesType::Config >;
+   using CellIndexer = TNL::ParticleSystem::SimpleCellIndex< SPHConfig::spaceDimension >;
 
    /**
     * \brief Particle type is required to search through particle seats we want to

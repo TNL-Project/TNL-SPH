@@ -22,7 +22,6 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 3;
 
    using UseWithDomainDecomposition = std::false_type;
-   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
    using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
    using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
 };
