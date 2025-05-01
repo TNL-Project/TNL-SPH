@@ -38,36 +38,36 @@ public:
    configSetupModel( TNL::Config::ConfigDescription& config )
    {
       config.addDelimiter( "WCSPH-BI model parameters" );
-      config.addEntry< float >( "dp", "Initial particle distance.", 0 );
-      config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
-      config.addEntry< float >( "boundaryElementSize", "Size of bounadry inegrals element.", 0 );
-      config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
-      config.addEntry< float >( "massBoundary", "Mass of particle, constant for all particles.", 0 );
-      config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
-      config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
-      config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
-      config.addEntry< float >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
-      config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
-      config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-      config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
-      config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-      config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
-      config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
-      config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
-      config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
-      config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      config.addEntry< double >( "dp", "Initial particle distance.", 0 );
+      config.addEntry< double >( "h", "SPH method smoothing lentgh.", 0 );
+      config.addEntry< double >( "boundaryElementSize", "Size of bounadry inegrals element.", 0 );
+      config.addEntry< double >( "mass", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< double >( "massBoundary", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< double >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
+      config.addEntry< double >( "alpha", "Coefficient of artificial viscous term.", 0 );
+      config.addEntry< double >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
+      config.addEntry< double >( "scaleBVTCoef", "Dynamic viscosity coefficient.", 1.f );
+      config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
+      config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
+      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "CFL", "CFL number.", 0 );
+      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
+      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
+      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
       // parameters of elastic bounce boundary correction
       config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
-      config.addEntry< RealType >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
-      config.addEntry< RealType >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
-      config.addEntry< RealType >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
+      config.addEntry< double >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
+      config.addEntry< double >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
+      config.addEntry< double >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
       // parameters of midpoint integration scheme
       config.addEntry< int >( "midpointMaxInterations", "Number of alowed midpoint iterations.", 30 );
-      config.addEntry< RealType >( "midpointResidualTolerance", "Midpoint iteration residual threshold.", 1e-5 );
-      config.addEntry< RealType >( "midpointRelaxCoef", "Midpoint relaxation coefficient.", 0.f );
-      config.addEntry< RealType >( "midpointRelaxCoef_0", "Midpoint relaxation coefficient in first iteration.", 0.f );
-      config.addEntry< RealType >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
-      config.addEntry< RealType >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
+      config.addEntry< double >( "midpointResidualTolerance", "Midpoint iteration residual threshold.", 1e-5 );
+      config.addEntry< double >( "midpointRelaxCoef", "Midpoint relaxation coefficient.", 0.f );
+      config.addEntry< double >( "midpointRelaxCoef_0", "Midpoint relaxation coefficient in first iteration.", 0.f );
+      config.addEntry< double >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
+      config.addEntry< double >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
 
       //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
       //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -82,37 +82,37 @@ public:
    void
    init( TNL::Config::ParameterContainer& parameters )
    {
-      h = parameters.getParameter< RealType >( "h" );
-      dp = parameters.getParameter< RealType >( "dp" );
-      searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-      mass = parameters.getParameter< RealType >( "mass" );
-      massBoundary = parameters.getParameter< RealType >( "massBoundary" );
+      h = parameters.getParameter< double >( "h" );
+      dp = parameters.getParameter< double >( "dp" );
+      searchRadius = parameters.getParameter< double >( "searchRadius" );
+      mass = parameters.getParameter< double >( "mass" );
+      massBoundary = parameters.getParameter< double >( "massBoundary" );
       if( massBoundary == 0 )
          massBoundary = mass;
-      boundaryElementSize = parameters.getParameter< RealType >( "boundaryElementSize" );
-      delta = parameters.getParameter< RealType >( "delta" );
-      alpha = parameters.getParameter< RealType >( "alpha" );
-      dynamicViscosity = parameters.getParameter< RealType >( "dynamicViscosity" );
-      scaleBVTCoef = parameters.getParameter< RealType >( "scaleBVTCoef" );
-      speedOfSound = parameters.getParameter< RealType >( "speedOfSound" );
-      rho0 = parameters.getParameter< RealType >( "rho0" );
-      dtInit = parameters.getParameter< RealType >( "initial-time-step" );
-      cfl = parameters.getParameter< RealType >( "CFL" );
-      dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
-      eps = parameters.getParameter< RealType >( "eps" );
+      boundaryElementSize = parameters.getParameter< double >( "boundaryElementSize" );
+      delta = parameters.getParameter< double >( "delta" );
+      alpha = parameters.getParameter< double >( "alpha" );
+      dynamicViscosity = parameters.getParameter< double >( "dynamicViscosity" );
+      scaleBVTCoef = parameters.getParameter< double >( "scaleBVTCoef" );
+      speedOfSound = parameters.getParameter< double >( "speedOfSound" );
+      rho0 = parameters.getParameter< double >( "rho0" );
+      dtInit = parameters.getParameter< double >( "initial-time-step" );
+      cfl = parameters.getParameter< double >( "CFL" );
+      dtMin = parameters.getParameter< double >( "minimal-time-step" );
+      eps = parameters.getParameter< double >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
       // parameters of elastic bounce boundary correction
       enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
-      elasticFactor = parameters.getParameter< RealType >( "elasticFactor" );
-      r_boxFactor = parameters.getParameter< RealType >( "r_boxFactor" );
-      minimalDistanceFactor = parameters.getParameter< RealType >( "minimalDistanceFactor" );
+      elasticFactor = parameters.getParameter< double >( "elasticFactor" );
+      r_boxFactor = parameters.getParameter< double >( "r_boxFactor" );
+      minimalDistanceFactor = parameters.getParameter< double >( "minimalDistanceFactor" );
       // parameters of midpoint integration scheme
       midpointMaxInterations = parameters.getParameter< int >( "midpointMaxInterations" );
-      midpointResidualTolerance = parameters.getParameter< RealType >( "midpointResidualTolerance" );
-      midpointRelaxCoef = parameters.getParameter< RealType >( "midpointRelaxCoef" );
-      midpointRelaxCoef_0 = parameters.getParameter< RealType >( "midpointRelaxCoef_0" );
-      midpointResidualMinimalDecay = parameters.getParameter< RealType >( "midpointResidualMinimalDecay" );
-      midpointRelaxCoefIncrement = parameters.getParameter< RealType >( "midpointRelaxCoefIncrement" );
+      midpointResidualTolerance = parameters.getParameter< double >( "midpointResidualTolerance" );
+      midpointRelaxCoef = parameters.getParameter< double >( "midpointRelaxCoef" );
+      midpointRelaxCoef_0 = parameters.getParameter< double >( "midpointRelaxCoef_0" );
+      midpointResidualMinimalDecay = parameters.getParameter< double >( "midpointResidualMinimalDecay" );
+      midpointRelaxCoefIncrement = parameters.getParameter< double >( "midpointRelaxCoefIncrement" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * dtInit;

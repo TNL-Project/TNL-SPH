@@ -18,10 +18,7 @@ int main( int argc, char* argv[] )
       sph.computeTimeStep();
 
       //integrate
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping, SPHDefs::BCType::integrateInTime() );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( "Integrate...", "Done." );
+      sph.integrateVerletStep();
 
       // check timers and if output should be performed, it is performed
       sph.makeSnapshot();

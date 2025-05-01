@@ -516,12 +516,83 @@ void
 SPHMultiset_CFD< Model >::integrateVerletStep()
 {
    timeMeasurement.start( "integrate" );
-   if constexpr( std::is_same< ModelType , WCSPH_DBC< ParticlesType, typename Model::ModelConfigType > >::value )
-      integrator->integratStepVerlet( fluid, boundary, timeStepping, ModelParams::BCType::integrateInTime() );
-   else
+   //if constexpr( std::is_same< ModelType , WCSPH_DBC< ParticlesType, typename Model::ModelConfigType > >::value )
+   //   integrator->integratStepVerlet( fluid, boundary, timeStepping, ModelParams::BCType::integrateInTime() );
+   //else
       integrator->integratStepVerlet( fluid, boundary, timeStepping );
    timeMeasurement.stop( "integrate" );
    writeLog( "Integrate...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::symplecticVerletPredictor()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->integratePredictorStep( fluid, boundary, timeStepping );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate - predictor step...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::symplecticVerletCorrector()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->integrateCorrectorStep( fluid, boundary, timeStepping );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate - corrector step...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointPredictor()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->predictor( timeStepping.getTimeStep(), fluid );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: predictor...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointUpdateVariables()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->midpointUpdateVariables( timeStepping.getTimeStep(), fluid );
+   //integrator->midpointUpdatePositions( sph.timeStepping.getTimeStep(), sph.fluid );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: midpoint update...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointResidualsAndRelaxationFactor()
+{
+
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointRelax()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->relax( fluid, modelParams );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: relax...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointCorrector()
+{
+   timeMeasurement.start( "integrate" );
+   if( timeStepping.getStep() == 0 )
+      integrator->corrector( 0, fluid );
+   else
+      integrator->corrector( timeStepping.getTimeStep(), fluid );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: corrector...", "Done." );
 }
 
 #ifdef HAVE_MPI

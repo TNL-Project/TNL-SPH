@@ -7,7 +7,6 @@ exec( Simulation& sph )
    // add special tools
    EnergyFields energyMonitor;
    energyMonitor.init( sph.fluid, true );
-
    EnergyFieldsInletOutlet energyMonitorInletOutlet;
    energyMonitorInletOutlet.addInlet( sph.openBoundaryPatches[ 0 ] );
    energyMonitorInletOutlet.addOutlet( sph.openBoundaryPatches[ 1 ] );
@@ -31,10 +30,7 @@ exec( Simulation& sph )
       sph.computeTimeStep();
 
       // integrate
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integratStepVerlet( sph.fluid, sph.boundary, sph.timeStepping, SPHDefs::BCType::integrateInTime() );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( "Integrate...", "Done." );
+      sph.integrateVerletStep();
 
       // compute energy flow through open boudnaries
       energyMonitorInletOutlet.computeInflowEnergyLevels( sph.fluid, sph.openBoundaryPatches[ 0 ], sph.modelParams, sph.timeStepping.getTimeStep() );

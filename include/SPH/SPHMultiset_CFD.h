@@ -194,6 +194,33 @@ public:
    void
    integrateVerletStep();
 
+   /**
+    * \brief Perform integration setp - wrapper for Verlet integration scheme step.
+    */
+   void
+   symplecticVerletPredictor();
+
+   void
+   symplecticVerletCorrector();
+
+   /**
+    * \brief Perform integration setp - wrapper for Midpoint scheme functions.
+    */
+   void
+   midpointPredictor();
+
+   void
+   midpointUpdateVariables();
+
+   void
+   midpointResidualsAndRelaxationFactor();
+
+   void
+   midpointRelax();
+
+   void
+   midpointCorrector();
+
 
 #ifdef HAVE_MPI
 
