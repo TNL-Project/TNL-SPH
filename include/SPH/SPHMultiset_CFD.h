@@ -189,6 +189,13 @@ public:
    measure();
 
    /**
+    * \brief General integrator wrapper
+    */
+   //template< typename IntegrationStage >
+   //void
+   //integrate( IntegrationStage stage );
+
+   /**
     * \brief Perform integration setp - wrapper for Verlet integration scheme step.
     */
    void

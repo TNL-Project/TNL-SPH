@@ -511,6 +511,17 @@ SPHMultiset_CFD< Model >::measure()
          fluid, boundary, modelParams, timeStepping, logger, verbose );
 }
 
+//template< typename Model >
+//template< typename IntegrationStage >
+//void
+//SPHMultiset_CFD< Model >::integrate( IntegrationStage integrationStage )
+//{
+//   timeMeasurement.start( "integrate" );
+//   integrator->integrate( fluid, boundary, timeStepping, integrationStage );
+//   timeMeasurement.stop( "integrate" );
+//   writeLog( "Integrate...", "Done." );
+//}
+
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::integrateVerletStep( const bool integrateBoundary )
