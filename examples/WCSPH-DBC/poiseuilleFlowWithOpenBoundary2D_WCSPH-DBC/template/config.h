@@ -18,7 +18,7 @@ class ParticleSystemConfig
 
    using UseWithDomainDecomposition = std::false_type;
    using CellIndexerType = TNL::ParticleSystem::SimpleCellIndex< spaceDimension, std::index_sequence< 1, 0 > >;
-   using NeighborListType = TNL::Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
+   using NeighborListType = TNL::Algorithms::Segments::Ellpack< Device, int >; //deprecated
 };
 
 template< typename Device >
@@ -33,7 +33,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfBoundaryBuffers = 2;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
 
@@ -68,8 +67,7 @@ class SPHParams
 };
 
 using SPHDefs = SPHParams< Device >;
-
-using ParticlesConfig = ParticleSystemConfig< Device >;
+using ParticlesConfig = ParticleSystemConfig;
 
 /**
  * Include type of particle system.
