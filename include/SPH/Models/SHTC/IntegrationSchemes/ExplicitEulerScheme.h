@@ -50,12 +50,16 @@ public:
    void
    updateVariables( RealType dt, FluidPointer& fluid )
    {
+      fluid->getVariables()->rho += dt * fluid->getVariables()->drhodt;
+      fluid->getVariables()->v += dt * fluid->getVariables()->dvdt;
+      fluid->getVariables()->A += dt * fluid->getVariables()->dAdt;
    }
 
    template< typename FluidPointer >
    void
    moveParticles( RealType dt, FluidPointer& fluid )
    {
+      fluid->getPoints() += dt * fluid->getVariables()->v;
    }
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >

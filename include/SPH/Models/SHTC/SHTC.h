@@ -10,12 +10,14 @@
 
 // placeholder for empty open boundary conditions
 #include "../emptyOpenBCPlaceholder.h"
+#include "../SPHMultisetSolverTemplate.h"
+
 
 namespace TNL {
 namespace SPH {
 
 template< typename Particles, typename ModelConfig >
-class SHTC
+class SHTC : public SPHMultisetSolverTemplate< Particles, ModelConfig >
 {
 public:
 
@@ -99,6 +101,21 @@ public:
    template< typename FluidPointer, typename BoundaryPointer >
    void
    finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+
+   // Empty functions to match the solver interface
+
+   //template< typename OpenBoundaryPointer, typename BoudaryPointer >
+   //void
+   //updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary,
+   //                                 OpenBoundaryPointer& openBoundaryPointer,
+   //                                 ModelParams& modelParams )
+   //{};
+
+   //template< typename FluidPointer, typename OpenBoudaryPointer >
+   //void
+   //interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams )
+   //{}
+
 
 };
 

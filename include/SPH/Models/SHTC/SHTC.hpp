@@ -1,5 +1,6 @@
 #include "SHTC.h"
 #include "details.h"
+#include <TNL/Containers/StaticVector.h>
 
 namespace TNL {
 namespace SPH {
@@ -62,7 +63,7 @@ SHTC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
 
          *dvdt_i += ( -1.0f ) * ( stress_i / ( rho_i * rho_i ) + stress_j / ( rho_j * rho_j ) ) * gradW * m;
 
-         *dAdt_i += A_i * ( v_ij * gradW ) * m / rho_j;
+         *dAdt_i += A_i * ( v_ij, gradW ) * m / rho_j;
       }
    };
 

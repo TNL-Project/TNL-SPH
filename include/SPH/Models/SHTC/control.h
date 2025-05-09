@@ -2,6 +2,7 @@
 
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Kernels.h>
+#include <SPH/Models/EquationOfState.h> //FIXME: Added due to complaining API.
 #include <SPH/Models/SHTC/stress.h>
 #include <SPH/Models/SHTC/IntegrationSchemes/ExplicitEulerScheme.h>
 
@@ -127,6 +128,9 @@ public:
 
    //eps - constant to prevent zero in denominator [-].
    RealType eps = 0.001f;
+
+   //FIXME: Added due to complaining API.
+   using EOS = EquationsOfState::None< SPHConfig >;
 };
 
 template< typename ModelParams >

@@ -33,6 +33,7 @@ deviator( const MatrixType& A )
       return deviator3D( A );
 }
 
+
 template< typename MatrixType  >
 __cuda_callable__
 static MatrixType
@@ -40,9 +41,9 @@ unitMatrix()
 {
    //TODO: Allow only for square matrices
    if constexpr( MatrixType::getRows() == 2 )
-      const MatrixType eye( { 1, 0, 0, 1 } );
+      return MatrixType( { 1, 0, 0, 1 } );
    if constexpr( MatrixType::getRows() == 3 )
-      const MatrixType eye( { 1, 0, 0, 0, 1, 0, 0, 0, 1 } );
+      return MatrixType( { 1, 0, 0, 0, 1, 0, 0, 0, 1 } );
 }
 
 } // details
