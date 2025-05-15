@@ -9,6 +9,7 @@ def generate_cavity_fluid_particles( setup ):
     fluid_rx = []; fluid_ry = []
     boundary_rx = []; boundary_ry = []
     boundary_vx = []; boundary_vy = []
+    boundary_nx = []; boundary_ny = []
     dp = setup[ 'dp' ]
     dpx = ( 4 / 3 )**( 1 / 4 ) * setup[ 'dp' ]
     dpy = ( 3 / 4 )**( 1 / 4 ) * setup[ 'dp' ]
@@ -34,6 +35,7 @@ def generate_cavity_fluid_particles( setup ):
                 else:
                     boundary_vx.append( 0 )
                     boundary_vy.append( 0 )
+
             else:
                 fluid_rx.append( rx )
                 fluid_ry.append( ry )
@@ -57,13 +59,15 @@ def generate_cavity_fluid_particles( setup ):
     boundary_v = np.array( ( boundary_vx, boundary_vy, np.zeros( boundary_n ) ), dtype=float ).T #
     boundary_rho = rho0 * np.ones( boundary_n )
     boundary_p = np.zeros( boundary_n )
+    boundary_normals = np.zeros( ( boundary_n, 3 ) ) #FIXME: Boundary are not generated since we don't need them!
     boundary_ptype = np.ones( boundary_n )
     box_to_write = saveParticlesVTK.create_pointcloud_polydata(
                     boundary_r,
                     boundary_v,
                     boundary_rho,
                     boundary_p,
-                    boundary_ptype )
+                    boundary_ptype,
+                    normals = boundary_normals )
     saveParticlesVTK.save_polydata( box_to_write, "sources/lidDrivenCavity_boundary.vtk" )
 
     # compute potential energy
@@ -172,7 +176,8 @@ if __name__ == "__main__":
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp ),
         "smoothing_length" : args.h_coef * args.dp,
-        "search_radius" : 2 * args.h_coef * args.dp,
+        #"search_radius" : 2 * args.h_coef * args.dp,
+        "search_radius" : args.h_coef * args.dp,
         "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound_bulk,
         "tau" : 6 * args.top_wall_velocity * args.cavity_length / ( args.Re * args.speed_of_sound_shear**2 ),
         "dynamic_viscosity" : args.top_wall_velocity * args.cavity_length / args.Re
