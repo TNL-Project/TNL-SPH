@@ -322,15 +322,6 @@ class ParticleSet
                1 );
    }
 
-   void
-   writeProlog( TNL::Logger& logger )
-   {
-      logger.writeParameter( "Number of particles:", this->particles->getNumberOfParticles() );
-      logger.writeParameter( "Number of allocated particles:", this->particles->getNumberOfAllocatedParticles() );
-      logger.writeParameter( "Search radius:", this->particles->getSearchRadius() );
-      logger.writeParameter( "Grid size:", this->particles->getSearchRadius() );
-   }
-
 #ifdef HAVE_MPI
    void
    synchronizeObject()
@@ -358,7 +349,7 @@ class ParticleSet
 #endif
 
    void
-   writeProlog( TNL::Logger& logger ) const noexcept
+   writeProlog( TNL::Logger& logger )
    {
       logger.writeParameter( "Particle system parameters:", "" );
       particles->writeProlog( logger );

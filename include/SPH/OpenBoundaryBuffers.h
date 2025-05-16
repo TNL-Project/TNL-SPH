@@ -69,7 +69,7 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    }
 
    void
-   writeProlog( TNL::Logger& logger ) const noexcept
+   writeProlog( TNL::Logger& logger )
    {
       BaseType::writeProlog( logger );
       zone.writeProlog( logger );
