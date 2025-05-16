@@ -377,17 +377,17 @@ SPHMultiset_CFD< Model >::performNeighborSearch( bool performBoundarySearch )
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::removeParticlesOutOfDomain( TNL::Logger& log )
+SPHMultiset_CFD< Model >::removeParticlesOutOfDomain()
 {
    const int numberOfParticlesToRemove = fluid->getParticles()->getNumberOfParticlesToRemove();
    fluid->getParticles()->removeParitclesOutOfDomain();
 
    if( fluid->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
       const int numberOfParticlesOutOfDomain = fluid->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-      log.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      logger.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
       // search for neighbros
       timeMeasurement.start( "search" );
-      this->performNeighborSearch( log );
+      this->performNeighborSearch();
       timeMeasurement.stop( "search" );
    }
 }
