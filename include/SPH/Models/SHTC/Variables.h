@@ -96,7 +96,11 @@ class SHTCVariables
    readVariables( ReaderType& reader )
    {
       reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
-      reader.template readParticleVariable< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+      //FIXME
+      if constexpr( SPHConfig::spaceDimension == 2 )
+         reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+      if constexpr( SPHConfig::spaceDimension == 3 )
+         reader.template readParticleVariable3D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
    }
 
    template< typename WriterType >
@@ -106,6 +110,7 @@ class SHTCVariables
       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
       writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
+      //writer.template writeVector< MatrixArrayType, RealType >( A, "Distortion", numberOfParticles, firstActiveParticle, 9 );
    }
 
 };

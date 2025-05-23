@@ -10,7 +10,7 @@ static MatrixType
 deviator2D( const MatrixType& A )
 {
    const MatrixType eye( { 1, 0, 0, 1 } );
-   return A - 1.f / 3.f * ( A( 0, 0 ) + A( 1, 1 ) ) * eye;
+   return A - 1.f / 2.f * ( A( 0, 0 ) + A( 1, 1 ) ) * eye; //FIXME
 }
 
 template< typename MatrixType  >

@@ -146,8 +146,8 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Lid driven example initial condition and setup generator")
     g = argparser.add_argument_group("resolution parameters")
-    g.add_argument("--dp", type=float, default=0.01, help="initial distance between particles")
-    g.add_argument("--h-coef", type=float, default=2.4, help="smoothing length coefitient")
+    g.add_argument("--dp", type=float, default=0.005, help="initial distance between particles")
+    g.add_argument("--h-coef", type=float, default=1.2, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--cavity-length", type=float, default=1.0, help="length of the cavity")
     g.add_argument("--cavity-height", type=float, default=1.0, help="height of the cavity")
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     g.add_argument("--density", type=float, default=1, help="referential density of the fluid")
     g.add_argument("--speed-of-sound-bulk", type=float, default=20, help="bulk speed of sound")
     g.add_argument("--speed-of-sound-shear", type=float, default=20, help="shear speed of sound")
-    g.add_argument("--cfl", type=float, default=0.05, help="referential density of the fluid")
+    g.add_argument("--cfl", type=float, default=0.1, help="referential density of the fluid")
 
     args = argparser.parse_args()
 
@@ -176,8 +176,7 @@ if __name__ == "__main__":
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp ),
         "smoothing_length" : args.h_coef * args.dp,
-        #"search_radius" : 2 * args.h_coef * args.dp,
-        "search_radius" : args.h_coef * args.dp,
+        "search_radius" : 2 * args.h_coef * args.dp,
         "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound_bulk,
         "tau" : 6 * args.top_wall_velocity * args.cavity_length / ( args.Re * args.speed_of_sound_shear**2 ),
         "dynamic_viscosity" : args.top_wall_velocity * args.cavity_length / args.Re

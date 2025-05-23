@@ -42,10 +42,10 @@ public:
       const RealType antiClumpFact = params.antiClumpFact;
 
       const MatrixType E = details::template unitMatrix< MatrixType >(); //FIXME: Do unit matrix constructor!
-      const MatrixType tAA = A * transpose( A );
+      const MatrixType fst = Matrices::matmul( Matrices::transpose( A ), A );
 
-      return powf( cl, 2 ) * ( rho - rho0 / ( 1.f + antiClumpFact ) ) * E + powf( cs, 2 ) * rho * details::deviator( tAA ) * tAA;
-
+      return powf( cl, 2 ) * ( rho - rho0 / ( 1.f + antiClumpFact ) ) * E +
+             powf( cs, 2 ) * rho * Matrices::matmul( fst, details::deviator( fst ) );
    }
 };
 
