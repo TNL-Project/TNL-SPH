@@ -577,7 +577,8 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::midpointResidualsAndRelaxationFactor()
 {
-
+   integrator->computeResiduals( fluid, modelParams );
+   integrator->updateRelaxationFactor( modelParams );
 }
 
 template< typename Model >

@@ -312,15 +312,18 @@ public:
          midpointIteration = 0;
          residual = 0.f;
          residualPrevious = 0.f;
-         midpointRelaxCoef = modelParams.midpointMaxInterations;
+         midpointRelaxCoef = modelParams.midpointRelaxCoef;
       }
 
-      bool runIterationLoop = false;
-      if( midpointIteration < modelParams.midpointMaxInterations )
-         runIterationLoop = true;
+      if( midpointIteration < modelParams.midpointMaxInterations ) {
+         midpointIteration++;
+         return true;
+      }
+      else {
+         midpointIteration = 0;
+         return false;
+      }
 
-      midpointIteration++;
-      return runIterationLoop;
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -337,8 +340,8 @@ public:
    void
    updateRelaxationFactor( ModelParams& modelParams )
    {
-      // control residuals decay
-      if( midpointIteration > 0 )
+      // control residuals decay (NOTE: -1 since midpointIteration are icreased at the start of the loop)
+      if( ( midpointIteration - 1 )  > 0 )
          if( residual / residualPrevious > modelParams.midpointResidualMinimalDecay )
             midpointRelaxCoef = modelParams.midpointRelaxCoefIncrement
                               + ( 1.0 - modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
