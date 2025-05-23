@@ -3,7 +3,7 @@ using Device = TNL::Devices::Cuda;
 
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
-#include <TNL/Particles/ParticlesTraits.h>
+#include <TNL/Particles/CellIndexer.h>
 
 class ParticleSystemConfig
 {
