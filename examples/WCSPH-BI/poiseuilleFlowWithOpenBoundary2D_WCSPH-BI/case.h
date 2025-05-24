@@ -23,6 +23,8 @@ int main( int argc, char* argv[] )
 
       // perform interaction with given model
       sph.interact();
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // compute and outpute energy levels
       energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );

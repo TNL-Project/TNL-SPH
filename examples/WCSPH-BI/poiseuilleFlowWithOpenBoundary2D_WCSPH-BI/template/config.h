@@ -69,7 +69,6 @@ class SPHParams
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
-   //using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
    //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
@@ -88,6 +87,8 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
 using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHDefs >;
+#include <SPH/shared/ElasticBounce.h>
+using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHConfig >;
 
 /**
  * Include type of SPH simulation.
