@@ -868,7 +868,7 @@ SPHMultiset_CFD< Model >::writeProlog( bool writeSystemInformation ) noexcept
          openBoundaryPatches[ i ]->config.writeProlog( logger );
       }
    }
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
+   if( fluid->periodicPatches.size() > 0 ) {
       const long unsigned int numberOfPeriodicPatches = std::size( fluid->periodicPatches );
       for( long unsigned int i = 0; i < numberOfPeriodicPatches; i++ ) {
          logger.writeHeader( "Periodic boundary patch " + std::to_string( i + 1 ) + "." );
