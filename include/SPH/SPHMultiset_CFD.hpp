@@ -72,10 +72,8 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
    }
 
    // init periodic boundary conditions
-   //TODO: I don't like that open boundary buffer are selected in compile time.
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
-      fluid->initializePeriodicity( parameters );
-      boundary->initializePeriodicity( parameters );
+   if( parameters.getParameter< std::string >( "periodic-boundary-config" ) != "" ){
+      initPeriodicBoundaryPatches( parameters, logger );
 
       // add custom timers related to perioric boundary conditions
       timeMeasurement.addTimer( "enforce-periodic-bc" );
@@ -167,7 +165,7 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  )
+SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -197,6 +195,25 @@ SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContain
                                             domainOrigin );
    }
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   logger.writeParameter( "Initialization of open boundary patches.", "" );
+   const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
+   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
+
+   // setup and parse open boundary config
+   for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
+   }
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+
+   fluid->initializePeriodicity( parameters, parametersOpenBoundary );
+   boundary->initializePeriodicity( parameters, parametersOpenBoundary );
 }
 
 #ifdef HAVE_MPI

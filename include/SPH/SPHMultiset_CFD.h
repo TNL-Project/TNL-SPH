@@ -73,7 +73,10 @@ public:
 
    // protected
    void
-   initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  );
+   initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+   void
+   initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
    // protected
    void

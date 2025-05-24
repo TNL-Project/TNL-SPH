@@ -13,21 +13,17 @@ class PeriodicBoundary
    using GlobalIndexType = typename ParticlesType::GlobalIndexType;
    using IndexVectorType = typename ParticlesType::PointType;
 
-   using ParticleZoneType = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, DeviceType >;
+   using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, DeviceType >;
 
    void
-   initialize( TNL::Config::ParameterContainer& parameters,
-               std::string prefix,
-               RealType searchRadius,
+   initialize( RealType searchRadius,
                IndexVectorType gridSize,
-               VectorType domainOrigin,
-               GlobalIndexType numberOfParticlesPerCell = 15 ) //TODO: Move this to config params.
+               VectorType gridOrigin,
+               GlobalIndexType numberOfParticlesPerCell = 75 ) //TODO: Move this to config params.
    {
-      config.init( parameters, parameters, prefix ); //FIXME: OpenBoundary configs uses two DIFERENT parameters containers
-
       //initialize the zone
       particleZone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      particleZone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, gridSize, domainOrigin, searchRadius );
+      particleZone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, gridSize, gridOrigin, searchRadius );
    }
 
    void
@@ -38,7 +34,7 @@ class PeriodicBoundary
    }
 
    OpenBoundaryConfigType config;
-   ParticleZoneType particleZone;
+   ParticleZone particleZone;
 };
 
 } // SPH

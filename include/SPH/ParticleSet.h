@@ -128,22 +128,23 @@ class ParticleSet
 #endif
 
    void
-   initializePeriodicity( TNL::Config::ParameterContainer& parameters )
+   initializePeriodicity( TNL::Config::ParameterContainer& parameters,
+                          TNL::Config::ParameterContainer& parametersOpenBoundary )
    {
+      const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
+      std::cout << "Number of periodic patches: " << numberOfPeriodicPatches << std::endl;
+
       //TODO: I don't like the compute domain properties here, this class should not take parameters as arg.
       const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
       const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
       const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
       const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
-      const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
-      std::cout << "Number of periodic patches: " << numberOfPeriodicPatches << std::endl;
       periodicPatches.resize( numberOfPeriodicPatches );
       for( int i = 0; i < numberOfPeriodicPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         periodicPatches[ i ]->initialize( parameters,
-                                           prefix,
-                                           searchRadius,
+         periodicPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
+         periodicPatches[ i ]->initialize( searchRadius,
                                            gridSize,
                                            domainOrigin );
                                            //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
