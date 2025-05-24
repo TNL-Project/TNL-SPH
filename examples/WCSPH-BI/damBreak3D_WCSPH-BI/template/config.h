@@ -8,8 +8,6 @@ using Device = TNL::Devices::Cuda;
 class ParticleSystemConfig
 {
    public:
-   using DeviceType = Device;
-
    using GlobalIndexType = int;
    using LocalIndexType = int;
    using CellIndexType = int;

@@ -43,7 +43,7 @@ class SPHConfig
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
-#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -87,9 +87,8 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
 using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
-
 #include <SPH/shared/ElasticBounce.h>
-using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHConfig >;
+using BoundaryCorrection = TNL::SPH::#placeholderBoundaryCorrection< ParticlesSys, SPHDefs::SPHConfig >;
 
 /**
  * Include type of SPH simulation.
