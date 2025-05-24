@@ -8,8 +8,6 @@ using Device = TNL::Devices::Cuda;
 class ParticleSystemConfig
 {
    public:
-   using DeviceType = Device;
-
    using GlobalIndexType = int;
    using LocalIndexType = int;
    using CellIndexType = int;
@@ -34,7 +32,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfPeriodicBuffers = 2;
 };
 
 #include <SPH/Models/EquationOfState.h>

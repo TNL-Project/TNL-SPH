@@ -43,7 +43,7 @@ class SPHConfig
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
-#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -61,7 +61,7 @@ public:
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
@@ -87,7 +87,6 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
 using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
-
 #include <SPH/shared/ElasticBounce.h>
 using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHConfig >;
 

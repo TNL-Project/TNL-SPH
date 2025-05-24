@@ -76,7 +76,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    };
    boundary->getParticles()->forAll( particleLoopBoundary );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
+   if( boundary->periodicPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ){
 
          const auto zoneParticleIndices_view = boundary->periodicPatches[ i ]->particleZone.getParticlesInZone().getConstView();
