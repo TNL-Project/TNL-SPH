@@ -180,6 +180,15 @@ public:
       if constexpr( SPHConfig::spaceDimension == 3 )
          reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
    }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType firstActiveParticle = 0 )
+   {
+      Base::writeVariables( writer, numberOfParticles );
+      writer.template writeVector< VectorArrayType, typename Base::RealType >(
+            n, "Normals", numberOfParticles, firstActiveParticle, 3 );  //TODO: Obvious.
+   }
 };
 
 template< typename SPHState >
