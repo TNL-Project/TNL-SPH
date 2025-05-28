@@ -21,8 +21,8 @@ class SPHFluidTraits
    using RealType = typename SPHFluidConfig::RealType;
 
    /* particle related */
-   using ParticleType = unsigned short int;
-   using ParticleTypeArrayType = Containers::Vector< ParticleType, DeviceType, GlobalIndexType >;
+   using MarkerType = int; //FIXME
+   using MarkerArrayType = Containers::Vector< MarkerType, DeviceType, GlobalIndexType >;
    using ScalarType = RealType;
    using ScalarArrayType = Containers::Vector< ScalarType, DeviceType, GlobalIndexType >;
    using VectorType = Containers::StaticVector< spaceDimension, RealType >;
