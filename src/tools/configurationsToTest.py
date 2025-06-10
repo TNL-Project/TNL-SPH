@@ -182,49 +182,49 @@ wcsph_bi_configurations = [
 test_default_examples = [
         # RSPH:
         {
-            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
-            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "case-tag" : "RSPH/damBreak2D_RSPH_default",
+            "case" : "RSPH/damBreak2D_RSPH",
             "evaluation-function" : None
         },
         # WCSPH-DBC:
         {
-            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC_default",
             "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
             "evaluation-function" : None
         },
         {
-            "case-tag" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
+            "case-tag" : "WCSPH-DBC/damBreak3D_WCSPH-DBC_default",
             "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
             "evaluation-function" : None
         },
         {
-            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
+            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC_default",
             "case" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
             "evaluation-function" : None
         },
         {
-            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
+            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_default",
             "case" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
             "evaluation-function" : None
         },
         # WCSPH-BI:
         {
-            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI",
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_default",
             "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
             "evaluation-function" : None
         },
         {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_default",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
             "evaluation-function" : None
         },
         {
-            "case-tag" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
+            "case-tag" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI_default",
             "case" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
             "evaluation-function" : None
         },
         {
-            "case-tag" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
+            "case-tag" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI_default",
             "case" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
             "evaluation-function" : None
         }

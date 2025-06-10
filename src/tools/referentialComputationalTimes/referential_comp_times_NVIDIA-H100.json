@@ -18,5 +18,14 @@
    "WCSPH-BI/damBreak3D_WCSPH-BI_hr-conservative" : "5421.71",
    "WCSPH-BI/damBreak3D_WCSPH-BI_conservative-MGVT" : "146.651",
    "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI": "67.1557",
-   "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI": "79.9094"
+   "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI": "79.9094",
+   "RSPH/damBreak2D_RSPH_default" : 1,
+   "WCSPH-DBC/damBreak2D_WCSPH-DBC_default" : 1,
+   "WCSPH-DBC/damBreak3D_WCSPH-DBC_default" : 1,
+   "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC_default" : 1,
+   "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_default" : 1,
+   "WCSPH-BI/damBreak2D_WCSPH-BI_default" : 1,
+   "WCSPH-BI/damBreak2D_WCSPH-BI_default" : 1,
+   "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI_default" : 1,
+   "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI_default" : 1
 }
