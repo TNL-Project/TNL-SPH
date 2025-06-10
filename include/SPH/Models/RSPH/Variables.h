@@ -12,10 +12,6 @@ namespace TNL {
 namespace SPH {
 
 template< typename SPHState >
-class Empty
-{};
-
-template< typename SPHState >
 class FluidVariables
 {
    public:
@@ -68,28 +64,6 @@ class FluidVariables
             view_rho.getArrayData(), view_rho_swap.getArrayData() );
       thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
             view_v.getArrayData(), view_v_swap.getArrayData() );
-
-      rho.swap( rho_swap );
-      v.swap( v_swap );
-   }
-
-   void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
-   {
-      auto view_map = map->getView();
-
-      auto view_rho = rho.getView();
-      auto view_v = v.getView();
-
-      auto view_rho_swap = rho_swap.getView();
-      auto view_v_swap = v_swap.getView();
-
-      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
-      ThrustDeviceType thrustDevice;
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_rho.getArrayData() + firstActiveParticle, view_rho_swap.getArrayData() + firstActiveParticle );
-      thrust::gather( thrust::device, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_v.getArrayData() + firstActiveParticle, view_v_swap.getArrayData() + firstActiveParticle );
 
       rho.swap( rho_swap );
       v.swap( v_swap );

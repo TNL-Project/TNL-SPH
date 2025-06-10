@@ -27,6 +27,32 @@ class NoOpenBC : public OpenBoundaryConfig< SPHConfig >
    {}
 };
 
+template< typename SPHState >
+class EmptyVariables
+{
+public:
+
+   using SPHConfig = typename SPHState::SPHConfig;
+   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+
+   void
+   setSize( const GlobalIndexType& size ) {};
+
+   template< typename IndexArrayTypePointer >
+   void
+   sortVariables( IndexArrayTypePointer& map, const GlobalIndexType& numberOfParticles ) {};
+
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader ) {};
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& startingIdx = 0 ) {};
+
+};
+
 } //namespace SPH
 } //namespace TNL
 
