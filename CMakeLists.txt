@@ -96,6 +96,28 @@ FetchContent_MakeAvailable(TNL)
 
 # FIXME: We should also require python with vtk module
 
+# Download the gencase from DualSPHysics
+option(ENABLE_GENCAGE_DOWNLOAD "Enable downloading GenCase_linux64" FALSE)
+if(ENABLE_GENCAGE_DOWNLOAD)
+   set(DOWNLOAD_URL "https://github.com/DualSPHysics/DualSPHysics/raw/master/bin/linux/GenCase_linux64")
+   set(DESTINATION_DIR "${CMAKE_SOURCE_DIR}/src/tools/3rdparty")
+   set(DESTINATION_FILE "${DESTINATION_DIR}/GenCase_linux64")
+
+   # Create the destination directory if it doesn't exist
+   file(MAKE_DIRECTORY ${DESTINATION_DIR})
+   # Download the file during the configuration phase
+   file(DOWNLOAD
+       ${DOWNLOAD_URL}
+       ${DESTINATION_FILE}
+       SHOW_PROGRESS
+       STATUS DOWNLOAD_STATUS
+   )
+   # Set executable permissions for the downloaded file
+   file(CHMOD ${DESTINATION_FILE} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+else()
+    message(STATUS "GenCase download is disabled (ENABLE_GENCAGE_DOWNLOAD is FALSE)")
+endif()
+
 # Add project subdirectories
 add_subdirectory(include)
 add_subdirectory(examples)

@@ -15,7 +15,7 @@ TNL-SPH is a high-performance Smoothed Particle Hydrodynamics code for simulatio
 
 ## Getting started
 
-1. Install [Git](https://git-scm.com/) and [Git LFS](https://git-lfs.com/).
+1. Install [Git](https://git-scm.com/).
 
 2. Clone the repository:
 
