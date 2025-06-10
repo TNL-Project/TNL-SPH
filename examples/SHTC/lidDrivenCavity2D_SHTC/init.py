@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Lid driven example initial condition and setup generator")
     g = argparser.add_argument_group("resolution parameters")
-    g.add_argument("--dp", type=float, default=0.005, help="initial distance between particles")
+    g.add_argument("--dp", type=float, default=0.01, help="initial distance between particles")
     g.add_argument("--h-coef", type=float, default=1.2, help="smoothing length coefitient")
     g = argparser.add_argument_group("domain parameters")
     g.add_argument("--cavity-length", type=float, default=1.0, help="length of the cavity")
