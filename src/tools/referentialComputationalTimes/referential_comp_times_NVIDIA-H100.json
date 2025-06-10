@@ -1,8 +1,8 @@
 {
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC": "1",
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT": "1",
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC:h-coef-2": "1",
-	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC": "1",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC": "59.2066",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MGVT": "79.456",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC:h-coef-2": "24.4819",
+	"WCSPH-DBC/damBreak2D_WCSPH-DBC:MDBC": "33.4031",
    "WCSPH-DBC/damBreak3D_WCSPH-DBC": "255.372",
    "WCSPH-DBC/damBreak3D_WCSPH-DBC:MGVT": "248.716",
    "WCSPH-DBC/damBreak3D_WCSPH-DBC:MDBC": "1",
