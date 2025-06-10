@@ -168,10 +168,6 @@ public:
                                                                fetch,
                                                                TNL::Min() );
 
-      //std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtMin: " << params.dtMin << std::endl;
-      //std::cout << "[ VariableTimeStep.computeTimeStep ] params.dtInit: " << params.dtInit << std::endl;
-      //std::cout << "[ VariableTimeStep.computeTimeStep ] newTimeStep: " << newTimeStep << std::endl;
-
       this->timeStep = std::max( std::min( newTimeStep, params.dtInit ), params.dtMin );
    }
 };
