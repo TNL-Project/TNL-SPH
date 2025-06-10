@@ -152,7 +152,7 @@ public:
       auto view_a = fluid->getVariables()->a.getView();
 
       const auto view_points_bound = boundary->getParticles()->getPoints().getView();
-      const auto view_v_bound = boundary->getVariables()->v.getView();
+      //const auto view_v_bound = boundary->getVariables()->v.getView();
       const auto view_n_bound = boundary->getVariables()->n.getView();
       const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
@@ -164,7 +164,7 @@ public:
          const RealType drs = l2Norm( r_ji );
          if (drs <= searchRadius )
          {
-            const VectorType v_j = view_v_bound[ j ];
+            //const VectorType v_j = view_v_bound[ j ];
             const VectorType n_j = ( -1.f ) * view_n_bound[ j ];
             const RealType s_j = view_elementSize_bound[ j ];
 

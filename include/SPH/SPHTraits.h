@@ -21,8 +21,8 @@ class SPHFluidTraits
    using RealType = typename SPHFluidConfig::RealType;
 
    /* particle related */
-   using ParticleType = unsigned short int;
-   using ParticleTypeArrayType = Containers::Vector< ParticleType, DeviceType, GlobalIndexType >;
+   using MarkerType = int; //FIXME
+   using MarkerArrayType = Containers::Vector< MarkerType, DeviceType, GlobalIndexType >;
    using ScalarType = RealType;
    using ScalarArrayType = Containers::Vector< ScalarType, DeviceType, GlobalIndexType >;
    using VectorType = Containers::StaticVector< spaceDimension, RealType >;
@@ -32,10 +32,12 @@ class SPHFluidTraits
 
    //types for correction matrices related to MDBC
    using MatrixType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension, SPHFluidConfig::spaceDimension >;
-   using MatrixExtendedType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension + 1, SPHFluidConfig::spaceDimension + 1 >;
-   using MatrixExtendedArrayType = Containers::Array< MatrixExtendedType, DeviceType, GlobalIndexType >;
+   using MatrixArrayType = Containers::Vector< MatrixType, DeviceType, GlobalIndexType >;
+
    using VectorExtendedType = Containers::StaticVector< SPHFluidConfig::spaceDimension + 1, RealType >;
    using VectorExtendedArrayType = Containers::Array< VectorExtendedType, DeviceType, GlobalIndexType >;
+   using MatrixExtendedType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension + 1, SPHFluidConfig::spaceDimension + 1 >;
+   using MatrixExtendedArrayType = Containers::Array< MatrixExtendedType, DeviceType, GlobalIndexType >;
 
 };
 

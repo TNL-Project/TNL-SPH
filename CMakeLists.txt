@@ -9,14 +9,13 @@ project(TNL-SPH
    LANGUAGES CXX CUDA
 )
 
-# Options to build
-option( TNL-SPH_USE_SYSTEM_GTEST "Use GTest installed in the local system and do not download the latest version" ON )
-option( TNL-SPH_BUILD_TESTS "Build tests" OFF )
-option( TNL_BUILD_BENCHMARKS "Compile the 'src/Benchmarks' directory" OFF )
+# Declare all CMake options for the project
+option(TNL_SPH_EXPORT_INTERFACE_TARGETS "Instruct CMake to generate rules to export the interface target" ${PROJECT_IS_TOP_LEVEL})
+option(TNL_SPH_ENABLE_MPI "Enable MPI support, if available" ON)
 
-# Require C++17, and disable compiler-specific extensions (if possible)
+# Require C++20, and disable compiler-specific extensions (if possible)
 foreach(lang CXX CUDA)
-    set(CMAKE_${lang}_STANDARD 17)
+    set(CMAKE_${lang}_STANDARD 20)
     set(CMAKE_${lang}_STANDARD_REQUIRED ON)
     set(CMAKE_${lang}_EXTENSIONS OFF)
 endforeach()
@@ -30,60 +29,57 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS
 # Set build flags for CUDA
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wall")
 set(CMAKE_CUDA_FLAGS_DEBUG "-g")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG --expt-relaxed-constexpr --expt-extended-lambda -use_fast_math")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG")
 set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "${CMAKE_CUDA_FLAGS_RELEASE} ${CMAKE_CUDA_FLAGS_DEBUG}")
+
+# Enforce (more or less) warning-free builds
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=deprecated -Wno-error=deprecated-declarations -Wno-error=uninitialized")
+
 if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "${CMAKE_CUDA_FLAGS_RELWITHDEBINFO} --generate-line-info")
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
+        # Enforce (more or less) warning-free builds for host code
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Werror -Xcompiler -Wno-error=deprecated -Xcompiler -Wno-error=deprecated-declarations")
+    endif()
+    # Force colorized output for nvcc's host compiler (assuming it is GCC...)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -fdiagnostics-color")
+endif()
+
+if(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+    # Enforce (more or less) warning-free builds
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Werror -Wno-error=deprecated -Wno-error=deprecated-declarations -Wno-error=unknown-cuda-version")
+    # workaround for Clang 15
+    # https://github.com/llvm/llvm-project/issues/58491
+    set(CMAKE_CUDA_FLAGS_DEBUG "-g -Xarch_device -g0")
+endif()
+
+# Disable GCC's infamous warnings (they produce many false positives)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-maybe-uninitialized -Wno-stringop-overflow")
+    if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wno-maybe-uninitialized -Wno-stringop-overflow")
+    endif()
 endif()
 
 # Warn about redundant semicolons
-if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
-    CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
-    CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
-)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+   CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+   CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR
+   CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra-semi")
-    if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
-        CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
-    )
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+       CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR
+       CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra-semi-stmt")
     endif()
 endif()
 
-# Build tests using gtest
-if( TNL-SPH_BUILD_TESTS )
-   enable_testing()
+set(TNL_SPH_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/include" CACHE INTERNAL "Directories where TNL-SPH headers are located")
 
-   # repeat failed tests to tolerate sporadic failures
-   set( CMAKE_CTEST_ARGUMENTS ${CMAKE_CTEST_ARGUMENTS} --repeat until-pass:2 )
-
-   # let CTest write test results in the JUnit XML format
-   set( CMAKE_CTEST_ARGUMENTS ${CMAKE_CTEST_ARGUMENTS} --output-junit "${CMAKE_BINARY_DIR}/tests-report.xml" )
-
-   if( TNL-SPH_USE_SYSTEM_GTEST OR TNL-SPH_OFFLINE_BUILD )
-      # find GoogleTest installed in the local system
-      find_package( GTest REQUIRED )
-   else()
-      # fetch and build GoogleTest from source
-      include( FetchGoogleTest )
-   endif()
-   set( CXX_TESTS_FLAGS )
-   set( CUDA_TESTS_FLAGS )
-   set( TESTS_LIBRARIES GTest::gtest_main )
-   set( TESTS_LINKER_FLAGS "" )
-
-   if( TNL_BUILD_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug" )
-      # set compiler flags needed for code coverage
-      set( CXX_TESTS_FLAGS ${CXX_TESTS_FLAGS} --coverage )
-      set( CUDA_TESTS_FLAGS ${CUDA_TESTS_FLAGS} -Xcompiler --coverage )
-      set( TESTS_LINKER_FLAGS ${TESTS_LINKER_FLAGS} --coverage )
-   endif()
-
-   # TODO: Add mpi tests.
-endif()
-
-
-
-
+# Create the exported targets
+add_library(TNL_SPH INTERFACE)
+# Create aliases to match exported targets
+add_library(TNL::TNL_SPH ALIAS TNL_SPH)
 
 # Set the project's include path
 include_directories(include)
@@ -98,12 +94,7 @@ FetchContent_Declare(TNL
 set(TNL_EXPORT_INTERFACE_TARGETS ON)  # needed for adding to the interface target
 FetchContent_MakeAvailable(TNL)
 
-# Set the install path for Python modules
-# FIXME: for some reason relying on find_package from libs/pytnl fails (dependent target 'Python3::Module' is not defined)
-find_package(Python 3 COMPONENTS Interpreter Development REQUIRED)
-
-# TODO:
-# Require python vtk
+# FIXME: We should also require python with vtk module
 
 # Add project subdirectories
 add_subdirectory(include)

@@ -1,19 +1,13 @@
 #include <TNL/Devices/Cuda.h>
 using Device = TNL::Devices::Cuda;
 
-#include <TNL/Containers/StaticVector.h>
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
-
 #include <TNL/Particles/CellIndexer.h>
-#include <TNL/Particles/ParticlesTraits.h>
 
-template< typename Device >
 class ParticleSystemConfig
 {
    public:
-   using DeviceType = Device;
-
    using GlobalIndexType = int;
    using LocalIndexType = int;
    using CellIndexType = int;
@@ -22,10 +16,9 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 3;
 
    using UseWithDomainDecomposition = std::true_type;
-   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
+   using CellIndexerType = TNL::ParticleSystem::SimpleCellIndex< spaceDimension, std::index_sequence< 0, 1, 2 > >;
    //using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 2, 1, 0 > >;
-   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
+   using NeighborListType = typename TNL::Algorithms::Segments::Ellpack< Device, int >;
 };
 
 template< typename Device >
@@ -74,8 +67,7 @@ public:
 };
 
 using SPHDefs = SPHParams< Device >;
-
-using ParticlesConfig = ParticleSystemConfig< Device >;
+using ParticlesConfig = ParticleSystemConfig;
 
 /**
  * Include type of particle system.

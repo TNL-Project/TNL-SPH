@@ -68,6 +68,7 @@ configSetup( TNL::Config::ConfigDescription& config,
         config.addEntryEnum( "computationalTime" );
     config.addEntry< float >( "number-of-particles-balancing-coef", "Particles count treshold for rebalancing [%].", 0.05 );
     config.addEntry< float >( "computational-time-balancing-coef", "Comp. time treshold for rebalancing.", 0.001 );
+    config.addEntry< int >( "load-balancing-step-inteval", "Number of steps after load balancing is performed", 100 );
 
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );

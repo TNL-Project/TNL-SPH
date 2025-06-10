@@ -188,7 +188,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
       fluid->getParticles()->forAll( particleLoopConservative );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
+   if( fluid->periodicPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ) {
          const auto zoneParticleIndices_view = fluid->periodicPatches[ i ]->particleZone.getParticlesInZone().getConstView();
          const GlobalIndexType numberOfZoneParticles = fluid->periodicPatches[ i ]->particleZone.getNumberOfParticles();
@@ -310,7 +310,7 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
       boundary->getParticles()->forAll( particleLoopBoundaryConservative );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
+   if( boundary->periodicPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ) {
          const auto zoneParticleIndices_view = boundary->periodicPatches[ i ]->particleZone.getParticlesInZone().getConstView();
          const GlobalIndexType numberOfZoneParticles = boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles();

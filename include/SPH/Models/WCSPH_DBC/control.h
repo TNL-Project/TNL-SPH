@@ -18,43 +18,6 @@
 namespace TNL {
 namespace SPH {
 
-template< typename SPHConfig >
-void
-configSetupModel( TNL::Config::ConfigDescription& config )
-{
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using RealType = typename SPHTraitsType::RealType;
-   using VectorType = typename SPHTraitsType::VectorType;
-
-   config.addDelimiter( "WCSPH-DBC model parameters" );
-
-   config.addEntry< float >( "dp", "Initial particle distance.", 0 );
-   config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
-   config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
-   config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
-   config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
-   config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
-   config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
-   config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-   config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
-   config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-   config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
-   config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-   config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
-
-   //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-   //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-   //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   //}
-   //for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-   //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-   //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-   //}
-}
-
 /**
  * \brief Class used to store core parameters of SPH scheme.
  */
@@ -72,22 +35,22 @@ public:
    configSetupModel( TNL::Config::ConfigDescription& config )
    {
       config.addDelimiter( "WCSPH-DBC model parameters" );
-      config.addEntry< float >( "dp", "Initial particle distance.", 0 );
-      config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
-      config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
-      config.addEntry< float >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
-      config.addEntry< float >( "alpha", "Coefficient of artificial viscous term.", 0 );
-      config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
-      config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
-      config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-      config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
-      config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-      config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
-      config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
-      config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
-      config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
-      config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-      config.addEntry< RealType >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
+      config.addEntry< double >( "dp", "Initial particle distance.", 0 );
+      config.addEntry< double >( "h", "SPH method smoothing lentgh.", 0 );
+      config.addEntry< double >( "mass", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< double >( "delta", "Coefficient of artificial delta-WCSPH diffusive term.", 0 );
+      config.addEntry< double >( "alpha", "Coefficient of artificial viscous term.", 0 );
+      config.addEntry< double >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
+      config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
+      config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
+      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "CFL", "CFL number.", 0 );
+      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
+      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
+      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+      config.addEntry< double >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
 
       //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
       //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
@@ -102,20 +65,20 @@ public:
    void
    init( TNL::Config::ParameterContainer& parameters )
    {
-      h = parameters.getParameter< RealType >( "h" );
-      dp = parameters.getParameter< RealType >( "dp" );
-      mass = parameters.getParameter< RealType >( "mass" );
-      delta = parameters.getParameter< RealType >( "delta" );
-      alpha = parameters.getParameter< RealType >( "alpha" );
-      dynamicViscosity = parameters.getParameter< RealType >( "dynamicViscosity" );
-      speedOfSound = parameters.getParameter< RealType >( "speedOfSound" );
-      rho0 = parameters.getParameter< RealType >( "rho0" );
-      dtInit = parameters.getParameter< RealType >( "initial-time-step" );
-      cfl = parameters.getParameter< RealType >( "CFL" );
-      dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
-      eps = parameters.getParameter< RealType >( "eps" );
+      h = parameters.getParameter< double >( "h" );
+      dp = parameters.getParameter< double >( "dp" );
+      mass = parameters.getParameter< double >( "mass" );
+      delta = parameters.getParameter< double >( "delta" );
+      alpha = parameters.getParameter< double >( "alpha" );
+      dynamicViscosity = parameters.getParameter< double >( "dynamicViscosity" );
+      speedOfSound = parameters.getParameter< double >( "speedOfSound" );
+      rho0 = parameters.getParameter< double >( "rho0" );
+      dtInit = parameters.getParameter< double >( "initial-time-step" );
+      cfl = parameters.getParameter< double >( "CFL" );
+      dtMin = parameters.getParameter< double >( "minimal-time-step" );
+      eps = parameters.getParameter< double >( "eps" );
       gravity = parameters.getXyz< VectorType >( "external-force" );
-      mdbcExtrapolationDetTreshold = parameters.getParameter< RealType >( "mdbcExtrapolationDetTreshold" );
+      mdbcExtrapolationDetTreshold = parameters.getParameter< double >( "mdbcExtrapolationDetTreshold" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * dtInit;

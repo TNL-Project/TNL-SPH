@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../SPHTraits.h"
-#include <memory>
 
 namespace TNL {
 namespace SPH {

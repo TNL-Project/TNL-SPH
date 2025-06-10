@@ -1,0 +1,1 @@
+add_subdirectory(lidDrivenCavity2D_SHTC)

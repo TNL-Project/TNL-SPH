@@ -145,17 +145,15 @@ class OpenBoundaryConfig
          if( orientation[ 1 ] >= 0. ){
             //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
             //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal - bufferWidth[ 0 ] * orientation; //this could be more narrow
             zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + searchRadius * orientation;
          }
          if( orientation[ 1 ] <= 0. ){
             zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + searchRadius * orientation;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal - bufferWidth[ 0 ] * orientation; //this could be more narrow
          }
       }
    }
-
-
 };
 
 
