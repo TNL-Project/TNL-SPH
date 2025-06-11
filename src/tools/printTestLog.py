@@ -43,6 +43,8 @@ def process_and_print_results(file_path):
     for col in header:
         table.add_column(col.strip())
 
+    print(data)
+
     # Add rows to the table with conditional coloring
     for row in data:
         result = row[2].strip()
@@ -59,6 +61,18 @@ def process_and_print_results(file_path):
             dif_color = "red"
         comp_time_dif_text = f"[{dif_color}]{comp_time_dif}[/{dif_color}]"
 
+        tests = row[6].strip()
+
+        test_result = row[7].strip()
+        if "Success" in test_result:
+            test_result_color = "green"
+            test_result_text = f"[{test_result_color}]{test_result}[/{test_result_color}]"
+        elif "Failed" in test_result:
+            test_result_color = "red"
+            test_result_text = f"[{test_result_color}]{test_result}[/{test_result_color}]"
+        else :
+            test_result_text = f"{test_result}"
+
         # Add the formatted row to the table
         table.add_row(
             row[0].strip(),
@@ -67,6 +81,8 @@ def process_and_print_results(file_path):
             row[3].strip(),
             row[4].strip(),
             comp_time_dif_text,
+            tests,
+            test_result_text,
         )
 
     # Render the table
