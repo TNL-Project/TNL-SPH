@@ -63,12 +63,12 @@ public:
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
-   using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
+   using IntegrationScheme = TNL::SPH::IntegrationSchemes::MidpointScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
    //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
