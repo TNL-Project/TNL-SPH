@@ -44,22 +44,12 @@ def process_dam_break_boundary_particles( setup ):
 
     box_n = len( np_points_box )
     box_r = np.array( np_points_box, dtype=float ) #!!
-    box_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
-    box_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
+    box_v = np.zeros( ( box_n, 3 ) )
+    box_rho = setup[ 'density' ] * np.ones( box_n )
     box_p = np.zeros( box_n )
     box_elementSizes = ( setup[ "dp" ]**2 ) * np.ones( box_n )
     box_ptype = np.zeros( box_n )
-
-    # generate ghost nodes from normals
-    reader_normals = vtk.vtkPolyDataReader()
-    reader_normals.SetFileName( f'./sources/genCaseGeometries/dambreak_normals_dp{setup[ "dp" ]}.vtk' )
-    reader_normals.ReadAllScalarsOn()
-    reader_normals.ReadAllVectorsOn()
-    reader_normals.Update()
-
-    polydata_normals = reader_normals.GetOutput()
-
-    box_normals = np.array( dsa.WrapDataObject( polydata_normals ).PointData[ 'Normal' ], dtype=float )
+    box_normals = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Normal' ], dtype=float )
     # scale normals
     zero_normals_count = 0
     for i in range( 0,  len( box_normals ) ):
