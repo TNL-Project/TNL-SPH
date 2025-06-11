@@ -36,6 +36,7 @@ def generate_channel_boundary_particles( setup ):
 
     box_rx = []; box_ry = []
     ghost_rx = []; ghost_ry = []
+    normal_x = []; normal_y = []
     box_length_n = round( setup[ "channel_length" ] / dp )
     box_height_n = round( setup[ "channel_height" ] / dp )
 
@@ -46,6 +47,8 @@ def generate_channel_boundary_particles( setup ):
             box_ry.append( 0. - layer * dp )
             ghost_rx.append( ( x - ( n_boundary_layers ) ) * dp )
             ghost_ry.append( 0. + dp * ( layer + 1 ) )
+            normal_x.append( 0. )
+            normal_y.append( 1. )
 
     # top wall
     for layer in range( n_boundary_layers ):
@@ -54,16 +57,19 @@ def generate_channel_boundary_particles( setup ):
             box_ry.append( ( setup[ "channel_height" ] ) + layer * dp )
             ghost_rx.append( ( x - ( n_boundary_layers ) ) * dp )
             ghost_ry.append( setup[ "channel_height" ] - dp * ( layer + 1 ) )
+            normal_x.append( 0. )
+            normal_y.append( -1. )
 
     boundary_n = len( box_rx )
     boundary_r = np.array( ( box_rx, box_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
     boundary_ghostNodes = np.array( ( ghost_rx, ghost_ry, np.zeros( boundary_n ) ), dtype=float ).T #!!
+    boundary_normals = np.array( ( normal_x, normal_y, np.zeros( boundary_n ) ), dtype=float ).T #!!
     boundary_v = np.zeros( ( boundary_n, 3 ) )
     boundary_rho = setup[ "density" ] * np.ones( boundary_n )
     boundary_p = np.zeros( boundary_n )
     boundary_ptype = np.ones( boundary_n )
     box_to_write = saveParticlesVTK.create_pointcloud_polydata( boundary_r, boundary_v, boundary_rho, boundary_p, boundary_ptype,
-                                                                ghostNodes=boundary_ghostNodes )
+                                                                ghostNodes=boundary_ghostNodes, normals=boundary_normals )
     saveParticlesVTK.save_polydata( box_to_write, "sources/openchannel_boundary.vtk" )
 
     setup[ "boundary_n" ] = boundary_n
