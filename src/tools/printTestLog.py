@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import re
-from typing import Required
+from typing_extensions import Required
 from rich.console import Console
 from rich.repr import T
 from rich.table import Table
@@ -42,8 +42,6 @@ def process_and_print_results(file_path):
     # Define table columns
     for col in header:
         table.add_column(col.strip())
-
-    print(data)
 
     # Add rows to the table with conditional coloring
     for row in data:
