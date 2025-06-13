@@ -115,7 +115,7 @@ if(ENABLE_GENCAGE_DOWNLOAD)
    # Set executable permissions for the downloaded file
    file(CHMOD ${DESTINATION_FILE} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 else()
-    message(STATUS "GenCase download is disabled (ENABLE_GENCAGE_DOWNLOAD is FALSE)")
+    message(STATUS "GenCase download is disabled (ENABLE_GENCASE_DOWNLOAD is FALSE)")
 endif()
 
 # Add project subdirectories
