@@ -98,7 +98,7 @@ FetchContent_MakeAvailable(TNL)
 
 # Download the gencase from DualSPHysics
 option(ENABLE_GENCASE_DOWNLOAD "Enable downloading GenCase_linux64" FALSE)
-if(ENABLE_GENCAGE_DOWNLOAD)
+if(ENABLE_GENCASE_DOWNLOAD)
    set(DOWNLOAD_URL "https://github.com/DualSPHysics/DualSPHysics/raw/master/bin/linux/GenCase_linux64")
    set(DESTINATION_DIR "${CMAKE_SOURCE_DIR}/src/tools/3rdparty")
    set(DESTINATION_FILE "${DESTINATION_DIR}/GenCase_linux64")
