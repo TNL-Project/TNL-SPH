@@ -5,7 +5,8 @@ import evaluateExamplesMetrics
 wcsph_rsph_configurations = [
         # dam break 2D
         {
-            "case" : 'RSPH/damBreak2D_RSPH',
+            "case-tag" : "RSPH/damBreak2D_RSPH",
+            "case" : "RSPH/damBreak2D_RSPH",
             "evaluation-function" : None
         }
 ]
@@ -133,17 +134,18 @@ wcsph_bi_configurations = [
         },
         # dam break 3D
         {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-inviscid",
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-conservative",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConsistent_numeric",
+            "bc-type" : "BIConservative_numeric",
+            "bc-correction" : "ElasticBounceLight",
+            "time-integration" : "MidpointScheme",
             "viscous-term" : "None",
+            "diffusive-term" : "None",
             "dp" : 0.01,
-            "h-coef" :  2,
-            "cfl" : 0.05,
+            "h-coef" :  3,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
+            # NOTE: Doesn't work! Requires midpoint?
         },
-        # NOTE: The previous works as it is, but using BIConsistent_numeric and including PV-MGVT,
-        #       lower CLF is required in order to mantain stability. 
         {
             "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-MGVT",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
@@ -154,20 +156,6 @@ wcsph_bi_configurations = [
             "cfl" : 0.05,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
         },
-        # NOTE: Doesn't work even with smaller CFL. Use midpoint scheme?
-        {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-conservative",
-            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConservative_numeric",
-            "viscous-term" : "None",
-            "diffusive-term" : "None",
-            "dp" : 0.01,
-            "h-coef" :  2,
-            "cfl" : 0.05,
-            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
-        },
-        # NOTE: With dp=0.01, this works even with default CFL, but for default dp=0.02,
-        #       it requires lower CFL
         {
             "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_conservative-MGVT",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
@@ -176,6 +164,8 @@ wcsph_bi_configurations = [
             "h-coef" :  2,
             "cfl" : 0.05,
             "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
+            # NOTE: With dp=0.01, this works even with default CFL, but for default dp=0.02,
+            #       it requires lower CFL
         },
         {
             "case-tag" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
@@ -189,6 +179,56 @@ wcsph_bi_configurations = [
         }
 ]
 
+test_default_examples = [
+        # RSPH:
+        {
+            "case-tag" : "RSPH/damBreak2D_RSPH_default",
+            "case" : "RSPH/damBreak2D_RSPH",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        # WCSPH-DBC:
+        {
+            "case-tag" : "WCSPH-DBC/damBreak2D_WCSPH-DBC_default",
+            "case" : "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        {
+            "case-tag" : "WCSPH-DBC/damBreak3D_WCSPH-DBC_default",
+            "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        {
+            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC_default",
+            "case" : "WCSPH-DBC/poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        {
+            "case-tag" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC_default",
+            "case" : "WCSPH-DBC/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-DBC",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        # WCSPH-BI:
+        {
+            "case-tag" : "WCSPH-BI/damBreak2D_WCSPH-BI_default",
+            "case" : "WCSPH-BI/damBreak2D_WCSPH-BI",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        {
+            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_default",
+            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        {
+            "case-tag" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI_default",
+            "case" : "WCSPH-BI/poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        },
+        {
+            "case-tag" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI_default",
+            "case" : "WCSPH-BI/poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
+            "evaluation-function" : evaluateExamplesMetrics.empty
+        }
+]
 
 test_configurations = [
         # dam break 2D
@@ -199,24 +239,4 @@ test_configurations = [
             "h-coef" :  2**0.5,
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_DBC
         }
-        #{
-        #    "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
-        #    "bc-type" : "DBC",
-        #    "dp" : 0.01,
-        #    "h-coef" :  2,
-        #    "viscous-term" : "PhysicalViscosity",
-        #    "evaluation-function" : None
-        #}
 ]
-
-
-#        {
-#            "case" : "WCSPH-DBC/damBreak3D_WCSPH-DBC",
-#            "bc-type" : "DBC",
-#            "dp" : 0.01,
-#            "h-coef" :  2,
-#            "diffusive_term" : "MolteniDiffusiveTerm",
-#            "delta" : 0.1,
-#            "viscous-term" : "ArtificialViscosity"
-#            "alpha" : 0.02,
-#        },

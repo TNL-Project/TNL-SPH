@@ -151,6 +151,14 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
+
+    with open( 'sources/config.ini', 'w' ) as file:
+      file.write( config_file )
+
+    # write parameters to config file
+    with open( 'template/config-periodic-boundary_template.ini', 'r' ) as file :
+      config_file = file.read()
+
     config_file = config_file.replace( 'placeholderPeriodicityLeftParticles', str( setup[ "periodicityLeft_n" ] ) )
     config_file = config_file.replace( 'placeholderPeriodicityLeftAllocatedParticles', str( 2 * setup[ "periodicityLeft_n" ] ) )
     config_file = config_file.replace( 'placeholderPeriodicityRightParticles', str( setup[ "periodicityRight_n" ] ) )
@@ -184,7 +192,7 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderOutletShiftVector_x', str( round( setup[ "periodicityRight_shift_vector_x" ], 7 ) ) )
     config_file = config_file.replace( 'placeholderOutletShiftVector_y', str( 0. ) )
 
-    with open( 'sources/config.ini', 'w' ) as file:
+    with open( 'sources/config-periodic-boundary.ini', 'w' ) as file:
       file.write( config_file )
 
 def write_domain_background_grid( setup ):

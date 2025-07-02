@@ -44,22 +44,12 @@ def process_dam_break_boundary_particles( setup ):
 
     box_n = len( np_points_box )
     box_r = np.array( np_points_box, dtype=float ) #!!
-    box_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
-    box_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
+    box_v = np.zeros( ( box_n, 3 ) )
+    box_rho = setup[ 'density' ] * np.ones( box_n )
     box_p = np.zeros( box_n )
     box_elementSizes = ( setup[ "dp" ]**2 ) * np.ones( box_n )
     box_ptype = np.zeros( box_n )
-
-    # generate ghost nodes from normals
-    reader_normals = vtk.vtkPolyDataReader()
-    reader_normals.SetFileName( f'./sources/genCaseGeometries/dambreak_normals_dp{setup[ "dp" ]}.vtk' )
-    reader_normals.ReadAllScalarsOn()
-    reader_normals.ReadAllVectorsOn()
-    reader_normals.Update()
-
-    polydata_normals = reader_normals.GetOutput()
-
-    box_normals = np.array( dsa.WrapDataObject( polydata_normals ).PointData[ 'Normal' ], dtype=float )
+    box_normals = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Normal' ], dtype=float )
     # scale normals
     zero_normals_count = 0
     for i in range( 0,  len( box_normals ) ):
@@ -147,6 +137,7 @@ def write_simulation_params( setup ):
       config_file = file.read()
 
     config_file = config_file.replace( '#placeholderBoundaryConditionsType',  setup[ "bc_type" ] )
+    config_file = config_file.replace( '#placeholderBoundaryCorrection',  setup[ "bc_correction" ] )
     config_file = config_file.replace( '#placeholderDiffusiveTerm', setup[ "diffusive_term" ] )
     config_file = config_file.replace( '#placeholderViscosTerm', setup[ "viscous_term" ] )
     config_file = config_file.replace( '#placeholderTimeIntegration', setup[ "time_integration" ] )
@@ -176,8 +167,9 @@ if __name__ == "__main__":
     g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
     g.add_argument("--cfl", type=float, default=0.1, help="referential density of the fluid")
     g.add_argument("--bc-type", type=str, default="BIConservative_numeric", help="type of solid walls boundary conditions")
+    g.add_argument("--bc-correction", type=str, default="ElasticBounce", help="non-penetrable bc correction")
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm", help="type of solid walls boundary conditions")
-    g.add_argument("--viscous-term", type=str, default="ArtificialViscosity", help="type of solid walls boundary conditions")
+    g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MGVT", help="type of solid walls boundary conditions")
     g.add_argument("--alpha", type=float, default=0.02, help="artificial vicosity parameter")
     g.add_argument("--dynamic-viscosity", type=float, default=0.001, help="dynamic viscosity")
     g.add_argument("--time-integration", type=str, default="VerletScheme", help="time integration scheme")
@@ -202,6 +194,7 @@ if __name__ == "__main__":
         "dynamic_viscosity" : args.dynamic_viscosity,
         # terms and formulations
         "bc_type" : args.bc_type,
+        "bc_correction" : args.bc_correction,
         "diffusive_term" : args.diffusive_term,
         "viscous_term" : args.viscous_term,
         "time_integration" : args.time_integration

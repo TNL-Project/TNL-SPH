@@ -15,23 +15,18 @@ template< typename Simulation,
                              TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename Simulation::SPHConfig > >,
              bool > Enabled = true >
 void
-exec( Simulation& sph, TNL::Logger& log )
+exec( Simulation& sph )
 {
    EnergyFields energyMonitor;
    energyMonitor.init( sph.fluid, true );
 
-   while( sph.timeStepping.runTheSimulation() ) {
+   while( sph.timeStepping.runTheSimulation() )
+   {
       // search for neighbros
-      sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log );
-      sph.timeMeasurement.stop( "search" );
-      sph.writeLog( log, "Search...", "Done." );
+      sph.performNeighborSearch();
 
       // perform interaction with given model
-      sph.timeMeasurement.start( "interact" );
       sph.interact();
-      sph.timeMeasurement.stop( "interact" );
-      sph.writeLog( log, "Interact...", "Done." );
       // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
@@ -40,22 +35,13 @@ exec( Simulation& sph, TNL::Logger& log )
       sph.timeStepping.outputTimeStep( sph.outputDirectory + "/timeStep.dat" );
 
       //integrate predictor step
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integratePredictorStep( sph.fluid, sph.boundary, sph.timeStepping );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate - predictor step...", "Done." );
+      sph.symplecticVerletPredictor();
 
       // search for neighbros
-      sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log );
-      sph.timeMeasurement.stop( "search" );
-      sph.writeLog( log, "Search...", "Done." );
+      sph.performNeighborSearch();
 
       // perform interaction with given model
-      sph.timeMeasurement.start( "interact" );
       sph.interact();
-      sph.timeMeasurement.stop( "interact" );
-      sph.writeLog( log, "Interact...", "Done." );
       // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
@@ -64,19 +50,17 @@ exec( Simulation& sph, TNL::Logger& log )
       energyMonitor.integrate( sph.timeStepping.getTimeStep() );
 
       //integrate
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integrateCorrectorStep( sph.fluid, sph.boundary, sph.timeStepping );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate - corrector step...", "Done." );
+      sph.symplecticVerletCorrector();
 
       // compute and outpute energy levels
       energyMonitor.computeEnergyLevels( sph.fluid, sph.modelParams );
 
       // output particle data
-      sph.makeSnapshot( log );
+      sph.makeSnapshot();
       energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+
       // check timers and if measurement or interpolation should be performed, is performed
-      sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
+      sph.measure();
 
       // update time step
       sph.updateTime();
@@ -90,116 +74,53 @@ template<
       std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::MidpointScheme< typename Simulation::SPHConfig > >,
       bool > Enabled = true >
 void
-exec( Simulation& sph, TNL::Logger& log )
+exec( Simulation& sph )
 {
    EnergyFields energyMonitor;
    energyMonitor.init( sph.fluid );
 
    // search for neighbros
-   sph.timeMeasurement.start( "search" );
-   sph.performNeighborSearch( log, true );
-   sph.timeMeasurement.stop( "search" );
-   sph.writeLog( log, "Search...", "Done." );
+   sph.performNeighborSearch( true );
 
-   /*
-   // perform interaction with given model
-   sph.timeMeasurement.start( "interact" );
-   sph.interact();
-   sph.timeMeasurement.stop( "interact" );
-   sph.writeLog( log, "Interact...", "Done." );
-   */
+   while( sph.timeStepping.runTheSimulation() )
+   {
+      sph.midpointPredictor();
 
-   while( sph.timeStepping.runTheSimulation() ) {
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->predictor( sph.timeStepping.getTimeStep(), sph.fluid );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate: predictor...", "Done." );
-
-      int midpointIteration = 0;
-      float residualPrevious = 0.f;
-      float midpointRelaxCoef = sph.modelParams.midpointRelaxCoef;
-
-      while( midpointIteration < sph.modelParams.midpointMaxInterations ) {
-         // backup derivatives
-         sph.fluid->getIntegratorVariables()->drhodt_in = sph.fluid->getVariables()->drho;
-         sph.fluid->getIntegratorVariables()->dvdt_in = sph.fluid->getVariables()->a;
-
+      while( sph.integrator->runMidpointSubiteration( sph.modelParams ) )
+      {
          // update inner loop variables
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->midpointUpdateVariables( sph.timeStepping.getTimeStep(), sph.fluid );
-         //sph.integrator->midpointUpdatePositions( sph.timeStepping.getTimeStep(), sph.fluid );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: midpoint update...", "Done." );
+         sph.midpointUpdateVariables();
 
          // search for neighbros
-         sph.timeMeasurement.start( "search" );
-         sph.performNeighborSearch( log, true );
-         sph.timeMeasurement.stop( "search" );
-         sph.writeLog( log, "Search...", "Done." );
+         sph.performNeighborSearch( true );
 
          // perform interaction with given model
-         sph.timeMeasurement.start( "interact" );
          sph.interact();
-         sph.timeMeasurement.stop( "interact" );
-         sph.writeLog( log, "Interact...", "Done." );
-
-         // custom: no-penetration bc
          BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
-         // compute residua
-         sph.timeMeasurement.start( "integrate" );
-         const float residual = sph.integrator->midpointResiduals( sph.fluid, sph.modelParams );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: compute residuals...", "Done." );
-         std::cout << "Step: " << sph.timeStepping.getStep() << " midpoint iteractions: " << midpointIteration
-                   << " residua: " << residual << " relax coef: " << midpointRelaxCoef << std::endl;
-
-         // stop midpoint iterations
-         if( residual < sph.modelParams.midpointResidualTolerance )
-            midpointIteration = sph.modelParams.midpointMaxInterations;
-         // constrol residua decay
-         if( midpointIteration > 0 )
-            if( residual / residualPrevious > sph.modelParams.midpointResidualMinimalDecay )
-               midpointRelaxCoef = sph.modelParams.midpointRelaxCoefIncrement
-                                 + ( 1.0 - sph.modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
-         // backup residua
-         residualPrevious = residual;
+         // compute residuals and update relaxation factors
+         sph.midpointResidualsAndRelaxationFactor();
 
          // relax
-         sph.timeMeasurement.start( "integrate" );
-         sph.integrator->relax( sph.fluid, sph.modelParams, midpointRelaxCoef, midpointIteration );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: relax...", "Done." );
-
-         midpointIteration++;
+         sph.midpointRelax();
       }
-      //std::cout  << "Midpoint iteractions residua: " << residualPrevious << " relax coef: " << midpointRelaxCoef << std::endl;
 
       // compute and outpute energy levels
       energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
       energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
-      sph.timeMeasurement.start( "integrate" );
-      if( sph.timeStepping.getStep() == 0 )
-         sph.integrator->corrector( 0, sph.fluid );
-      else
-         sph.integrator->corrector( sph.timeStepping.getTimeStep(), sph.fluid );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate: corrector...", "Done." );
+      // integration corrector
+      sph.midpointCorrector();
 
+      // post integration domain adjustemnt
       BoundaryCorrection::boundaryCorrectionPST( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // output particle data
-      if( sph.timeStepping.checkOutputTimer( "save_results" ) ) {
-         // compute pressure from density
-         sph.model.computePressureFromDensity( sph.fluid, sph.modelParams );
-         sph.model.computePressureFromDensity( sph.boundary, sph.modelParams );
+      sph.makeSnapshot();
 
-         sph.save( log );
-      }
-      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
       // check timers and if measurement or interpolation should be performed, is performed
-      sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
+      sph.measure();
 
       // update time step
       sph.updateTime();
@@ -254,26 +175,10 @@ exec( Simulation& sph, TNL::Logger& log )
 int
 main( int argc, char* argv[] )
 {
-   // prepare client parameters
-   TNL::Config::ParameterContainer cliParams;
-   TNL::Config::ConfigDescription cliConfig;
-
-   // prepare sph parameters
-   TNL::Config::ParameterContainer parameters;
-   TNL::Config::ConfigDescription config;
-
-   try {
-      TNL::SPH::template initialize< Simulation >( argc, argv, cliParams, cliConfig, parameters, config );
-   }
-   catch( ... ) {
-      return EXIT_FAILURE;
-   }
-
-   TNL::Logger log( 100, std::cout );
    Simulation sph;
-   sph.init( parameters, log );
-   sph.writeProlog( log );
-   exec( sph, log );
-   sph.writeEpilog( log );
+   sph.init( argc, argv );
+   sph.writeProlog();
+   exec( sph );
+   sph.writeEpilog();
 }
 

@@ -25,7 +25,7 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    using SPHTraitsType = typename BaseType::SPHTraitsType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   using ParticleZone = ParticleZone< typename ParticleSystem::Config >;
+   using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticleSystem::Config, typename ParticleSystem::DeviceType >;
 
    //remove
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
@@ -69,7 +69,7 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    }
 
    void
-   writeProlog( TNL::Logger& logger ) const noexcept
+   writeProlog( TNL::Logger& logger )
    {
       BaseType::writeProlog( logger );
       zone.writeProlog( logger );

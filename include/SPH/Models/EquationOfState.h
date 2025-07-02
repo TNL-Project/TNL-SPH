@@ -1,8 +1,43 @@
 #pragma once
 
+#include "../SPHTraits.h"
+
 namespace TNL {
 namespace SPH {
 namespace EquationsOfState {
+
+/**
+ * \brief Template for disabled equation of state.
+ */
+template< typename SPHCaseConfig >
+class None
+{
+   public:
+   using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
+   using RealType = typename SPHCaseConfig::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     __cuda_callable__
+     ParamsType( SPHState sphState ) {}
+   };
+
+   __cuda_callable__
+   static RealType
+   DensityToPressure( const RealType& rho, const ParamsType& params )
+   {
+      return 0.f;
+   }
+
+   __cuda_callable__
+   static RealType
+   pressureToDensity( const RealType& p, const ParamsType& params )
+   {
+      return 0.f;
+   }
+};
 
 template< typename SPHCaseConfig >
 class TaitWeaklyCompressibleEOS
@@ -75,9 +110,9 @@ public:
       const RealType c0 = params.c0;
       const RealType rho0 = params.rho0;
       return p / ( c0 * c0 ) + rho0;
-
    }
 };
+
 
 } // EquationsOfState
 } // SPH

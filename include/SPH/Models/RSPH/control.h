@@ -5,39 +5,11 @@
 #include <SPH/Kernels.h>
 #include <SPH/Models/RSPH/IntegrationSchemes/VerletScheme.h>
 
-
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
-#include <complex>
-#include <limits>
 
 namespace TNL {
 namespace SPH {
-
-template< typename SPHConfig >
-void
-configSetupModel( TNL::Config::ConfigDescription& config )
-{
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using RealType = typename SPHTraitsType::RealType;
-   using VectorType = typename SPHTraitsType::VectorType;
-
-   config.addDelimiter( "WCSPH-DBC model parameters" );
-   config.addEntry< float >( "dp", "Initial particle distance.", 0 );
-   config.addEntry< float >( "h", "SPH method smoothing lentgh.", 0 );
-   config.addEntry< float >( "mass", "Mass of particle, constant for all particles.", 0 );
-   config.addEntry< float >( "limiterEta", "Coefficient of modified linearized Roe scheme.", 0 );
-   config.addEntry< float >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
-   config.addEntry< float >( "speedOfSound", "Numerical speed of sound.", 0 );
-   config.addEntry< float >( "rho0", "Referential density of the medium.", 0 );
-   config.addEntry< RealType >( "initial-time-step", "Initial time step.", 0 );
-   config.addEntry< RealType >( "CFL", "CFL number.", 0 );
-   config.addEntry< RealType >( "minimal-time-step", "Minimal allowed time step.", 0 );
-   config.addEntry< RealType >( "external-force-x", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-y", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "external-force-z", "External bulk forces.", 0 );
-   config.addEntry< RealType >( "eps", "Coefficient to prevent denominator from zero.", 0 );
-}
 
 /**
  * \brief Class used to store core parameters of SPH scheme.
@@ -51,6 +23,30 @@ public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
+
+   static void
+   configSetupModel( TNL::Config::ConfigDescription& config )
+   {
+      using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+      using RealType = typename SPHTraitsType::RealType;
+      using VectorType = typename SPHTraitsType::VectorType;
+
+      config.addDelimiter( "WCSPH-DBC model parameters" );
+      config.addEntry< double >( "dp", "Initial particle distance.", 0 );
+      config.addEntry< double >( "h", "SPH method smoothing lentgh.", 0 );
+      config.addEntry< double >( "mass", "Mass of particle, constant for all particles.", 0 );
+      config.addEntry< double >( "limiterEta", "Coefficient of modified linearized Roe scheme.", 0 );
+      config.addEntry< double >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
+      config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
+      config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
+      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "CFL", "CFL number.", 0 );
+      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
+      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
+      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
+   }
 
    void
    init( TNL::Config::ParameterContainer& parameters )

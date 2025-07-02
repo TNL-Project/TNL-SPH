@@ -1,18 +1,13 @@
 #include <TNL/Devices/Cuda.h>
 using Device = TNL::Devices::Cuda;
 
-#include <TNL/Containers/StaticVector.h>
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
-
 #include <TNL/Particles/CellIndexer.h>
-#include <TNL/Particles/ParticlesTraits.h>
 
-template< typename Device >
 class ParticleSystemConfig
 {
    public:
-   using DeviceType = Device;
 
    using GlobalIndexType = int;
    using LocalIndexType = int;
@@ -22,9 +17,8 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 2;
 
    using UseWithDomainDecomposition = std::false_type;
-   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 1, 0 > >;
-   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >; //deprecated
+   using CellIndexerType = TNL::ParticleSystem::SimpleCellIndex< spaceDimension, std::index_sequence< 1, 0 > >;
+   using NeighborListType = TNL::Algorithms::Segments::Ellpack< Device, int >; //deprecated
 };
 
 template< typename Device >
@@ -39,7 +33,6 @@ class SPHConfig
    using RealType = float;
 
    static constexpr int spaceDimension = 2;
-   static constexpr int numberOfBoundaryBuffers = 2;
    static constexpr int numberOfPeriodicBuffers = 0;
 };
 
@@ -66,16 +59,15 @@ class SPHParams
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
+   using ViscousTerm = TNL::SPH::ViscousTerms::PhysicalViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
+   using BCType = TNL::SPH::WCSPH_BCTypes::MDBC;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
 };
 
 using SPHDefs = SPHParams< Device >;
-
-using ParticlesConfig = ParticleSystemConfig< Device >;
+using ParticlesConfig = ParticleSystemConfig;
 
 /**
  * Include type of particle system.

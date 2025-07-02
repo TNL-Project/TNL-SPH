@@ -1,5 +1,4 @@
 #include "Interactions.h"
-#include <execution>
 #include "details.h"
 
 namespace TNL {
@@ -112,7 +111,7 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid,
    };
    fluid->getParticles()->forAll( particleLoop );
 
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ){
+   if( fluid->periodicPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ){
 
          const auto zoneParticleIndices_view = fluid->periodicPatches[ i ]->particleZone.getParticlesInZone().getConstView();

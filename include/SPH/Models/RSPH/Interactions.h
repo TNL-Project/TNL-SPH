@@ -8,11 +8,15 @@
  **/
 #include "control.h"
 
+// placeholder for empty open boundary conditions
+#include "../emptyOpenBCPlaceholder.h"
+#include "../SPHMultisetSolverTemplate.h"
+
 namespace TNL {
 namespace SPH {
 
 template< typename Particles, typename ModelConfig >
-class RSPH
+class RSPH : public SPHMultisetSolverTemplate< Particles, ModelConfig >
 {
 public:
 
@@ -31,16 +35,16 @@ public:
    using VectorType = typename SPHTraitsType::VectorType;
 
    using FluidVariables = FluidVariables< SPHConfig >;
-   using BoundaryVariables = BoundaryVariables< ModelConfig >;
-   using OpenBoundaryVariables = Empty< SPHConfig >;
+   using BoundaryVariables = BoundaryVariables< SPHConfig >;
+   using OpenBoundaryVariables = EmptyVariables< SPHConfig >;
    using IntegrationSchemeType = typename ModelConfig::IntegrationScheme;
    using IntegrationSchemeVariables = typename IntegrationSchemeType::IntegrationSchemeVariablesType;
    using KernelFunction = typename ModelConfig::KernelFunction;
    using RiemannSolver = typename ModelConfig::RiemannSolver;
    using EOS = typename ModelConfig::EOS;
 
-   using OpenBoundaryConfig = Empty< SPHConfig >;
-   using OpenBoundaryModel = Empty< SPHConfig >;
+   using OpenBoundaryConfig = NoOpenBC< SPHConfig >;
+   using OpenBoundaryModel = NoOpenBC< SPHConfig >;
 
    /**
     * Constructor.

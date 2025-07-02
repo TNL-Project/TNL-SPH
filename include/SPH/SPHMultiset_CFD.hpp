@@ -13,15 +13,23 @@
 #include "distributedUtils.h"
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
+#include <SPH/configInit.h>
+
 namespace TNL {
 namespace SPH {
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
 {
-   logger.writeHeader( "SPH simulation initialization." );
+   try {
+      initialize< SimulationType >( argc, argv, cliParams, cliConfig, parameters, config );
+   }
+   catch ( ... ) {
+      std::cerr << std::endl;
+   }
 
+   logger.writeHeader( "SPH simulation initialization." );
 #ifdef HAVE_MPI
    // build config for distributed domain
    logger.writeParameter( "Configuration of distributed simulation:", "" );
@@ -36,6 +44,19 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
+
+   // set balancing tresholds
+   loadBalancingMeasure = parameters.getParameter< std::string >( "load-balancing-measure" );
+   loadBalancingStepInterval = parameters.getParameter< int >( "load-balancing-step-inteval" );
+   fluid->getDistributedParticles()->setParticlesCountResizeTrashold(
+         parameters.getParameter< float >( "number-of-particles-balancing-coef" ) );
+   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+         parameters.getParameter< float >( "computational-time-balancing-coef" ) );
+   std::cout << "Printf: comp time balancing coef:" << parameters.getParameter< float >( "computational-time-balancing-coef" ) << std::endl;
+
+   // add timers related to synchronization and load balancing
+   timeMeasurement.addTimer( "synchronize", false );
+   timeMeasurement.addTimer( "rebalance", false );
 #else
    // initialize particle sets
    initParticleSets( parameters, logger );
@@ -44,14 +65,19 @@ SPHMultiset_CFD< Model >::init( TNL::Config::ParameterContainer& parameters, TNL
    // initialize open boundary conditions
    if( parameters.getParameter< std::string >( "open-boundary-config" ) != "" ){
       initOpenBoundaryPatches( parameters, logger );
+
+      // add custom timers related to open boundary conditions
+      timeMeasurement.addTimer( "extrapolate-openbc" );
+      timeMeasurement.addTimer( "apply-openbc" );
    }
 
    // init periodic boundary conditions
-   //TODO: I don't like that open boundary buffer are selected in compile time.
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
-      fluid->initializePeriodicity( parameters );
-      boundary->initializePeriodicity( parameters );
+   if( parameters.getParameter< std::string >( "periodic-boundary-config" ) != "" ){
+      initPeriodicBoundaryPatches( parameters, logger );
 
+      // add custom timers related to perioric boundary conditions
+      timeMeasurement.addTimer( "enforce-periodic-bc" );
+      timeMeasurement.addTimer( "transfer-periodic-bc" );
       timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
       timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
    }
@@ -139,7 +165,7 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  )
+SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -169,6 +195,25 @@ SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContain
                                             domainOrigin );
    }
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   logger.writeParameter( "Initialization of open boundary patches.", "" );
+   const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
+   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
+
+   // setup and parse open boundary config
+   for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
+   }
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+
+   fluid->initializePeriodicity( parameters, parametersOpenBoundary );
+   boundary->initializePeriodicity( parameters, parametersOpenBoundary );
 }
 
 #ifdef HAVE_MPI
@@ -296,8 +341,10 @@ SPHMultiset_CFD< Model >::readParticleFilesDistributed( TNL::Config::ParameterCo
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool performBoundarySearch )
+SPHMultiset_CFD< Model >::performNeighborSearch( bool performBoundarySearch )
 {
+   timeMeasurement.start( "search" );
+
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
       fluid->searchForNeighbors();
       if( verbose == "full" )
@@ -340,21 +387,24 @@ SPHMultiset_CFD< Model >::performNeighborSearch( TNL::Logger& logger, bool perfo
       if( verbose == "full" )
          logger.writeParameter( "Boundary-fluid search procedure:", "Done." );
    }
+
+   timeMeasurement.stop( "search" );
+   writeLog("Search...", "Done." );
 }
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::removeParticlesOutOfDomain( TNL::Logger& log )
+SPHMultiset_CFD< Model >::removeParticlesOutOfDomain()
 {
    const int numberOfParticlesToRemove = fluid->getParticles()->getNumberOfParticlesToRemove();
    fluid->getParticles()->removeParitclesOutOfDomain();
 
    if( fluid->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
       const int numberOfParticlesOutOfDomain = fluid->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-      log.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      logger.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
       // search for neighbros
       timeMeasurement.start( "search" );
-      this->performNeighborSearch( log );
+      this->performNeighborSearch();
       timeMeasurement.stop( "search" );
    }
 }
@@ -374,49 +424,63 @@ template< typename Model >
 void
 SPHMultiset_CFD< Model >::extrapolateOpenBC()
 {
+   timeMeasurement.start( "extrapolate-openbc" );
    for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
       //TODO Check if open boundary buffer is really open boundary buffer
       model.extrapolateOpenBoundaryData( fluid, openBoundaryPatches[ i ], modelParams, openBoundaryPatches[ i ]->config );
    }
+   timeMeasurement.stop( "extrapolate-openbc" );
+   writeLog( "Extrapolate open BC...", "Done." );
 }
 
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::applyOpenBC( const RealType timeStepFact )
 {
+   timeMeasurement.start( "apply-openbc" );
    for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
       //TODO Check if open boundary buffer is really open boundary buffer
       openBoundaryModel.applyOpenBoundary(
          timeStepFact * timeStepping.getTimeStep(), fluid, openBoundaryPatches[ i ], openBoundaryPatches[ i ]->config );
    }
+   timeMeasurement.stop( "apply-openbc" );
+   writeLog( "Update open BC...", "Done." );
 }
 
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::applyPeriodicBCEnforce()
 {
+   timeMeasurement.start( "enforce-periodic-bc" );
    timeMeasurement.start( "periodicity-fluid-updateZone" );
    fluid->enforcePeriodicPatches();
    timeMeasurement.stop( "periodicity-boundary-updateZone" );
    timeMeasurement.start( "periodicity-fluid-updateZone" );
    boundary->enforcePeriodicPatches();
    timeMeasurement.stop( "periodicity-boundary-updateZone" );
+   timeMeasurement.stop( "enforce-periodic-bc" );
+   writeLog( "Apply periodic BC...", "Done." );
 }
 
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::applyPeriodicBCTransfer()
 {
+   timeMeasurement.start( "transfer-periodic-bc" );
    const long unsigned int numberOfPeriodicPatches = std::size( fluid->periodicPatches );
    for( long unsigned int i = 0; i < numberOfPeriodicPatches; i++ ) {
       openBoundaryModel.periodicityParticleTransfer( fluid, fluid->periodicPatches[ i ] );
    }
+   timeMeasurement.stop( "transfer-periodic-bc" );
+   writeLog( "Transfer periodic BC...", "Done." );
 }
 
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::interact()
 {
+   timeMeasurement.start( "interact" );
+
    // update solid boundary conditions
    model.updateSolidBoundary( fluid, boundary, modelParams );
    if( openBoundaryPatches.size() > 0 ) {
@@ -437,6 +501,9 @@ SPHMultiset_CFD< Model >::interact()
       }
    }
    model.finalizeInteraction( fluid, boundary, modelParams );
+
+   timeMeasurement.stop( "interact" );
+   writeLog( "Interact...", "Done." );
 }
 
 template< typename Model >
@@ -454,21 +521,118 @@ SPHMultiset_CFD< Model >::updateTime()
 }
 
 template< typename Model >
-template< typename SPHKernelFunction, typename EOS >
 void
-SPHMultiset_CFD< Model >::measure( TNL::Logger& logger )
+SPHMultiset_CFD< Model >::measure()
 {
-   simulationMonitor.template measure< SPHKernelFunction, EOS >( fluid, boundary, modelParams, timeStepping, logger, verbose );
+   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
+         fluid, boundary, modelParams, timeStepping, logger, verbose );
+}
+
+//template< typename Model >
+//template< typename IntegrationStage >
+//void
+//SPHMultiset_CFD< Model >::integrate( IntegrationStage integrationStage )
+//{
+//   timeMeasurement.start( "integrate" );
+//   integrator->integrate( fluid, boundary, timeStepping, integrationStage );
+//   timeMeasurement.stop( "integrate" );
+//   writeLog( "Integrate...", "Done." );
+//}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::integrateVerletStep( const bool integrateBoundary )
+{
+   timeMeasurement.start( "integrate" );
+   integrator->integratStepVerlet( fluid, boundary, timeStepping, integrateBoundary );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::symplecticVerletPredictor()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->integratePredictorStep( fluid, boundary, timeStepping );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate - predictor step...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::symplecticVerletCorrector()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->integrateCorrectorStep( fluid, boundary, timeStepping );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate - corrector step...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointPredictor()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->predictor( timeStepping.getTimeStep(), fluid );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: predictor...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointUpdateVariables()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->midpointUpdateVariables( timeStepping.getTimeStep(), fluid );
+   //integrator->midpointUpdatePositions( sph.timeStepping.getTimeStep(), sph.fluid );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: midpoint update...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointResidualsAndRelaxationFactor()
+{
+   integrator->computeResiduals( fluid, modelParams );
+   integrator->updateRelaxationFactor( modelParams );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointRelax()
+{
+   timeMeasurement.start( "integrate" );
+   integrator->relax( fluid, modelParams );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: relax...", "Done." );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::midpointCorrector()
+{
+   timeMeasurement.start( "integrate" );
+   if( timeStepping.getStep() == 0 )
+      integrator->corrector( 0, fluid );
+   else
+      integrator->corrector( timeStepping.getTimeStep(), fluid );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate: corrector...", "Done." );
 }
 
 #ifdef HAVE_MPI
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::synchronizeDistributedSimulation( TNL::Logger& logger )
+SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
 {
+   writeLog( "Starting synchronization.", "" );
+   timeMeasurement.start( "synchronize" );
    fluid->synchronizeObject();
    boundary->synchronizeObject();
+   timeMeasurement.stop( "synchronize" );
+   writeLog( "Synchronize...", "Done." );
 }
 
 template< typename Model >
@@ -482,11 +646,8 @@ SPHMultiset_CFD< Model >::resetOverlaps()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
+SPHMultiset_CFD< Model >::performLoadBalancing()
 {
-   //setup tresholds:
-   fluid->getDistributedParticles()->setParticlesCountResizeTrashold( 1000 );
-   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
 
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() ); //TODO: Remove ptcs duplicity
@@ -494,8 +655,14 @@ SPHMultiset_CFD< Model >::performLoadBalancing( TNL::Logger& logger )
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
-   //std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   std::pair< IndexVectorType, VectorType > subdomainAdjustment;
+   if( loadBalancingMeasure == "computationalTime" )
+      subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
+   else if( loadBalancingMeasure == "numberOfParticles" )
+      subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   else
+      std::cerr << "Invalid load balancing metrics. Load balancing metrics is: " << loadBalancingMeasure << "." << std::endl;
+
    const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->getParticles()->getSearchRadius();
 
@@ -556,14 +723,44 @@ SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
            << gridResize << std::endl;
 }
 
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::balanceSubdomains()
+{
+   if( ( timeStepping.getStep() % loadBalancingStepInterval  == 0 ) && ( timeStepping.getStep() > 1 ) ){
+
+      performNeighborSearch( true );
+
+      logger.writeSeparator();
+      writeLog( "Starting load balancing.", "" );
+      timeMeasurement.start( "rebalance" );
+      performLoadBalancing();
+      timeMeasurement.stop( "rebalance" );
+      writeLog( "Load balancing...", "Done." );
+      logger.writeSeparator();
+      TNL::MPI::Barrier( communicator );
+
+      // reset overlaps and synchronize with new domain syze
+      resetOverlaps();
+      writeLog( "Reset overlaps...", "Done." );
+      TNL::MPI::Barrier( communicator );
+
+      performNeighborSearch( true );
+      TNL::MPI::Barrier( communicator );
+
+      synchronizeDistributedSimulation();
+      TNL::MPI::Barrier( communicator );
+   }
+}
+
 #endif
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex )
+SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
 {
    if( ( verbose == "with-snapshot" ) || ( verbose == "full" ) )
-      writeInfo( logger );
+      writeInfo();
 
    const int step = timeStepping.getStep();
    const RealType time = timeStepping.getTime();
@@ -606,7 +803,7 @@ SPHMultiset_CFD< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::makeSnapshot( TNL::Logger& logger )
+SPHMultiset_CFD< Model >::makeSnapshot()
 {
    const bool savePressure = true;
    if( timeStepping.checkOutputTimer( "save_results" ) ){
@@ -614,14 +811,14 @@ SPHMultiset_CFD< Model >::makeSnapshot( TNL::Logger& logger )
         model.computePressureFromDensity( fluid, modelParams );
         model.computePressureFromDensity( boundary, modelParams );
      }
-      save( logger );
-      writeLog( logger, "Save results...", "Done." );
+      save();
+      writeLog( "Save results...", "Done." );
    }
 }
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInformation ) const noexcept
+SPHMultiset_CFD< Model >::writeProlog( bool writeSystemInformation ) noexcept
 {
    logger.writeHeader( "SPH simulation configuration." );
    logger.writeParameter( "Case name:", caseName );
@@ -646,6 +843,18 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
    logger.writeParameter( "Verbose:", verbose );
    logger.writeParameter( "Output directory:", outputDirectory );
    logger.writeParameter( "Particles format", particlesFormat );
+#ifdef HAVE_MPI
+   if( TNL::MPI::isInitialized() ){
+      logger.writeParameter( "Load balancing step interval: ", loadBalancingStepInterval );
+      logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
+      if( loadBalancingMeasure == "computationalTime" )
+         logger.writeParameter( "Comp. time fraction difference to balance [-]:",
+             fluid->getDistributedParticles()->getCompTimeResizePercentageTrashold() );
+      else if( loadBalancingMeasure == "numberOfParticles" )
+         logger.writeParameter( "Particles count fraction difference to balance [-]:",
+             fluid->getDistributedParticles()->getParticlesCountResizeTrashold() );
+   }
+#endif
    writePrologModel( logger, modelParams );
    logger.writeHeader( "Fluid object information." );
    fluid->writeProlog( logger );
@@ -659,7 +868,7 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
          openBoundaryPatches[ i ]->config.writeProlog( logger );
       }
    }
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
+   if( fluid->periodicPatches.size() > 0 ) {
       const long unsigned int numberOfPeriodicPatches = std::size( fluid->periodicPatches );
       for( long unsigned int i = 0; i < numberOfPeriodicPatches; i++ ) {
          logger.writeHeader( "Periodic boundary patch " + std::to_string( i + 1 ) + "." );
@@ -681,10 +890,7 @@ SPHMultiset_CFD< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfo
 template< typename Model >
 template< typename ParameterType >
 void
-SPHMultiset_CFD< Model >::writeLog( TNL::Logger& logger,
-                                    const std::string& label,
-                                    const ParameterType& value,
-                                    int parameterLevel )
+SPHMultiset_CFD< Model >::writeLog( const std::string& label, const ParameterType& value, int parameterLevel )
 {
    if( verbose == "full" )
       logger.writeParameter( label, value, parameterLevel );
@@ -692,7 +898,7 @@ SPHMultiset_CFD< Model >::writeLog( TNL::Logger& logger,
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
+SPHMultiset_CFD< Model >::writeInfo() noexcept
 {
    logger.writeSeparator();
    logger.writeParameter( "Simulation time: " + std::to_string( timeStepping.getTime() )
@@ -723,7 +929,7 @@ SPHMultiset_CFD< Model >::writeInfo( TNL::Logger& logger ) const noexcept
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::writeEpilog( TNL::Logger& logger ) noexcept
+SPHMultiset_CFD< Model >::writeEpilog() noexcept
 {
    logger.writeHeader( "SPH simulation successfully finished." );
    logger.writeCurrentTime( "Ended at:" );

@@ -213,7 +213,7 @@ if __name__ == "__main__":
     g.add_argument("--bc-type", type=str, default="BIConservative_numeric", help="type of solid walls boundary conditions")
     g.add_argument("--bc-correction", type=str, default="ElasticBounceLight", help="non-penetrable bc correction")
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm", help="type of solid walls boundary conditions")
-    g.add_argument("--viscous-term", type=str, default="ArtificialViscosity", help="type of solid walls boundary conditions")
+    g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MGVT", help="type of solid walls boundary conditions")
     g.add_argument("--alpha", type=float, default=0.02, help="artificial vicosity parameter")
     g.add_argument("--dynamic-viscosity", type=float, default=0.001, help="dynamic viscosity")
     g.add_argument("--time-integration", type=str, default="MidpointScheme", help="time integration scheme")

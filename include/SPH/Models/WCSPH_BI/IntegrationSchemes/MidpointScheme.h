@@ -133,6 +133,8 @@ class MidpointIntegrationSchemeVariables
       residua.swap( residua_swap );
    }
 
+
+   // Midpoint integration scheme fields
    VectorArrayType dvdt_in;
    ScalarArrayType drhodt_in;
 
@@ -190,6 +192,11 @@ public:
    void
    midpointUpdateVariables( RealType dt, FluidPointer& fluid )
    {
+
+      // backup derivatives
+      fluid->getIntegratorVariables()->drhodt_in = fluid->getVariables()->drho;
+      fluid->getIntegratorVariables()->dvdt_in = fluid->getVariables()->a;
+
       auto v_view = fluid->getVariables()->v.getView();
       const auto v_in_view = fluid->getIntegratorVariables()->v_in.getConstView();
       const auto dvdt_view = fluid->getVariables()->a.getConstView();
@@ -226,7 +233,7 @@ public:
 
    template< typename FluidPointer, typename ModelParams >
    void
-   relax( FluidPointer& fluid, ModelParams& modelParams, const RealType midpointRelaxCoef, const int midpointIteration )
+   relax( FluidPointer& fluid, ModelParams& modelParams )
    {
       RealType relaxMidpoint;
       if( midpointIteration == 0 )
@@ -296,6 +303,59 @@ public:
       };
       fluid->getParticles()->forAll( init );
    }
+
+   template< typename ModelParams >
+   bool
+   runMidpointSubiteration( ModelParams& modelParams )
+   {
+      if( midpointIteration == 0 ){
+         midpointIteration = 0;
+         residual = 0.f;
+         residualPrevious = 0.f;
+         midpointRelaxCoef = modelParams.midpointRelaxCoef;
+      }
+
+      if( midpointIteration < modelParams.midpointMaxInterations ) {
+         midpointIteration++;
+         return true;
+      }
+      else {
+         midpointIteration = 0;
+         return false;
+      }
+
+   }
+
+   template< typename FluidPointer, typename ModelParams >
+   void
+   computeResiduals( FluidPointer& fluid, ModelParams& modelParams )
+   {
+      // compute residuals and control
+      residual = midpointResiduals( fluid, modelParams );
+      if( residual < modelParams.midpointResidualTolerance )
+         this->midpointIteration = modelParams.midpointMaxInterations;
+   }
+
+   template< typename ModelParams >
+   void
+   updateRelaxationFactor( ModelParams& modelParams )
+   {
+      // control residuals decay (NOTE: -1 since midpointIteration are icreased at the start of the loop)
+      if( ( midpointIteration - 1 )  > 0 )
+         if( residual / residualPrevious > modelParams.midpointResidualMinimalDecay )
+            midpointRelaxCoef = modelParams.midpointRelaxCoefIncrement
+                              + ( 1.0 - modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
+
+      // backup the residuals
+      residualPrevious = residual;
+   }
+
+
+   // Midpoint integration scheme  variables
+   int midpointIteration = 0;
+   RealType residual = 0.f;
+   RealType residualPrevious = 0.f;
+   RealType midpointRelaxCoef = 0.f;
 };
 
 } // IntegrationSchemes

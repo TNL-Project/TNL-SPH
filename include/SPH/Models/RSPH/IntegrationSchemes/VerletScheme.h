@@ -209,7 +209,7 @@ public:
 
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
    void
-   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
+   integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping, bool integrateBoundary = false )
    {
       if( timeStepping.getStep() % 20 == 0 ) {
          integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!

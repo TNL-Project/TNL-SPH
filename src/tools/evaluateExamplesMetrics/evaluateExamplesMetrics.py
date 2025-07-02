@@ -92,6 +92,9 @@ def poiseuilleFlowWithOpenBoundary2D_WCSPH_BI( case_dir ):
 def poiseuilleFlowWithPeriodicBoundary2D_WCSPH_BI( case_dir ):
     return 0, 0
 
+def empty( case_dir ):
+    return 0, 0
+
 if __name__ == "__main__":
 
     print( "Evaluate metrics - main." )

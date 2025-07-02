@@ -1,19 +1,13 @@
 #include <TNL/Devices/Cuda.h>
 using Device = TNL::Devices::Cuda;
 
-#include <TNL/Containers/StaticVector.h>
 #include <TNL/Algorithms/Segments/CSR.h>
 #include <TNL/Algorithms/Segments/Ellpack.h>
-
 #include <TNL/Particles/CellIndexer.h>
-#include <TNL/Particles/ParticlesTraits.h>
 
-template< typename Device >
 class ParticleSystemConfig
 {
    public:
-   using DeviceType = Device;
-
    using GlobalIndexType = int;
    using LocalIndexType = int;
    using CellIndexType = int;
@@ -22,9 +16,8 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 3;
 
    using UseWithDomainDecomposition = std::false_type;
-   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, ParticleSystemConfig, std::index_sequence< 0, 1, 2 > >;
-   using NeighborListType = typename Algorithms::Segments::Ellpack< DeviceType, int >;
+   using CellIndexerType = TNL::ParticleSystem::SimpleCellIndex< spaceDimension, std::index_sequence< 0, 1, 2 > >;
+   using NeighborListType = TNL::Algorithms::Segments::Ellpack< Device, int >;
 };
 
 template< typename Device >
@@ -50,7 +43,7 @@ class SPHConfig
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
-#include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -79,7 +72,7 @@ public:
 };
 
 using SPHDefs = SPHParams< Device >;
-using ParticlesConfig = ParticleSystemConfig< Device >;
+using ParticlesConfig = ParticleSystemConfig;
 
 /**
  * Include type of particle system.
@@ -94,9 +87,8 @@ using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, 
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
 using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
-
 #include <SPH/shared/ElasticBounce.h>
-using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHConfig >;
+using BoundaryCorrection = TNL::SPH::#placeholderBoundaryCorrection< ParticlesSys, SPHDefs::SPHConfig >;
 
 /**
  * Include type of SPH simulation.

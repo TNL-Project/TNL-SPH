@@ -76,6 +76,12 @@ def generate_channel_boundary_particles( setup ):
 
 def generate_channel_open_boundary_particles( setup, prefix ):
     dp = setup[ "dp" ]
+    pos_x = setup[ prefix + "_position_x" ]
+    pos_y = setup[ prefix + "_position_y" ]
+    n_x = setup[ prefix + "_orientation_x" ]
+    n_y = setup[ prefix + "_orientation_y" ]
+    vel_x = setup[ prefix + "_velocity_x" ]
+    vel_y = setup[ prefix + "_velocity_y" ]
     patch_rx = []; patch_ry = []
     patch_vx = []; patch_vy = []
 
@@ -84,10 +90,10 @@ def generate_channel_open_boundary_particles( setup, prefix ):
 
     for x in range( patch_width_n ):
         for y in range( patch_height_n ):
-            patch_rx.append( setup[ prefix + "_position_x" ] - setup[ prefix + "_orientation_x" ] * dp *  x  )
-            patch_ry.append( setup[ prefix + "_position_y" ] + dp * ( y ) )
-            patch_vx.append( setup[ prefix + "_velocity_x" ] )
-            patch_vy.append( setup[ prefix + "_velocity_y" ] )
+            patch_rx.append( pos_x - n_x * dp *  x  )
+            patch_ry.append( pos_y + dp * ( y ) )
+            patch_vx.append( vel_x )
+            patch_vy.append( vel_y )
 
     patch_n = len( patch_rx )
     r = np.array( ( patch_rx, patch_ry, np.zeros( patch_n ) ), dtype=float ).T #!!
@@ -95,10 +101,10 @@ def generate_channel_open_boundary_particles( setup, prefix ):
     rho = setup[ "density" ] * np.ones( patch_n, dtype=float )
     p = np.zeros( patch_n )
     ptype = np.ones( patch_n )
-
-    inletToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype )
+    normals = np.array( ( n_x * np.ones( patch_n ), n_y * np.ones( patch_n ), np.ones( patch_n ) ), dtype=float ).T #!!
+    elemetnSizes = dp * np.ones( patch_n )
+    inletToWrite = saveParticlesVTK.create_pointcloud_polydata( r, v, rho, p, ptype, normals=normals, elementSize=elemetnSizes )
     saveParticlesVTK.save_polydata( inletToWrite, "sources/openchannel_" + prefix + ".vtk" )
-
     setup[ prefix + "_n" ] = patch_n
 
 def compute_domain_size( setup ):
