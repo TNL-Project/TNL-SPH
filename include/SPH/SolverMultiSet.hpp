@@ -631,7 +631,7 @@ SolverMultiSet< Model >::makeSnapshot( TNL::Logger& logger )
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInformation ) const noexcept
+SolverMultiSet< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInformation )
 {
    logger.writeHeader( "SPH simulation configuration." );
    logger.writeParameter( "Case name:", caseName );
@@ -709,7 +709,7 @@ SolverMultiSet< Model >::writeLog( TNL::Logger& logger,
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeInfo( TNL::Logger& logger ) const noexcept
+SolverMultiSet< Model >::writeInfo( TNL::Logger& logger ) noexcept
 {
    logger.writeSeparator();
    logger.writeParameter( "Simulation time: " + std::to_string( timeStepping.getTime() )

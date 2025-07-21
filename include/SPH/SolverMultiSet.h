@@ -213,14 +213,14 @@ public:
    makeSnapshot( TNL::Logger& logger );
 
    void
-   writeProlog( TNL::Logger& logger, bool writeSystemInformation = true ) const noexcept;
+   writeProlog( TNL::Logger& logger, bool writeSystemInformation = true );
 
    template< typename ParameterType >
    void
    writeLog( TNL::Logger& logger, const std::string& label, const ParameterType& value, int parameterLevel = 0 );
 
    void
-   writeInfo( TNL::Logger& logger ) const noexcept;
+   writeInfo( TNL::Logger& logger ) noexcept;
 
    void
    writeEpilog( TNL::Logger& logger ) noexcept;

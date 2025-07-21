@@ -31,23 +31,15 @@ int main( int argc, char* argv[] )
    sph.init( parameters, log );
    sph.writeProlog( log );
 
-   // Solver model:
-
-   //sph.init( parameters );
-   //sph.writeProlog( parameters );
-   //sph.exec();
-   //sph.writeEpilog( parameters );
-
-   // Library model:
-
    while( sph.timeStepping.getStep() < 1 )
    {
-      /*
       // search for neighbros
       sph.timeMeasurement.start( "search" );
       sph.performNeighborSearch( log );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
+
+      /*
 
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
@@ -68,10 +60,10 @@ int main( int argc, char* argv[] )
       sph.makeSnapshot( log );
       // check timers and if measurement or interpolation should be performed, is performed
       sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
+      */
 
       // update time step
       sph.updateTime();
-      */
    }
 
    sph.writeEpilog( log );
