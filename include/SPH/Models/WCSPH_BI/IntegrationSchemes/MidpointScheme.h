@@ -72,67 +72,17 @@ class MidpointIntegrationSchemeVariables
       v_old.setSize( size );
    }
 
-   /*
+   template< typename ParticlesPointer >
    void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   sortVariables( ParticlesPointer& particles )
    {
-      auto view_map = map->getView();
-
-      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
-      ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            dvdt_in.getArrayData(), swapVector.getArrayData() );
-      dvdt_in.swap( swapVector );
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            drhodt_in.getArrayData(), swapScalar.getArrayData() );
-      drhodt_in.swap( swapScalar );
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            r_in.getArrayData(), swapVector.getArrayData() );
-      r_in.swap( swapVector );
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            v_in.getArrayData(), swapVector.getArrayData() );
-      v_in.swap( swapVector );
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            rho_in.getArrayData(), swapScalar.getArrayData() );
-      rho_in.swap( swapScalar );
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            residua.getArrayData(), swapScalar.getArrayData() );
-      residua.swap( swapScalar );
+      particles->reorderArray( dvdt_in, dvdt_in_swap );
+      particles->reorderArray( drhodt_in, drhodt_in_swap );
+      particles->reorderArray( r_in, r_in_swap );
+      particles->reorderArray( v_in, v_in_swap );
+      particles->reorderArray( rho_in, rho_in_swap );
+      particles->reorderArray( residua, residua_swap );
    }
-   */
-
-   void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
-   {
-      auto view_map = map->getView();
-
-      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
-      ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            dvdt_in.getArrayData(), dvdt_in_swap.getArrayData() );
-      dvdt_in.swap( dvdt_in_swap );
-
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            drhodt_in.getArrayData(), drhodt_in_swap.getArrayData() );
-      drhodt_in.swap( drhodt_in_swap );
-
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            r_in.getArrayData(), r_in_swap.getArrayData() );
-      r_in.swap( r_in_swap );
-
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            v_in.getArrayData(), v_in_swap.getArrayData() );
-      v_in.swap( v_in_swap );
-
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            rho_in.getArrayData(), rho_in_swap.getArrayData() );
-      rho_in.swap( rho_in_swap );
-
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            residua.getArrayData(), residua_swap.getArrayData() );
-      residua.swap( residua_swap );
-   }
-
 
    // Midpoint integration scheme fields
    VectorArrayType dvdt_in;

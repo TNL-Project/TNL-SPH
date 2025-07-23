@@ -254,24 +254,22 @@ class ParticleSet
    sortParticles()
    {
       this->getParticles()->sortParticles();
-      this->variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
-      this->integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      this->variables->sortVariables( particles );
+      this->integratorVariables->sortVariables( particles );
    }
 
    void
-   sortVariables( const GlobalIndexType numberOfParticlesToRemove = 0 )
+   sortVariables()
    {
-      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
-      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
+      variables->sortVariables( particles );
+      integratorVariables->sortVariables( particles );
    }
 
    void
    searchForNeighbors()
    {
-      const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
       this->particles->searchForNeighbors();
-      this->sortVariables( numberOfParticlesToRemove );
-
+      this->sortVariables();
    }
 
    void
