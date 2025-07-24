@@ -39,9 +39,9 @@ public:
    void
    setSize( const GlobalIndexType& size ) {};
 
-   template< typename IndexArrayTypePointer >
+   template< typename ParticlesPointer >
    void
-   sortVariables( IndexArrayTypePointer& map, const GlobalIndexType& numberOfParticles ) {};
+   sortVariables( ParticlesPointer& particles ) {};
 
    template< typename ReaderType >
    void

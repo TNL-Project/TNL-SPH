@@ -115,38 +115,12 @@ public:
    VectorArrayType n;
    VectorArrayType n_swap;
 
+   template< typename ParticlesPointer >
    void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles )
+   sortVariables( ParticlesPointer& particles )
    {
-      Base::sortVariables( map, numberOfParticles );
-
-      auto view_map = map->getView();
-      auto view_n = n.getView();
-      auto view_n_swap = n_swap.getView();
-
-      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
-      ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_n.getArrayData(), view_n_swap.getArrayData() );
-
-      n.swap( n_swap );
-   }
-
-   void
-   sortVariables( IndexArrayTypePointer& map, GlobalIndexType numberOfParticles, GlobalIndexType firstActiveParticle )
-   {
-      Base::sortVariables( map, numberOfParticles, firstActiveParticle );
-
-      auto view_map = map->getView();
-      auto view_n = n.getView();
-      auto view_n_swap = n_swap.getView();
-
-      using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< typename SPHConfig::DeviceType >;
-      ThrustDeviceType thrustDevice;
-      thrust::gather( thrustDevice, view_map.getArrayData(), view_map.getArrayData() + numberOfParticles,
-            view_n.getArrayData() + firstActiveParticle, view_n_swap.getArrayData() + firstActiveParticle );
-
-      n.swap( n_swap );
+      Base::sortVariables( particles );
+      particles->reorderArray( n, n_swap );
    }
 
    template< typename ReaderType >
