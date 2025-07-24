@@ -18,9 +18,9 @@ class ExplicitEulerSchemeVariables
    setSize( const IndexType& size )
    {}
 
-   template< typename IndexArrayTypePointer, typename IndexType >
+   template< typename ParticlesPointer >
    void
-   sortVariables( IndexArrayTypePointer& map, const IndexType numberOfParticles )
+   sortVariables( ParticlesPointer& particles )
    {}
 };
 
