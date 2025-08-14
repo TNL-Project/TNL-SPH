@@ -91,7 +91,7 @@ FetchContent_Declare(TNL
     GIT_TAG TH/particles
     EXCLUDE_FROM_ALL
 )
-set(TNL_EXPORT_INTERFACE_TARGETS ON)  # needed for adding to the interface target
+set(TNL_EXPORT_INTERFACE_TARGETS OFF)  # needed for adding to the interface target
 FetchContent_MakeAvailable(TNL)
 
 # FIXME: We should also require python with vtk module
@@ -121,4 +121,3 @@ endif()
 # Add project subdirectories
 add_subdirectory(include)
 add_subdirectory(examples)
-add_subdirectory(src)

@@ -35,7 +35,7 @@ def plot_pressure_sensors():
     # nondim_time_coef = coef * sensor_snapshot_time,
     nondim_time_coef = 1. * 0.002
     # nondim_pressure_coef = coef
-    nondim_pressure_coef = 1.
+    nondim_pressure_coef = 1
 
     for i in range( 0, 8 ):
         fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
@@ -47,8 +47,8 @@ def plot_pressure_sensors():
                  nondim_pressure_coef * simulation_data[ :, i + 1 ],
                  label='WCSPH-DBC', linewidth=1, color='k' )
 
-        ax.set_ylabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
-        ax.set_xlabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
+        ax.set_xlabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
+        ax.set_ylabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')

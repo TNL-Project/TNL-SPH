@@ -45,7 +45,7 @@ def plot_pressure_sensors():
                 label='Issa \& Violeau 2006', linewidth=2, color='b'  )
         ax.plot( nondim_time_coef * simulation_data[ :, 0 ],
                  nondim_pressure_coef * simulation_data[ :, i + 1 ],
-                 label='WCSPH-DBC', linewidth=1, color='k' )
+                 label='WCSPH-BI', linewidth=1, color='k' )
 
         ax.set_ylabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
         ax.set_xlabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
@@ -80,10 +80,10 @@ def plot_water_level_sensors():
                  label='Issa \& Violeau 2006', linewidth=2, color='b'  )
         ax.plot( nondim_time_coef * simulation_data[ :, 0 ],
                  nondim_height_coef * simulation_data[ :, i + 1 ],
-                 label='WCSPH-DBC', linewidth=2, color='k' )
+                 label='WCSPH-BI', linewidth=2, color='k' )
 
-        ax.set_ylabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
-        ax.set_xlabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
+        ax.set_xlabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
+        ax.set_ylabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
