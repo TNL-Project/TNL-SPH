@@ -97,7 +97,6 @@ class ParticleSet
                             TNL::Logger& logger )
    {
       this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
-      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setNumberOfParticles( numberOfParticles );
@@ -106,7 +105,9 @@ class ParticleSet
       this->particles->setGridDimensions( subdomainGridDimension );
       this->particles->setGridOrigin( subdomainOrigin ); //REMOVE
       this->particles->setOverlapWidth( numberOfOverlapLayers );
-      this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      //const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
+      //this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      this->particles->setGridReferentialOrigin( domainOrigin );
       this->particles->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
 
       this->variables->setSize( numberOfAllocatedParticles );
@@ -254,24 +255,22 @@ class ParticleSet
    sortParticles()
    {
       this->getParticles()->sortParticles();
-      this->variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles());
-      this->integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() );
+      this->variables->sortVariables( particles );
+      this->integratorVariables->sortVariables( particles );
    }
 
    void
-   sortVariables( const GlobalIndexType numberOfParticlesToRemove = 0 )
+   sortVariables()
    {
-      variables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
-      integratorVariables->sortVariables( particles->getSortPermutations(), particles->getNumberOfParticles() + numberOfParticlesToRemove );
+      variables->sortVariables( particles );
+      integratorVariables->sortVariables( particles );
    }
 
    void
    searchForNeighbors()
    {
-      const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
       this->particles->searchForNeighbors();
-      this->sortVariables( numberOfParticlesToRemove );
-
+      this->sortVariables();
    }
 
    void
