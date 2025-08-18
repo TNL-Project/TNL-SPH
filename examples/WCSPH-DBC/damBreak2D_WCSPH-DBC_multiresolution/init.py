@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import numpy as np
+import math
 import sys
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
@@ -14,11 +15,11 @@ def compute_hydrostatic_density( ry, fluid_height, rho0, speed_of_sound ):
 def generate_dam_break_fluid_particles( setup ):
     number_of_subdomains = setup[ 'number_of_subdomains' ]
     for subdomain in range( 0, number_of_subdomains ):
-        subdomain_key = f"subdomain-{subdomain}-"
+        subdomain_key = f"subdomain-{subdomain}"
 
         fluid_rx = []; fluid_ry = []
         fluid_density = []
-        dp = setup[ 'dp' ] * setup[ f"{subdomain_key}factor" ]
+        dp = setup[ 'dp' ] * setup[ f"{subdomain_key}-factor" ]
         fluid_length = setup[ 'fluid_length' ]
         fluid_height = setup[ 'fluid_height' ]
         fluid_lenght_n = round( fluid_length / dp )
@@ -26,10 +27,21 @@ def generate_dam_break_fluid_particles( setup ):
         rho0 = setup[ 'density' ]
         speed_of_sound = setup[ 'speed_of_sound' ]
 
-        x_min = setup[ subdomain_key + 'x_min' ]
-        x_max = setup[ subdomain_key + 'x_max' ]
-        y_min = setup[ subdomain_key + 'y_min' ]
-        y_max = setup[ subdomain_key + 'y_max' ]
+        #x_min = setup[ subdomain_key + 'x_min' ]
+        #x_max = setup[ subdomain_key + 'x_max' ]
+        #y_min = setup[ subdomain_key + 'y_min' ]
+        #y_max = setup[ subdomain_key + 'y_max' ]
+
+        search_radius_L0 = setup[ "search_radius" ]
+        grid_origin_x = setup[ "domain_origin_x" ] +  search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_x' ]
+        grid_size_x = setup[ f'{subdomain_key}-dimensions_x' ] *  setup[ f'{subdomain_key}-search_radius' ]
+        grid_origin_y = setup[ "domain_origin_y" ] +  search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_y' ]
+        grid_size_y = setup[ f'{subdomain_key}-dimensions_y' ] *  setup[ f'{subdomain_key}-search_radius' ]
+        x_min = grid_origin_x
+        x_max = grid_origin_x + grid_size_x
+        y_min = grid_origin_y
+        y_max = grid_origin_y + grid_size_y
+        print( f"Generate fluid particles - subdomain limits: \nx: [ {x_min}, {x_max} ], y: [ {y_min}, {y_max} ]" )
 
         for x in range( fluid_lenght_n ):
             for y in range( fluid_height_n ):
@@ -47,32 +59,37 @@ def generate_dam_break_fluid_particles( setup ):
         fluid_p = np.zeros( fluid_n )
         fluid_ptype = np.zeros( fluid_n )
         fluid_to_write = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
-        saveParticlesVTK.save_polydata( fluid_to_write, f"sources/{subdomain_key}dambreak_fluid.vtk" )
+        saveParticlesVTK.save_polydata( fluid_to_write, f"sources/{subdomain_key}-dambreak_fluid.vtk" )
 
         # compute potential energy
         mass = rho0 * ( dp * dp )
         Epot0 = mass * 9.81 * np.sum( fluid_ry )
         print( f"Initial potential energy of fluid Epot0: {Epot0}" )
-        setup[ subdomain_key + "fluid_n" ] = fluid_n
+        setup[ f"{subdomain_key}-fluid_n" ] = fluid_n
 
 def generate_dam_break_boundary_particles( setup ):
     number_of_subdomains = setup[ 'number_of_subdomains' ]
     for subdomain in range( 0, number_of_subdomains ):
-        subdomain_key = f"subdomain-{subdomain}-"
+        subdomain_key = f"subdomain-{subdomain}"
 
         box_rx = []; box_ry = []
         ghost_rx = []; ghost_ry = []
         normal_x = []; normal_y = []
-        dp = setup[ 'dp' ] * setup[ f"{subdomain_key}factor" ]
+        dp = setup[ 'dp' ] * setup[ f"{subdomain_key}-factor" ]
         n_boundary_layers = setup[ 'n_boundary_layers' ]
         box_length_n = round( setup[ 'box_length' ] / dp )
         box_height_n = round( setup[ 'box_height' ] / dp )
         rho0 = setup[ 'density' ]
 
-        x_min = setup[ subdomain_key + 'x_min' ]
-        x_max = setup[ subdomain_key + 'x_max' ]
-        y_min = setup[ subdomain_key + 'y_min' ]
-        y_max = setup[ subdomain_key + 'y_max' ]
+        search_radius_L0 = setup[ "search_radius" ]
+        grid_origin_x = setup[ "domain_origin_x" ] +  search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_x' ]
+        grid_size_x = setup[ f'{subdomain_key}-dimensions_x' ] *  setup[ f'{subdomain_key}-search_radius' ]
+        grid_origin_y = setup[ "domain_origin_y" ] +  search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_y' ]
+        grid_size_y = setup[ f'{subdomain_key}-dimensions_y' ] *  setup[ f'{subdomain_key}-search_radius' ]
+        x_min = grid_origin_x
+        x_max = grid_origin_x + grid_size_x
+        y_min = grid_origin_y
+        y_max = grid_origin_y + grid_size_y
 
         # left wall
         for layer in range( n_boundary_layers ):
@@ -151,83 +168,162 @@ def generate_dam_break_boundary_particles( setup ):
                         boundary_ptype,
                         ghostNodes=boundary_ghostNodes,
                         normals=boundary_normals )
-        saveParticlesVTK.save_polydata( box_to_write, f"sources/{subdomain_key}dambreak_boundary.vtk" )
+        saveParticlesVTK.save_polydata( box_to_write, f"sources/{subdomain_key}-dambreak_boundary.vtk" )
 
-        setup[ subdomain_key + "boundary_n" ] = boundary_n
-        setup[ subdomain_key + "origin_x" ] = min( box_rx )
-        setup[ subdomain_key + "origin_y" ]  = min( box_ry )
-        setup[ subdomain_key + "end_x" ] = max( box_rx )
-        setup[ subdomain_key + "end_y" ] = max( box_ry )
+        setup[ f"{subdomain_key}-boundary_n" ] = boundary_n
+        #setup[ subdomain_key + "origin_x" ] = min( box_rx )
+        #setup[ subdomain_key + "origin_y" ]  = min( box_ry )
+        #setup[ subdomain_key + "end_x" ] = max( box_rx )
+        #setup[ subdomain_key + "end_y" ] = max( box_ry )
 
-def compute_domain_size( setup ):
-    # Get global domains limit
+#def compute_domain_size( setup ):
+#    search_radius = setup[ "search_radius" ]
+#    # Resize domain by one layer of cells
+#    eps = 1.005
+#    eps_sloshing = 1.2
+#    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
+#    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
+#    domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
+#    domain_end_y = eps_sloshing * ( setup[ "domain_end_y" ] + search_radius )
+#    domain_size_x = domain_end_x - domain_origin_x
+#    domain_size_y = domain_end_y - domain_origin_y
+#
+#    extra_parameters = {
+#        "domain_origin_x" : domain_origin_x,
+#        "domain_origin_y" : domain_origin_y,
+#        "domain_size_x" : domain_size_x,
+#        "domain_size_y" : domain_size_y,
+#    }
+#    setup.update( extra_parameters )
 
-    fluid_n = setup[ 'subdomain-0-fluid_n' ]
-    boundary_n = setup[ 'subdomain-0-boundary_n' ]
+
+def compute_subdomain_size( setup ):
+    # load coordinates of global domain
+    search_radius_L0 = setup[ "search_radius" ]
+    glob_grid_origin_x = setup[ "domain_origin_x" ]
+    glob_grid_origin_y = setup[ "domain_origin_y" ]
+    glob_grid_dimension_x = int( math.ceil( setup[ "domain_size_x" ] / search_radius_L0 ) )
+    glob_grid_dimension_y = int( math.ceil( setup[ "domain_size_x" ] / search_radius_L0 ) )
+
+    # compute coords of subdomains
     number_of_subdomains = setup[ 'number_of_subdomains' ]
-    domain_origin_x = setup[ 'subdomain-0-origin_x' ]
-    domain_origin_y = setup[ 'subdomain-0-origin_y' ]
-    domain_end_x = setup[ 'subdomain-0-end_x' ]
-    domain_end_y = setup[ 'subdomain-0-end_y' ]
-
-    for subdomain in range( 1, number_of_subdomains ):
-        subdomain_key = f"subdomain-{subdomain}-"
-        fluid_n += setup[ subdomain_key + 'fluid_n' ]
-        boundary_n += setup[ subdomain_key + 'boundary_n' ]
-        if( setup[ subdomain_key + "origin_x" ] < domain_origin_x ):
-            domain_origin_x =  setup[ subdomain_key + "origin_x" ]
-        if( setup[ subdomain_key + "origin_y" ] < domain_origin_y ):
-            domain_origin_y =  setup[ subdomain_key + "origin_y" ]
-        if( setup[ subdomain_key + "end_x" ] < domain_end_x ):
-            domain_end_x =  setup[ subdomain_key + "end_x" ]
-        if( setup[ subdomain_key + "end_y" ] < domain_end_y ):
-            domain_end_y =  setup[ subdomain_key + "end_y" ]
-
-    # Compute origin grid coordinates
-    search_radius = setup[ 'search_radius' ]
     for subdomain in range( 0, number_of_subdomains ):
-        subdomain_key = f"subdomain-{subdomain}-"
-        search_radius = setup[ f"search_radius" ]
+        subdomain_key = f"subdomain-{subdomain}"
+        subdomain_x_min = setup[ f"{subdomain_key}-x_min" ]
+        subdomain_x_max = setup[ f"{subdomain_key}-x_max" ]
+        subdomain_y_min = setup[ f"{subdomain_key}-y_min" ]
+        subdomain_y_max = setup[ f"{subdomain_key}-y_max" ]
 
-        setup[ f"{subdomain_key}origin-global-coords-x" ] = int( np.floor( ( setup[ subdomain_key + "origin_x" ] - domain_origin_x ) / search_radius ) )
-        setup[ f"{subdomain_key}origin-global-coords-y" ] = int( np.floor( ( setup[ subdomain_key + "origin_y" ] - domain_origin_y ) / search_radius ) )
-        setup[ f"{subdomain_key}grid-dimensions-x" ] = int( 1 / ( setup[ f"{subdomain_key}factor" ] ) * ( setup[ subdomain_key + "end_x" ] - setup[ subdomain_key + "origin_x" ] ) / search_radius )
-        setup[ f"{subdomain_key}grid-dimensions-y" ] = int( 1 / ( setup[ f"{subdomain_key}factor" ] ) * ( setup[ subdomain_key + "end_y" ] - setup[ subdomain_key + "origin_y" ] ) / search_radius )
-        setup[ f"{subdomain_key}size-x" ] = setup[ subdomain_key + "end_x" ] - setup[ subdomain_key + "origin_x" ]
-        setup[ f"{subdomain_key}size-y" ] = setup[ subdomain_key + "end_y" ] - setup[ subdomain_key + "origin_y" ]
-        domain_size_x = domain_end_x - domain_origin_x
-        domain_size_y = domain_end_y - domain_origin_y
+        subdomain_factor = setup[ f"{subdomain_key}-factor" ]
+        subdomain_search_radius = subdomain_factor * search_radius_L0
 
-    # Save global domain limits
-    domain_parameters = {
-        "fluid_n" : fluid_n,
-        "boundary_n" : boundary_n,
-        "domain_origin_x" : domain_origin_x,
-        "domain_origin_y" : domain_origin_y,
-        "domain_end_x" : domain_end_x,
-        "domain_end_y" : domain_end_y,
-    }
-    setup.update( domain_parameters )
+        #: x dimension
+        if subdomain_x_min < glob_grid_origin_x:
+            subdomain_origin_x = glob_grid_origin_x
+            subdomain_grid_origin_glob_coords_x = 0
+        else:
+            #ASSERT x_min > domain_end
+            subdomain_origin_x = subdomain_x_min
+            subdomain_grid_origin_glob_coords_x = int( math.floor( ( subdomain_origin_x - glob_grid_origin_x ) / search_radius_L0 ) )
+
+        if subdomain_x_max > glob_grid_origin_x + glob_grid_dimension_x * search_radius_L0:
+            subdomain_glob_dimension_x = glob_grid_dimension_x - subdomain_grid_origin_glob_coords_x
+            subdomain_dimension_x = subdomain_glob_dimension_x * int( 1 / subdomain_factor )
+        else:
+            #ASSERT x_max > domain_end
+            subdomain_end_x = subdomain_x_max
+            subdomain_grid_end_global_cords_x = int( math.floor( ( subdomain_end_x - glob_grid_origin_x ) / search_radius_L0 ) )
+            subdomain_glob_dimension_x = subdomain_grid_end_global_cords_x - subdomain_grid_origin_glob_coords_x
+            subdomain_dimension_x = subdomain_glob_dimension_x * int( 1 / subdomain_factor )
+
+        #: y dimension
+        if subdomain_y_min < glob_grid_dimension_y:
+            subdomain_origin_y = glob_grid_origin_y
+            subdomain_grid_origin_glob_coords_y = 0
+        else:
+            #ASSERT y_min > domain_end
+            subdomain_origin_y = subdomain_y_min
+            subdomain_grid_origin_glob_coords_y = int( math.floor( ( subdomain_origin_y - glob_grid_origin_y ) / search_radius_L0 ) )
+
+        if subdomain_y_max > glob_grid_origin_y + glob_grid_dimension_y * search_radius_L0:
+            subdomain_glob_dimension_y = glob_grid_dimension_y - subdomain_grid_origin_glob_coords_y
+            subdomain_dimension_y = subdomain_glob_dimension_y * int( 1 / subdomain_factor )
+        else:
+            #ASSERT y_max > domain_end
+            subdomain_end_y = subdomain_y_max
+            subdomain_grid_end_global_cords_y = int( math.floor( ( subdomain_end_y - glob_grid_origin_y ) / search_radius_L0 ) )
+            subdomain_glob_dimension_y = subdomain_grid_end_global_cords_y - subdomain_grid_origin_glob_coords_y
+            subdomain_dimension_y = subdomain_glob_dimension_y * int( 1 / subdomain_factor )
+
+        subdomain_params = {
+            f"{subdomain_key}-search_radius" : subdomain_search_radius,
+            f"{subdomain_key}-origin_glob_coords_x" : subdomain_grid_origin_glob_coords_x,
+            f"{subdomain_key}-origin_glob_coords_y" : subdomain_grid_origin_glob_coords_y,
+            f"{subdomain_key}-dimensions_x" : subdomain_dimension_x,
+            f"{subdomain_key}-dimensions_y" : subdomain_dimension_y,
+        }
+        setup.update( subdomain_params )
 
 
-    search_radius = setup[ "search_radius" ]
-    # Resize domain by one layer of cells
-    eps = 1.005
-    eps_sloshing = 1.2
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
-    domain_end_y = eps_sloshing * ( setup[ "domain_end_y" ] + search_radius )
-    domain_size_x = domain_end_x - domain_origin_x
-    domain_size_y = domain_end_y - domain_origin_y
+   #     if( subdomain_grid_origin_x < domain_origin_x ):
+   #         domain_origin_x =  setup[ subdomain_key + "origin_x" ]
+   #     if( setup[ subdomain_key + "origin_y" ] < domain_origin_y ):
+   #         domain_origin_y =  setup[ subdomain_key + "origin_y" ]
+   #     if( setup[ subdomain_key + "end_x" ] < domain_end_x ):
+   #         domain_end_x =  setup[ subdomain_key + "end_x" ]
+   #     if( setup[ subdomain_key + "end_y" ] < domain_end_y ):
+   #         domain_end_y =  setup[ subdomain_key + "end_y" ]
 
-    extra_parameters = {
-        "domain_origin_x" : domain_origin_x,
-        "domain_origin_y" : domain_origin_y,
-        "domain_size_x" : domain_size_x,
-        "domain_size_y" : domain_size_y,
-    }
-    setup.update( extra_parameters )
+   # #: # Get global domains limit
+   # #: fluid_n = setup[ 'subdomain-0-fluid_n' ]
+   # #: boundary_n = setup[ 'subdomain-0-boundary_n' ]
+   # #: number_of_subdomains = setup[ 'number_of_subdomains' ]
+   # #: domain_origin_x = setup[ 'subdomain-0-origin_x' ]
+   # #: domain_origin_y = setup[ 'subdomain-0-origin_y' ]
+   # #: domain_end_x = setup[ 'subdomain-0-end_x' ]
+   # #: domain_end_y = setup[ 'subdomain-0-end_y' ]
+
+   # for subdomain in range( 1, number_of_subdomains ):
+   #     subdomain_key = f"subdomain-{subdomain}-"
+   #     fluid_n += setup[ subdomain_key + 'fluid_n' ]
+   #     boundary_n += setup[ subdomain_key + 'boundary_n' ]
+
+   #     if( setup[ subdomain_key + "origin_x" ] < domain_origin_x ):
+   #         domain_origin_x =  setup[ subdomain_key + "origin_x" ]
+   #     if( setup[ subdomain_key + "origin_y" ] < domain_origin_y ):
+   #         domain_origin_y =  setup[ subdomain_key + "origin_y" ]
+   #     if( setup[ subdomain_key + "end_x" ] < domain_end_x ):
+   #         domain_end_x =  setup[ subdomain_key + "end_x" ]
+   #     if( setup[ subdomain_key + "end_y" ] < domain_end_y ):
+   #         domain_end_y =  setup[ subdomain_key + "end_y" ]
+
+   # # Compute origin grid coordinates
+   # search_radius = setup[ 'search_radius' ]
+   # for subdomain in range( 0, number_of_subdomains ):
+   #     subdomain_key = f"subdomain-{subdomain}-"
+   #     search_radius = setup[ f"search_radius" ]
+
+   #     setup[ f"{subdomain_key}origin-global-coords-x" ] = int( np.floor( ( setup[ subdomain_key + "origin_x" ] - domain_origin_x ) / search_radius ) )
+   #     setup[ f"{subdomain_key}origin-global-coords-y" ] = int( np.floor( ( setup[ subdomain_key + "origin_y" ] - domain_origin_y ) / search_radius ) )
+   #     setup[ f"{subdomain_key}grid-dimensions-x" ] = int( 1 / ( setup[ f"{subdomain_key}factor" ] ) * ( setup[ subdomain_key + "end_x" ] - setup[ subdomain_key + "origin_x" ] ) / search_radius )
+   #     setup[ f"{subdomain_key}grid-dimensions-y" ] = int( 1 / ( setup[ f"{subdomain_key}factor" ] ) * ( setup[ subdomain_key + "end_y" ] - setup[ subdomain_key + "origin_y" ] ) / search_radius )
+   #     setup[ f"{subdomain_key}size-x" ] = setup[ subdomain_key + "end_x" ] - setup[ subdomain_key + "origin_x" ]
+   #     setup[ f"{subdomain_key}size-y" ] = setup[ subdomain_key + "end_y" ] - setup[ subdomain_key + "origin_y" ]
+   #     domain_size_x = domain_end_x - domain_origin_x
+   #     domain_size_y = domain_end_y - domain_origin_y
+
+   # # Save global domain limits
+   # domain_parameters = {
+   #     "fluid_n" : fluid_n,
+   #     "boundary_n" : boundary_n,
+   #     "domain_origin_x" : domain_origin_x,
+   #     "domain_origin_y" : domain_origin_y,
+   #     "domain_end_x" : domain_end_x,
+   #     "domain_end_y" : domain_end_y,
+   # }
+   # setup.update( domain_parameters )
+
+
 
 def write_distributed_domain_params( setup ):
     # write paramerters to new created config file related to decomposition
@@ -245,22 +341,29 @@ def write_distributed_domain_params( setup ):
             file.write( f'{key_prefix}fluid_n_allocated = { 2*setup[ f"{key_prefix}fluid_n" ] }\n' )
             file.write( f'{key_prefix}boundary_n_allocated = { 3*setup[ f"{key_prefix}boundary_n" ] }\n' )
             file.write( f'{key_prefix}refinement-factor = { setup[ f"{key_prefix}factor" ] }\n' )
-            subdomain_grid_origin_x = setup[ f"{key_prefix}origin_x" ]
-            subdomain_grid_origin_y = setup[ f"{key_prefix}origin_y" ]
-            file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
-            file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
-            subdomain_grid_origin_glob_coords_x = setup[ f"{key_prefix}origin-global-coords-x" ]
-            subdomain_grid_origin_glob_coords_y = setup[ f"{key_prefix}origin-global-coords-y" ]
+            search_radius = setup[ f"{key_prefix}search_radius" ]
+            file.write( f'{key_prefix}refinement-factor = { setup[ f"{key_prefix}factor" ] }\n' )
+
+            subdomain_grid_origin_glob_coords_x = setup[ f"{key_prefix}origin_glob_coords_x" ]
+            subdomain_grid_origin_glob_coords_y = setup[ f"{key_prefix}origin_glob_coords_y" ]
             file.write( f"{key_prefix}origin-global-coords-x = { subdomain_grid_origin_glob_coords_x }\n" )
             file.write( f"{key_prefix}origin-global-coords-y = { subdomain_grid_origin_glob_coords_y }\n" )
-            subdomain_size_x = setup[ f"{key_prefix}size-x" ]
-            subdomain_size_y = setup[ f"{key_prefix}size-y" ]
-            file.write( f"{key_prefix}size-x = { subdomain_size_x:.7f}\n" )
-            file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
-            subdomain_grid_dims_x = setup[ f"{key_prefix}grid-dimensions-x" ]
-            subdomain_grid_dims_y = setup[ f"{key_prefix}grid-dimensions-y" ]
+            subdomain_grid_dims_x = setup[ f"{key_prefix}dimensions_x" ]
+            subdomain_grid_dims_y = setup[ f"{key_prefix}dimensions_y" ]
             file.write( f"{key_prefix}grid-dimensions-x = { subdomain_grid_dims_x }\n" )
             file.write( f"{key_prefix}grid-dimensions-y = { subdomain_grid_dims_y }\n" )
+
+            # useless
+            search_radius_L0 = setup[ "search_radius" ]
+            subdomain_grid_origin_x = setup[ f"domain_origin_x" ] + search_radius_L0 * subdomain_grid_origin_glob_coords_x
+            subdomain_grid_origin_y = setup[ f"domain_origin_y" ] + search_radius_L0 * subdomain_grid_origin_glob_coords_y
+            file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
+            file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
+            subdomain_size_x = search_radius * subdomain_grid_dims_x
+            subdomain_size_y = search_radius * subdomain_grid_dims_y
+            file.write( f"{key_prefix}size-x = { subdomain_size_x:.7f}\n" )
+            file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
+
             file.write( f'\n' )
 
 def write_simulation_params( setup ):
@@ -268,11 +371,11 @@ def write_simulation_params( setup ):
     with open( 'template/config_template.ini', 'r' ) as file :
       config_file = file.read()
 
-    config_file = config_file.replace( 'placeholderSearchRadius', f'{ setup[ "search_radius" ] }' )
-    config_file = config_file.replace( 'placeholderDomainOrigin-x', f'{setup[ "domain_origin_x" ]:.5f}' )
-    config_file = config_file.replace( 'placeholderDomainOrigin-y', f'{setup[ "domain_origin_y" ]:.5f}' )
-    config_file = config_file.replace( 'placeholderDomainSize-x', f'{setup[ "domain_size_x" ]:.5f}' )
-    config_file = config_file.replace( 'placeholderDomainSize-y', f'{setup[ "domain_size_y" ]:.5f}' )
+    config_file = config_file.replace( 'placeholderSearchRadius', f'{setup[ "search_radius" ] }' )
+    config_file = config_file.replace( 'placeholderDomainOrigin-x', f'{setup[ "domain_origin_x" ]:.7f}' )
+    config_file = config_file.replace( 'placeholderDomainOrigin-y', f'{setup[ "domain_origin_y" ]:.7f}' )
+    config_file = config_file.replace( 'placeholderDomainSize-x', f'{setup[ "domain_size_x" ]:.7f}' )
+    config_file = config_file.replace( 'placeholderDomainSize-y', f'{setup[ "domain_size_y" ]:.7f}' )
 
     config_file = config_file.replace( 'placeholderInitParticleDistance', f'{ setup[ "dp" ] }' )
     config_file = config_file.replace( 'placeholderSmoothingLength', f'{ setup[ "smoothing_length" ] }' )
@@ -301,6 +404,23 @@ def write_simulation_params( setup ):
 
     with open( 'template/config.h', 'w' ) as file:
       file.write( config_file )
+
+def save_grid( setup ):
+
+    import domainGrid
+
+    for subdomain in range( 0, setup[ 'number_of_subdomains' ] ):
+        subdomain_key = f"subdomain-{subdomain}"
+        search_radius_L0 = setup[ "search_radius" ]
+        domainGrid.domainGrid( setup[ f"{subdomain_key}-dimensions_x" ],
+                               setup[ f"{subdomain_key}-dimensions_y" ],
+                               1,
+                               setup[ "domain_origin_x" ] + search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_x' ],
+                               setup[ "domain_origin_y" ] + search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_y' ],
+                               0,
+                               np.zeros(( setup[ f"{subdomain_key}-dimensions_x" ] * setup[ f"{subdomain_key}-dimensions_y" ] )), # deprecated gridSector,
+                               setup[ f"{subdomain_key}-search_radius" ],
+                               f"sources/{subdomain_key}dambreak_grid.vtk" )
 
 def configure_and_write_measuretool_parameters( setup ):
     # write parameters to config file
@@ -390,15 +510,24 @@ if __name__ == "__main__":
         os.makedirs( sourcesPath )
 
     # generate particles
-    generate_dam_break_fluid_particles( dambreak_setup )
-    generate_dam_break_boundary_particles( dambreak_setup )
+    import init_generate_standard as single_resolution
+    single_resolution.generate_dam_break_fluid_particles( dambreak_setup )
+    single_resolution.generate_dam_break_boundary_particles( dambreak_setup )
+    single_resolution.compute_domain_size( dambreak_setup )
 
-    # setup parameters
-    compute_domain_size( dambreak_setup )
+    compute_subdomain_size( dambreak_setup )
 
     print( "Complete example setup:" )
     pprint( dambreak_setup )
+
+    generate_dam_break_fluid_particles( dambreak_setup )
+    generate_dam_break_boundary_particles( dambreak_setup )
+
+
     # write simulation params
+
+    save_grid( dambreak_setup )
+
     write_simulation_params( dambreak_setup )
     write_distributed_domain_params( dambreak_setup )
     configure_and_write_measuretool_parameters( dambreak_setup )
