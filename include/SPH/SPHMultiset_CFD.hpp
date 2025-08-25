@@ -292,9 +292,18 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
       fluid->template readParticlesAndVariables< SimulationReaderType >(
          parameters.getParameter< std::string >( "fluid-particles" ) );
    }
-   logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
-   boundary->template readParticlesAndVariables< SimulationReaderType >(
-      parameters.getParameter< std::string >( "boundary-particles" ) );
+   else{
+      logger.writeParameter( "Reading fluid particles:", "NO PARTICLES TO READ" );
+   }
+
+   if( parameters.getParameter< int >( "numberOfBoundaryParticles" ) != 0 ){
+      logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
+      boundary->template readParticlesAndVariables< SimulationReaderType >(
+         parameters.getParameter< std::string >( "boundary-particles" ) );
+   }
+   else{
+      logger.writeParameter( "Reading boundary particles:", "NO PARTICLES TO READ" );
+   }
 
    // init open boundary patches
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -302,9 +311,14 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
-         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
-            parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+         if( parameters.getParameter< int >( prefix +"numberOfParticles" ) != 0 ){
+            logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+            openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+               parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+         }
+         else{
+            logger.writeParameter( "Reading open boundary particles:", "NO PARTICLES TO READ" );
+         }
       }
    }
 }
