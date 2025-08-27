@@ -311,7 +311,7 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         if( parameters.getParameter< int >( prefix +"numberOfParticles" ) != 0 ){
+         if( parametersOpenBoundary.getParameter< int >( prefix +"numberOfParticles" ) != 0 ){
             logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
             openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
                parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
