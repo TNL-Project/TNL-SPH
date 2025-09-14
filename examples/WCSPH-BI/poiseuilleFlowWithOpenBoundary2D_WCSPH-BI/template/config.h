@@ -63,7 +63,7 @@ class SPHParams
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MVT< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::None< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
@@ -101,4 +101,6 @@ using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 using EnergyFields = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
 #include <SPH/shared/energyEvaluation/energyFieldsInletOutlet.h>
 using EnergyFieldsInletOutlet = TNL::SPH::WCSPHOpenBoundaryEnergyFields< SPHDefs >;
+#include <SPH/shared/measureVolumetricFlowRate.h>
+using FlowRateMonitor = TNL::SPH::MeasureVolumetricFlowRate< ParticlesConfig, SPHDefs >;
 

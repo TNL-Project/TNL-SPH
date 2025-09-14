@@ -6,8 +6,6 @@ from pathlib import Path
 # Include globaly used postpro scripts
 import sys
 sys.path.append('../../../src/tools')
-import groupResults
-import plotEnergy
 
 #TODO: Rename the default sensors labels providet by Lobovsky et. al.
 case_tag = "poiseuilleFlowWithOpenBoundary2D_WCSPH-BI"
@@ -37,9 +35,16 @@ if __name__ == "__main__":
         os.makedirs( postproPath )
 
     # group results
-    groupResults.make_data_series( example_dir )
+    import groupResults
+    groupResults.make_data_series(example_dir)
 
-    #plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
-    plotEnergy.plot_not_normalized_energy( results_dir )
-    plotEnergy.plot_not_normalized_energy_snapshots( results_dir )
-    plotEnergy.plot_not_normalized_open_boundary_energy_snapshots( results_dir )
+    # plot energy levels
+    import plotEnergy
+    #plotEnergy.plot_energy(results_dir, Epot0 = 264.87)
+    plotEnergy.plot_not_normalized_energy(results_dir)
+    plotEnergy.plot_not_normalized_energy_snapshots(results_dir)
+    plotEnergy.plot_not_normalized_open_boundary_energy_snapshots(results_dir)
+
+    # plot volumetric flow rate
+    import plotVolumetricFlowRate
+    plotVolumetricFlowRate.plot_vorumetlic_flow_rate(results_dir)

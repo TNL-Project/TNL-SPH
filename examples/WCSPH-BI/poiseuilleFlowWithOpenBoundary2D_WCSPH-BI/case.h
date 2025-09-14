@@ -6,12 +6,17 @@ int main( int argc, char* argv[] )
    sph.init( argc, argv );
    sph.writeProlog();
 
-   // Library model:
+   // Initialize energy monitor:
    EnergyFields energyMonitor;
    energyMonitor.init( sph.fluid, true );
    EnergyFieldsInletOutlet energyMonitorInletOutlet;
    energyMonitorInletOutlet.addInlet( sph.openBoundaryPatches[ 0 ] );
    energyMonitorInletOutlet.addOutlet( sph.openBoundaryPatches[ 1 ] );
+
+   // Initialize flow rate:
+   FlowRateMonitor flowRateMonitor;
+   flowRateMonitor.init( sph.fluid, { 0.25f, 0.f }, { 0.25f, 0.1f }, { 1.f, 0.f } );
+
 
    while( sph.timeStepping.runTheSimulation() )
    {
@@ -29,6 +34,10 @@ int main( int argc, char* argv[] )
       // compute and outpute energy levels
       energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
       energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+
+      // measure volumetric flow rate
+      flowRateMonitor.measureVolumetricFlowRate( sph.fluid, sph.modelParams, sph.timeStepping.getTimeStep() );
+      flowRateMonitor.output( sph.outputDirectory + "/volumetricFlowRate.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
       //integrate
       sph.integrateVerletStep();
