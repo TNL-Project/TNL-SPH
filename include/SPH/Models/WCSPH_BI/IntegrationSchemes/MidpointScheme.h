@@ -176,7 +176,7 @@ public:
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
-         r_view[ i ] = r_in_view[ i ] + 0.5f * v_view[ i ];
+         r_view[ i ] = r_in_view[ i ] + dt05 * v_view[ i ];
       };
       fluid->getParticles()->forAll( init );
    }
