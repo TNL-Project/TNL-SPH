@@ -20,7 +20,6 @@ public:
    using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
    //Variables - Fields
    ScalarArrayType rho;
@@ -31,10 +30,14 @@ public:
    ScalarArrayType gamma;
    MarkerArrayType marker;
 
-   //Additional variable fields to avoid inmpace sort
+   GlobalIndexType highestReferentialIdx;
+   IndexArrayType  referentialIdx;
+
+   //Additional variable fields to avoid in-place sort
    ScalarArrayType rho_swap;
    VectorArrayType v_swap;
    MarkerArrayType marker_swap;
+   IndexArrayType  referentialIdx_swap;
 
    void
    setSize( const GlobalIndexType& size )
@@ -49,6 +52,11 @@ public:
       rho_swap.setSize( size );
       v_swap.setSize( size );
       marker_swap.setSize( size );
+      referentialIdx.setSize( size );
+      referentialIdx_swap.setSize( size );
+
+      referentialIdx.forAllElements( [] __cuda_callable__( GlobalIndexType i, GlobalIndexType& value ) { value = i; } );
+      highestReferentialIdx = size;
    }
 
    template< typename ParticlesPointer >
@@ -58,6 +66,7 @@ public:
       particles->reorderArray( rho, rho_swap );
       particles->reorderArray( v, v_swap );
       particles->reorderArray( marker, marker_swap );
+      particles->reorderArray( referentialIdx, referentialIdx_swap );
    }
 
    template< typename ReaderType >
@@ -81,6 +90,8 @@ public:
       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
       writer.template writeVector< VectorArrayType, RealType >(
          v, "Velocity", numberOfParticles, firstActiveParticle, 3 );  //TODO: Obvious.
+      writer.template writePointData< IndexArrayType >(
+            referentialIdx, "ReferentialIndex", numberOfParticles, firstActiveParticle, 1 );
       //writer.template writePointData< ScalarArrayType >( gamma, "Gamma", numberOfParticles, firstActiveParticle, 1 );
    }
 };
@@ -95,7 +106,6 @@ public:
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
-   using IndexArrayTypePointer = typename Base::IndexArrayTypePointer;
 
    void
    setSize( const GlobalIndexType& size )

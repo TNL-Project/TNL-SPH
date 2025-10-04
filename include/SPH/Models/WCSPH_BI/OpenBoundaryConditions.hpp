@@ -113,14 +113,15 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
 
    const VectorType inletOrientation = openBoundary->parameters.orientation;
    const VectorType bufferWidth = openBoundary->parameters.bufferWidth;
-   //const VectorType inletConstVelocity = openBoundaryParams.velocity;
-   //const RealType inletConstDensity = openBoundaryParams.density;
+   // get last referential index of existing particles
+   const GlobalIndexType highestReferentialIdx = fluid->getVariables()->highestReferentialIdx;
 
    auto view_r_fluid = fluid->getParticles()->getPoints().getView();
    auto view_v_fluid = fluid->getVariables()->v.getView();
    auto view_rho_fluid = fluid->getVariables()->rho.getView();
    auto view_rho_old = fluid->getIntegratorVariables()->rho_old.getView();
    auto view_v_old = fluid->getIntegratorVariables()->v_old.getView();
+   auto view_referentialIdx = fluid->getVariables()->referentialIdx.getView();
 
    auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
    {
@@ -131,18 +132,19 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid( F
       view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
       view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
 
+      view_referentialIdx[ numberOfParticle + i ] = highestReferentialIdx + i;
+
       //const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
       //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation - bufferWidth[ 0 ] * inletOrientation;
       const VectorType newBufferParticle = view_r_buffer[ i ] - bufferWidth[ 0 ] * inletOrientation;
 
       view_r_buffer[ i ] = newBufferParticle;
-      //view_v_buffer[ i ] = inletConstVelocity; //TODO: Keep the velocity same, keep the profile the same
-      //view_rho_buffer[ i ] = inletConstDensity; //TODO: Keep the density same.
    };
    Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
 
    //Update number of particles
    fluid->getParticles()->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+   fluid->getVariables()->highestReferentialIdx += numberOfRetyped;
 }
 
 template< typename SPHConfig, typename ModelConfig >

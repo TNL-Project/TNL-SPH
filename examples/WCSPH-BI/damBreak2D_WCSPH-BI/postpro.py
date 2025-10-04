@@ -9,6 +9,7 @@ import sys
 sys.path.append('../../../src/tools')
 import plotTimeStep
 import plotEnergy
+import groupResults
 
 #TODO: Rename the default sensors labels providet by Lobovsky et. al.
 case_tag = "damBreak2D_WCSPH-BI"
@@ -112,6 +113,9 @@ if __name__ == "__main__":
     postproPath = r'./results/postprocessing'
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
+
+    # group results
+    groupResults.make_data_series( example_dir )
 
     # plot results from pressure sensors
     plot_pressure_sensors()
