@@ -8,6 +8,7 @@
 #include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
 #include "OpenBoundaryConfig.h"
+#include "MultiresolutionBuffer.h"
 #include "TNL/Functional.h"
 #include "TNL/Logger.h"
 #include "TimeMeasurement.h"

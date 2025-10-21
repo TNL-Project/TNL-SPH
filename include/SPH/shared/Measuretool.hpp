@@ -104,8 +104,8 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( Flui
    const auto view_rho = fluid->getVariables()->rho.getView();
    const auto view_v = fluid->getVariables()->v.getView();
 
-   auto view_rho_interpolation = this->getVariables()->rho.getView();
-   auto view_v_interpolation = this->getVariables()->v.getView();
+   auto view_rho_interpolation = this->variables()->rho.getView();
+   auto view_v_interpolation = this->variables()->v.getView();
 
    // loaded constants
    const RealType h = sphState.h;
