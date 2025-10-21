@@ -8,7 +8,7 @@ namespace SPH {
 namespace Interpolation {
 
 // TODO: Pass this real type to ABFs directisimo!
-template< int Dim, int Order, typename RealType, template< int, int > typename ABFsType, typename KernelFunction >
+template< int Dim, int Order, typename RealType, template< int, int, typename > typename ABFsType, typename KernelFunction, typename SolverConfig >
 class MFD
 {
    public:
@@ -16,7 +16,7 @@ class MFD
    using VectorType = Containers::StaticVector< Dim, RealType >; //FIXME: Should not be there
    using BaseVectorType = Containers::StaticVector< p, RealType >;
    using BaseMatrixType = Matrices::StaticMatrix< RealType, p, p >;
-   using ABFs = ABFsType< Dim, Order >;
+   using ABFs = ABFsType< Dim, Order, SolverConfig >;
    using TaylorMonomials = TaylorMonomials< Dim, Order, RealType >;
 
    static const BaseMatrixType

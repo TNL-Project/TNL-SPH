@@ -1,3 +1,5 @@
+#include <TNL/Containers/StaticVector.h>
+
 namespace TNL {
 namespace SPH {
 namespace Interpolation {
@@ -6,7 +8,7 @@ template< int Dim, int Order, typename RealType >
 class TaylorMonomials
 {
 public:
-    static constexpr int p = get_p(Dim, Order);
+    static constexpr int p = get_p< Dim, Order >();
     using VectorType = Containers::StaticVector< Dim, RealType >;
     using BaseVectorType = Containers::StaticVector< p, RealType >;
 

@@ -1,3 +1,4 @@
+#include <TNL/Containers/StaticVector.h>
 #include "./../Kernels.h"
 
 namespace TNL {
@@ -8,10 +9,10 @@ template< int Dim, int Order, typename SolverConfig >
 class WendlandC2ABFs
 {
 public:
-    static constexpr int p = get_p(Dim, Order);
+    static constexpr int p = get_p< Dim, Order >();
     //FIXME:
     using RealType = typename SolverConfig::RealType;
-    using WendlandKernel = KernelFunctions::WendlandKernel< SolverConfig >;
+    using WendlandKernel = KernelFunctions::WendlandKernel< SolverConfig >; //FIXME
     using VectorType = Containers::StaticVector< Dim, RealType >;
     using BaseVectorType = Containers::StaticVector< p, RealType >;
 

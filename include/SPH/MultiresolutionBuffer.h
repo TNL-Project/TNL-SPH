@@ -86,9 +86,10 @@ public:
    // matrix and vector type for interpolation
    // FIXME: Hard-def ABFs
 
-   using ABFs = Interpolation::WendlandC2ABFs< 2, 2, SPHCaseConfig >;
+   //using ABFs = Interpolation::WendlandC2ABFs< 2, 2, SPHCaseConfig >;
    using KernelFunction = typename SPHDefs::KernelFunction;
-   using MFD = Interpolation::MFD< 2, 2, RealType, ABFs, KernelFunction >;
+   using MFD = Interpolation::MFD< 2, 2, RealType, Interpolation::WendlandC2ABFs, KernelFunction, SPHCaseConfig >;
+   using ABFs = typename MFD::ABFs;
 
    using MfdVectorType = typename MFD::BaseVectorType;
    using MfdMatrixType = typename MFD::BaseMatrixType;
