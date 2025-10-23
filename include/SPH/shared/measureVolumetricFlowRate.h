@@ -45,6 +45,12 @@ public:
       zone.assignCells( zoneFirstPoint, zoneSecondPoint, gridDimensions, gridOrigin, searchRadius );
    }
 
+   const RealType
+   getVolumetricFlowRate() const
+   {
+      return volumetricFlux;
+   }
+
    template< typename FluidPointer, typename ModelParams >
    void
    measureVolumetricFlowRate( FluidPointer& fluid, ModelParams& modelParams, const RealType dt )
