@@ -415,12 +415,31 @@ SPHMultiset_CFD< Model >::removeParticlesOutOfDomain()
 
    if( fluid->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
       const int numberOfParticlesOutOfDomain = fluid->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-      logger.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      this->totalNumberOfParticlesOutOfDomain += numberOfParticlesOutOfDomain;
+      logger.writeParameter( "Particles out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      logger.writeParameter( "Total particles of out of domain removed particles:", this->totalNumberOfParticlesOutOfDomain );
       // search for neighbros
       timeMeasurement.start( "search" );
       this->performNeighborSearch();
       timeMeasurement.stop( "search" );
    }
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::removeParticlesOutOfDensityLimits()
+{
+   const int numberOfParticlesOutOfDensityLimits = customFunctions::removeParticlesOutOfDensityLimits( fluid, modelParams );
+   this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
+   logger.writeParameter( "Particles out of density limits:", numberOfParticlesOutOfDensityLimits  );
+   logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
+
+   //TODO: search for neighbors should follow, but assume we call this function always before the neighbor search
+   /*
+   timeMeasurement.start( "search" );
+   this->performNeighborSearch();
+   timeMeasurement.stop( "search" );
+   */
 }
 
 template< typename Model >

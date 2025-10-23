@@ -14,6 +14,9 @@
 
 #include "SimulationMonitor.h"
 
+// custom shared modules
+#include "shared/removeParticlesOutOfDensityLimits.h"
+
 namespace TNL {
 namespace SPH {
 
@@ -118,6 +121,13 @@ public:
     */
    void
    removeParticlesOutOfDomain();
+
+   /**
+    * Wrapper for module removeing particles out of density limits.
+    */
+   void
+   removeParticlesOutOfDensityLimits();
+   //requires ( requires { &Model::action; std::is_member_function_pointer_v< decltype( &Model::action ) >; } )
 
    //void
    //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
@@ -293,6 +303,10 @@ public:
 
    TimeStepping timeStepping;
    ComputationTimeMeasurement timeMeasurement;
+
+   // Track removed fluid particles
+   GlobalIndexType totalNumberOfParticlesOutOfDomain = 0;
+   GlobalIndexType totalNumberOfParticlesOutOfDensityLimits = 0;
 
    std::string caseName;
    std::string verbose = "none";
