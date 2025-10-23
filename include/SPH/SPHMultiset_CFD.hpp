@@ -430,9 +430,11 @@ void
 SPHMultiset_CFD< Model >::removeParticlesOutOfDensityLimits()
 {
    const int numberOfParticlesOutOfDensityLimits = customFunctions::removeParticlesOutOfDensityLimits( fluid, modelParams );
-   this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
-   logger.writeParameter( "Particles out of density limits:", numberOfParticlesOutOfDensityLimits  );
-   logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
+   if( numberOfParticlesOutOfDensityLimits > 0 ){
+      this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
+      logger.writeParameter( "Particles out of density limits:", numberOfParticlesOutOfDensityLimits  );
+      logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
+   }
 
    //TODO: search for neighbors should follow, but assume we call this function always before the neighbor search
    /*
