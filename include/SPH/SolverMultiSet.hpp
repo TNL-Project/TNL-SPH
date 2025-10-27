@@ -69,6 +69,13 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
 
    // init model parameters
    modelParams.init( parameters );
+   // FIXME: See note in initializeParticleSets()
+   for( int i = 0; i < numberOfSubsets; i++ ){
+      std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
+      const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
+
+      multiresolutionBoundaryPatches[ i ]->initMassNodes( modelParams, i, refinementFactor );
+   }
 
    // init time stepping
    timeStepping.setTimeStep( parameters.getParameter< RealType >( "initial-time-step" ) );
@@ -115,6 +122,7 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    //const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const int numberOfOverlapLayers = 1; //TODO: Load from file as for MPI
 
    // in this case, this is not required
    const Containers::StaticVector< 2, int >& numberOfSubdomains = { 0, 0 };
@@ -122,6 +130,7 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    const int numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
    fluidSets.resize( numberOfSubsets );
    boundarySets.resize( numberOfSubsets );
+   multiresolutionBoundaryPatches.resize( numberOfSubsets );
 
    for( int i = 0; i < numberOfSubsets; i++ ){
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
@@ -129,36 +138,68 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
       const VectorType subdomainOrigin = parametersSubdomains.getXyz< VectorType >( subdomainKey + "origin" ); //REMOVE
       const IndexVectorType subdomainGridDimension = parametersSubdomains.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
       const IndexVectorType subdomainGridOriginGlobalCoords = parametersSubdomains.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
+      const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
+      const RealType localSearchRadius = refinementFactor * searchRadius;
 
       // init fluid
-      fluidSets[ i ]->initializeAsDistributed( parametersSubdomains.getParameter< int >( subdomainKey + "fluid_n" ),
-                                               parametersSubdomains.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
-                                               searchRadius,
-                                               domainGridDimension,
-                                               domainOrigin,
-                                               subdomainGridDimension,
-                                               subdomainGridOriginGlobalCoords,
-                                               1, // number of overlap layers
-                                               numberOfSubdomains,
-                                               subdomainOrigin, //REMOVE
-                                               logger );
+      fluidSets[ i ]->initializeAsDistributed(
+            parametersSubdomains.getParameter< int >( subdomainKey + "fluid_n" ),
+            parametersSubdomains.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+            localSearchRadius,
+            domainGridDimension,
+            domainOrigin,
+            subdomainGridDimension,
+            subdomainGridOriginGlobalCoords,
+            1, // number of overlap layers
+            numberOfSubdomains,
+            subdomainOrigin, //REMOVE
+            logger );
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
          fluidSets[ i ]->getParticles()->setParticleSetLabel( 0 );
 
       // init boundary
-      boundarySets[ i ]->initializeAsDistributed( parametersSubdomains.getParameter< int >( subdomainKey + "boundary_n" ),
-                                                  parametersSubdomains.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
-                                                  searchRadius,
-                                                  domainGridDimension,
-                                                  domainOrigin,
-                                                  subdomainGridDimension,
-                                                  subdomainGridOriginGlobalCoords,
-                                                  1, // number of overlap layers
-                                                  numberOfSubdomains,
-                                                  subdomainOrigin, //REMOVE
-                                                  logger );
+      boundarySets[ i ]->initializeAsDistributed(
+            parametersSubdomains.getParameter< int >( subdomainKey + "boundary_n" ),
+            parametersSubdomains.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+            localSearchRadius,
+            domainGridDimension,
+            domainOrigin,
+            subdomainGridDimension,
+            subdomainGridOriginGlobalCoords,
+            1, // number of overlap layers
+            numberOfSubdomains,
+            subdomainOrigin, //REMOVE
+            logger );
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
          boundarySets[ i ]->getParticles()->setParticleSetLabel( 1 );
+
+      // Initialize multiresolution buffer
+      std::cout << " >>> Initialize particle set: " << i << std::endl;
+      multiresolutionBoundaryPatches[ i ]->initializeAsDistributed(
+            //parametersSubdomains.getParameter< int >( subdomainKey + "patch_n" ),
+            //parametersSubdomains.getParameter< int >( subdomainKey + "patch_n_allocated" ),
+            0,
+            10000,
+            localSearchRadius,
+            domainGridDimension,
+            domainOrigin,
+            subdomainGridDimension,
+            subdomainGridOriginGlobalCoords,
+            numberOfOverlapLayers, // number of overlap layers
+            numberOfSubdomains,
+            subdomainOrigin, //REMOVE
+            logger );
+      // Initialize multiresolution boundaries
+      const IndexVectorType zoneOriginIdx_left = { 0, 0 };
+      const IndexVectorType zoneDimensions_left = { 2, subdomainGridDimension[ 1 ] };
+      const IndexVectorType zoneOriginIdx_right = { subdomainGridDimension[ 0 ] + numberOfOverlapLayers, 0 };
+      const IndexVectorType zoneDimensions_right = { 2, subdomainGridDimension[ 1 ] };
+      // init zones
+      const IndexVectorType gridDimensionsWithOverlap = fluidSets[ i ]->getParticles()->getGridDimensionsWithOverlap();
+      multiresolutionBoundaryPatches[ i ]->initZones( zoneOriginIdx_left, zoneDimensions_left, zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap );
+      // init mass nodes // FIXME: I WOULD LIKE TO DO IT HERE, BUT IT REQUIRES DP FROM MODEL PARAMS WHICH ARE NOT INITIALIZED YET
+      //multiresolutionBoundaryPatches[ i ]->initMassNodes();
+
    }
 }
 

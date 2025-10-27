@@ -12,7 +12,7 @@ template< int Dim, int Order, typename RealType, template< int, int, typename > 
 class MFD
 {
    public:
-   constexpr static int p = get_p< Dim, Order >;
+   constexpr static int p = get_p< Dim, Order >();
    using VectorType = Containers::StaticVector< Dim, RealType >; //FIXME: Should not be there
    using BaseVectorType = Containers::StaticVector< p, RealType >;
    using BaseMatrixType = Matrices::StaticMatrix< RealType, p, p >;

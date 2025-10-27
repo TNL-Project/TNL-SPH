@@ -28,14 +28,18 @@ public:
    using ScalarArrayType = typename SolverTraitsType::ScalarArrayType;
    using VectorArrayType = typename SolverTraitsType::VectorArrayType;
 
+   MassNodes() = default;
+
    void
    setSize( const IndexType& size )
    {
-      points.setSize();
-      normal.setSize();
-      massFlux.setSize();
-      mass.setSize();
-      particlesToCreate.setSize();
+      points.setSize( size );
+      normal.setSize( size );
+      massFlux.setSize( size );
+      mass.setSize( size );
+      particlesToCreate.setSize( size );
+
+      numberOfMassNodes = size;
    }
 
    void
@@ -83,6 +87,9 @@ public:
    using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
    using MassNodes = MassNodes< SPHCaseConfig >;
 
+   //TODO: Due to init
+   using IndexVectorType = typename SolverTraitsType::IndexVectorType;
+
    // matrix and vector type for interpolation
    // FIXME: Hard-def ABFs
 
@@ -96,10 +103,78 @@ public:
 
    MultiresolutionBoundary() = default;
 
-   void initialize()
+
+   // -----------------------------------------------------------------------------------------------------------------------
+   void
+   initZones( const IndexVectorType zoneOriginIdx_left,
+              const IndexVectorType zoneDimensions_left,
+              const IndexVectorType zoneOriginIdx_right,
+              const IndexVectorType zoneDimensions_right,
+              const IndexVectorType gridDimensionsWithOverlap,
+              const IndexType numberOfParticlesPerCell = 75 )
    {
+      zone_left.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+      zone_left.assignCells( zoneOriginIdx_left, zoneDimensions_left, gridDimensionsWithOverlap );
+
+      zone_right.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
+      zone_right.assignCells( zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap );
+
+      const IndexType numberOfAllocatedParticles = this->getNumberOfAllocatedParticles();
+      particlesToFluid.setSize( numberOfAllocatedParticles );
+      particlesToRemove.setSize( numberOfAllocatedParticles );
+      particlesToBuffer.setSize( numberOfAllocatedParticles );      //TODO: Set sizes
 
    };
+   // -----------------------------------------------------------------------------------------------------------------------
+   template< typename ModelParams >
+   void
+   initMassNodes( ModelParams& modelParams, const int subdomainIdx, const RealType refinemnetFactor )
+   {
+      std::cout << "=== INIT MASS NODES =================== " << std::endl;
+      const RealType searchRadius = this->getParticles()->getSearchRadius();
+      std::cout << "Search radius: " << searchRadius << std::endl;
+      std::cout << "Grid origin: " << this->getParticles()->getGridOrigin() << std::endl;
+      std::cout << "Grid origin with overlap: " << this->getParticles()->getGridOriginWithOverlap() << std::endl;
+      std::cout << "Grid dimensions: " << this->getParticles()->getGridDimensions() << std::endl;
+      std::cout << "Grid dimensions with overlap: " << this->getParticles()->getGridDimensionsWithOverlap() << std::endl;
+      std::cout << "Domain size: " << this->getParticles()->getGridOrigin() + this->getParticles()->getGridDimensions() * searchRadius << std::endl;
+      std::cout << "Domain size with overlap: " << this->getParticles()->getGridOriginWithOverlap() + this->getParticles()->getGridDimensionsWithOverlap() * searchRadius << std::endl;
+      std::cout << "======================================= " << std::endl;
+
+      const RealType height = 1.f;
+      const RealType dp = refinemnetFactor * modelParams.dp;
+      const int numberOfMassNodes = height / dp;
+      massNodes.setSize( numberOfMassNodes );
+
+      RealType massNodes_xCoord;
+      VectorType massNodes_normal;
+      if( subdomainIdx == 0 ){
+         massNodes_xCoord = this->getParticles()->getGridOriginWithOverlap()[ 0 ] + this->getParticles()->getGridDimensionsWithOverlap()[ 0 ] * searchRadius;
+         massNodes_normal = { -1.f, 0 };
+      }
+      else if( subdomainIdx == 1 ){
+         massNodes_xCoord = this->getParticles()->getGridOriginWithOverlap()[ 0 ];
+         massNodes_normal = { 1.f, 0 };
+      }
+      else{
+         std::cerr << "Invalid buffer count." << std::endl;
+      }
+
+      auto points_massNodes_view = this->massNodes.points.getView();
+      auto normals_massNodes_view = this->massNodes.normal.getView();
+
+      auto generateMassNodesCoordinates = [=] __cuda_callable__ ( int i ) mutable
+      {
+         const VectorType r = { massNodes_xCoord, dp * ( i + 1 ) };
+         points_massNodes_view[ i ] = r;
+         normals_massNodes_view[ i ] = massNodes_normal;
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfMassNodes, generateMassNodesCoordinates );
+   }
+
+   // -----------------------------------------------------------------------------------------------------------------------
+
+
 
    //compute mass fluxes and create new buffer particles
    template< typename FluidPointer, typename ModelParams >
@@ -588,7 +663,8 @@ public:
    RealType bufferWidth; // FIXME: temp
 
    //
-   ParticleZone zone;
+   ParticleZone zone_left;
+   ParticleZone zone_right;
 
 };
 

@@ -52,6 +52,11 @@ public:
    using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
    using OpenBoundaryModel = typename Model::OpenBoundaryModel;
 
+   // MR
+   using MultiresolutionBoundary = MultiresolutionBoundary<
+      ParticlesType, SPHConfig, FluidVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType, ModelParams >;
+   using MultiresolutionBoundaryPointer = Pointers::SharedPointer< MultiresolutionBoundary, DeviceType >;
+
    //Reader
    using Reader = TNL::ParticleSystem::Readers::VTKReader;
    using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesType >;
@@ -232,6 +237,7 @@ public:
    std::vector< FluidPointer > fluidSets;
    std::vector< BoundaryPointer > boundarySets;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
+   std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;
 
    Model model;
    ModelParams modelParams;
