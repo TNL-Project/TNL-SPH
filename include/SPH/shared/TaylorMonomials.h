@@ -12,6 +12,7 @@ public:
     using VectorType = Containers::StaticVector< Dim, RealType >;
     using BaseVectorType = Containers::StaticVector< p, RealType >;
 
+    __cuda_callable__
     static BaseVectorType
     eval( const VectorType& r_ij, RealType h )
     {

@@ -196,7 +196,7 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
       const IndexVectorType zoneDimensions_right = { 2, subdomainGridDimension[ 1 ] };
       // init zones
       const IndexVectorType gridDimensionsWithOverlap = fluidSets[ i ]->getParticles()->getGridDimensionsWithOverlap();
-      multiresolutionBoundaryPatches[ i ]->initZones( zoneOriginIdx_left, zoneDimensions_left, zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap );
+      multiresolutionBoundaryPatches[ i ]->initZones( zoneOriginIdx_left, zoneDimensions_left, zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap, i );
       // init mass nodes // FIXME: I WOULD LIKE TO DO IT HERE, BUT IT REQUIRES DP FROM MODEL PARAMS WHICH ARE NOT INITIALIZED YET
       //multiresolutionBoundaryPatches[ i ]->initMassNodes();
 
@@ -478,6 +478,19 @@ SolverMultiSet< Model >::applyPeriodicBCTransfer()
 
 template< typename Model >
 void
+SolverMultiSet< Model >::applyMultiresolutionBC()
+{
+   // express the terms manually
+
+   multiresolutionBoundaryPatches[ 0 ]->updateInterfaceBuffer(
+         fluidSets[ 0 ], fluidSets[ 1 ], modelParams, timeStepping.getTimeStep(), 0 );
+
+   multiresolutionBoundaryPatches[ 1 ]->updateInterfaceBuffer(
+         fluidSets[ 1 ], fluidSets[ 0 ], modelParams, timeStepping.getTimeStep(), 1 );
+}
+
+template< typename Model >
+void
 SolverMultiSet< Model >::interact()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
@@ -640,6 +653,16 @@ SolverMultiSet< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex 
       //FIXME:    }
       //FIXME: }
 
+      if( multiresolutionBoundaryPatches.size() ) {
+         //for( auto& multiresolutionBoundaryPatch : multiresolutionBoundaryPatches ) {
+            std::string outputFileNameMultiresolutionBound =
+               outputDirectory + "/multiresolutionBoundaryPatch_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
+            multiresolutionBoundaryPatches[ i ]->template writeParticlesAndVariables< Writer >(
+                  outputFileNameMultiresolutionBound, writeParticleCellIndex );
+            logger.writeParameter( "Saved:", outputFileNameMultiresolutionBound );
+         //}
+      }
+
 #ifdef HAVE_MPI
       std::string outputFileNameGrid = outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( time ) + ".vtk";
 #else
@@ -727,6 +750,13 @@ SolverMultiSet< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfor
    //FIXME:    }
    //FIXME: }
 
+   if( multiresolutionBoundaryPatches.size() > 0 ) {
+      for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ ) {
+         logger.writeHeader( "Multiresolutin boundary buffer" + std::to_string( i + 1 ) + "." );
+         multiresolutionBoundaryPatches[ i ]->writeProlog( logger, i );
+      }
+   }
+
    logger.writeHeader( "System information." );
    if( writeSystemInformation ) {
       logger.writeSystemInformation( printGPUs );
@@ -778,6 +808,13 @@ SolverMultiSet< Model >::writeInfo( TNL::Logger& logger ) noexcept
    //FIXME:                                 boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
    //FIXME:    }
    //FIXME: }
+
+
+   if( multiresolutionBoundaryPatches.size() > 0 ) {
+      for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
+         logger.writeParameter( "Number of mr-buffer " + std::to_string( i ) + " particles:",
+               multiresolutionBoundaryPatches[ i ]->getNumberOfParticles() );
+   }
    logger.writeSeparator();
 }
 

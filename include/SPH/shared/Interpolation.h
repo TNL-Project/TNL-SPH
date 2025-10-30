@@ -19,14 +19,16 @@ class MFD
    using ABFs = ABFsType< Dim, Order, SolverConfig >;
    using TaylorMonomials = TaylorMonomials< Dim, Order, RealType >;
 
+   __cuda_callable__
    static const BaseMatrixType
    getPairCorrectionMatrix( VectorType r_ij, RealType h )
    {
       const BaseVectorType W_ji = ABFs::eval( ( -1 ) * r_ij, h ); //FIXME!
-      const BaseVectorType X_ji = TaylorMonomials::eval(( -1 ) * r_ij ); //FIXME
+      const BaseVectorType X_ji = TaylorMonomials::eval(( -1 ) * r_ij, h ); //FIXME
       return Matrices::cross( X_ji, W_ji );
    }
 
+   __cuda_callable__
    static const BaseVectorType
    getPairVariableAndDerivatives( VectorType r_ij, RealType h )
    {

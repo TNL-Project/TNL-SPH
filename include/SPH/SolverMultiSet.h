@@ -169,6 +169,12 @@ public:
    applyPeriodicBCTransfer();
 
    /**
+    * NEW:
+    */
+   void
+   applyMultiresolutionBC();
+
+   /**
     * \brief Perform interaction between all particles and all particle objects
     * in the simulation.
     */
