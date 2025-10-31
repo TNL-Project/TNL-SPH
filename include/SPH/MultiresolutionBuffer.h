@@ -11,6 +11,9 @@
 #include "shared/Interpolation.h"
 #include "shared/WendlandC2ABFs.h"
 
+//FIXME - debug use MDBC corrections
+#include "Models/WCSPH_DBC/details.h"
+
 namespace TNL {
 namespace SPH {
 
@@ -244,6 +247,8 @@ public:
       const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius(); //TODO: Is it this one?
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold; //TODO: rename -> introduce extrapolationDetTrashold
 
+      //debug mdbc kernels
+
       auto interpolateFluid = [=] __cuda_callable__ (
             IndexType i,
             IndexType j,
@@ -264,14 +269,24 @@ public:
             const VectorType v_j = view_v_fluid[ j ];
             const RealType V_j = m / rho_j;
 
-            // the temporary c
-            //const MfdMatrixType M_xj = MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
+            /*
             *M_x += MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
             const MfdVectorType b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
             *brho_x += rho_j * b_x;
             *bvx_x += v_j[ 0 ] * b_x;
             *bvy_x += v_j[ 1 ] * b_x;
+            */
             //*bvz_x += v_j[ 2 ] * b_x;
+
+            // MDBC debug
+
+            const RealType F = KernelFunction::F( drs, h );
+            const RealType W = KernelFunction::W( drs, h );
+            const VectorType gradW1 = r_xj * F;
+            *M_x += ghostNodeDetail::getCorrectionMatrix( W, gradW1, r_xj, V_j );
+            *brho_x = ghostNodeDetail::getVariableValueAndGradient( W, gradW1, rho_j, V_j );
+            *bvx_x = ghostNodeDetail::getVariableValueAndGradient( W, gradW1, v_j[ 0 ], V_j );
+            *bvy_x = ghostNodeDetail::getVariableValueAndGradient( W, gradW1, v_j[ 1 ], V_j );
 
             //div r
             const VectorType gradW = r_xj * KernelFunction::F( drs, h );
@@ -299,7 +314,8 @@ public:
          RealType vy_x;
          //RealType vz_x;
 
-         if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold ) {
+         //if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold ) {
+         if( M_x( 0, 0 ) > 0.05 ) {
             rho_x = Matrices::solve( M_x, brho_x )[ 0 ];
             vx_x  = Matrices::solve( M_x, bvx_x  )[ 0 ];
             vy_x  = Matrices::solve( M_x, bvy_x  )[ 0 ];
@@ -318,8 +334,9 @@ public:
          RealType m_flux_x;
          //const VectorType v_x = { vx_x, vy_x, vz_x };
          const VectorType v_x = { vx_x, vy_x };
-         const RealType m_x_lessZero = TNL::max( 0, -rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt );
+         const RealType m_x_lessZero = TNL::max( 0, rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt ); // NOTE: Ricci uses (-1) * rho, but I think I have different normal orientation
          const RealType m_x_geqZero = -rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt;
+         m_flux_x = m_x_lessZero;
 
          // free surface correction
          if( div_r_x < div_r_trashold )
@@ -329,7 +346,8 @@ public:
 
          // Debug playground
          if( M_x( 0, 0 ) > 0 )
-            printf( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! M00: %f, rho_x %f, v_x %f, %f massFlux: %f \n", M_x( 0, 0 ), rho_x, vx_x, vy_x, m_flux_x );
+            printf( "!!!!! r_x: %f, %f, M00: %f, rho_x %f, v_x %f, %f massFlux: %f, m_x_lZ: %f, div_r: %f  ( nx: %f,  ny: %f , dx: %f, dt %f )\n",
+                  r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), rho_x, vx_x, vy_x, m_flux_x, m_x_lessZero, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt );
       };
       //massNodes->getParticles()->forAll( particleLoop );
       Algorithms::parallelFor< DeviceType >( 0, massNodes.numberOfMassNodes, particleLoop );
