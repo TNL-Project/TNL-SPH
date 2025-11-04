@@ -23,16 +23,19 @@ class MFD
    static const BaseMatrixType
    getPairCorrectionMatrix( VectorType r_ij, RealType h )
    {
-      const BaseVectorType W_ji = ABFs::eval( ( -1 ) * r_ij, h ); //FIXME!
-      const BaseVectorType X_ji = TaylorMonomials::eval(( -1 ) * r_ij, h ); //FIXME
-      return Matrices::cross( X_ji, W_ji );
+      const BaseVectorType W_ji = ABFs::eval( r_ij, h );
+      //const BaseVectorType W_ji = ABFs::eval( ( -1 ) * r_ij, h ); //TODO: Why it isnt like this?
+      const BaseVectorType X_ji = TaylorMonomials::eval(( -1 ) * r_ij, h );
+      //return Matrices::cross( X_ji, W_ji ); //TODO: Why it isnt like this?
+      return Matrices::cross( W_ji, X_ji );
    }
 
    __cuda_callable__
    static const BaseVectorType
    getPairVariableAndDerivatives( VectorType r_ij, RealType h )
    {
-      return ABFs::eval( r_ij, h );
+      //return ABFs::eval( (-1 ) * r_ij, h ); //TODO: Why it isnt like this?
+      return ABFs::eval(  r_ij, h );
    }
 };
 
