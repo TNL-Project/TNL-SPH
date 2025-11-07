@@ -258,7 +258,8 @@ public:
             MfdVectorType* bvx_x,
             MfdVectorType* bvy_x,
             //MfdVectorType* bvz_x,
-            RealType* div_r_x ) mutable
+            RealType* div_r_x,
+            RealType* drs_min ) mutable
       {
          const VectorType r_j = view_points_fluid[ j ];
          const VectorType r_xj = r_x - r_j;
@@ -269,28 +270,19 @@ public:
             const VectorType v_j = view_v_fluid[ j ];
             const RealType V_j = m / rho_j;
 
-            /*
             *M_x += MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
             const MfdVectorType b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
             *brho_x += rho_j * b_x;
             *bvx_x += v_j[ 0 ] * b_x;
             *bvy_x += v_j[ 1 ] * b_x;
-            */
             //*bvz_x += v_j[ 2 ] * b_x;
 
-            // MDBC debug
-
-            const RealType F = KernelFunction::F( drs, h );
-            const RealType W = KernelFunction::W( drs, h );
-            const VectorType gradW1 = r_xj * F;
-            *M_x += ghostNodeDetail::getCorrectionMatrix( W, gradW1, r_xj, V_j );
-            *brho_x = ghostNodeDetail::getVariableValueAndGradient( W, gradW1, rho_j, V_j );
-            *bvx_x = ghostNodeDetail::getVariableValueAndGradient( W, gradW1, v_j[ 0 ], V_j );
-            *bvy_x = ghostNodeDetail::getVariableValueAndGradient( W, gradW1, v_j[ 1 ], V_j );
-
-            //div r
+            // div r
             const VectorType gradW = r_xj * KernelFunction::F( drs, h );
-            *div_r_x += ( r_xj, gradW ) * V_j;
+            *div_r_x += (-1.f) * ( r_xj, gradW ) * V_j; //TODO: Added - sign, should be there?
+
+            // find nearest neighbor
+            *drs_min = std::min( *drs_min, drs );
          }
       };
 
@@ -304,10 +296,11 @@ public:
          MfdVectorType bvy_x = 0.f;
          //MfdVectorType bvz_x = 0.f;
          RealType div_r_x = 0.f;
+         RealType drs_min = FLT_MAX;
 
          ParticlesType::NeighborsLoop::exec(
-               //i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bvx_x, &bvy_x, &bvz_x, &div_r_x );
-               i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bvx_x, &bvy_x, &div_r_x );
+               //i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bvx_x, &bvy_x, &bvz_x, &div_r_x, &drs_min );
+               i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bvx_x, &bvy_x, &div_r_x, &drs_min );
 
          RealType rho_x;
          RealType vx_x;
@@ -331,23 +324,30 @@ public:
             // not sure what to do here
          }
 
-         RealType m_flux_x;
          //const VectorType v_x = { vx_x, vy_x, vz_x };
          const VectorType v_x = { vx_x, vy_x };
-         const RealType m_x_lessZero = TNL::max( 0, rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt ); // NOTE: Ricci uses (-1) * rho, but I think I have different normal orientation
-         const RealType m_x_geqZero = -rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt;
-         m_flux_x = m_x_lessZero;
+         const RealType m_x_lessZero = TNL::max( 0,rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt ); // NOTE: Ricci uses (-1) * rho, but I think I have different normal orientation
+         const RealType m_x_geqZero = rho_x * ( ( v_x - v_subdomain ), normal_x ) * dx * dt; // NOTE: Ricci uses (-1) * rho, but I think I have different normal orientation
 
-         // free surface correction
-         if( div_r_x < div_r_trashold )
-            m_flux_x = 0.f;
+         // sum up the flux with free surface corrections
+         RealType m_flux_x = 0;
 
-         view_mFlux_massPoints[ i ] = m_flux_x;
+         if( ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_mFlux_massPoints[ i ] < 0.f  ) )
+            m_flux_x = m_x_lessZero;
+         else if( div_r_x > div_r_trashold || drs_min < dx )
+            m_flux_x = m_x_geqZero;
+         else
+            m_flux_x = 0;
+
+         view_mFlux_massPoints[ i ] += m_flux_x;
 
          // Debug playground
-         if( M_x( 0, 0 ) > 0 )
-            printf( "!!!!! r_x: %f, %f, M00: %f, rho_x %f, v_x %f, %f massFlux: %f, m_x_lZ: %f, div_r: %f  ( nx: %f,  ny: %f , dx: %f, dt %f )\n",
-                  r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), rho_x, vx_x, vy_x, m_flux_x, m_x_lessZero, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt );
+         //if( M_x( 0, 0 ) > 0 )
+         //   printf( "!!!!! r_x: %.3f, %.3f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f massFlux: %f, div_r: %.2f  ( nx: %.2f,  ny: %.2f , dx: %.3f, dt %f ), detM: %f \n",
+         //         r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x, m_flux_x, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt, Matrices::determinant( M_x ) );
+
+         //if( M_x( 0, 0 ) > 0 )
+         //printf( "fluxik: %f \n ", view_mFlux_massPoints[ i ] );
       };
       //massNodes->getParticles()->forAll( particleLoop );
       Algorithms::parallelFor< DeviceType >( 0, massNodes.numberOfMassNodes, particleLoop );
@@ -369,9 +369,9 @@ public:
       const auto view_v_fluid = fluid_neihgbor->getVariables()->v.getConstView();
 
       const RealType h = modelParams.h;
-      const RealType m = modelParams.m;
+      const RealType m = modelParams.mass;
       const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius(); //TODO: Is it this one?
-      const RealType extrapolationDetTreshold = modelParams.extrapolationDetTreshold;
+      const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold; //TODO: rename -> introduce extrapolationDetTrashold
 
       auto interpolateFluid = [=] __cuda_callable__ (
             IndexType i,
@@ -389,15 +389,15 @@ public:
          if( drs <= searchRadius )
          {
             const RealType rho_j = view_rho_fluid[ j ];
-            const RealType v_j = view_v_fluid[ j ];
+            const VectorType v_j = view_v_fluid[ j ];
             const RealType V_j = m / rho_j;
 
             *M_x += MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
-            const auto b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
+            const MfdVectorType b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
             *brho_x += rho_j * b_x;
             *bvx_x += v_j[ 0 ] * b_x;
             *bvy_x += v_j[ 1 ] * b_x;
-            *bvz_x += v_j[ 2 ] * b_x;
+            //*bvz_x += v_j[ 2 ] * b_x;
          }
       };
 
@@ -412,27 +412,43 @@ public:
 
          ParticlesType::NeighborsLoop::exec( i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bvx_x, &bvy_x, &bvz_x );
 
-         if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold ) {
-            const RealType rho_x = Matrices::solve( M_x, brho_x )[ 0 ];
-            const RealType vx_x =  Matrices::solve( M_x, vx_x   )[ 0 ];
-            const RealType vy_x =  Matrices::solve( M_x, vy_x   )[ 0 ];
-            const RealType vz_x =  Matrices::solve( M_x, vx_x   )[ 0 ];
+         //if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold ) {
+         RealType rho_x;
+         RealType vx_x;
+         RealType vy_x;
+
+         //TODO: the conditions needs to be different
+         const RealType detM = Matrices::determinant( M_x );
+         if( M_x( 0, 0 ) > 0.05  && detM > 0.001f ) {
+            rho_x = Matrices::solve( M_x, brho_x )[ 0 ];
+            vx_x =  Matrices::solve( M_x, bvx_x   )[ 0 ];
+            vy_x =  Matrices::solve( M_x, bvy_x   )[ 0 ];
+            //const RealType vz_x =  Matrices::solve( M_x, vx_x   )[ 0 ];
 
             view_rho_overlap[ i ] = rho_x;
-            view_v_overlap[ i ] = { vx_x, vy_x, vz_x };
+            //view_v_overlap[ i ] = { vx_x, vy_x, vz_x };
+            view_v_overlap[ i ] = { vx_x, vy_x };
          }
-         else if( M_x( 0, 0 ) > 0.f ) {
-            const RealType rho_x = brho_x[ 0 ] / M_x( 0, 0 );
-            const RealType vx_x =  vx_x[ 0 ]   / M_x( 0, 0 );
-            const RealType vy_x =  vy_x[ 0 ]   / M_x( 0, 0 );
-            const RealType vz_x =  vx_x[ 0 ]   / M_x( 0, 0 );
+         else if( M_x( 0, 0 ) > 0.05f ) {
+            rho_x = brho_x[ 0 ] / M_x( 0, 0 );
+            vx_x =  bvx_x[ 0 ]  / M_x( 0, 0 );
+            vy_x =  bvy_x[ 0 ]  / M_x( 0, 0 );
+            //const RealType vz_x =  bvz_x[ 0 ]   / M_x( 0, 0 );
 
             view_rho_overlap[ i ] = rho_x;
-            view_v_overlap[ i ] = { vx_x, vy_x, vz_x };
+            //view_v_overlap[ i ] = { vx_x, vy_x, vz_x };
+            view_v_overlap[ i ] = { vx_x, vy_x };
          }
          else{
-            // not sure what to do here
+            // FIXME: not sure what to do here
          }
+
+
+         // Debug playground
+         //if( M_x( 0, 0 ) > 0 )
+            printf( "!!!!! r_x: %.5f, %.5f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f, detM: %f \n",
+                  r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x,  detM );
+
       };
       this->getParticles()->forAll( particleLoop );
    }
@@ -444,7 +460,7 @@ public:
    // - buffer out of buffer -> remove
    // - buffer into fluid -> fluid
    void
-   moveBufferParticles( const RealType dt )
+   moveBufferParticles( const RealType dt, const int subdomain )
    {
       auto view_r_buffer = this->getParticles()->getPoints().getView();
       const auto view_v_buffer = this->getVariables()->v.getConstView();
@@ -453,9 +469,8 @@ public:
       const VectorType bufferPosition = this->bufferPosition;
       const VectorType bufferOrientation = this->bufferOrientation;
       const RealType bufferWidth = this->bufferWidth;
-      std::cout << "[mBP]: nbp: " << numberOfBufferParticles << " bufferPosition: " << bufferPosition << " bufferOrientation: " << bufferOrientation << " bufferWidth: " << bufferWidth << std::endl;
+      std::cout << "[mBP]: subdomain: " << subdomain << " nbp: " << numberOfBufferParticles << " bufferPosition: " << bufferPosition << " bufferOrientation: " << bufferOrientation << " bufferWidth: " << bufferWidth << std::endl;
 
-      auto retypeMarker_view = retypeMarker.getView();
       auto moveBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
@@ -465,12 +480,17 @@ public:
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, moveBufferParticles );
 
+      // reset retype marker
+      auto retypeMarker_view = retypeMarker.getView();
+      retypeMarker_view = 0;
+
       // identify particles moving to fluid
       auto identifyParticlesToRetype = [=] __cuda_callable__ ( IndexType i ) mutable
       {
          const VectorType r = view_r_buffer[ i ];
          const VectorType r_relative = bufferPosition - r;
          if( ( r_relative, bufferOrientation ) <= 0.f ){
+            printf(" <<r_new: %f, %f>>\n", r[ 0 ], r[ 1 ]);
             retypeMarker_view[ i ] = -1;
             return 1;
          }
@@ -536,6 +556,8 @@ public:
       auto view_v_buffer = this->getVariables()->v.getView();
       auto view_rho_buffer = this->getVariables()->rho.getView();
 
+      std::cout << "[cBTF]: numberOfPtcsToRetype: " << numberOfPtcsToRetype << std::endl;
+
       auto createNewFluidParticles = [=] __cuda_callable__ ( int i ) mutable
       {
          view_r_fluid[ numberOfFluidPtcs + i ] = view_r_buffer[ i ];
@@ -544,8 +566,23 @@ public:
 
          view_rho_old[ numberOfFluidPtcs + i ] = view_rho_buffer[ i ];
          view_v_old[ numberOfFluidPtcs + i ] = view_v_buffer[ i ];
+
+         //TODO: I need to remove the used particles, not sure if this is the right way
+         view_r_buffer[ i ] = FLT_MAX;
+
+         //debug: print new fluid particles
+         printf(" [r_new: %f, %f]\n", view_r_fluid[ numberOfFluidPtcs + i ][ 0 ], view_r_fluid[ numberOfFluidPtcs + i ][ 1 ]);
       };
       Algorithms::parallelFor< DeviceType >( 0, this->numberOfPtcsToRetype, createNewFluidParticles );
+      fluid->getParticles()->setNumberOfParticles( numberOfFluidPtcs + this->numberOfPtcsToRetype );
+      this->getParticles()->setNumberOfParticlesToRemove(
+            this->getParticles()->getNumberOfParticlesToRemove() + this->numberOfPtcsToRetype );
+
+      std::cout << "[cBTF][end]: " <<
+         " fluid n: " << fluid->getNumberOfParticles() <<
+         " mr-buffer n: " << this->getNumberOfParticles() <<
+         " numberOfPtcsToRetype: " << this->numberOfPtcsToRetype <<
+         " mr-buffer to remove:" << this->getParticles()->getNumberOfParticlesToRemove() << std::endl;
    }
 
    void
@@ -564,16 +601,20 @@ public:
       auto mass_view = massNodes.mass.getView();
       auto view_particlesToCreate = massNodes.particlesToCreate.getView();
 
-      const RealType particleMass = modelParams.mass;
-      const IndexType numberOfBufferPartices = this->getParticles()->getNumberOfParticles();
+      //FIXME: I need refinemet factor here! Subdomain mass is different
+      const RealType particleMass = 0.25f * modelParams.mass ;
+      const IndexType numberOfMassNodes = this->massNodes.numberOfMassNodes;
 
       // reset list with markers
       view_particlesToCreate = 0;
 
       auto identifyParticlesToCreate = [=] __cuda_callable__ ( IndexType i ) mutable
       {
-         mass_view[ i ] = dt * massFlux_view[ i ];
+         //mass_view[ i ] += dt * massFlux_view[ i ];
+         mass_view[ i ] += massFlux_view[ i ]; // dt is already added
          //*****
+         if( massFlux_view[ i ] != 0.f )
+            printf( " ================================================================ m: %f, mass_view: %f, mass_flux: %f \n", particleMass, mass_view[ i ], massFlux_view[ i ] );
          //*****
          if( mass_view[ i ] > particleMass )
          {
@@ -584,7 +625,8 @@ public:
          else
             return 0;
       };
-      this->numberOfPtcsToCreate = Algorithms::reduce< DeviceType >( 0, numberOfBufferPartices, identifyParticlesToCreate );
+      this->numberOfPtcsToCreate = Algorithms::reduce< DeviceType >( 0, numberOfMassNodes, identifyParticlesToCreate );
+      std::cout << "[uMN] resuls - numberOfParticle: " << this->numberOfPtcsToCreate << " numberOfMassNodes: " << massNodes.numberOfMassNodes << std::endl;
    }
 
    template< typename ModelParams >
@@ -597,6 +639,8 @@ public:
 
       const IndexType numberOfBufferPtcs = this->getParticles()->getNumberOfParticles();
       const RealType dp = modelParams.dp;
+
+      std::cout << "[cBP]: numberOfParticlesToCreate: " << numberOfPtcsToCreate << std::endl;
 
       auto createNewBufferParticles = [=] __cuda_callable__ ( int i ) mutable
       {
@@ -696,9 +740,16 @@ public:
    {
       // update buffer: buffer -> fluid, buffer -> remove
       std::cout << "Move buffer particles: " << std::endl;
-      moveBufferParticles( dt );
+      moveBufferParticles( dt, subdomainIdx ); //subdomain idx for debugging
       std::cout << "Sort buffer particles: " << std::endl;
       sortBufferParticles();
+
+      /*
+            //debug inlet
+            if( ( subdomainIdx == 1 ) && ( numberOfPtcsToRetype > 0 ) )
+               std::cout << "Ptcs: " << this->getParticles()->getPoints() << std::endl;
+      */
+
       std::cout << "Remove buffer particles: " << std::endl;
       removeBufferParticles();
       std::cout << "Convert buffer to fluid: " << std::endl;
@@ -723,15 +774,23 @@ public:
       std::cout << "BUFFER UPDATED: buffer particles count: " << this->getNumberOfParticles() << " fluid particles count: " << fluid->getNumberOfParticles() << std::endl;
 
       //// update the values
+      massNodes.massFlux = 0;
       if( subdomainIdx == 1 )
       accumulateMasses( fluid_neihgbor, modelParams, dt ); // ?
-      //interpolateVariables( fluid_neihgbor, modelParams );
+      interpolateVariables( fluid_neihgbor, modelParams );
+
+
+      //sun search to rmeove the retyped particles
+      if( numberOfPtcsToRetype > 0 )
+         this->searchForNeighbors();
 
       // reset temorary variables and fields (i prefere names such as: fluidToBufferCount )
       numberOfPtcsToRemove = 0;
       numberOfPtcsToRetype = 0; //TODO: Move to fluid
       numberOfPtcsToCreate = 0;
       numberOfPtcsToBuffer = 0;
+      //reset the flux
+
 
    }
 
