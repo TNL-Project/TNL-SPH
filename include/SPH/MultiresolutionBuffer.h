@@ -232,7 +232,7 @@ public:
       const auto view_normals_massNodes = this->massNodes.normal.getConstView();
       //auto view_rho_massPoints = this->getVariables()->rho.getView();
       //auto view_v_massPoints = this->getVariables()->v.getView();
-      //const auto view_m_massPoints = massNodes.mass.getView(); I need the flux, right?
+      const auto view_m_massPoints = massNodes.mass.getView(); //TODO: temp due to condition
       auto view_mFlux_massPoints = massNodes.massFlux.getView();
       const auto view_points_fluid = fluid_neihgbor->getParticles()->getPoints().getConstView();
       const auto view_rho_fluid = fluid_neihgbor->getVariables()->rho.getConstView();
@@ -332,7 +332,8 @@ public:
          // sum up the flux with free surface corrections
          RealType m_flux_x = 0;
 
-         if( ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_mFlux_massPoints[ i ] < 0.f  ) )
+         //if( ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_mFlux_massPoints[ i ] < 0.f  ) ) //TODO: Original implementation uses only fluxes
+         if( ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_m_massPoints[ i ] < 0.f  ) )
             m_flux_x = m_x_lessZero;
          else if( div_r_x > div_r_trashold || drs_min < dx )
             m_flux_x = m_x_geqZero;
@@ -342,9 +343,11 @@ public:
          view_mFlux_massPoints[ i ] += m_flux_x;
 
          // Debug playground
-         //if( M_x( 0, 0 ) > 0 )
-         //   printf( "!!!!! r_x: %.3f, %.3f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f massFlux: %f, div_r: %.2f  ( nx: %.2f,  ny: %.2f , dx: %.3f, dt %f ), detM: %f \n",
-         //         r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x, m_flux_x, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt, Matrices::determinant( M_x ) );
+         bool firstCond = ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_m_massPoints[ i ] < 0.f  );
+         bool secondCond = ( div_r_x > div_r_trashold || drs_min < dx );
+         if( M_x( 0, 0 ) > 0 )
+            printf( "!!!!! r_x: %.3f, %.3f, c1: %d, c2: %d, M00: %.3f, m: %f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f massFlux: %f, div_r: %.2f,   ( nx: %.2f,  ny: %.2f , dx: %.3f, dt %f ), detM: %f \n",
+                  r_x[ 0 ], r_x[ 1 ], firstCond, secondCond, M_x( 0, 0 ), view_m_massPoints[ i ], brho_x[ 0 ], rho_x, vx_x, vy_x, m_flux_x, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt, Matrices::determinant( M_x ) );
 
          //if( M_x( 0, 0 ) > 0 )
          //printf( "fluxik: %f \n ", view_mFlux_massPoints[ i ] );
@@ -446,8 +449,8 @@ public:
 
          // Debug playground
          //if( M_x( 0, 0 ) > 0 )
-            printf( "!!!!! r_x: %.5f, %.5f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f, detM: %f \n",
-                  r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x,  detM );
+         //   printf( "!!!!! r_x: %.5f, %.5f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f, detM: %f \n",
+         //         r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x,  detM );
 
       };
       this->getParticles()->forAll( particleLoop );
@@ -605,6 +608,9 @@ public:
       const RealType particleMass = 0.25f * modelParams.mass ;
       const IndexType numberOfMassNodes = this->massNodes.numberOfMassNodes;
 
+      // debug
+      const auto massNodes_coords = this->massNodes.points.getConstView();
+
       // reset list with markers
       view_particlesToCreate = 0;
 
@@ -613,13 +619,18 @@ public:
          //mass_view[ i ] += dt * massFlux_view[ i ];
          mass_view[ i ] += massFlux_view[ i ]; // dt is already added
          //*****
-         if( massFlux_view[ i ] != 0.f )
-            printf( " ================================================================ m: %f, mass_view: %f, mass_flux: %f \n", particleMass, mass_view[ i ], massFlux_view[ i ] );
+         //if( massFlux_view[ i ] != 0.f )
+         //   printf( " ================================================================ m: %f, mass_view: %f, mass_flux: %f \n", particleMass, mass_view[ i ], massFlux_view[ i ] );
+         bool myCond = mass_view[ i ] > particleMass;
+         if( mass_view[ i ] != 0.f )
+            printf( " ================================================================ m: %f, x: %.3f, y: %.3f , cond: %d, mass_view: %f, mass_flux: %f \n",
+                  particleMass, massNodes_coords[ i ][ 0 ], massNodes_coords[ i ][ 1 ], myCond, mass_view[ i ], massFlux_view[ i ] );
          //*****
          if( mass_view[ i ] > particleMass )
          {
             mass_view[ i ] -= particleMass;
-            view_particlesToCreate[ i ] = 1;
+            //view_particlesToCreate[ i ] = 1;
+            view_particlesToCreate[ i ] = -1;
             return 1;
          }
          else
