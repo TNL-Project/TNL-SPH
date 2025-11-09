@@ -205,6 +205,9 @@ public:
 
    //eps - constant to prevent zero in denominator [-].
    RealType eps = 0.001f;
+
+   //FIXME: mdbcExtrapolationDetTreshold - MR extrapolation trashold
+   RealType mdbcExtrapolationDetTreshold = 0.f;
 };
 
 template< typename ModelParams >
