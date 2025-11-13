@@ -32,8 +32,15 @@ public:
 
       typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
+      std::cout << " __> numberOfParticles; " << searchInBound.numberOfParticles << std::endl;
+      std::cout << " __> gridSize;          " << searchInBound.gridSize          << std::endl;
+      std::cout << " __> gridOrigin;        " << searchInBound.gridOrigin        << std::endl;
+      std::cout << " __> searchRadius;      " << searchInBound.searchRadius      << std::endl;
+
+
       /* CONSTANT VARIABLES */
-      const RealType dp = sphState.dp;
+      const RealType refinementFactor = searchRadius / ( 2.f * sphState.h );
+      const RealType dp = refinementFactor * sphState.dp;
       const RealType r_box = sphState.r_boxFactor * dp;
       const RealType minimalDistanceFactor = sphState.minimalDistanceFactor;
       const RealType elasticFactor = sphState.elasticFactor;
@@ -53,6 +60,13 @@ public:
          const VectorType r_j = view_points_bound[ j ];
          const VectorType r_ji = r_j - r_i;
          const RealType drs = l2Norm( r_ji );
+
+               //DEBUG
+               if((refinementFactor< 0.75f) && ( i < 2 ))
+                  printf("<REFLECTED i: %d r_i: %.6f, %.6f, r_j %.6f, %.6f, drs: %.6f rad: %f>\n",
+                        i, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs, searchRadius);
+
+
          if (drs <= searchRadius )
          {
             const VectorType v_j = view_v_bound[ j ];
@@ -100,6 +114,7 @@ public:
 
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
+      std::cout << "[ElasticBounce] Done for n: " << numberOfParticles << std::endl;
    }
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHState >

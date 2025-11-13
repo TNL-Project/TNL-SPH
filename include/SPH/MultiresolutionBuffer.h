@@ -213,7 +213,7 @@ public:
          points_massNodes_view[ i ] = r;
          normals_massNodes_view[ i ] = massNodes_normal;
       };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfMassNodes, generateMassNodesCoordinates );
+      Algorithms::parallelFor< DeviceType >( 1, numberOfMassNodes, generateMassNodesCoordinates ); //FIXME 0 is right, 1 for debug
    }
 
    // -----------------------------------------------------------------------------------------------------------------------
@@ -238,16 +238,19 @@ public:
       const auto view_rho_fluid = fluid_neihgbor->getVariables()->rho.getConstView();
       const auto view_v_fluid = fluid_neihgbor->getVariables()->v.getConstView();
 
-      const RealType h = modelParams.h;
-      const RealType m = modelParams.mass;
-      const RealType dx = modelParams.dp; //FIXME
+      const unsigned int dim = SPHCaseConfig::spaceDimension;
+      const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius(); //TODO: Is it this one?
+      const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+      const RealType h = refinementFactor * modelParams.h;
+      const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+      const RealType dx = refinementFactor * modelParams.dp; //FIXME
       const VectorType v_subdomain = 0.f; // velocity of moving subdomain
       //const RealType div_r_trashold = modelParams.div_r_trashold;
       const RealType div_r_trashold = 1.5f; //FIXME add to model params
-      const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius(); //TODO: Is it this one?
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold; //TODO: rename -> introduce extrapolationDetTrashold
 
       //debug mdbc kernels
+      std::cout << "Refinemet factor: " << refinementFactor << std::endl;
 
       auto interpolateFluid = [=] __cuda_callable__ (
             IndexType i,
@@ -345,9 +348,9 @@ public:
          // Debug playground
          bool firstCond = ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_m_massPoints[ i ] < 0.f  );
          bool secondCond = ( div_r_x > div_r_trashold || drs_min < dx );
-         if( M_x( 0, 0 ) > 0 )
-            printf( "!!!!! r_x: %.3f, %.3f, c1: %d, c2: %d, M00: %.3f, m: %f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f massFlux: %f, div_r: %.2f,   ( nx: %.2f,  ny: %.2f , dx: %.3f, dt %f ), detM: %f \n",
-                  r_x[ 0 ], r_x[ 1 ], firstCond, secondCond, M_x( 0, 0 ), view_m_massPoints[ i ], brho_x[ 0 ], rho_x, vx_x, vy_x, m_flux_x, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt, Matrices::determinant( M_x ) );
+         //if( M_x( 0, 0 ) > 0 )
+         //   printf( "!!!!! r_x: %.3f, %.3f, c1: %d, c2: %d, M00: %.3f, m: %f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f massFlux: %f, div_r: %.2f,   ( nx: %.2f,  ny: %.2f , dx: %.3f, dt %f ), detM: %f \n",
+         //         r_x[ 0 ], r_x[ 1 ], firstCond, secondCond, M_x( 0, 0 ), view_m_massPoints[ i ], brho_x[ 0 ], rho_x, vx_x, vy_x, m_flux_x, div_r_x, normal_x[ 0 ], normal_x[ 1 ], dx, dt, Matrices::determinant( M_x ) );
 
          //if( M_x( 0, 0 ) > 0 )
          //printf( "fluxik: %f \n ", view_mFlux_massPoints[ i ] );
@@ -363,6 +366,9 @@ public:
    {
       //auto searchInFluid = this->getParticles()->getSearchToken( fluid_neihgbor->getParticles() )
       typename ParticlesType::NeighborsLoopParams searchInFluid( fluid_neihgbor->getParticles() );
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+
+      std::cout << "[iV] numberOfBufferPtcs: " << numberOfBufferParticles << std::endl;
 
       const auto view_points_overlap = this->getParticles()->getPoints().getConstView();
       auto view_rho_overlap = this->getVariables()->rho.getView();
@@ -371,10 +377,17 @@ public:
       const auto view_rho_fluid = fluid_neihgbor->getVariables()->rho.getConstView();
       const auto view_v_fluid = fluid_neihgbor->getVariables()->v.getConstView();
 
-      const RealType h = modelParams.h;
-      const RealType m = modelParams.mass;
+      //const RealType h = modelParams.h;
+      //const RealType m = modelParams.mass;
+      //const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius(); //TODO: Is it this one?
+      //const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold; //TODO: rename -> introduce extrapolationDetTrashold
+
+      const unsigned int dim = SPHCaseConfig::spaceDimension;
       const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius(); //TODO: Is it this one?
-      const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold; //TODO: rename -> introduce extrapolationDetTrashold
+      const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+      const RealType h = refinementFactor * modelParams.h;
+      const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+      const RealType dx = refinementFactor * modelParams.dp; //FIXME
 
       auto interpolateFluid = [=] __cuda_callable__ (
             IndexType i,
@@ -412,6 +425,7 @@ public:
          MfdVectorType bvx_x = 0.f;
          MfdVectorType bvy_x = 0.f;
          MfdVectorType bvz_x = 0.f;
+         printf( "| i: %d buffer r: %f, %f | \n", i, r_x[ 0 ], r_x[ 0 ] );
 
          ParticlesType::NeighborsLoop::exec( i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bvx_x, &bvy_x, &bvz_x );
 
@@ -448,12 +462,13 @@ public:
 
 
          // Debug playground
-         //if( M_x( 0, 0 ) > 0 )
-         //   printf( "!!!!! r_x: %.5f, %.5f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f, detM: %f \n",
-         //         r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x,  detM );
+         if( M_x( 0, 0 ) > 0 )
+            printf( "!! intp. !! r_x: %.5f, %.5f, M00: %.3f, brho[0]: %f, rho_x %.2f, v_x %.3f, %.3f, detM: %f \n",
+                  r_x[ 0 ], r_x[ 1 ], M_x( 0, 0 ), brho_x[ 0 ], rho_x, vx_x, vy_x,  detM );
 
       };
-      this->getParticles()->forAll( particleLoop );
+      //this->getParticles()->forAll( particleLoop );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, particleLoop );
    }
 
    //shift the buffer particles
@@ -511,7 +526,7 @@ public:
          //printf( "---> r: %f, r_r: %f vx: %f \n", r[ 0 ], r_relative[ 0 ], view_v_buffer[ i ][ 0 ] );
          if( ( r_relative, bufferOrientation ) > bufferWidth ) {
             retypeMarker_view[ i ] = 1;
-            printf( " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ RBP \n" );
+            //printf( " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ RBP \n" );
             return 1;
          }
          else
@@ -609,7 +624,7 @@ public:
       const IndexType numberOfMassNodes = this->massNodes.numberOfMassNodes;
 
       // debug
-      const auto massNodes_coords = this->massNodes.points.getConstView();
+      //const auto massNodes_coords = this->massNodes.points.getConstView();
 
       // reset list with markers
       view_particlesToCreate = 0;
@@ -621,10 +636,10 @@ public:
          //*****
          //if( massFlux_view[ i ] != 0.f )
          //   printf( " ================================================================ m: %f, mass_view: %f, mass_flux: %f \n", particleMass, mass_view[ i ], massFlux_view[ i ] );
-         bool myCond = mass_view[ i ] > particleMass;
-         if( mass_view[ i ] != 0.f )
-            printf( " ================================================================ m: %f, x: %.3f, y: %.3f , cond: %d, mass_view: %f, mass_flux: %f \n",
-                  particleMass, massNodes_coords[ i ][ 0 ], massNodes_coords[ i ][ 1 ], myCond, mass_view[ i ], massFlux_view[ i ] );
+         //bool myCond = mass_view[ i ] > particleMass;
+         //if( mass_view[ i ] != 0.f )
+         //   printf( " ================================================================ m: %f, x: %.3f, y: %.3f , cond: %d, mass_view: %f, mass_flux: %f \n",
+         //         particleMass, massNodes_coords[ i ][ 0 ], massNodes_coords[ i ][ 1 ], myCond, mass_view[ i ], massFlux_view[ i ] );
          //*****
          if( mass_view[ i ] > particleMass )
          {
@@ -637,7 +652,7 @@ public:
             return 0;
       };
       this->numberOfPtcsToCreate = Algorithms::reduce< DeviceType >( 0, numberOfMassNodes, identifyParticlesToCreate );
-      std::cout << "[uMN] resuls - numberOfParticle: " << this->numberOfPtcsToCreate << " numberOfMassNodes: " << massNodes.numberOfMassNodes << std::endl;
+      std::cout << "[uMN] END - numberOfParticles: " << this->getNumberOfParticles() << " numberOfParticleToCreate: " << this->numberOfPtcsToCreate << " numberOfMassNodes: " << massNodes.numberOfMassNodes << std::endl;
    }
 
    template< typename ModelParams >
@@ -657,10 +672,12 @@ public:
       {
          const VectorType r_new = r_massNodes_view[ i ] + ( 0.5f * dp ) * normal_massNodes_view[ i ];
          r_buffer_view[ numberOfBufferPtcs + i ] = r_new;
+         printf(" ** created r_new: %f, %f ** \n", r_new[ 0 ], r_new[ 1 ]);
       };
       Algorithms::parallelFor< DeviceType >( 0, this->numberOfPtcsToCreate, createNewBufferParticles );
 
       this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + this->numberOfPtcsToCreate );
+      std::cout << "[cBP] END - number of buffer particles : " << this->getNumberOfParticles() << std::endl;
    }
 
    template< typename FluidPointer >
@@ -786,10 +803,14 @@ public:
 
       //// update the values
       massNodes.massFlux = 0;
+      std::cout << "Accumulate mass:" << std::endl;
       if( subdomainIdx == 1 )
       accumulateMasses( fluid_neihgbor, modelParams, dt ); // ?
+      std::cout << "Interpolate variables: " << std::endl;
+      if( subdomainIdx == 1 ) //LARGEST FIXME
       interpolateVariables( fluid_neihgbor, modelParams );
 
+      std::cout << "# MR buffer updated." << std::endl;
 
       //sun search to rmeove the retyped particles
       if( numberOfPtcsToRetype > 0 )

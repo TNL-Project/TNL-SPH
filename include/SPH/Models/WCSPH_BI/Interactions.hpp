@@ -11,18 +11,23 @@ void
 WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundary->getParticles()->getNumberOfParticles();
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
    typename Particles::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
+   // Get refinement factor
+   const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+   const unsigned int dim = SPHConfig::spaceDimension;
+
    /* CONSTANT VARIABLES */
-   const RealType h = modelParams.h;
-   const RealType m = modelParams.mass;
-   const RealType ds = modelParams.boundaryElementSize;
+   const RealType h = refinementFactor * modelParams.h;
+   const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+   const RealType ds = std::pow( refinementFactor, dim - 1  ) * modelParams.boundaryElementSize;
    const RealType rho0 = modelParams.rho0;
+
+   std::cout << "=========================" << std::endl;
+   std::cout << "FF: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << " np: " <<  fluid->getNumberOfParticles() << std::endl;
 
    typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
    typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
@@ -56,7 +61,19 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
+
+         //debug
+
+         if(( refinementFactor < 0.75f ) && ( i == 70 ) )
+            printf(" WARNING!!!!!!!! WARNING!!!! >> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  drs: %f] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs);
+
       if( drs <= searchRadius ) {
+
+         //debug
+         if(( refinementFactor < 0.75f ) && ( i == 70 ) )
+            printf(" XXXX--------->> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  ] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ]);
+
+
          const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
@@ -124,6 +141,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
       if( drs <= searchRadius ) {
+
+
          const VectorType v_j = view_v_bound[ j ];
          const RealType rho_j = view_rho_bound[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
@@ -175,6 +194,14 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       RealType drho_i = 0.f;
       RealType gamma_i = 0.f;
 
+      if(( refinementFactor < 0.75f ) ){
+         const typename Particles::NeighborsLoopParams::IndexVectorType gridIndex = TNL::floor( ( r_i - searchInFluid.gridOrigin ) / searchInFluid.searchRadius );
+         const unsigned int neighborCell = Particles::NeighborsLoopParams::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ], gridIndex[ 1 ], searchInFluid.gridSize );
+         const typename Particles::NeighborsLoopParams::PairIndexType firstLastParticle = searchInFluid.view_firstLastCellParticle[ neighborCell ];
+
+         printf(" {{ i: %d, r_i: %f, %f | c_i: %d, %d | cidx: %d | flp: %d, %d, }} ", i, r_i[ 0 ], r_i[ 1 ], gridIndex[ 0 ], gridIndex[ 1 ], neighborCell, firstLastParticle[ 0 ], firstLastParticle[ 1 ] );
+      }
+
       Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBoundConservative, v_i, rho_i, p_i, &drho_i, &a_i );
 
@@ -183,10 +210,13 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       view_gamma[ i ] = gamma_i;
    };
 
+   const int numberOfParticles = fluid->getNumberOfParticles();
    if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
-      fluid->getParticles()->forAll( particleLoopConsistent );
+      //fluid->getParticles()->forAll( particleLoopConsistent );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoopConsistent );
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
-      fluid->getParticles()->forAll( particleLoopConservative );
+      //fluid->getParticles()->forAll( particleLoopConservative );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoopConservative );
 
    if( fluid->periodicPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < std::size( fluid->periodicPatches ); i++ ) {
@@ -228,10 +258,22 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
 
    /* CONSTANT VARIABLES */
+   //const RealType searchRadius = fluid->getParticles()->getSearchRadius();
+   //const RealType h = modelParams.h;
+   //const RealType m = modelParams.mass;
+   //const RealType rho0 = modelParams.rho0;
+
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
-   const RealType h = modelParams.h;
-   const RealType m = modelParams.mass;
+   // Get refinement factor
+   const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+   const unsigned int dim = SPHConfig::spaceDimension;
+   // load and update modelconstants
+   const RealType h = refinementFactor * modelParams.h;
+   const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+   const RealType ds = std::pow( refinementFactor, dim - 1 ) * modelParams.boundaryElementSize;
    const RealType rho0 = modelParams.rho0;
+   std::cout << "=========================" << std::endl;
+   std::cout << "USB: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << std::endl;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->getParticles()->getPoints().getView();
