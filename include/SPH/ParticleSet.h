@@ -278,12 +278,12 @@ class ParticleSet
        if constexpr( ParticleSystem::specifySearchedSetExplicitly() == true ){
          const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
          this->particles->makeSetSearchable();
-         this->sortVariables( numberOfParticlesToRemove );
+         this->sortVariables();
        }
        else if constexpr( ParticleSystem::specifySearchedSetExplicitly() == false ){
          const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
          this->particles->searchForNeighbors();
-         this->sortVariables( numberOfParticlesToRemove );
+         this->sortVariables();
       }
    }
 
