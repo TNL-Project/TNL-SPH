@@ -28,11 +28,32 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
    std::cout << "=========================" << std::endl;
    std::cout << "FF: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << " np: " <<  fluid->getNumberOfParticles() << std::endl;
+   auto refIdx_view = fluid->getVariables()->referentialIdx.getView();
 
-   typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
-   typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
-   typename EOS::ParamsType eosParams( modelParams );
-   typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modelParams );
+      std::cout << " ================ SEARCH TOKEN STUFF ================= gri: " << refinementFactor << std::endl;
+      std::cout << " ===> numberOfParticles; " << searchInBound.numberOfParticles << std::endl;
+      std::cout << " ===> gridSize;          " << searchInBound.gridSize          << std::endl;
+      std::cout << " ===> gridOrigin;        " << searchInBound.gridOrigin        << std::endl;
+      std::cout << " ===> searchRadius;      " << searchInBound.searchRadius      << std::endl;
+      std::cout << " =====================================================" << std::endl;
+
+   ModelParams modModelParams = modelParams;
+   modModelParams.h = h;
+   modModelParams.mass = m;
+   modModelParams.dp = modelParams.dp * refinementFactor;
+   modModelParams.boundaryElementSize = ds;
+
+   //typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
+   //typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
+   //typename EOS::ParamsType eosParams( modelParams );
+   //typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modelParams );
+   typename DiffusiveTerm::ParamsType diffusiveTermsParams( modModelParams );
+   typename ViscousTerm::ParamsType viscousTermsParams( modModelParams );
+   typename EOS::ParamsType eosParams( modModelParams );
+   typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modModelParams );
+
+   std::cout << "MOOOOOOODMODELPARAMS: " << modModelParams.h << std::endl;
+   std::cout << "MOOOOOOODMODELPARAMS: " << modModelParams.mass << std::endl;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->getParticles()->getPoints().getView();
@@ -56,7 +77,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
                                               RealType & p_i,
                                               RealType * drho_i,
                                               VectorType * a_i,
-                                              RealType * gamma_i ) mutable
+                                              RealType * gamma_i,
+                                              int * nbs_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -64,14 +86,14 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
          //debug
 
-         if(( refinementFactor < 0.75f ) && ( i == 70 ) )
-            printf(" WARNING!!!!!!!! WARNING!!!! >> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  drs: %f] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs);
+         //if(( refinementFactor < 0.75f ) && ( i == 4 ) )
+         //   printf(" WARNING!!!!!!!! WARNING!!!! >> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  drs: %f] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs);
 
       if( drs <= searchRadius ) {
 
-         //debug
-         if(( refinementFactor < 0.75f ) && ( i == 70 ) )
-            printf(" XXXX--------->> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  ] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ]);
+         ////debug
+         //if(( refinementFactor < 0.75f ) && ( i == 4 ) )
+         //   printf(" XXXX--------->> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  ] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ]);
 
 
          const VectorType v_j = view_v[ j ];
@@ -91,6 +113,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
 
          *gamma_i +=  KernelFunction::W( drs, h ) * m / rho_j;
+         *nbs_i += 1;
       }
    };
 
@@ -140,8 +163,16 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       const VectorType r_j = view_points_bound[ j ];
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
+
+         //if(( refinementFactor < 0.75f ) && ( i == 5 ) )
+         //   printf("BC: WARNING!!!!!!!! WARNING!!!! >> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  drs: %f] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs);
+
       if( drs <= searchRadius ) {
 
+
+         //debug
+         //if(( refinementFactor < 0.75f ) && ( i == 5 ) )
+         //   printf("BC: XXXX--------->> - >> - >> i: %d, i: %d, r_i %f, %f  r_j: %f, %f  ] \n", i, j, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ]);
 
          const VectorType v_j = view_v_bound[ j ];
          const RealType rho_j = view_rho_bound[ j ];
@@ -175,8 +206,9 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
       RealType gamma_i = 0.f;
+      int nbs_i = 0;
 
-      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i, &nbs_i );
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBoundConsistent, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ i ] = drho_i;
@@ -193,21 +225,28 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
       RealType gamma_i = 0.f;
+      int nbs_i = 0;
 
-      if(( refinementFactor < 0.75f ) ){
-         const typename Particles::NeighborsLoopParams::IndexVectorType gridIndex = TNL::floor( ( r_i - searchInFluid.gridOrigin ) / searchInFluid.searchRadius );
-         const unsigned int neighborCell = Particles::NeighborsLoopParams::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ], gridIndex[ 1 ], searchInFluid.gridSize );
-         const typename Particles::NeighborsLoopParams::PairIndexType firstLastParticle = searchInFluid.view_firstLastCellParticle[ neighborCell ];
+      //if(( refinementFactor < 0.75f ) ){
+      //   const typename Particles::NeighborsLoopParams::IndexVectorType gridIndex = TNL::floor( ( r_i - searchInFluid.gridOrigin ) / searchInFluid.searchRadius );
+      //   const unsigned int neighborCell = Particles::NeighborsLoopParams::CellIndexer::EvaluateCellIndex( gridIndex[ 0 ], gridIndex[ 1 ], searchInFluid.gridSize );
+      //   const typename Particles::NeighborsLoopParams::PairIndexType firstLastParticle = searchInFluid.view_firstLastCellParticle[ neighborCell ];
 
-         printf(" {{ i: %d, r_i: %f, %f | c_i: %d, %d | cidx: %d | flp: %d, %d, }} ", i, r_i[ 0 ], r_i[ 1 ], gridIndex[ 0 ], gridIndex[ 1 ], neighborCell, firstLastParticle[ 0 ], firstLastParticle[ 1 ] );
-      }
+      //   //printf(" {{ i: %d, r_i: %f, %f | c_i: %d, %d | cidx: %d | flp: %d, %d, }} ", i, r_i[ 0 ], r_i[ 1 ], gridIndex[ 0 ], gridIndex[ 1 ], neighborCell, firstLastParticle[ 0 ], firstLastParticle[ 1 ] );
+      //}
 
-      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+      Particles::NeighborsLoop::exec( i, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i, &nbs_i );
       Particles::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, FluidBoundConservative, v_i, rho_i, p_i, &drho_i, &a_i );
 
-      view_Drho[ i ] = drho_i;
-      view_a[ i ] = a_i;
-      view_gamma[ i ] = gamma_i;
+      //TURNOFFINTERACTION if( refinementFactor < 0.75 ){
+      //TURNOFFINTERACTION    refIdx_view[ i ] = nbs_i;
+      //TURNOFFINTERACTION }
+      //TURNOFFINTERACTION else{
+       view_Drho[ i ] = drho_i;
+       view_a[ i ] = a_i;
+       view_gamma[ i ] = gamma_i;
+       refIdx_view[ i ] = nbs_i;
+      //TURNOFFINTERACTION }
    };
 
    const int numberOfParticles = fluid->getNumberOfParticles();
@@ -234,8 +273,9 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
             VectorType a_i = 0.f;
             RealType drho_i = 0.f;
             RealType gamma_i = 0.f;
+            int nbs_i = 0;
 
-            Particles::NeighborsLoop::exec( p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+            Particles::NeighborsLoop::exec( p, r_i, searchInFluid, FluidFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i, &nbs_i );
             Particles::NeighborsLoopAnotherSet::exec( p, r_i, searchInBound, FluidBoundConsistent, v_i, rho_i, p_i, &drho_i, &a_i );
 
             view_Drho[ p ] += drho_i;
@@ -472,12 +512,30 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
-   const RealType h = modelParams.h;
-   const RealType m = modelParams.mass;
+   //const RealType h = modelParams.h;
+   //const RealType m = modelParams.mass;
 
-   typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
-   typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
-   typename EOS::ParamsType eosParams( modelParams );
+   // Get refinement factor
+   const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+   const unsigned int dim = SPHConfig::spaceDimension;
+
+   /* CONSTANT VARIABLES */
+   const RealType h = refinementFactor * modelParams.h;
+   const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+
+   //typename DiffusiveTerm::ParamsType diffusiveTermsParams( modelParams );
+   //typename ViscousTerm::ParamsType viscousTermsParams( modelParams );
+   //typename EOS::ParamsType eosParams( modelParams );
+
+   ModelParams modModelParams = modelParams;
+   modModelParams.h = h;
+   modModelParams.mass = m;
+   modModelParams.dp = modelParams.dp * refinementFactor;
+   //modModelParams.elementSize = ds;
+
+   typename DiffusiveTerm::ParamsType diffusiveTermsParams( modModelParams );
+   typename ViscousTerm::ParamsType viscousTermsParams( modModelParams );
+   typename EOS::ParamsType eosParams( modModelParams );
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->getParticles()->getPoints().getView();
@@ -491,8 +549,9 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
    auto view_v_openBound = openBoundary->getVariables()->v.getView();
 
-   const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
-   const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
+   //FIXME: I dont think the zone works with MR buffer
+   //const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
+   //const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
 
    auto FluidOpenBoundary = [ = ] __cuda_callable__( LocalIndexType i,
                                                      LocalIndexType j,
@@ -508,6 +567,7 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
       if( drs <= searchRadius ) {
+         //printf(" -----------OPENBOUNDARY INTERACTION -------------- ");
          const VectorType v_j = view_v_openBound[ j ];
          const RealType rho_j = view_rho_openBound[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
@@ -530,7 +590,8 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
 
    auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
-      const GlobalIndexType p = zoneParticleIndices_view[ i ];
+      //const GlobalIndexType p = zoneParticleIndices_view[ i ];
+      const GlobalIndexType p = i;
       const VectorType r_i = view_points[ p ];
       const VectorType v_i = view_v[ p ];
       const RealType rho_i = view_rho[ p ];
@@ -547,7 +608,8 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
       view_a[ p ] += a_i;
       view_gamma[ p ] += gamma_i;
    };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
+   //Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
+   Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), particleLoop );
 }
 
 //FIXME: WTF is this function
@@ -675,6 +737,11 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
    {
       view_a[ i ] += gravity;
    };
+
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
+   const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+   //TURNOFFINTERACTION if( refinementFactor < 0.75 )
+   //TURNOFFINTERACTION    return;
 
    if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
       fluid->getParticles()->forAll( finalizeInteractionConsistent );

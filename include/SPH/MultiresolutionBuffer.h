@@ -370,7 +370,7 @@ public:
 
       std::cout << "[iV] numberOfBufferPtcs: " << numberOfBufferParticles << std::endl;
 
-      const auto view_points_overlap = this->getParticles()->getPoints().getConstView();
+      auto view_points_overlap = this->getParticles()->getPoints().getView();
       auto view_rho_overlap = this->getVariables()->rho.getView();
       auto view_v_overlap = this->getVariables()->v.getView();
       const auto view_points_fluid = fluid_neihgbor->getParticles()->getPoints().getConstView();
@@ -445,6 +445,7 @@ public:
             view_rho_overlap[ i ] = rho_x;
             //view_v_overlap[ i ] = { vx_x, vy_x, vz_x };
             view_v_overlap[ i ] = { vx_x, vy_x };
+            return 0;
          }
          else if( M_x( 0, 0 ) > 0.05f ) {
             rho_x = brho_x[ 0 ] / M_x( 0, 0 );
@@ -455,9 +456,13 @@ public:
             view_rho_overlap[ i ] = rho_x;
             //view_v_overlap[ i ] = { vx_x, vy_x, vz_x };
             view_v_overlap[ i ] = { vx_x, vy_x };
+            return 0;
          }
          else{
             // FIXME: not sure what to do here
+            //experiment with remove
+            view_points_overlap[ i ] = FLT_MAX;
+            return 1;
          }
 
 
@@ -468,8 +473,46 @@ public:
 
       };
       //this->getParticles()->forAll( particleLoop );
-      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, particleLoop );
+      //Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, particleLoop );
+      const IndexType numberOfInvalidBufferParticles = Algorithms::reduce< DeviceType >( 0, numberOfBufferParticles, particleLoop );
+      this->getParticles()->setNumberOfParticlesToRemove( this->getParticles()->getNumberOfParticlesToRemove() + numberOfInvalidBufferParticles );
+      std::cout << "[INteprolation] numberOfInvalidBufferParticles: " << numberOfInvalidBufferParticles << std::endl;
    }
+
+      /*
+   template< typename FluidPointer, typename ModelParams >
+   void
+   shiftParticles( FluidPointer& fluid, ModelParams& modelParams )
+   {
+
+      auto interpolateFluid = [=] __cuda_callable__ (
+            IndexType i,
+            IndexType j,
+            VectorType& r_i
+            VectorType* gradC_i,
+            RealType* gamma_i ) mutable
+      {
+         const VectorType r_j = view_points_fluid[ j ];
+         const VectorType r_xj = r_x - r_j;
+         const RealType drs = l2Norm( r_xj );
+         if( drs <= searchRadius )
+         {
+            const RealType WV_j = KernelFunction::W( drs, h ) * m / rho_j;
+            const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
+            *gradC_i += gradWV_j;
+            *gamma_i += WV_j;
+         }
+      };
+
+
+      auto particleLoop = [=] __cuda_callable__ ( IndexType i ) mutable
+      {
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticles )
+
+   }
+   */
+
 
    //shift the buffer particles
 
@@ -831,7 +874,7 @@ public:
       std::cout << "# MR buffer updated." << std::endl;
 
       //sun search to rmeove the retyped particles
-      if( numberOfPtcsToRetype > 0 )
+      //if( numberOfPtcsToRetype > 0 ) //TODO: Now, we remove only due to invalid interpolation
          this->searchForNeighbors();
 
       // reset temorary variables and fields (i prefere names such as: fluidToBufferCount )
