@@ -35,8 +35,8 @@ if __name__ == "__main__":
         os.makedirs( postproPath )
 
     # group results
-    import groupResults
-    groupResults.make_data_series(example_dir)
+    import writeParaviewSeriesFile
+    writeParaviewSeriesFile.generate_series( results_dir )
 
     # plot energy levels
     import plotEnergy

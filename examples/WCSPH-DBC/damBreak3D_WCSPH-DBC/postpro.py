@@ -7,7 +7,6 @@ from pathlib import Path
 # Include globaly used postpro scripts
 import sys
 sys.path.append('../../../src/tools')
-import groupResults
 
 case_tag = "damBreak3D_WCSPH-DBC"
 example_dir = Path(__file__).parent
@@ -107,7 +106,8 @@ if __name__ == "__main__":
         os.makedirs( postproPath )
 
     # group results
-    groupResults.make_data_series( example_dir )
+    import writeParaviewSeriesFile
+    writeParaviewSeriesFile.generate_series( results_dir )
 
     # plot results from pressure sensors
     plot_pressure_sensors()

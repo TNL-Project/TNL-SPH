@@ -7,9 +7,6 @@ from pathlib import Path
 # Include globaly used postpro scripts
 import sys
 sys.path.append('../../../src/tools')
-import plotTimeStep
-import plotEnergy
-import groupResults
 
 #TODO: Rename the default sensors labels providet by Lobovsky et. al.
 case_tag = "poiseuilleFlowWithOpenBoundary2D_WCSPH-DBC"
@@ -39,9 +36,11 @@ if __name__ == "__main__":
         os.makedirs( postproPath )
 
     # group results
-    groupResults.make_data_series( example_dir )
+    import writeParaviewSeriesFile
+    writeParaviewSeriesFile.generate_series( results_dir )
 
     #plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
+    import plotEnergy
     plotEnergy.plot_not_normalized_energy( results_dir )
     plotEnergy.plot_energy_snapshots( results_dir )
     plotEnergy.plot_not_normalized_open_boundary_energy_snapshots( results_dir )
