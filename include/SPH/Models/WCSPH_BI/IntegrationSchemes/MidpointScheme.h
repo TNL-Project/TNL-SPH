@@ -8,6 +8,7 @@
 #include <thrust/sort.h>
 #include <thrust/gather.h>
 
+#include "../../../shared/MidpointSchemeOutputLog.h"
 #include "../../../SPHTraits.h"
 
 namespace TNL {
@@ -264,6 +265,8 @@ public:
          residualPrevious = 0.f;
          midpointRelaxCoef = modelParams.midpointRelaxCoef;
       }
+      // backup iteration due to midpoint output log;
+      midpointIterationBackup = midpointIteration + 1;
 
       if( midpointIteration < modelParams.midpointMaxInterations ) {
          midpointIteration++;
@@ -303,6 +306,7 @@ public:
 
    // Midpoint integration scheme  variables
    int midpointIteration = 0;
+   int midpointIterationBackup = 0; // temp iteraction backup just due to outpu
    RealType residual = 0.f;
    RealType residualPrevious = 0.f;
    RealType midpointRelaxCoef = 0.f;
