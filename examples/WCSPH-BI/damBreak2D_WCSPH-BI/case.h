@@ -77,7 +77,7 @@ void
 exec( Simulation& sph )
 {
    EnergyFields energyMonitor;
-   energyMonitor.init( sph.fluid );
+   energyMonitor.init( sph.fluid, true );
 
    // search for neighbros
    sph.performNeighborSearch( true );
@@ -103,6 +103,10 @@ exec( Simulation& sph )
 
          // relax
          sph.midpointRelax();
+
+         // save information about midpoint iteration
+         TNL::SPH::Info::midpointSchemeOutputLog(
+               sph.integrator, sph.modelParams, sph.timeStepping, sph.outputDirectory + "/midpointInfo.dat" );
       }
 
       // compute and outpute energy levels
