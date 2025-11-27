@@ -9,7 +9,10 @@ from time import strftime, gmtime
 
 # list of tests
 import configurationsToTest
-conf_list = configurationsToTest.wcsph_dbc_configurations
+conf_list = configurationsToTest.wcsph_dbc_configurations + configurationsToTest.wcsph_bi_configurations + configurationsToTest.test_default_examples
+
+# additional params
+backup_the_results = False
 
 # initialize directories
 tools_dir = Path(__file__).parent
@@ -88,6 +91,7 @@ def parse_tnl_sph_output( case_dir ):
             lines = json.load( f )
             json_str = json.dumps( lines )
             timers_dictionary = json.loads( json_str )
+            print(f"Computational time: {float( timers_dictionary[ 'total' ] )}")
             return float( timers_dictionary[ "total" ] )
     except:
         print( f"parse_tnl_sph_output: File {filename} not found." )
@@ -115,10 +119,11 @@ def run_cases():
         computational_time.append( parse_tnl_sph_output( case_dir ) )
 
         # backup the results
-        results_dir = case_dir / "results"
-        results_with_tag = "results" + conf[ "case" ]
-        results_dir_renamed = case_dir / results_with_tag
-        rename( results_dir, results_dir_renamed )
+        if backup_the_results:
+            results_dir = case_dir / "results"
+            results_with_tag = "results" + conf[ "case" ]
+            results_dir_renamed = case_dir / results_with_tag
+            rename( results_dir, results_dir_renamed )
 
 def process_results( gpu_type ):
     # parse return codes to fancy output
