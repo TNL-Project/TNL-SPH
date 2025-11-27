@@ -111,15 +111,19 @@ if __name__ == "__main__":
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
 
-    # group results
-    import writeParaviewSeriesFile
-    writeParaviewSeriesFile.generate_series( results_dir )
-
     # plot results from pressure sensors
     plot_pressure_sensors()
 
     # plot results from pressure sensors
     plot_water_level_sensors()
+
+    # Global postprocessing tools: group results
+    import writeParaviewSeriesFile
+    writeParaviewSeriesFile.generate_series( results_dir )
+
+    # Global postprocessing tools: plot midpoint iterations info
+    import plotMidpointInfo
+    plotMidpointInfo.plot_midpoint_info( results_dir, residual_trashold =.33166e-05, iteration_trashold = 10 )
 
     # Global postprocessing tools: plot time step log and energy
     import plotEnergy
