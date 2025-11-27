@@ -116,10 +116,11 @@ def run_cases():
         computational_time.append( parse_tnl_sph_output( case_dir ) )
 
         # backup the results
-        results_dir = case_dir / "results"
-        results_with_tag = "results_" + conf[ "case-tag" ]
-        results_dir_renamed = case_dir / results_with_tag
-        rename( results_dir, results_dir_renamed )
+        if backup_the_results:
+            results_dir = case_dir / "results"
+            results_with_tag = "results_" + conf[ "case-tag" ]
+            results_dir_renamed = case_dir / results_with_tag
+            rename( results_dir, results_dir_renamed )
 
 def process_results():
     # parse return codes to fancy output
