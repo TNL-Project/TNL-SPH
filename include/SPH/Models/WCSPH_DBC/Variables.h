@@ -2,6 +2,7 @@
 
 #include "../../SPHTraits.h"
 #include <TNL/Particles/details/thrustExecPolicySelector.h>
+#include <exception>
 #include <thrust/gather.h>
 #include "BoundaryConditionsTypes.h"
 
@@ -118,27 +119,64 @@ class OpenBoundaryVariables : public FluidVariables< SPHState >
    IndexArrayType receivingParticleMark;
 };
 
-template< typename SPHState, typename Enable = void >
+template< typename SPHState >
 class BoundaryVariables : public FluidVariables< SPHState >
 {};
 
 template< typename SPHState >
-class BoundaryVariables< SPHState,
-                         typename std::enable_if_t< std::is_same_v< typename SPHState::BCType, WCSPH_BCTypes::DBC > > >
-: public FluidVariables< SPHState >
+requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::DBC >
+class BoundaryVariables< SPHState > : public FluidVariables< SPHState >
 {
 public:
    using BaseType = FluidVariables< SPHState >;
-   using GlobalIndexType = typename BaseType::GlobalIndexType;
+   using SPHTraitsType = typename BaseType::SPHTraitsType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using MarkerArrayType = typename SPHTraitsType::MarkerArrayType;
 
-   //SPHBoundaryVariables( GlobalIndexType size )
-   //: SPHFluidVariables< SPHState >( size ) {};
+   MarkerArrayType marker;
+   MarkerArrayType marker_swap;
+
+   void
+   setSize( const GlobalIndexType& size )
+   {
+      BaseType::setSize( size );
+      marker.setSize( size );
+      marker_swap.setSize( size );
+   }
+
+   template< typename ParticlesPointer >
+   void
+   sortVariables( ParticlesPointer& particles )
+   {
+      BaseType::sortVariables( particles );
+      particles->reorderArray( marker, marker_swap );
+   }
+
+   template< typename ReaderType >
+   void
+   readVariables( ReaderType& reader )
+   {
+      BaseType::readVariables( reader );
+      try {
+         reader.template readParticleVariable< MarkerArrayType, typename MarkerArrayType::ValueType >( marker, "Ptype" );
+      }
+      catch ( const std::exception& e ){
+         std::cout << "Warning: Uanble to read boundary particles variable 'Ptype': " << e.what() << std::endl;
+      }
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   {
+      BaseType::writeVariables( writer, numberOfParticles );
+      writer.template writePointData< MarkerArrayType >( marker, "Ptype", numberOfParticles, 0, 1 );
+   }
 };
 
 template< typename SPHState >
-class BoundaryVariables< SPHState,
-                         typename std::enable_if_t< std::is_same_v< typename SPHState::BCType, WCSPH_BCTypes::MDBC > > >
-: public FluidVariables< SPHState >
+requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::MDBC >
+class BoundaryVariables< SPHState > : public FluidVariables< SPHState >
 {
 public:
    using Base = FluidVariables< SPHState >;
