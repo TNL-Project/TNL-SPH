@@ -72,9 +72,10 @@ configSetup( TNL::Config::ConfigDescription& config,
 
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
-    config.addEntry< int >( "interpolation-planes-count", "Input boundary particles file path.", 0 );
-    config.addEntry< int >( "pressure-sensors-count", "Input boundary particles file path.", 0 );
-    config.addEntry< int >( "water-level-sensors-count", "Input boundary particles file path.", 0 );
+    config.addEntry< int >( "interpolation-planes-count", "Number of interpolation planes.", 0 );
+    config.addEntry< int >( "pressure-sensors-count", "Number of pressure evalutaion sensors.", 0 );
+    config.addEntry< int >( "water-level-sensors-count", "Number of water level evaluation sensors.", 0 );
+    config.addEntry< int >( "volumetric-flow-rate-planes-count", "Number of volumetric flow rate evaluation planes", 0 );
 
     //TODO: Move this to suiteble place, it is used also for open zones
     config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
