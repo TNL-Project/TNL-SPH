@@ -30,6 +30,7 @@ class ParticleSet
 {
    public:
    using DeviceType = typename ParticleSystem::Device;
+   using ParticlesType = ParticleSystem;
    using ParticlePointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
    using VariablesPointerType = typename Pointers::SharedPointer< Variables, DeviceType >;
    using IntegratorVariablesPointerType = typename Pointers::SharedPointer< IntegratorVariables, DeviceType >;
