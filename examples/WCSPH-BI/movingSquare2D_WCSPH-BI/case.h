@@ -8,12 +8,13 @@ requires std::is_same_v<
 >
 void exec( Simulation& sph )
 {
-   userCodedFunctions::CustomMotion motion( "Motion_Body.dat" );
+   userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
 
    while( sph.timeStepping.runTheSimulation() )
    {
+      std::cout << "Step: " << sph.timeStepping.getStep() << " time: " << sph.timeStepping.getTime() << "." << std::endl;
       // search for neighbros
-      sph.performNeighborSearch();
+      sph.performNeighborSearch( true );
 
       // perform interaction with given model
       sph.interact();
@@ -21,7 +22,7 @@ void exec( Simulation& sph )
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // asssing square motion
-      motion.assignMotion( sph.boundary, sph.timeSteppting() );
+      motion.assignMotion( sph.boundary, sph.timeStepping );
 
       //integrate
       sph.integrateVerletStep();
