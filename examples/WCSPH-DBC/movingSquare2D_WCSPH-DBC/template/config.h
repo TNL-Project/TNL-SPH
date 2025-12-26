@@ -72,13 +72,13 @@ using ParticlesConfig = ParticleSystemConfig;
  * Include type of particle system.
  */
 #include <TNL/Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_DBC/Interactions.h>
-using Model = TNL::SPH::WCSPH_DBC< ParticlesSys, SPHParams< Device > >;
+using Model = TNL::SPH::WCSPH_DBC< ParticlesType, SPHParams< Device > >;
 
 /**
  * Include type of SPH simulation.
@@ -89,4 +89,8 @@ using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 // Custom post processing tools
 #include <SPH/shared/energyEvaluation/energyFields.h>
 using EnergyMonitor = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+
+// PST
+#include <SPH/shared/PST.h>
+using PST = TNL::SPH::PST< ParticlesType, SPHDefs >;
 

@@ -8,6 +8,7 @@ requires std::is_same_v<
 >
 void exec( Simulation& sph )
 {
+   // FEATURE: motion and energy monitor
    userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
    EnergyMonitor energyMonitor;
    energyMonitor.init( sph.fluid, true );
@@ -29,6 +30,9 @@ void exec( Simulation& sph )
 
       //integrate
       sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
+
+      // FEATURE: shift particles
+      PST::shift( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // output particle data
       sph.makeSnapshot();

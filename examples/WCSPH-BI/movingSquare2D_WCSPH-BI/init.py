@@ -75,7 +75,7 @@ def generate_moving_square_boundary_particles(setup):
     # Outer channel walls (bottom, top, inlet, outlet)
     # Bottom wall (y = 0)
     nx = int(round(L / dp))
-    for i in range(nx + 1):
+    for i in range(1, nx):
         x = i * dp
         box_rx.append(x)
         box_ry.append(0.0)
@@ -84,7 +84,7 @@ def generate_moving_square_boundary_particles(setup):
         particle_type.append(0)
 
     # Top wall (y = H)
-    for i in range(nx + 1):
+    for i in range(1, nx):
         x = i * dp
         box_rx.append(x)
         box_ry.append(H)
@@ -94,7 +94,7 @@ def generate_moving_square_boundary_particles(setup):
 
     # Inlet (left wall, x = 0) – only between bottom and top
     ny = int(round(H / dp))
-    for j in range(ny + 1):
+    for j in range(1, ny):
         y = j * dp
         box_rx.append(0.0)
         box_ry.append(y)
@@ -103,7 +103,7 @@ def generate_moving_square_boundary_particles(setup):
         particle_type.append(0)
 
     # Outlet (right wall, x = L)
-    for j in range(ny + 1):
+    for j in range(1, ny):
         y = j * dp
         box_rx.append(L)
         box_ry.append(y)
@@ -114,42 +114,46 @@ def generate_moving_square_boundary_particles(setup):
     # Moving square obstacle (four sides)
     # Bottom side of square
     nx_side = int(round(D / dp))
-    for i in range(nx_side + 1):
+    #for i in range(nx_side + 1):
+    for i in range(1, nx_side):
         x = x_square - half_D + i * dp
         y = y_square - half_D
-        box_rx.append(x)
-        box_ry.append(y)
-        normal_x.append(0.0)
-        normal_y.append(1.0)
-        particle_type.append(1)
-
-    # Top side of square
-    for i in range(nx_side + 1):
-        x = x_square - half_D + i * dp
-        y = y_square + half_D
         box_rx.append(x)
         box_ry.append(y)
         normal_x.append(0.0)
         normal_y.append(-1.0)
         particle_type.append(1)
 
+    # Top side of square
+    #for i in range(nx_side + 1):
+    for i in range(1, nx_side):
+        x = x_square - half_D + i * dp
+        y = y_square + half_D
+        box_rx.append(x)
+        box_ry.append(y)
+        normal_x.append(0.0)
+        normal_y.append(1.0)
+        particle_type.append(1)
+
     # Left side of square
-    for j in range(nx_side + 1):
+    #for j in range(nx_side + 1):
+    for j in range(1, nx_side):
         x = x_square - half_D
         y = y_square - half_D + j * dp
         box_rx.append(x)
         box_ry.append(y)
-        normal_x.append(1.0)
+        normal_x.append(-1.0)
         normal_y.append(0.0)
         particle_type.append(1)
 
     # Right side of square
-    for j in range(nx_side + 1):
+    #for j in range(nx_side + 1):
+    for j in range(1, nx_side):
         x = x_square + half_D
         y = y_square - half_D + j * dp
         box_rx.append(x)
         box_ry.append(y)
-        normal_x.append(-1.0)
+        normal_x.append(1.0)
         normal_y.append(0.0)
         particle_type.append(1)
 
@@ -259,11 +263,11 @@ if __name__ == "__main__":
     g.add_argument("--cfl", type=float, default=0.1, help="CFL number")
     g.add_argument("--alpha", type=float, default=0.0, help="artificial viscosity alpha")
     g = argparser.add_argument_group("boundary and numerical options")
-    g.add_argument("--bc-type", type=str, default="BIConservative_numeric", help="boundary condition type")
-    g.add_argument("--bc-correction", type=str, default="ElasticBounceLight", help="boundary correction")
+    g.add_argument("--bc-type", type=str, default="BIConsistent_numeric", help="boundary condition type")
+    g.add_argument("--bc-correction", type=str, default="ElasticBounce", help="boundary correction")
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm", help="density diffusion term")
     g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MGVT", help="viscosity formulation")
-    g.add_argument("--time-integration", type=str, default="MidpointScheme", help="time integration scheme")
+    g.add_argument("--time-integration", type=str, default="VerletScheme", help="time integration scheme")
 
     args = argparser.parse_args()
 
