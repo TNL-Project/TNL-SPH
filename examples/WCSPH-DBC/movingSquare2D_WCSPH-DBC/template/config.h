@@ -89,6 +89,8 @@ using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 // Custom post processing tools
 #include <SPH/shared/energyEvaluation/energyFields.h>
 using EnergyMonitor = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+#include <SPH/shared/evaluateForces.h>
+using ForceMonitor = TNL::SPH::EvaluateForces< SPHDefs >;
 
 // PST
 #include <SPH/shared/PST.h>
