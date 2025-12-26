@@ -10,8 +10,8 @@ void exec( Simulation& sph )
 {
    // FEATURE: motion and energy monitor
    userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
-   EnergyMonitor energyMonitor;
-   energyMonitor.init( sph.fluid, true );
+   EnergyMonitor energyMonitor( sph.fluid, true  );
+   ForceMonitor forceMonitor( sph.boundary );
 
    while( sph.timeStepping.runTheSimulation() )
    {
@@ -27,6 +27,8 @@ void exec( Simulation& sph )
       // FEATURE: monitor energy levels
       energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
       energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+      // FEATURE: monitor forces
+      forceMonitor.computeForces( sph.fluid, sph.boundary, sph.modelParams, 1 );
 
       //integrate
       sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
@@ -37,6 +39,7 @@ void exec( Simulation& sph )
       // output particle data
       sph.makeSnapshot();
       energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+      forceMonitor.output( sph.outputDirectory + "/force.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
       // check timers and if measurement or interpolation should be performed, is performed
       sph.measure();
