@@ -39,6 +39,7 @@ public:
       config.addEntry< double >( "dynamicViscosity", "Dynamic viscosity coefficient.", 0 );
       config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
       config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
+      config.addEntry< double >( "p0", "Background pressure.", 0. );
       config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
       config.addEntry< double >( "CFL", "CFL number.", 0 );
       config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
@@ -58,6 +59,7 @@ public:
       dynamicViscosity = parameters.getParameter< RealType >( "dynamicViscosity" );
       speedOfSound = parameters.getParameter< RealType >( "speedOfSound" );
       rho0 = parameters.getParameter< RealType >( "rho0" );
+      p0 = parameters.getParameter< double >( "p0" );
       dtInit = parameters.getParameter< RealType >( "initial-time-step" );
       cfl = parameters.getParameter< RealType >( "CFL" );
       dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
@@ -96,6 +98,8 @@ public:
    RealType coefB = 0.f;
    //rho0 - referential density of the fluid [kg/m^3]
    RealType rho0 = 0.f;
+   //p0 - background pressure [Pa]
+   RealType p0 = 0.f;
 
    //TODO: Add boundary conditions types to RSPH scheme
    //Define type of boundary conditions.
@@ -141,6 +145,7 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
+   logger.writeParameter( "Background pressure (p0):", modelParams.p0, 1 );
    logger.writeParameter( "Time integration", "" );
    if constexpr ( std::is_same_v< typename ModelParams::IntegrationScheme, IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig> > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::RSPH::VerletScheme", 1 );

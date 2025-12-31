@@ -51,10 +51,12 @@ public:
       __cuda_callable__
      ParamsType( SPHState sphState )
      : rho0( sphState.rho0 ),
-       coefB( sphState.coefB ) {}
+       coefB( sphState.coefB ),
+       p0( sphState.p0 ){}
 
      const RealType rho0;
      const RealType coefB;
+     const RealType p0;
    };
 
    __cuda_callable__
@@ -63,7 +65,7 @@ public:
    {
       const RealType gamma = 7.f;
       const RealType relativeDensity = rho / params.rho0;
-      return params.coefB * ( powf( relativeDensity, gamma ) - 1.f );
+      return params.coefB * ( powf( relativeDensity, gamma ) - 1.f ) + params.p0;
    }
 
    __cuda_callable__
@@ -71,7 +73,7 @@ public:
    pressureToDensity( const RealType& p, const ParamsType& params )
    {
       const RealType gamma = 7.f;
-      const RealType relativeDensity = powf( ( p / params.coefB ) + 1, 1.f / gamma );
+      const RealType relativeDensity = powf( ( ( p - params.p0 ) / params.coefB ) + 1, 1.f / gamma );
       return params.rho0 * relativeDensity;
    }
 };
@@ -88,10 +90,12 @@ public:
      __cuda_callable__
      ParamsType( SPHState sphState )
      : rho0( sphState.rho0 ),
-       c0( sphState.speedOfSound ) {}
+       c0( sphState.speedOfSound ),
+       p0 ( sphState.p0 ){}
 
      const RealType rho0;
      const RealType c0;
+     const RealType p0;
    };
 
    __cuda_callable__
@@ -100,7 +104,8 @@ public:
    {
       const RealType c0 = params.c0;
       const RealType rho0 = params.rho0;
-      return c0 * c0 * ( rho - rho0 );
+      const RealType p0 = params.p0;
+      return c0 * c0 * ( rho - rho0 ) + p0;
    }
 
    __cuda_callable__
@@ -109,7 +114,8 @@ public:
    {
       const RealType c0 = params.c0;
       const RealType rho0 = params.rho0;
-      return p / ( c0 * c0 ) + rho0;
+      const RealType p0 = params.p0;
+      return ( p - p0 ) / ( c0 * c0 ) + rho0;
    }
 };
 
