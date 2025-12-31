@@ -43,7 +43,7 @@ def generate_moving_square_fluid_particles(setup):
     fluid_r = np.array((fluid_rx, fluid_ry, np.zeros(fluid_n)), dtype=float).T
     # Inlet velocity in x-direction
     fluid_v = np.zeros((fluid_n, 3))
-    fluid_v[:, 0] = U
+    fluid_v[:, 0] = 0
     fluid_rho = rho0 * np.ones(fluid_n)
     fluid_p = np.zeros(fluid_n)
     fluid_ptype = np.zeros(fluid_n)  # fluid particles
@@ -75,8 +75,8 @@ def generate_moving_square_boundary_particles(setup):
     # Outer channel walls (bottom, top, inlet, outlet)
     # Bottom wall (y = 0)
     nx = int(round(L / dp))
-    for i in range(1, nx):
-        x = i * dp
+    for i in range(0, nx):
+        x = i * dp + dp / 2
         box_rx.append(x)
         box_ry.append(0.0)
         normal_x.append(0.0)
@@ -84,8 +84,8 @@ def generate_moving_square_boundary_particles(setup):
         particle_type.append(0)
 
     # Top wall (y = H)
-    for i in range(1, nx):
-        x = i * dp
+    for i in range(0, nx):
+        x = i * dp + dp / 2
         box_rx.append(x)
         box_ry.append(H)
         normal_x.append(0.0)
@@ -94,8 +94,8 @@ def generate_moving_square_boundary_particles(setup):
 
     # Inlet (left wall, x = 0) – only between bottom and top
     ny = int(round(H / dp))
-    for j in range(1, ny):
-        y = j * dp
+    for j in range(0, ny):
+        y = j * dp + dp / 2
         box_rx.append(0.0)
         box_ry.append(y)
         normal_x.append(1.0)
@@ -103,8 +103,8 @@ def generate_moving_square_boundary_particles(setup):
         particle_type.append(0)
 
     # Outlet (right wall, x = L)
-    for j in range(1, ny):
-        y = j * dp
+    for j in range(0, ny):
+        y = j * dp + dp / 2
         box_rx.append(L)
         box_ry.append(y)
         normal_x.append(-1.0)
@@ -115,8 +115,8 @@ def generate_moving_square_boundary_particles(setup):
     # Bottom side of square
     nx_side = int(round(D / dp))
     #for i in range(nx_side + 1):
-    for i in range(1, nx_side):
-        x = x_square - half_D + i * dp
+    for i in range(0, nx_side):
+        x = x_square - half_D + i * dp + dp / 2
         y = y_square - half_D
         box_rx.append(x)
         box_ry.append(y)
@@ -126,8 +126,8 @@ def generate_moving_square_boundary_particles(setup):
 
     # Top side of square
     #for i in range(nx_side + 1):
-    for i in range(1, nx_side):
-        x = x_square - half_D + i * dp
+    for i in range(0, nx_side):
+        x = x_square - half_D + i * dp + dp / 2
         y = y_square + half_D
         box_rx.append(x)
         box_ry.append(y)
@@ -137,9 +137,9 @@ def generate_moving_square_boundary_particles(setup):
 
     # Left side of square
     #for j in range(nx_side + 1):
-    for j in range(1, nx_side):
+    for j in range(0, nx_side):
         x = x_square - half_D
-        y = y_square - half_D + j * dp
+        y = y_square - half_D + j * dp + dp / 2
         box_rx.append(x)
         box_ry.append(y)
         normal_x.append(-1.0)
@@ -148,9 +148,9 @@ def generate_moving_square_boundary_particles(setup):
 
     # Right side of square
     #for j in range(nx_side + 1):
-    for j in range(1, nx_side):
+    for j in range(0, nx_side):
         x = x_square + half_D
-        y = y_square - half_D + j * dp
+        y = y_square - half_D + j * dp + dp / 2
         box_rx.append(x)
         box_ry.append(y)
         normal_x.append(1.0)
