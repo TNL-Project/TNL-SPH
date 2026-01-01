@@ -68,6 +68,14 @@ public:
    RealType dEcompdt_outlet = 0.f;
    */
 
+   WCSPHEnergyFields() = default;
+
+   template< typename FluidPointer >
+   WCSPHEnergyFields( FluidPointer& fluid, bool initEnergySnapshots = false )
+   {
+      init( fluid, initEnergySnapshots );
+   }
+
    template< typename FluidPointer >
    void
    init( FluidPointer& fluid, bool initEnergySnapshots = false )
