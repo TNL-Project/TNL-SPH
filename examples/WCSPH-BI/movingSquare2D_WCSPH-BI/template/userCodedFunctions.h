@@ -13,15 +13,15 @@ class CustomMotion
    {
       std::ifstream file( motionFileName );
       if ( !file.is_open() ) {
-         std::cerr( "Cannot open file with body motion: " + motionFileName );
+         std::cerr << "Cannot open file with body motion: " + motionFileName << std::endl;
          exit( 1 );
       }
       std::string line;
       // skip first two lines (header)
-      std::getline(f, line);
-      std::getline(f, line);
+      std::getline( file, line );
+      std::getline( file, line );
 
-      while( std::getline( f, line ) ){
+      while( std::getline( file, line ) ){
          // clean multiple spaces
          while( line.find( "  " ) != std::string::npos ) {
              line.replace( line.find( "  " ), 2, " " );
@@ -32,14 +32,14 @@ class CustomMotion
 
          std::istringstream iss( line );
          float t, dvdt, v, x;
-         if ( !( iss >> t >> dudt >> u >> x ) ) continue;
+         if ( !( iss >> t >> dvdt >> v >> x ) ) continue;
 
          time.push_back( t );
-         acc.push_back( dudt );
+         acc.push_back( dvdt );
          vel.push_back( v );
          pos.push_back( x );
       }
-      f.close();
+      file.close();
    }
 
    // temp custom interpolation function
@@ -87,7 +87,7 @@ class CustomMotion
       {
          if( marker_view[ i ] == movingBoundary )
          {
-            r_view[ i ] = dt * vel;
+            r_view[ i ] += dt * vel;
             v_view[ i ] = vel;
          }
       };

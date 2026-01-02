@@ -257,7 +257,7 @@ public:
          ParticlesType::NeighborsLoop::exec( i, r_i, searchInFluid, comptueViscousForce, v_i, rho_i, p_i, n_i, S_i, &F_visco_i );
 
          if( maker_i == markerValueToProcess ){
-            view_F_pressure[ i ] = p_i * n_i * m;
+            view_F_pressure[ i ] = p_i * n_i * S_i;
             view_F_visco[ i ] = dynamicViscosity * F_visco_i;
          }
          else{
