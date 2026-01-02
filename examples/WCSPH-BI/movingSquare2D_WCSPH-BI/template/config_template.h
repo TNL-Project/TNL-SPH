@@ -80,16 +80,16 @@ using ParticlesConfig = ParticleSystemConfig;
  * Include type of particle system.
  */
 #include <TNL/Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
-using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
+using Model = TNL::SPH::WCSPH_BI< ParticlesType, SPHParams< Device > >;
 
 #include <SPH/shared/ElasticBounce.h>
-using BoundaryCorrection = TNL::SPH::#placeholderBoundaryCorrection< ParticlesSys, SPHDefs::SPHConfig >;
+using BoundaryCorrection = TNL::SPH::#placeholderBoundaryCorrection< ParticlesType, SPHDefs::SPHConfig >;
 
 /**
  * Include type of SPH simulation.
@@ -99,5 +99,7 @@ using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 
 // Custom post processing tools
 #include <SPH/shared/energyEvaluation/energyFields.h>
-using EnergyFields = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+using EnergyMonitor = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+#include <SPH/shared/evaluateForces.h>
+using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 

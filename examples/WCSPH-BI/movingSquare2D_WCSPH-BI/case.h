@@ -9,10 +9,11 @@ requires std::is_same_v<
 void exec( Simulation& sph )
 {
    userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
+   EnergyMonitor energyMonitor( sph.fluid, true  );
+   ForceMonitor forceMonitor( sph.boundary );
 
    while( sph.timeStepping.runTheSimulation() )
    {
-      std::cout << "Step: " << sph.timeStepping.getStep() << " time: " << sph.timeStepping.getTime() << "." << std::endl;
       // search for neighbros
       sph.performNeighborSearch( true );
 
@@ -20,6 +21,12 @@ void exec( Simulation& sph )
       sph.interact();
       // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
+      // FEATURE: monitor energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+      // FEATURE: monitor forces
+      forceMonitor.computeForces( sph.fluid, sph.boundary, sph.modelParams, 1 );
 
       // asssing square motion
       motion.assignMotion( sph.boundary, sph.timeStepping );
@@ -29,12 +36,78 @@ void exec( Simulation& sph )
 
       // output particle data
       sph.makeSnapshot();
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+      forceMonitor.output( sph.outputDirectory + "/force.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
 
       // check timers and if measurement or interpolation should be performed, is performed
       sph.measure();
 
       // update time step
       sph.timeStepping.updateTimeStep();
+   }
+}
+
+template< typename Simulation >
+requires std::is_same_v<
+    typename Simulation::ModelParams::IntegrationScheme,
+    TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename SPHDefs::SPHConfig >
+>
+void exec( Simulation& sph )
+{
+   userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
+   EnergyMonitor energyMonitor( sph.fluid, true  );
+   ForceMonitor forceMonitor( sph.boundary );
+
+   while( sph.timeStepping.runTheSimulation() )
+   {
+      // search for neighbros
+      sph.performNeighborSearch( true );
+
+      // perform interaction with given model
+      sph.interact();
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
+      // // compute new time step
+      // sph.computeTimeStep();
+      // sph.timeStepping.outputTimeStep( sph.outputDirectory + "/timeStep.dat" );
+
+      //integrate predictor step
+      sph.symplecticVerletPredictor();
+
+      // search for neighbros
+      sph.performNeighborSearch();
+
+      // perform interaction with given model
+      sph.interact();
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
+      // FEATURE: monitor energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+
+      //integrate
+      sph.symplecticVerletCorrector();
+
+      // asssing square motion
+      motion.assignMotion( sph.boundary, sph.timeStepping );
+
+      // FEATURE: monitor energy levels
+      energyMonitor.computeEnergyLevels( sph.fluid, sph.modelParams );
+      // FEATURE: monitor forces
+      forceMonitor.computeForces( sph.fluid, sph.boundary, sph.modelParams, 1 );
+
+      // output particle data
+      sph.makeSnapshot();
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+      forceMonitor.output( sph.outputDirectory + "/force.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+
+      // check timers and if measurement or interpolation should be performed, is performed
+      sph.measure();
+
+      // update time step
+      sph.updateTime();
    }
 }
 

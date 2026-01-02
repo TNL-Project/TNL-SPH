@@ -68,7 +68,7 @@ public:
    using EOS = TNL::SPH::EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
-   using IntegrationScheme = TNL::SPH::IntegrationSchemes::MidpointScheme< SPHConfig >;
+   using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
    //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
@@ -80,16 +80,16 @@ using ParticlesConfig = ParticleSystemConfig;
  * Include type of particle system.
  */
 #include <TNL/Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_BI/Interactions.h>
-using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
+using Model = TNL::SPH::WCSPH_BI< ParticlesType, SPHParams< Device > >;
 
 #include <SPH/shared/ElasticBounce.h>
-using BoundaryCorrection = TNL::SPH::ElasticBounceLight< ParticlesSys, SPHDefs::SPHConfig >;
+using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesType, SPHDefs::SPHConfig >;
 
 /**
  * Include type of SPH simulation.
@@ -99,5 +99,7 @@ using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 
 // Custom post processing tools
 #include <SPH/shared/energyEvaluation/energyFields.h>
-using EnergyFields = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+using EnergyMonitor = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
+#include <SPH/shared/evaluateForces.h>
+using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 
