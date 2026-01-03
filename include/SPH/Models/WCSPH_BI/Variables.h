@@ -92,7 +92,7 @@ public:
          v, "Velocity", numberOfParticles, firstActiveParticle, 3 );  //TODO: Obvious.
       writer.template writePointData< IndexArrayType >(
             referentialIdx, "ReferentialIndex", numberOfParticles, firstActiveParticle, 1 );
-      //writer.template writePointData< ScalarArrayType >( gamma, "Gamma", numberOfParticles, firstActiveParticle, 1 );
+      writer.template writePointData< ScalarArrayType >( gamma, "Gamma", numberOfParticles, firstActiveParticle, 1 );
    }
 };
 
