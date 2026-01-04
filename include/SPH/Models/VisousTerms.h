@@ -218,9 +218,11 @@ class PhysicalViscosity_MVT
      template< typename SPHState >
      __cuda_callable__
      ParamsType( SPHState sphState )
-     : dynamicViscosity( sphState.dynamicViscosity ),
+     : dp( sphState.dp ),
+       dynamicViscosity( sphState.dynamicViscosity ),
        preventZero( sphState.h * sphState.h * sphState.eps ) {}
 
+     const RealType dp;
      const RealType dynamicViscosity;
      const RealType preventZero;
    };
@@ -251,7 +253,13 @@ class PhysicalViscosity_MVT
           const ParamsType& params )
    {
       const RealType viscoCoef = params.dynamicViscosity / rho_i;
-      return 2.f * viscoCoef * v_ik / ( r_ik, n_k ) * WS_ik;
+
+      const RealType r_ik_n = std::max( std::abs( ( r_ik, n_k ) ), params.dp );
+      const VectorType v_ik_t = v_ik - ( v_ik, n_k ) * n_k;
+
+      const VectorType lap_v_t = 2.f * v_ik_t / ( r_ik_n ) * WS_ik;
+
+      return  viscoCoef * lap_v_t;
    }
 };
 
