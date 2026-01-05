@@ -276,6 +276,12 @@ public:
    void
    makeSnapshot();
 
+   /**
+    * Read and parse user coded params
+    */
+   template< typename Func >
+   void initUserConfig( Func&& userConfigFunction );
+
    void
    writeProlog( bool writeSystemInformation = true ) noexcept;
 
@@ -339,6 +345,10 @@ public:
 
    TNL::Config::ConfigDescription configPeriodicBoundary;
    TNL::Config::ParameterContainer parametersPeriodicBoundary;
+
+   // Configurations and parameters for user defined constants and variables
+   TNL::Config::ParameterContainer userParams;
+   TNL::Config::ConfigDescription userConfig;
 
 };
 

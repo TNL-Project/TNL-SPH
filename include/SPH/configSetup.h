@@ -7,7 +7,7 @@
 namespace TNL {
 namespace SPH {
 
-inline void
+void
 configSetup( TNL::Config::ConfigDescription& config,
              std::string sectionPrefix = "SPH" )
 {
@@ -79,6 +79,9 @@ configSetup( TNL::Config::ConfigDescription& config,
 
     //TODO: Move this to suiteble place, it is used also for open zones
     config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
+
+    // user defined parameters
+    config.addEntry< std::string >( "user-defined-config", "Configuration file for user's custom parameters.", "" );
 }
 
 void
@@ -151,27 +154,48 @@ parseOpenBoundaryConfig( const std::string& configOpenBoundaryPath,
 }
 
 void
-parseDistributedConfig( const std::string& configDistributedPath,
-                        TNL::Config::ParameterContainer& parametersDistributed,
-                        TNL::Config::ConfigDescription& configDistributed,
+parseDistributedConfig( const std::string& configPath,
+                        TNL::Config::ParameterContainer& params,
+                        TNL::Config::ConfigDescription& config,
                         TNL::Logger& logger )
 {
-   if( configDistributedPath != "" ) {
+   if( configPath != "" ) {
       logger.writeParameter( "Parsing distributed simulation config.", "" );
       try {
-          parametersDistributed = TNL::Config::parseINIConfigFile( configDistributedPath, configDistributed );
+          params = TNL::Config::parseINIConfigFile( configPath, config );
       }
       catch ( const std::exception& e ) {
-          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to the following error:\n" << e.what() << std::endl;
+          std::cerr << "Failed to parse the measuretool configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
       }
       catch (...) {
-          std::cerr << "Failed to parse the measuretool configuration file " << configDistributedPath << " due to an unknown C++ exception." << std::endl;
+          std::cerr << "Failed to parse the measuretool configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
           throw;
       }
       logger.writeParameter( "Parsing distributed simulation config.", "Done." );
    }
 }
 
+void
+parseUserDefinedConfig( const std::string& configPath,
+                        TNL::Config::ParameterContainer& params,
+                        TNL::Config::ConfigDescription& config,
+                        TNL::Logger& logger )
+{
+   if( configPath != "" ) {
+      logger.writeParameter( "Parsing user defined params config.", "" );
+      try {
+          parametersDistributed = TNL::Config::parseINIConfigFile( configPath, config );
+      }
+      catch ( const std::exception& e ) {
+          std::cerr << "Failed to parse the user defined params config file " << configPath << " due to the following error:\n" << e.what() << std::endl;
+      }
+      catch (...) {
+          std::cerr << "Failed to parse the user defined params config file " << configPath << " due to an unknown C++ exception." << std::endl;
+          throw;
+      }
+      logger.writeParameter( "Parsing user defined params config.", "Done." );
+   }
+}
 
 } // SPH
 } // TNL

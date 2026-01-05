@@ -283,6 +283,19 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
 }
 #endif
 
+template< typename Model>
+template< typename Func >
+void
+SPHMultiset_CFD< Model>::initUserConfig( Func&& userConfigFunction )
+{
+   const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
+   if( userConfigPath == "" )
+      return;
+
+   userConfigFunction( userConfig );
+   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger );
+}
+
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
