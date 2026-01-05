@@ -231,7 +231,7 @@ def write_simulation_params(setup):
     with open('template/user_config_template.ini', 'r') as file:
         config_file = file.read()
     config_file = config_file.replace('placeholderFilteringInterval', f'{setup["filtering_steps_interval"]}')
-    with open('template/config.h', 'w') as file:
+    with open('sources/user_config.ini', 'w') as file:
         file.write(config_file)
 
     with open('template/config_template.h', 'r') as file:
