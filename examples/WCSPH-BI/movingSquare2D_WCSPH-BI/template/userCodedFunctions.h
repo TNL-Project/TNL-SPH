@@ -1,7 +1,13 @@
 #include <SPH/SPHTraits.h>
+#include <climits>
 
 namespace userCodedFunctions {
 
+void
+userConfigSetup( TNL::Config::ConfigDescription& config )
+{
+   config.addEntry< int >( "filtering-steps-interval", "The initial number of fluid particles.", INT_MAX );
+}
 
 class CustomMotion
 {

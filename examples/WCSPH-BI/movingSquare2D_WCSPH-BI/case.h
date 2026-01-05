@@ -37,7 +37,8 @@ void exec( Simulation& sph )
       // FEATURE: shift particles
       PST::shift( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
       // FEATURE: filter density
-      if( sph.timeStepping.getStep() % 1 == 0 )
+      const int filteringFrequency = sph.userParams.template getParameter< int >( "filtering-steps-interval" );
+      if( sph.timeStepping.getStep() % filteringFrequency == 0 )
          DensityFilter::filterDensity( sph.fluid, sph.modelParams );
 
       // output particle data
@@ -121,6 +122,8 @@ int main( int argc, char* argv[] )
 {
    Simulation sph;
    sph.init( argc, argv );
+   // FEATURE: parse custom user defined params
+   sph.initUserConfig( userCodedFunctions::userConfigSetup );
    sph.writeProlog();
    exec( sph );
    sph.writeEpilog();

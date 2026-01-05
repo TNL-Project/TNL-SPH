@@ -39,7 +39,6 @@ class SPHConfig
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Models/BoundaryViscousTerms.h>
-#include <SPH/Models/DensityFilters.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
@@ -105,5 +104,6 @@ using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 #include <SPH/shared/PST.h>
 using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
 //Density filter
-using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< ParticlesType, SPHDefs >;
+#include <SPH/Models/DensityFilters.h>
+using DensityFilter = TNL::SPH::DensityFilters::None< ParticlesType, SPHDefs >;
 
