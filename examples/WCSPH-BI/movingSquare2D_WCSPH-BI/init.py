@@ -236,7 +236,7 @@ def write_simulation_params(setup):
 
     with open('template/config_template.h', 'r') as file:
         config_file = file.read()
-    config_file = config_file.replace('#placeholderPressureGradScheme', setup["grad_p"])
+    config_file = config_file.replace('#placeholderPressureGradient', setup["grad_p"])
     config_file = config_file.replace('#placeholderBoundaryConditionsType', setup["bc_type"])
     config_file = config_file.replace('#placeholderBoundaryCorrection', setup["bc_correction"])
     config_file = config_file.replace('#placeholderDiffusiveTerm', setup["diffusive_term"])
