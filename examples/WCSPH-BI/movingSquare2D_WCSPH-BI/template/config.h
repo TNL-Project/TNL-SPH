@@ -69,8 +69,6 @@ public:
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
-   using DensityFilter = TNL::SPH::DensityFilters::None;
-   //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
 
 using SPHDefs = SPHParams< Device >;
@@ -106,4 +104,6 @@ using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 // PST
 #include <SPH/shared/PST.h>
 using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
+//Density filter
+using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< ParticlesType, SPHDefs >;
 
