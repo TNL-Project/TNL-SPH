@@ -94,5 +94,5 @@ using ForceMonitor = TNL::SPH::EvaluateForces< SPHDefs >;
 
 // PST
 #include <SPH/shared/PST.h>
-using PST = TNL::SPH::PST< ParticlesType, SPHDefs >;
+using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
 
