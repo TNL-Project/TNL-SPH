@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/PressureGradient.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Kernels.h>
@@ -134,6 +135,9 @@ public:
    //SPH weight function (kernel).
    using KernelFunction = typename SPHDefs::KernelFunction;
 
+   //Pressure gradient approximation
+   using PressureGradient = typename SPHDefs::PressureGradient;
+
    //Diffusive term type
    using DiffusiveTerm = typename SPHDefs::DiffusiveTerm;
    // Define coefficient of diffusive term (DT), [-].
@@ -221,6 +225,12 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Boundary particle mass (massBoundary):", modelParams.massBoundary, 1 );
    logger.writeParameter( "Size of boundary elements (boundaryElementSize):", modelParams.boundaryElementSize, 1 );
    logger.writeParameter( "Model parameters", "" );
+   if constexpr( std::is_same_v< typename ModelParams::PressureGradient,
+                                 PressureGradients::Symmetric< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Pressure gradient:", "TNL::SPH::Symmetric", 1 );
+   if constexpr( std::is_same_v< typename ModelParams::PressureGradient,
+                                 PressureGradients::TIC< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Pressure gradient:", "TNL::SPH::TIC", 1 );
    if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
                                  DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig > > )
    {
