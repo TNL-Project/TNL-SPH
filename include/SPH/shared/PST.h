@@ -4,9 +4,23 @@
 
 namespace TNL {
 namespace SPH {
+namespace PST {
 
 template< typename ParticlesType, typename ModelConfig >
-class PST
+class None
+{
+public:
+
+   using RealType = typename ModelConfig::RealType;
+
+   template< typename FluidPointer, typename BoundaryPointer, typename ModelParams >
+   static void
+   shift( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams, const RealType dt )
+   {}
+};
+
+template< typename ParticlesType, typename ModelConfig >
+class Simple
 {
 public:
 
@@ -124,6 +138,7 @@ public:
 
 };
 
+} // PST
 } // SPH
 } // TNL
 
