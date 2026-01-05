@@ -67,8 +67,6 @@ public:
    using BCType = TNL::SPH::WCSPH_BCTypes::#placeholderBoundaryConditionsType;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::#placeholderTimeIntegration< SPHConfig >;
-   using DensityFilter = TNL::SPH::DensityFilters::None;
-   //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
 
 using SPHDefs = SPHParams< Device >;

@@ -68,8 +68,6 @@ class SPHParams
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
    //using IntegrationScheme = TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< SPHConfig >;
-   using DensityFilter = TNL::SPH::DensityFilters::None;
-   //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
 
 using SPHDefs = SPHParams< Device >;
