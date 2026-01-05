@@ -204,7 +204,6 @@ def compute_domain_size(setup):
 def write_simulation_params(setup):
     with open('template/config_template.ini', 'r') as file:
         config_file = file.read()
-
     config_file = config_file.replace('placeholderSearchRadius', f'{setup["search_radius"]}')
     config_file = config_file.replace('placeholderDomainOrigin-x', f'{setup["domain_origin_x"]:.5f}')
     config_file = config_file.replace('placeholderDomainOrigin-y', f'{setup["domain_origin_y"]:.5f}')
@@ -226,24 +225,26 @@ def write_simulation_params(setup):
     config_file = config_file.replace('placeholderAllocatedFluidParticles', f'{setup["fluid_n"]}')
     config_file = config_file.replace('placeholderBoundaryParticles', f'{setup["boundary_n"]}')
     config_file = config_file.replace('placeholderAllocatedBoundaryParticles', f'{setup["boundary_n"]}')
-
     with open('sources/config.ini', 'w') as file:
         file.write(config_file)
 
-    # Header file (if needed)
+    with open('template/user_config_template.ini', 'r') as file:
+        config_file = file.read()
+    config_file = config_file.replace('placeholderFilteringInterval', f'{setup["filtering_steps_interval"]}')
+    with open('template/config.h', 'w') as file:
+        file.write(config_file)
+
     with open('template/config_template.h', 'r') as file:
         config_file = file.read()
-
+    config_file = config_file.replace('#placeholderPressureGradScheme', setup["grad_p"])
     config_file = config_file.replace('#placeholderBoundaryConditionsType', setup["bc_type"])
     config_file = config_file.replace('#placeholderBoundaryCorrection', setup["bc_correction"])
     config_file = config_file.replace('#placeholderDiffusiveTerm', setup["diffusive_term"])
     config_file = config_file.replace('#placeholderViscosTerm', setup["viscous_term"])
     config_file = config_file.replace('#placeholderTimeIntegration', setup["time_integration"])
-    config_file = config_file.replace('#placeholderPst', setup["time_integration"])
-
+    config_file = config_file.replace('#placeholderPst', setup["pst"])
     with open('template/config.h', 'w') as file:
         file.write(config_file)
-
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Moving square in channel (SPHERIC benchmark 06) initial condition generator")
@@ -272,6 +273,10 @@ if __name__ == "__main__":
     g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MVT", help="viscosity formulation")
     g.add_argument("--time-integration", type=str, default="VerletScheme", help="time integration scheme")
     g.add_argument("--pst", type=str, default="Simple", help="particles shifting scheme")
+    g.add_argument("--grad_p", type=str, default="Symmetric", help="scheme used for gradient")
+    g.add_argument("--density-filter", type=str, default="None", help="density filtering scheme")
+    g.add_argument("--filtering-steps-interval", type=int, default=5, help="filter every n-th step")
+
 
     args = argparser.parse_args()
 
@@ -312,6 +317,9 @@ if __name__ == "__main__":
         "viscous_term": args.viscous_term,
         "time_integration": args.time_integration,
         "pst": args.pst,
+        "grad_p": args.grad_p,
+        "density_filter" : args.density_filter,
+        "filtering_steps_interval" : args.filtering_steps_interval,
         "n_boundary_layers": 1,  # single layer boundary as in modern SPH
     }
 

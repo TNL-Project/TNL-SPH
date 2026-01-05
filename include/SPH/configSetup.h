@@ -184,7 +184,7 @@ parseUserDefinedConfig( const std::string& configPath,
    if( configPath != "" ) {
       logger.writeParameter( "Parsing user defined params config.", "" );
       try {
-          parametersDistributed = TNL::Config::parseINIConfigFile( configPath, config );
+          params = TNL::Config::parseINIConfigFile( configPath, config );
       }
       catch ( const std::exception& e ) {
           std::cerr << "Failed to parse the user defined params config file " << configPath << " due to the following error:\n" << e.what() << std::endl;
