@@ -88,6 +88,16 @@ public:
    interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
    template< typename FluidPointer, typename BoudaryPointer >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
+            std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
+   void
+   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+
+   /**
+    * Experimental
+    */
+   template< typename FluidPointer, typename BoudaryPointer >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
@@ -181,6 +191,17 @@ public:
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    template< typename FluidPointer, typename BoundaryPointer >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric >
+   void
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
+
+   template< typename FluidPointer, typename BoundaryPointer >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
+   void
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
+
+   template< typename FluidPointer, typename BoundaryPointer >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
    void
    finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 };
@@ -189,6 +210,6 @@ public:
 }  //namespace TNL
 
 #include "Interactions.hpp"
-
 #include "OpenBoundaryConditionsDataExtrapolation.h"
+#include "experimental/interpolatedBoundaryPressure.h"
 

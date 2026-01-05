@@ -12,6 +12,11 @@ struct BIConsistent_numeric
    static constexpr bool renormalize = true;
 };
 
+struct BIConsistent_numeric_interpolated
+{
+   static constexpr bool renormalize = true;
+};
+
 struct BIConservative_numeric
 {
    static constexpr bool renormalize = false;

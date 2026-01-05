@@ -126,7 +126,6 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       if( drs <= searchRadius ) {
          const VectorType v_j = view_v_bound[ j ];
          const RealType rho_j = view_rho_bound[ j ];
-         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
          const VectorType n_j =  view_n_bound[ j ];
          const RealType S_j = view_elementSize_bound[ j ];
          const VectorType v_ij = v_i - v_j;
@@ -139,8 +138,10 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          *drho_i += ( -2.f ) * rho_i * ( v_i - v_j, n_j ) * WS_j;
 
          const VectorType grad_p = 2.f * p_i * n_j * WS_j;
+
          const VectorType visco_term = ViscousTerm::BI_Pi( drs, r_ij, v_ij, rho_i, rho_j, n_j, WS_j, viscousTermsParams );
          const VectorType bvt = BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
+
          //FIXME: The signs are fucked, because I used inner normals.
          //       Correct is of course: -1/rho * grad + visco
          *a_i += ( +1.f / rho_i ) * grad_p - visco_term  + bvt;
@@ -183,7 +184,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       view_gamma[ i ] = gamma_i;
    };
 
-   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
+   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
+                 std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >)
       fluid->getParticles()->forAll( particleLoopConsistent );
    else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
       fluid->getParticles()->forAll( particleLoopConservative );
@@ -219,6 +221,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
+requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
+         std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
 void
 WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
                                                          BoudaryPointer& boundary,
@@ -642,6 +646,7 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoundaryPointer >
+requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric >
 void
 WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
                                                                  BoundaryPointer& boundary,
@@ -662,11 +667,21 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
          view_rho_bound[ i ] = ( rho_i / gamma_i > rho0 ) ? ( rho_i / gamma_i ) : rho0;
       }
       else {
-         view_rho_bound[ i ] = rho0;
+         view_rho_bound[ i ] = ( rho_i > rho0 ) ? rho_i : rho0;
       }
+
    };
    boundary->getParticles()->forAll( particleLoopBoundary );
 }
+
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer, typename BoundaryPointer >
+requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
+void
+WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
+                                                                 BoundaryPointer& boundary,
+                                                                 ModelParams& modelParams )
+{}
 
 }  //namespace SPH
 }  //namespace TNL
