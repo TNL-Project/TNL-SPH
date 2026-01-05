@@ -274,7 +274,7 @@ if __name__ == "__main__":
     g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MVT", help="viscosity formulation")
     g.add_argument("--time-integration", type=str, default="VerletScheme", help="time integration scheme")
     g.add_argument("--pst", type=str, default="Simple", help="particles shifting scheme")
-    g.add_argument("--grad_p", type=str, default="Symmetric", help="scheme used for gradient")
+    g.add_argument("--grad-p", type=str, default="Symmetric", help="scheme used for gradient")
     g.add_argument("--density-filter", type=str, default="None", help="density filtering scheme")
     g.add_argument("--filtering-steps-interval", type=int, default=5, help="filter every n-th step")
 
