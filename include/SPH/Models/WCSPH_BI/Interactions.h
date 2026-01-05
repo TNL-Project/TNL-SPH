@@ -44,6 +44,7 @@ public:
    using IntegrationSchemeType = typename ModelConfig::IntegrationScheme;
    using IntegrationSchemeVariables = typename IntegrationSchemeType::IntegrationSchemeVariablesType;
    using KernelFunction = typename ModelConfig::KernelFunction;
+   using PressureGradient = typename ModelConfig::PressureGradient;
    using DiffusiveTerm = typename ModelConfig::DiffusiveTerm;
    using ViscousTerm = typename ModelConfig::ViscousTerm;
    using BoundaryViscousTerm = typename ModelConfig::BoundaryViscousTerm;

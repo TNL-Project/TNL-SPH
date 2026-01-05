@@ -69,7 +69,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const RealType diffTerm = psi * ( r_ij, gradWV_j );
          *drho_i += rho_i * ( v_ij, gradWV_j ) - diffTerm;
 
-         const VectorType grad_p = ( p_i + p_j ) * gradWV_j;
+         //const VectorType grad_p = ( p_i + p_j ) * gradWV_j;
+         const VectorType grad_p = PressureGradient::grad_p( p_i, p_j, gradWV_j );
          const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradWV_j, viscousTermsParams );
          *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
 
@@ -102,7 +103,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
          *drho_i += ( -1.f ) * rho_j * ( v_ij, n_j ) * WS_j;
 
-         const VectorType grad_p = ( p_i + p_j ) * n_j * WS_j;
+         //const VectorType grad_p = ( p_i + p_j ) * n_j * WS_j;
+         const VectorType grad_p = PressureGradient::BI_grad_p( p_i, p_j, n_j * WS_j );
          const VectorType visco_term = ViscousTerm::BI_Pi( drs, r_ij, v_ij, rho_i, rho_j, n_j, WS_j, viscousTermsParams );
          const VectorType bvt = BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
          //FIXME: The signs are fucked, because I used inner normals.
