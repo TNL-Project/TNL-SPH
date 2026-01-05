@@ -11,7 +11,8 @@ class None
 {
 public:
 
-   using RealType = typename ModelConfig::RealType;
+   using SPHTraitsType = SPHFluidTraits< typename ModelConfig::SPHConfig >;
+   using RealType = typename SPHTraitsType::RealType;
 
    template< typename FluidPointer, typename BoundaryPointer, typename ModelParams >
    static void
