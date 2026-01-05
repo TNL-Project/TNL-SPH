@@ -243,7 +243,7 @@ def write_simulation_params(setup):
     config_file = config_file.replace('#placeholderViscosTerm', setup["viscous_term"])
     config_file = config_file.replace('#placeholderTimeIntegration', setup["time_integration"])
     config_file = config_file.replace('#placeholderPst', setup["pst"])
-    config_file = config_file.replace('#placeholderDensityFilter', setup["pst"])
+    config_file = config_file.replace('#placeholderDensityFilter', setup["density_filter"])
     with open('template/config.h', 'w') as file:
         file.write(config_file)
 
