@@ -412,16 +412,6 @@ WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPo
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer >
-void
-WCSPH_BI< Particles, ModelConfig >::filterDensity( FluidPointer& fluid, ModelParams& modelParams )
-{
-   //TODO: This requires ParticleType template due to neighbor loop. I don't like this.
-   DensityFilter::template filterDensityOverlaps< ParticlesType >( fluid, modelParams );
-   //DensityFilter::template filterDensity< ParticlesType >( fluid, modelParams );
-}
-
-template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoudaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& fluid,

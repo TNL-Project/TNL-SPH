@@ -3,7 +3,6 @@
 #include <SPH/Models/EquationOfState.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
-#include <SPH/Models/DensityFilters.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
@@ -163,9 +162,6 @@ public:
    //p0 - background pressure [Pa]
    RealType p0 = 0.f;
 
-   //Define model for density filtering
-   using DensityFilter = typename SPHDefs::DensityFilter;
-
    //Define type of boundary conditions.
    using BCType = typename SPHDefs::BCType;
 
@@ -279,10 +275,6 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
    logger.writeParameter( "Background pressure (p0):", modelParams.p0, 1 );
-   if constexpr( std::is_same_v< typename ModelParams::DensityFilter,
-                                 DensityFilters::ShepardFilter< typename ModelParams::SPHConfig,
-                                                                typename ModelParams::KernelFunction > > )
-      logger.writeParameter( "Density filter:", "TNL::SPH::DensityFilters::ShepardFilter", 1 );
    std::string boundaryConditionsTypes;
    if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
       boundaryConditionsTypes = "TNL::SPH::WCSPH_BI::BI_numeric";
