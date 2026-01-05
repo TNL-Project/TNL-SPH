@@ -34,6 +34,9 @@ void exec( Simulation& sph )
       //integrate
       sph.integrateVerletStep();
 
+      // FEATURE: shift particles
+      PST::shift( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
       // output particle data
       sph.makeSnapshot();
       energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );

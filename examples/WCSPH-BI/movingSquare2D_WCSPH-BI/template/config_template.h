@@ -103,3 +103,7 @@ using EnergyMonitor = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
 #include <SPH/shared/evaluateForces.h>
 using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 
+// PST
+#include <SPH/shared/PST.h>
+using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
+

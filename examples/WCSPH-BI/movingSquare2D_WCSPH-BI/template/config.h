@@ -63,10 +63,10 @@ public:
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig >;
+   using ViscousTerm = TNL::SPH::BIViscousTerms::PhysicalViscosity_MVT< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< SPHConfig >;
-   using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
    using DensityFilter = TNL::SPH::DensityFilters::None;
@@ -102,4 +102,8 @@ using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
 using EnergyMonitor = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
 #include <SPH/shared/evaluateForces.h>
 using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
+
+// PST
+#include <SPH/shared/PST.h>
+using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
 
