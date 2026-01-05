@@ -220,6 +220,7 @@ def write_simulation_params(setup):
     config_file = config_file.replace('placeholderTimeStep', f'{setup["time_step"]}')
     config_file = config_file.replace('placeholderCFL', f'{setup["cfl"]}')
     config_file = config_file.replace('placeholderAlpha', f'{setup["alpha"]}')
+    config_file = config_file.replace('placeholderBackroundPressure', f'{setup["background_pressure"]}')
     config_file = config_file.replace('placeholderDynamicVicosity', f'{setup["dynamic_viscosity"]}')
     config_file = config_file.replace('placeholderFluidParticles', f'{setup["fluid_n"]}')
     config_file = config_file.replace('placeholderAllocatedFluidParticles', f'{setup["fluid_n"]}')
@@ -238,6 +239,7 @@ def write_simulation_params(setup):
     config_file = config_file.replace('#placeholderDiffusiveTerm', setup["diffusive_term"])
     config_file = config_file.replace('#placeholderViscosTerm', setup["viscous_term"])
     config_file = config_file.replace('#placeholderTimeIntegration', setup["time_integration"])
+    config_file = config_file.replace('#placeholderPst', setup["time_integration"])
 
     with open('template/config.h', 'w') as file:
         file.write(config_file)
@@ -262,12 +264,14 @@ if __name__ == "__main__":
     g.add_argument("--speed-of-sound", type=float, default=50.0, help="speed of sound (multiples of U)")
     g.add_argument("--cfl", type=float, default=0.1, help="CFL number")
     g.add_argument("--alpha", type=float, default=0.0, help="artificial viscosity alpha")
+    g.add_argument("--background-pressure", type=float, default=0.0, help="background pressure")
     g = argparser.add_argument_group("boundary and numerical options")
     g.add_argument("--bc-type", type=str, default="BIConsistent_numeric", help="boundary condition type")
     g.add_argument("--bc-correction", type=str, default="ElasticBounce", help="boundary correction")
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm", help="density diffusion term")
-    g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MGVT", help="viscosity formulation")
+    g.add_argument("--viscous-term", type=str, default="PhysicalViscosity_MVT", help="viscosity formulation")
     g.add_argument("--time-integration", type=str, default="VerletScheme", help="time integration scheme")
+    g.add_argument("--pst", type=str, default="Simple", help="particles shifting scheme")
 
     args = argparser.parse_args()
 
@@ -296,6 +300,7 @@ if __name__ == "__main__":
         "speed_of_sound": speed_of_sound,
         "cfl": args.cfl,
         "alpha": args.alpha,
+        "background_pressure": args.background_pressure,
         "dynamic_viscosity": dynamic_viscosity,
         "particle_mass": args.density * (args.dp ** 2),
         "smoothing_length": args.h_coef * args.dp,
@@ -306,6 +311,7 @@ if __name__ == "__main__":
         "diffusive_term": args.diffusive_term,
         "viscous_term": args.viscous_term,
         "time_integration": args.time_integration,
+        "pst": args.pst,
         "n_boundary_layers": 1,  # single layer boundary as in modern SPH
     }
 
