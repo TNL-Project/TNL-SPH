@@ -36,6 +36,9 @@ void exec( Simulation& sph )
 
       // FEATURE: shift particles
       PST::shift( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+      // FEATURE: filter density
+      if( sph.timeStepping.getStep() % 1 == 0 )
+         DensityFilter::filterDensity( sph.fluid, sph.modelParams );
 
       // output particle data
       sph.makeSnapshot();
