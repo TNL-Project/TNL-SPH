@@ -36,6 +36,7 @@ class SPHConfig
 };
 
 #include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/PressureGradient.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Models/BoundaryViscousTerms.h>
