@@ -62,6 +62,7 @@ public:
    using SPHConfig = SPHConfig< Device >;
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
+   using PressureGradient = TNL::SPH::PressureGradients::Symmetric< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::#placeholderDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::BIViscousTerms::#placeholderViscosTerm< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;

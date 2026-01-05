@@ -36,6 +36,7 @@ class SPHConfig
 };
 
 #include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/PressureGradient.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Models/BoundaryViscousTerms.h>
@@ -61,6 +62,7 @@ public:
    using SPHConfig = SPHConfig< Device >;
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
+   using PressureGradient = TNL::SPH::PressureGradient::#placeholderPressureGradient< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::#placeholderDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::BIViscousTerms::#placeholderViscosTerm< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
