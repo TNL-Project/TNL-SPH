@@ -76,12 +76,15 @@ class CustomMotion
       RealType t = timeStepping.getTime();
       RealType dt = timeStepping.getTimeStep();
       RealType vx = interpolate( t, time, vel );
+      RealType accx = interpolate( t, time, acc );
 
       auto r_view = boundary->getPoints().getView();
       auto v_view = boundary->getVariables()->v.getView();
+      auto dvdt_view = boundary->getVariables()->a.getView();
       const auto marker_view = boundary->getVariables()->marker.getConstView();
 
       const VectorType vel = { vx, 0 };
+      const VectorType acc = { accx, 0 };
 
       auto moveSquare = [ = ] __cuda_callable__( int i ) mutable
       {
@@ -89,6 +92,7 @@ class CustomMotion
          {
             r_view[ i ] += dt * vel;
             v_view[ i ] = vel;
+            dvdt_view[ i ] = acc;
          }
       };
       boundary->getParticles()->forAll( moveSquare );
