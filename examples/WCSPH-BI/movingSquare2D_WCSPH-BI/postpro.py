@@ -53,7 +53,7 @@ def plot_forces( results_dir ):
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/forces.png"
+        output_plot_name = str(results_dir) + f"/postprocessing/forces.png"
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
         fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
@@ -113,7 +113,7 @@ if __name__ == "__main__":
             help="path to the config file (relative to the path of this script)")
 
     # create folder for postprocessing results
-    postproPath = r'./results/postprocessing'
+    postproPath = str(results_dir) + '/postprocessing'
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
 
