@@ -107,5 +107,5 @@ using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
 //Density filter
 #include <SPH/Models/DensityFilters.h>
-using DensityFilter = TNL::SPH::DensityFilters::None< ParticlesType, SPHDefs >;
+using DensityFilter = TNL::SPH::DensityFilters::Simple< ParticlesType, SPHDefs >;
 
