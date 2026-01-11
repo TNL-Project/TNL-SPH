@@ -3,7 +3,7 @@ def do_nothing( case_dir ):
 
 configurations = []
 # WCSPH-BI: dam break 3D 
-for dp in [0.0075, 0.01, 0.02]:
+for dp in [0.02, 0.01, 0.0075]:
     configurations.append({
         "case-tag" : f"damBreak3D_WCSPH-BI_dp{dp}-unconditionally-stable-with-dissipation",
         "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
