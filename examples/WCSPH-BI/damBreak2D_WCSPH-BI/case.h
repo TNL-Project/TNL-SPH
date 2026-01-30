@@ -8,12 +8,54 @@
 
 #include <SPH/Models/WCSPH_BI/control.h>
 
-template< typename Simulation,
-          typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
-          typename std::enable_if_t<
-             std::is_same_v< IntegrationScheme,
-                             TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename Simulation::SPHConfig > >,
-             bool > Enabled = true >
+template< typename Simulation >
+requires std::is_same_v<
+   typename Simulation::ModelParams::IntegrationScheme,
+   TNL::SPH::IntegrationSchemes::VerletScheme< typename SPHDefs::SPHConfig >
+>
+void
+exec( Simulation& sph )
+{
+   EnergyFields energyMonitor;
+   energyMonitor.init( sph.fluid, true );
+
+   while( sph.timeStepping.runTheSimulation() )
+   {
+      // search for neighbros
+      sph.performNeighborSearch();
+
+      // perform interaction with given model
+      sph.interact();
+      // custom: no-penetration bc
+      BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
+
+      // in case of variable time step, compute the step
+      sph.computeTimeStep();
+
+      // compute and outpute energy levels
+      energyMonitor.computeEnergyDerivatives( sph.fluid, sph.modelParams );
+      energyMonitor.integrate( sph.timeStepping.getTimeStep() );
+
+      // make integration step with Verlet scheme
+      sph.integrateVerletStep();
+
+      // check timers and if output should be performed, it is performed
+      sph.makeSnapshot();
+      energyMonitor.output( sph.outputDirectory + "/energy.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+
+      // check timers and if measurement or interpolation should be performed, it is performed
+      sph.measure();
+
+      // update time step
+      sph.updateTime();
+   }
+}
+
+template< typename Simulation >
+requires std::is_same_v<
+    typename Simulation::ModelParams::IntegrationScheme,
+    TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename SPHDefs::SPHConfig >
+>
 void
 exec( Simulation& sph )
 {
@@ -67,12 +109,11 @@ exec( Simulation& sph )
    }
 }
 
-template<
-   typename Simulation,
-   typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
-   typename std::enable_if_t<
-      std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::MidpointScheme< typename Simulation::SPHConfig > >,
-      bool > Enabled = true >
+template< typename Simulation >
+requires std::is_same_v<
+   typename Simulation::ModelParams::IntegrationScheme,
+   TNL::SPH::IntegrationSchemes::MidpointScheme< typename Simulation::SPHConfig >
+>
 void
 exec( Simulation& sph )
 {
@@ -131,47 +172,39 @@ exec( Simulation& sph )
    }
 }
 
-template< typename Simulation,
-          typename IntegrationScheme = typename Simulation::ModelParams::IntegrationScheme,
-          typename std::enable_if_t<
-             std::is_same_v< IntegrationScheme, TNL::SPH::IntegrationSchemes::RK45Scheme< typename Simulation::SPHConfig > >,
-             bool > Enabled = true >
+template< typename Simulation >
+requires std::is_same_v<
+   typename Simulation::ModelParams::IntegrationScheme,
+   TNL::SPH::IntegrationSchemes::RK4Scheme< typename Simulation::SPHConfig >
+>
 void
-exec( Simulation& sph, TNL::Logger& log )
+exec( Simulation& sph )
 {
    while( sph.timeStepping.runTheSimulation() ) {
       for( int predictorStep = 0; predictorStep < 4; predictorStep++ ) {
+
          // predictor step
-         sph.timeMeasurement.start( "integrate" );
          sph.integrator->predictor( sph.timeStepping.getTimeStep(), sph.fluid, predictorStep );
-         sph.timeMeasurement.stop( "integrate" );
-         sph.writeLog( log, "Integrate: predictor...", "Done." );
 
          // search for neighbros
-         sph.timeMeasurement.start( "search" );
-         sph.performNeighborSearch( log );
-         sph.timeMeasurement.stop( "search" );
-         sph.writeLog( log, "Search...", "Done." );
+         sph.performNeighborSearch( true );
 
          // perform interaction with given model
-         sph.timeMeasurement.start( "interact" );
-         sph.interact();  //TODO: What about BC conditions?
-         sph.timeMeasurement.stop( "interact" );
-         sph.writeLog( log, "Interact...", "Done." );
-
+         sph.interact();
          // custom: no-penetration bc
          BoundaryCorrection::boundaryCorrection( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
       }
 
       // predictor step
-      sph.timeMeasurement.start( "integrate" );
       sph.integrator->corrector( sph.timeStepping.getTimeStep(), sph.fluid );
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate: predictor...", "Done." );
 
       // output particle data
-      sph.makeSnapshot( log );
+      sph.makeSnapshot();
 
+      // check timers and if measurement or interpolation should be performed, is performed
+      sph.measure();
+
+      // update time step
       sph.updateTime();
    }
 }

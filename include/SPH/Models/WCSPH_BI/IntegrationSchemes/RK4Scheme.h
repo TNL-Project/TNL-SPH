@@ -15,7 +15,7 @@ namespace SPH {
 namespace IntegrationSchemes {
 
 template< typename SPHConfig >
-class RK45IntegrationSchemeVariables
+class RK4IntegrationSchemeVariables
 {
    public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
@@ -26,7 +26,7 @@ class RK45IntegrationSchemeVariables
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
    using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
-   RK45IntegrationSchemeVariables() = default;
+   RK4IntegrationSchemeVariables() = default;
 
    void
    setSize( const GlobalIndexType& size )
@@ -102,7 +102,7 @@ class RK45IntegrationSchemeVariables
 };
 
 template< typename SPHConfig >
-class RK45Scheme
+class RK4Scheme
 {
 public:
 
@@ -112,7 +112,7 @@ public:
    using PairIndexType = Containers::StaticVector< 2, GlobalIndexType >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
-   using IntegrationSchemeVariablesType = RK45IntegrationSchemeVariables< SPHConfig >;
+   using IntegrationSchemeVariablesType = RK4IntegrationSchemeVariables< SPHConfig >;
 
    template< typename FluidPointer >
    void

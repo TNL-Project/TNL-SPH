@@ -8,7 +8,7 @@
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
-#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK45Scheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK4Scheme.h>
 
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 
@@ -313,8 +313,8 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Midpoint relax coef, icrement: ", modelParams.midpointRelaxCoefIncrement, 1 );
    }
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
-                                 IntegrationSchemes::RK45Scheme< typename ModelParams::SPHConfig > > )
-      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::RK45Scheme", 1 );
+                                 IntegrationSchemes::RK4Scheme< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::RK4Scheme", 1 );
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
