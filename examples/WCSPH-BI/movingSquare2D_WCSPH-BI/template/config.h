@@ -45,7 +45,7 @@ class SPHConfig
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
-#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK45Scheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK4Scheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -107,5 +107,5 @@ using ForceMonitor = TNL::SPH::EvaluateForces_BoundaryIntegrals< SPHDefs >;
 using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
 //Density filter
 #include <SPH/Models/DensityFilters.h>
-using DensityFilter = TNL::SPH::DensityFilters::Simple< ParticlesType, SPHDefs >;
+using DensityFilter = TNL::SPH::DensityFilters::None< ParticlesType, SPHDefs >;
 
