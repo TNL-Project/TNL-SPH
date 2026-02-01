@@ -296,4 +296,4 @@ WCSPH-BI is designed as a model for a multi-set SPH solver, requiring three inte
 | `IntegrationScheme`    | `MidpointScheme`                    | Implicit midpoint scheme                                                    |
 |                        | `VerletScheme`                      | Verlet scheme                                                               |
 |                        | `SymplecticVerletScheme`            | Symplectic Verlet scheme                                                    |
-|                        | `RK45`                              | Runge–Kutta 4(5) scheme                                                     |
+|                        | `RK4`                               | Runge–Kutta 4 scheme                                                        |
