@@ -8,7 +8,8 @@ int main( int argc, char* argv[] )
 
    while( sph.timeStepping.runTheSimulation() )
    {
-      // search for neighbros
+      // search for neighbros 
+      sph.removeParticlesOutOfDomain();
       sph.performNeighborSearch();
 
       // perform interaction with given model

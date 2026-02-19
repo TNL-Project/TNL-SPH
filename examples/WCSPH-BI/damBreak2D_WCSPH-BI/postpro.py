@@ -45,16 +45,16 @@ def plot_pressure_sensors():
         experimental_data_file = resources_dir / "pressure" / experimental_data_files[ i ]
         experimental_data = np.genfromtxt( experimental_data_file )
 
-        mask = nondim_time_coef * simulation_data[:, 0] < 8
-        ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='exp', linewidth=2, color='b'  )
-        ax.plot( nondim_time_coef * simulation_data[ mask, 0 ],
-                 nondim_pressure_coef * simulation_data[ mask, i + 1 ],
+        ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='Lobovsky 2014', linewidth=2, color='b'  )
+        mask = (nondim_time_coef * simulation_data[:, 0]) < 7.5
+        ax.plot( nondim_time_coef * simulation_data[ :, 0 ][ mask ],
+                 nondim_pressure_coef * simulation_data[ :, i + 1 ][ mask ],
                  label='WCSPH-BI', linewidth=1, color='k' )
 
         ax.set_xlabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
         ax.set_ylabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
-        if i == 0:
+        if i == 3:
             leg = ax.legend()
             leg.get_frame().set_edgecolor('k')
         title = f'Pressure sensor P{ i + 1 }'
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             help="path to the config file (relative to the path of this script)")
 
     # create folder for postprocessing results
-    postproPath = r'./results/postprocessing'
+    postproPath = results_dir / 'postprocessing'
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
 

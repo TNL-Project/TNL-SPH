@@ -57,7 +57,7 @@ def plot_pressure_sensors():
         leg.get_frame().set_edgecolor('k')
         title = f'Pressure sensor P{ i + 1 }'
         plt.title( title, fontsize=24 )
-        output_plot_name = f"results/postprocessing/{case_tag}_pressure_sensor_{ i + 1 }.png"
+        output_plot_name = str(results_dir) + f"/postprocessing/{case_tag}_pressure_sensor_{ i + 1 }.png"
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
 def plot_water_level_sensors():
@@ -93,7 +93,7 @@ def plot_water_level_sensors():
         leg.get_frame().set_edgecolor('k')
         title = f'Water level sensor H{ i + 1 }'
         plt.title( title, fontsize=24 )
-        output_plot_name = f"results/postprocessing/{case_tag}_water_level_sensor_{ i + 1 }.png"
+        output_plot_name = str(results_dir) + f"/postprocessing/{case_tag}_water_level_sensor_{ i + 1 }.png"
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
 if __name__ == "__main__":
@@ -106,7 +106,7 @@ if __name__ == "__main__":
             help="path to the config file (relative to the path of this script)")
 
     # create folder for postprocessing results
-    postproPath = r'./results/postprocessing'
+    postproPath = results_dir / "postprocessing"
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
 
