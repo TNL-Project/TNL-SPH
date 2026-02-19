@@ -132,20 +132,20 @@ wcsph_bi_configurations = [
             "h-coef" : 2,
             "evaluation-function" : evaluateExamplesMetrics.damBreak2D_WCSPH_BI
         },
-        # dam break 3D
-        {
-            "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-conservative",
-            "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
-            "bc-type" : "BIConservative_numeric",
-            "bc-correction" : "ElasticBounceLight",
-            "time-integration" : "MidpointScheme",
-            "viscous-term" : "None",
-            "diffusive-term" : "None",
-            "dp" : 0.01,
-            "h-coef" :  3,
-            "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
-            # NOTE: Doesn't work! Requires midpoint?
-        },
+        ## dam break 3D
+        #{
+        #    "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-conservative",
+        #    "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",
+        #    "bc-type" : "BIConservative_numeric",
+        #    "bc-correction" : "ElasticBounceLight",
+        #    "time-integration" : "MidpointScheme",
+        #    "viscous-term" : "None",
+        #    "diffusive-term" : "None",
+        #    "dp" : 0.01,
+        #    "h-coef" :  3,
+        #    "evaluation-function" : evaluateExamplesMetrics.damBreak3D_WCSPH_BI
+        #    # NOTE: Doesn't work! Requires midpoint?
+        #},
         {
             "case-tag" : "WCSPH-BI/damBreak3D_WCSPH-BI_hr-MGVT",
             "case" : "WCSPH-BI/damBreak3D_WCSPH-BI",

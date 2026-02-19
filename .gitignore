@@ -16,7 +16,7 @@ __*__
 build
 
 # examples source files
-examples/*/*/results
+examples/*/*/results*
 examples/*/*/sources
 
 # gencase generated configuration files (not the templates!)

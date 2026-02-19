@@ -21,7 +21,8 @@ def solve( mpi_ranks: int, config_path: Path ):
 
     args = []
     if mpi_ranks > 1:
-        args += ["mpirun", "-np", str(mpi_ranks)]
+        #args += ["mpirun", "-np", str(mpi_ranks)]
+        args += ["mpiexec","-np", str(mpi_ranks), "--hostfile", example_dir / "nodes.txt" ]
     args += [
         solver_path,
         "--config", config_path,
