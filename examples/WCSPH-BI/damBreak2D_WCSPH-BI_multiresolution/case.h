@@ -8,6 +8,7 @@
 
 #include <SPH/Models/WCSPH_BI/control.h>
 #include <cstdlib>
+#include <SPH/shared/removeParticlesOutOfDensityLimits.h>
 
 int main( int argc, char* argv[] )
 {
@@ -34,11 +35,15 @@ int main( int argc, char* argv[] )
    //while( sph.timeStepping.getStep() < 1 )
    while( sph.timeStepping.runTheSimulation() )
    {
-      std::cout << "Step: " << sph.timeStepping.getStep() << std::endl;
+      std::cout << "Step: " << sph.timeStepping.getStep() << " Time: " << sph.timeStepping.getTime() << std::endl;
 
       // search for neighbros
       sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log, true );
+      //TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 1 ], sph.modelParams );
+      sph.removeParticlesOutOfDomain( log );
+
+      //sph.performNeighborSearch( log, true );
+      sph.performNeighborSearch( log  );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
 
@@ -61,6 +66,31 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
+
+      //if (( sph.timeStepping.getTime() > 0.22 ) && sph.timeStepping.getStep()%25 == 0 )
+      ////if (( sph.timeStepping.getTime() > 0.218 ) && sph.timeStepping.getStep()%1 == 0 )
+      //   sph.save( log );
+
+      /** MINUS TESTER **/
+      const auto r_f1_veiw = sph.fluidSets[ 1 ]->getParticles()->getPoints().getConstView();
+      const int f1_np = sph.fluidSets[ 1 ]->getNumberOfParticles();
+
+
+      auto check = [=] __cuda_callable__ ( int i ) mutable
+      {
+         const auto r_i = r_f1_veiw[ i ];
+         if( r_i[ 1 ] < 0.f ){
+            printf( "WARNING, WARNING: i %d, with r: %f, %f\n", i, r_i[ 0 ], r_i[ 1 ] );
+            //printf( "xcs: %f", r_f1_veiw[ 999999 ][ 0 ] );
+         }
+      };
+      TNL::Algorithms::parallelFor< Device >( 0, f1_np, check );
+      /** MINUS TESTER **/
+
+
+
+      //sph.removeParticlesOutOfDomain( log );
+
       // output particle data
       sph.makeSnapshot( log );
       // check timers and if measurement or interpolation should be performed, is performed
@@ -72,7 +102,6 @@ int main( int argc, char* argv[] )
       //NOTE: Info
       if( sph.timeStepping.getStep() > 10782  )
          sph.writeInfo( log );
-
 
       // update time step
       sph.updateTime();

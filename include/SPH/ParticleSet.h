@@ -371,7 +371,6 @@ protected:
    VariablesPointerType variables;
    // variables corresponding to local particles requred by selected integration scheme
    IntegratorVariablesPointerType integratorVariables;
-
 };
 
 }
