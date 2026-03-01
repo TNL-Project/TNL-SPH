@@ -196,6 +196,49 @@ def generate_dam_break_boundary_particles( setup ):
 #    }
 #    setup.update( extra_parameters )
 
+def generate_mass_nodes( setup ):
+    number_of_subdomains = setup[ 'number_of_subdomains' ]
+    for subdomain in range( 0, number_of_subdomains ):
+        subdomain_key = f"subdomain-{subdomain}"
+
+        massNodes_rx = []; massNodes_ry = []
+        dp = setup[ 'dp' ] * setup[ f"{subdomain_key}-factor" ]
+        #box_height_n = round( setup[ 'box_height' ] / dp )
+        box_height_n = round( setup[ 'domain_size_y' ] / dp )
+
+        search_radius_L0 = setup[ "search_radius" ]
+        grid_origin_x = setup[ "domain_origin_x" ] +  search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_x' ]
+        grid_size_x = setup[ f'{subdomain_key}-dimensions_x' ] *  setup[ f'{subdomain_key}-search_radius' ]
+        grid_origin_y = setup[ "domain_origin_y" ] +  search_radius_L0 * setup[ f'{subdomain_key}-origin_glob_coords_y' ]
+        grid_size_y = setup[ f'{subdomain_key}-dimensions_y' ] *  setup[ f'{subdomain_key}-search_radius' ]
+
+        search_radius = search_radius_L0 * setup[ f"{subdomain_key}-factor" ]
+        x_min = grid_origin_x
+        x_max = grid_origin_x + grid_size_x
+
+        if subdomain == 0:
+            x_coord = x_max + search_radius
+        elif subdomain == 1:
+            x_coord = x_min - search_radius
+        else:
+            print( "Invalid subdomain number!" )
+
+        for y in range( box_height_n ):
+            rx = x_coord
+            ry = dp * ( y + 1 )
+            massNodes_rx.append( rx )
+            massNodes_ry.append( ry )
+
+        massNodes_n = len( massNodes_rx )
+        massNodes_r = np.array( ( massNodes_rx, massNodes_ry, np.zeros( massNodes_n ) ), dtype=float ).T #!!
+        massNodes_v = np.zeros( ( massNodes_n, 3 ) )
+        massNodes_rho = np.zeros( massNodes_n, dtype=float )
+        massNodes_p = np.zeros( massNodes_n )
+        massNodes_ptype = np.zeros( massNodes_n )
+        fluid_to_write = saveParticlesVTK.create_pointcloud_polydata( massNodes_r, massNodes_v, massNodes_rho, massNodes_p, massNodes_ptype )
+        saveParticlesVTK.save_polydata( fluid_to_write, f"sources/{subdomain_key}-dambreak_massNodes.vtk" )
+
+        setup[ f"{subdomain_key}-fluid_n" ] = massNodes_n
 
 def compute_subdomain_size( setup ):
     # load coordinates of global domain
@@ -522,6 +565,7 @@ if __name__ == "__main__":
 
     generate_dam_break_fluid_particles( dambreak_setup )
     generate_dam_break_boundary_particles( dambreak_setup )
+    #generate_mass_nodes( dambreak_setup )
 
 
     # write simulation params
