@@ -7,8 +7,6 @@ from pathlib import Path
 # Include globaly used postpro scripts
 import sys
 sys.path.append('../../../src/tools')
-import plotTimeStep
-import plotEnergy
 
 #TODO: Rename the default sensors labels providet by Lobovsky et. al.
 case_tag = "damBreak2D_WCSPH-BI"
@@ -115,6 +113,9 @@ if __name__ == "__main__":
     if not os.path.exists( postproPath ):
         os.makedirs( postproPath )
 
+    import writeParaviewSeriesFile
+    writeParaviewSeriesFile.generate_series( results_dir )
+
     # plot results from pressure sensors
     plot_pressure_sensors()
 
@@ -122,6 +123,8 @@ if __name__ == "__main__":
     plot_water_level_sensors()
 
     # Global postprocessing tools: plot time step log and energy
+    #import plotTimeStep
     #plotTimeStep.plot_time_step( results_dir )
-    plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
-    plotEnergy.plot_energy_snapshots( results_dir, Epot0 = 264.87 )
+    #import plotEnergy
+    #plotEnergy.plot_energy( results_dir, Epot0 = 264.87 )
+    #plotEnergy.plot_energy_snapshots( results_dir, Epot0 = 264.87 )
