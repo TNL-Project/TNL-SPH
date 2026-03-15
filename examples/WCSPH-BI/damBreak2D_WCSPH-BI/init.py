@@ -203,7 +203,7 @@ def set_paraview_states_paths():
             continue
         print(pvsmfile)
         content = pvsmfile.read_text()
-        content = content.replace("{path_to_tnl-sph_directory}", str(project_dir))
+        content = content.replace("{project_dir}", str(project_dir))
         pvsmfile.write_text(content)
 
 if __name__ == "__main__":
