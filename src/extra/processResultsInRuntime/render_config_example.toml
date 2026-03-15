@@ -1,0 +1,22 @@
+# render_config.toml
+# Place this next to your .pvsm files.
+# All paths are relative to the directory containing this file,
+# unless they start with / (absolute).
+
+results_dir     = "../results"
+screenshots_dir = "../screenshots"
+
+pvpython        = "pvpython"
+settle_time     = 2.0
+worker_threads  = 2
+
+# VTK filename patterns to watch for (Python regex)
+patterns = [
+    'fluid_[\d.]+_particles\.vtk$',
+    'boundary_[\d.]+_particles\.vtk$',
+]
+
+# label = "path/to/state.pvsm"  (relative to this file's directory)
+[states]
+pressure = "results_pressure_vertical_legend.pvsm"
+velocity = "results_velocity_vertical_legend.pvsm"
