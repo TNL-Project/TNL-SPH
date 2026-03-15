@@ -3,6 +3,7 @@
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
+#include <filesystem>
 
 #include "Fluid.h"
 #include "Boundary.h"

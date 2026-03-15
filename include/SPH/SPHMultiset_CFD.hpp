@@ -817,7 +817,9 @@ SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
 #else
    std::string outputFileNameFluid = outputDirectory + "/fluid_" + std::to_string( time ) + "_particles.vtk";
 #endif
-   fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid, writeParticleCellIndex );
+   std::string tmpOutputFileNameFluid = outputFileNameFluid + ".tmp";
+   fluid->template writeParticlesAndVariables< Writer >( tmpOutputFileNameFluid, writeParticleCellIndex );
+   std::filesystem::rename( tmpOutputFileNameFluid, outputFileNameFluid );
    logger.writeParameter( "Saved:", outputFileNameFluid );
 
 #ifdef HAVE_MPI
@@ -825,14 +827,18 @@ SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
 #else
    std::string outputFileNameBound = outputDirectory + "/boundary_" + std::to_string( time ) + "_particles.vtk";
 #endif
-   boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
+   std::string tmpOutputFileNameBound = outputFileNameBound + ".tmp"
+   boundary->template writeParticlesAndVariables< Writer >( tmpOutputFileNameBound, writeParticleCellIndex );
+   std::filesystem::rename( tmpOutputFileNameBound, outputFileNameBound );
    logger.writeParameter( "Saved:", outputFileNameBound );
 
    if( openBoundaryPatches.size() ) {
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          std::string outputFileNameOpenBound =
             outputDirectory + "/" + openBoundaryPatch->parameters.identifier + "_" + std::to_string( time ) + "_particles.vtk";
-         openBoundaryPatch->template writeParticlesAndVariables< Writer >( outputFileNameOpenBound, writeParticleCellIndex );
+         std::string tmpOutputFileNameOpenBound = outputFileNameOpenBound  + ".tmp"
+         openBoundaryPatch->template writeParticlesAndVariables< Writer >( tmpOutputFileNameOpenBound, writeParticleCellIndex );
+         std::filesystem::rename( tmpOutputFileNameOpenBound, outputFileNameOpenBound );
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
       }
    }

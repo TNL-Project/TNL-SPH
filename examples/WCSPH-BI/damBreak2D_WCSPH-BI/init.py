@@ -5,6 +5,11 @@ import sys
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import math
+from pathlib import Path
+
+# initialize directories
+example_dir = Path(__file__).parent
+project_dir = (example_dir / ".." / ".." / ".." ).resolve()
 
 def compute_hydrostatic_density( ry, fluid_height, rho0, speed_of_sound ):
     hydrostaticPressure = rho0 * 9.81 * ( fluid_height - ry )
@@ -190,6 +195,17 @@ def configure_and_write_measuretool_parameters( dambreak_setup ):
     with open( 'sources/config-measuretool.ini', 'w' ) as file:
       file.write( config_file )
 
+def set_paraview_states_paths():
+    import re
+    template_dir = ( example_dir / "template" ).resolve()
+    for pvsmfile in sorted(template_dir.iterdir()):
+        if not pvsmfile.is_file() or ".pvsm" not in pvsmfile.name:
+            continue
+        print(pvsmfile)
+        content = pvsmfile.read_text()
+        content = content.replace("{path_to_tnl-sph_directory}", str(project_dir))
+        pvsmfile.write_text(content)
+
 if __name__ == "__main__":
     import sys
     import argparse
@@ -272,3 +288,4 @@ if __name__ == "__main__":
     # write simulation params
     write_simulation_params( dambreak_setup )
     configure_and_write_measuretool_parameters( dambreak_setup )
+    set_paraview_states_paths()
