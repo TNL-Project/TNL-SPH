@@ -386,18 +386,18 @@ SolverMultiSet< Model >::performNeighborSearch( TNL::Logger& logger, bool perfor
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
-         std::cout << "Search fluid set i: " << i << std::endl;
+         //std::cout << "Search fluid set i: " << i << std::endl;
          fluidSets[ i ]->searchForNeighbors();
          if( verbose == "full" )
             logger.writeParameter( "Fluid search procedure:", "Done." );
 
          if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
-            std::cout << "Searching boundary set i: " << i << std::endl;
+            //std::cout << "Searching boundary set i: " << i << std::endl;
             boundarySets[ i ]->searchForNeighbors();
             if( verbose == "full" )
                logger.writeParameter( "Boundary search procedure:", "Done." );
          }
-         std::cout << "Searching multiresolution patch i: " << i << std::endl;
+         //std::cout << "Searching multiresolution patch i: " << i << std::endl;
          multiresolutionBoundaryPatches[ i ]->searchForNeighbors();
          if( verbose == "full" )
             logger.writeParameter( "Multiresolution patch search procedure:", "Done." );
@@ -427,14 +427,14 @@ void
 SolverMultiSet< Model >::removeParticlesOutOfDomain( TNL::Logger& log )
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
-      std::cout << "Processing set i: " << i << std::endl;
+      //std::cout << "Processing set i: " << i << std::endl;
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
       fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
-      std::cout << "WAS: " << numberOfParticlesToRemove << " IS: " << fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() << std::endl;
+      //std::cout << "WAS: " << numberOfParticlesToRemove << " IS: " << fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() << std::endl;
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-         std::cout << "Subdomain: " << i << std::endl;
+         //std::cout << "Subdomain: " << i << std::endl;
          log.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
          // search for neighbros
          //FIXME: I can not search dist
@@ -507,7 +507,7 @@ SolverMultiSet< Model >::applyMultiresolutionBC()
 
    multiresolutionBoundaryPatches[ 0 ]->updateInterfaceBuffer(
          fluidSets[ 0 ], fluidSets[ 1 ], modelParams, timeStepping.getTimeStep(), 0 );
-   std::cout << "/ * * * * * * * * * * * * *  * * * * * * * * * * ** * * * * * * * * ** * * * /" << std::endl;
+   //std::cout << "/ * * * * * * * * * * * * *  * * * * * * * * * * ** * * * * * * * * ** * * * /" << std::endl;
    multiresolutionBoundaryPatches[ 1 ]->updateInterfaceBuffer(
          fluidSets[ 1 ], fluidSets[ 0 ], modelParams, timeStepping.getTimeStep(), 1 );
 }
@@ -518,7 +518,7 @@ SolverMultiSet< Model >::interact()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       // update solid boundary conditions
-      std::cout << "Set i: " << i << " updating boundary." << std::endl;
+      //std::cout << "Set i: " << i << " updating boundary." << std::endl;
       model.updateSolidBoundary( fluidSets[ i ], boundarySets[ i ], modelParams );
       //FIXME: if( openBoundaryPatches.size() > 0 ) {
       //FIXME:    for( long unsigned int j = 0; j < std::size( openBoundaryPatches ); j++ ) {
@@ -530,7 +530,7 @@ SolverMultiSet< Model >::interact()
       model.finalizeBoundaryInteraction( fluidSets[ i ], boundarySets[ i ], modelParams );
 
       // updat fluid
-      std::cout << "Set i: " << i << " updating fluid." << std::endl;
+      //std::cout << "Set i: " << i << " updating fluid." << std::endl;
       model.interaction( fluidSets[ i ], boundarySets[ i ], modelParams );
       //FIXME: if( openBoundaryPatches.size() > 0 ) {
       //FIXME:    for( long unsigned int j = 0; j < std::size( openBoundaryPatches ); j++ ) {

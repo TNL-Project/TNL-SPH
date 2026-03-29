@@ -26,16 +26,16 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    const RealType ds = std::pow( refinementFactor, dim - 1  ) * modelParams.boundaryElementSize;
    const RealType rho0 = modelParams.rho0;
 
-   std::cout << "=========================" << std::endl;
-   std::cout << "FF: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << " np: " <<  fluid->getNumberOfParticles() << std::endl;
+   //std::cout << "=========================" << std::endl;
+   //std::cout << "FF: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << " np: " <<  fluid->getNumberOfParticles() << std::endl;
    auto refIdx_view = fluid->getVariables()->referentialIdx.getView();
 
-      std::cout << " ================ SEARCH TOKEN STUFF ================= gri: " << refinementFactor << std::endl;
-      std::cout << " ===> numberOfParticles; " << searchInBound.numberOfParticles << std::endl;
-      std::cout << " ===> gridSize;          " << searchInBound.gridSize          << std::endl;
-      std::cout << " ===> gridOrigin;        " << searchInBound.gridOrigin        << std::endl;
-      std::cout << " ===> searchRadius;      " << searchInBound.searchRadius      << std::endl;
-      std::cout << " =====================================================" << std::endl;
+   //   std::cout << " ================ SEARCH TOKEN STUFF ================= gri: " << refinementFactor << std::endl;
+   //   std::cout << " ===> numberOfParticles; " << searchInBound.numberOfParticles << std::endl;
+   //   std::cout << " ===> gridSize;          " << searchInBound.gridSize          << std::endl;
+   //   std::cout << " ===> gridOrigin;        " << searchInBound.gridOrigin        << std::endl;
+   //   std::cout << " ===> searchRadius;      " << searchInBound.searchRadius      << std::endl;
+   //   std::cout << " =====================================================" << std::endl;
 
    ModelParams modModelParams = modelParams;
    modModelParams.h = h;
@@ -52,8 +52,8 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    typename EOS::ParamsType eosParams( modModelParams );
    typename BoundaryViscousTerm::ParamsType boundaryViscoParams( modModelParams );
 
-   std::cout << "MOOOOOOODMODELPARAMS: " << modModelParams.h << std::endl;
-   std::cout << "MOOOOOOODMODELPARAMS: " << modModelParams.mass << std::endl;
+   //std::cout << "MOOOOOOODMODELPARAMS: " << modModelParams.h << std::endl;
+   //std::cout << "MOOOOOOODMODELPARAMS: " << modModelParams.mass << std::endl;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->getParticles()->getPoints().getView();
@@ -312,8 +312,8 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
    const RealType ds = std::pow( refinementFactor, dim - 1 ) * modelParams.boundaryElementSize;
    const RealType rho0 = modelParams.rho0;
-   std::cout << "=========================" << std::endl;
-   std::cout << "USB: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << std::endl;
+   //std::cout << "=========================" << std::endl;
+   //std::cout << "USB: searchRadius: " << searchRadius << " h: " << h << " mass: " << m << " ds: " << ds << std::endl;
 
    /* VARIABLES AND FIELD ARRAYS */
    const auto view_points = fluid->getParticles()->getPoints().getView();

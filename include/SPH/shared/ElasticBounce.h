@@ -32,12 +32,6 @@ public:
 
       typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
-      std::cout << " __> numberOfParticles; " << searchInBound.numberOfParticles << std::endl;
-      std::cout << " __> gridSize;          " << searchInBound.gridSize          << std::endl;
-      std::cout << " __> gridOrigin;        " << searchInBound.gridOrigin        << std::endl;
-      std::cout << " __> searchRadius;      " << searchInBound.searchRadius      << std::endl;
-
-
       /* CONSTANT VARIABLES */
       const RealType refinementFactor = searchRadius / ( 2.f * sphState.h );
       const RealType dp = refinementFactor * sphState.dp;
@@ -60,12 +54,6 @@ public:
          const VectorType r_j = view_points_bound[ j ];
          const VectorType r_ji = r_j - r_i;
          const RealType drs = l2Norm( r_ji );
-
-               ////DEBUG
-               //if((refinementFactor< 0.75f) && ( i < 2 ))
-               //   printf("<REFLECTED i: %d r_i: %.6f, %.6f, r_j %.6f, %.6f, drs: %.6f rad: %f>\n",
-               //         i, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs, searchRadius);
-
 
          if (drs <= searchRadius )
          {
@@ -95,9 +83,6 @@ public:
                *ve_i = ( *ve_i ) - ( 1.f + elasticFactor ) * v_n * n_j;
                *ae_i = ( *ae_i ) - ( 1.f + elasticFactor ) * dvdt_n * n_j;
 
-               //if((refinementFactor< 0.75f) && ( i < 2 ))
-               //   printf("<REFLECTED i: %d r_i: %.6f, %.6f, r_j %.6f, %.6f, drs: %.6f rad: %f>\n",
-               //         i, r_i[ 0 ], r_i[ 1 ], r_j[ 0 ], r_j[ 1 ], drs, searchRadius);
             }
          }
       };
@@ -108,23 +93,14 @@ public:
          const VectorType v_i = view_v[ i ];
          const VectorType dvdt_i = view_a[ i ];
 
-
-
          VectorType ve_i = v_i;
          VectorType ae_i = dvdt_i;
-
          ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, elasticBounce, &ve_i, &ae_i );
-
-         //if( refinementFactor< 0.75f )
-         //   printf(" EB: ~~~~ i: %d, r_i: %f, %f v_i: %f, %f, v_new: %f, %f, a_i: %f, %f, a_new: %f, %f \n",
-         //         i, r_i[ 0 ], r_i[ 1 ], v_i[ 0 ], v_i[ 1 ], ve_i[ 0 ], ve_i[ 1 ], dvdt_i[ 0 ], dvdt_i[ 1 ], ae_i[ 0 ], ae_i[ 1 ]);
-
          view_v[ i ] = ve_i;
          view_a[ i ] = ae_i;
 
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
-      std::cout << "[ElasticBounce] Done for n: " << numberOfParticles << std::endl;
    }
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
