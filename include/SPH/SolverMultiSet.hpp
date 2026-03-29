@@ -193,8 +193,20 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
       // Initialize multiresolution boundaries
       const IndexVectorType zoneOriginIdx_left = { 0, 0 };
       const IndexVectorType zoneDimensions_left = { 2, subdomainGridDimension[ 1 ] };
-      const IndexVectorType zoneOriginIdx_right = { subdomainGridDimension[ 0 ] + numberOfOverlapLayers, 0 };
+      const IndexVectorType zoneOriginIdx_right = { subdomainGridDimension[ 0 ] + numberOfOverlapLayers - 1, 0 }; //NOTE: Added -1 due to idxing
       const IndexVectorType zoneDimensions_right = { 2, subdomainGridDimension[ 1 ] };
+      // NOTE: Debug - print where the zone atually is
+      std::cout << "WHERE THE ZONE ACTUALLY IS:"
+         << "originLeft: " << zoneOriginIdx_left * localSearchRadius + domainOrigin
+         << "zoneEndLeft: " << zoneOriginIdx_left * localSearchRadius + domainOrigin + zoneDimensions_left * localSearchRadius
+         << std::endl;
+      std::cout << "WHERE THE ZONE ACTUALLY IS:"
+         << "zoneOriginIdx_right: " << zoneOriginIdx_right
+         << "zoneDimensions_right: " << zoneDimensions_right
+         << "originRight: " << zoneOriginIdx_right * localSearchRadius + domainOrigin
+         << "zoneEndRight: " << zoneOriginIdx_right * localSearchRadius + domainOrigin + zoneDimensions_right * localSearchRadius
+         << std::endl;
+      std::cout << "subdomain-grid-dimensions:" << subdomainGridDimension << std::endl;
       // init zones
       const IndexVectorType gridDimensionsWithOverlap = fluidSets[ i ]->getParticles()->getGridDimensionsWithOverlap();
       multiresolutionBoundaryPatches[ i ]->initZones( zoneOriginIdx_left, zoneDimensions_left, zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap, i );
@@ -415,17 +427,20 @@ void
 SolverMultiSet< Model >::removeParticlesOutOfDomain( TNL::Logger& log )
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
+      std::cout << "Processing set i: " << i << std::endl;
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
       fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
+      std::cout << "WAS: " << numberOfParticlesToRemove << " IS: " << fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() << std::endl;
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
          std::cout << "Subdomain: " << i << std::endl;
          log.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
          // search for neighbros
-         timeMeasurement.start( "search" );
-         this->performNeighborSearch( log );
-         timeMeasurement.stop( "search" );
+         //FIXME: I can not search dist
+         //timeMeasurement.start( "search" );
+         //this->performNeighborSearch( log );
+         //timeMeasurement.stop( "search" );
       }
    }
 }

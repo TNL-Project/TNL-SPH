@@ -41,7 +41,6 @@ public:
       massFlux.setSize( size );
       mass.setSize( size );
       particlesToCreate.setSize( size );
-
       numberOfMassNodes = size;
       mass = 0.f;
       massFlux = 0.f;
@@ -52,23 +51,23 @@ public:
    {
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::sort_by_key( thrustDevice,
-                           particlesToCreate.getData(),
-                           particlesToCreate.getData() + this->numberOfMassNodes,
-                           thrust::make_zip_iterator( thrust::make_tuple( points.getArrayData(),
-                                                                          normal.getArrayData(),
-                                                                          massFlux.getArrayData(),
-                                                                          mass.getArrayData() ) ) );
+      thrust::sort_by_key(
+            thrustDevice,
+            particlesToCreate.getData(),
+            particlesToCreate.getData() + numberOfMassNodes,
+            thrust::make_zip_iterator( thrust::make_tuple(
+                  points.getArrayData(),
+                  normal.getArrayData(),
+                  massFlux.getArrayData(),
+                  mass.getArrayData() ) ) );
    }
 
-   IndexType numberOfMassNodes;
-
+   IndexType numberOfMassNodes = 0;
    VectorArrayType points;
    VectorArrayType normal;
-
    ScalarArrayType massFlux;
    ScalarArrayType mass;
-   IndexArrayType  particlesToCreate;
+   IndexArrayType particlesToCreate;
 };
 
 template< typename ParticlesType,
@@ -89,21 +88,14 @@ public:
    using RealType = typename SolverTraitsType::RealType;
    using VectorType = typename SolverTraitsType::VectorType;
    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
+   using IndexVectorType = typename SolverTraitsType::IndexVectorType;  //TODO: Due to init
 
    using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
    using MassNodes = MassNodes< SPHCaseConfig >;
 
-   //TODO: Due to init
-   using IndexVectorType = typename SolverTraitsType::IndexVectorType;
-
-   // matrix and vector type for interpolation
-   // FIXME: Hard-def ABFs
-
-   //using ABFs = Interpolation::WendlandC2ABFs< 2, 2, SPHCaseConfig >;
    using KernelFunction = typename SPHDefs::KernelFunction;
    using MFD = Interpolation::MFD< 2, 1, RealType, Interpolation::WendlandC2ABFs, KernelFunction, SPHCaseConfig >;
    using ABFs = typename MFD::ABFs;
-
    using MfdVectorType = typename MFD::BaseVectorType;
    using MfdMatrixType = typename MFD::BaseMatrixType;
 
@@ -140,6 +132,8 @@ public:
       // FIXME FIXME Requires dp, dp is in model params, what to do!
       // FIXME FIXME just put dp to multiresolution file
       const RealType dp = 0.002;
+
+
 
 
       //FIXME: With two subdomains, we can start with signle zone
@@ -735,7 +729,7 @@ public:
 
    template< typename FluidPointer >
    void
-   getFluidParticlesEneringTheBuffer( FluidPointer& fluid )
+   getFluidParticlesEneringTheBuffer( FluidPointer& fluid, int subdomain )
    {
       auto particlesToBuffer_view = this->particlesToBuffer.getView();
       particlesToBuffer_view = INT_MAX;
@@ -744,6 +738,11 @@ public:
       const auto zoneParticleIndices_view = this->zone.getParticlesInZone().getConstView();
       const IndexType numberOfZoneParticles = this->zone.getNumberOfParticles();
       std::cout << "[gFPETB] number of zone particles: " << numberOfZoneParticles << " n: " <<  bufferOrientation << " r: "<< bufferPosition << std::endl;
+      //if( ( subdomain == 0 ) && ( numberOfZoneParticles > 0 ) )
+      //{
+      //   std::cout << "Number of fluid particles in the subdomain zone is > 0! " << std::endl;
+      //   std::exit(8);
+      //}
 
       const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
       const VectorType bufferPosition = this->bufferPosition;
@@ -817,74 +816,48 @@ public:
 
    template< typename FluidPointer, typename ModelParams >
    void
-   updateInterfaceBuffer( FluidPointer& fluid, FluidPointer& fluid_neihgbor, ModelParams& modelParams, const RealType dt, const int subdomainIdx )
+   updateInterfaceBuffer( FluidPointer& fluid_own,
+                          FluidPointer& fluid_neihgbor,
+                          const ModelParams& modelParams,
+                          const RealType dt,
+                          const int subdomainIdx )
    {
-
-
-      //// update the values
       massNodes.massFlux = 0;
-      std::cout << "Accumulate mass:" << std::endl;
-      if( subdomainIdx == 1 )
-      accumulateMasses( fluid_neihgbor, modelParams, dt ); // ?
 
-      // update buffer: buffer -> fluid, buffer -> remove
-      std::cout << "Move buffer particles: " << std::endl;
+
+      std::cout << "========== SUBDOMAIN : " << subdomainIdx << "========================================================================" << std::endl;
+      std::cout << "========== accumulateMasses " << std::endl;
+      //if( subdomainIdx == 1 )
+      accumulateMasses( fluid_neihgbor, modelParams, dt );
       moveBufferParticles( dt, subdomainIdx ); //subdomain idx for debugging
-      std::cout << "Sort buffer particles: " << std::endl;
       sortBufferParticles();
-
-      /*
-            //debug inlet
-            if( ( subdomainIdx == 1 ) && ( numberOfPtcsToRetype > 0 ) )
-               std::cout << "Ptcs: " << this->getParticles()->getPoints() << std::endl;
-      */
-
-
-      /*
-         Particles to remove are market by 2, particles to retye to fluid are markged by 1.
-         [ 0 0 0 0 0 1 1 1 1 2 2 ]
-      */
-      std::cout << "Remove buffer particles: " << std::endl;
       removeBufferParticles();
-      std::cout << "Convert buffer to fluid: " << std::endl;
-      convertBufferToFluid( fluid );
+      convertBufferToFluid( fluid_own );
 
-      // fluid -> buffer
-      std::cout << "Update particles in zone: " << std::endl;
-      zone.updateParticlesInZone( fluid->getParticles() );
-      std::cout << "Get fluid particles entering the zone: " << std::endl;
-      getFluidParticlesEneringTheBuffer( fluid );
-      std::cout << "Conver fluid to buffer: " << std::endl;
-      convertFluidToBuffer( fluid );
+      zone.updateParticlesInZone( fluid_own->getParticles() );
+      getFluidParticlesEneringTheBuffer( fluid_own, subdomainIdx ); //subdomain idx for debug
+      convertFluidToBuffer( fluid_own );
 
       // mass-nodes -> buffer
-      std::cout << "Update mass nodes: " << std::endl;
       updateMassNodes( modelParams, dt );
-      std::cout << "Sort mass nodes: " << std::endl;
       massNodes.sort();
-      std::cout << "Create buffer particles: " << std::endl;
       createBufferParticles( modelParams );
 
-      std::cout << "BUFFER UPDATED: buffer particles count: " << this->getNumberOfParticles() << " fluid particles count: " << fluid->getNumberOfParticles() << std::endl;
 
-      std::cout << "Interpolate variables: " << std::endl;
-      if( subdomainIdx == 1 ) //LARGEST FIXME
+      //if( subdomainIdx == 1 ) //LARGEST FIXME
       interpolateVariables( fluid_neihgbor, modelParams );
 
-      std::cout << "# MR buffer updated." << std::endl;
 
-      //sun search to rmeove the retyped particles
       //if( numberOfPtcsToRetype > 0 ) //TODO: Now, we remove only due to invalid interpolation
-         this->searchForNeighbors();
+      this->searchForNeighbors();
 
-      // reset temorary variables and fields (i prefere names such as: fluidToBufferCount )
+      // Reset (i prefere names such as: fluidToBufferCount )
       numberOfPtcsToRemove = 0;
       numberOfPtcsToRetype = 0; //TODO: Move to fluid
       numberOfPtcsToCreate = 0;
       numberOfPtcsToBuffer = 0;
       //reset the flux
-
-
+      std::cout << "==================================================================================================" << std::endl;
    }
 
    void
