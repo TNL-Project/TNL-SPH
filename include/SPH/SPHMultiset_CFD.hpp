@@ -827,7 +827,7 @@ SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
 #else
    std::string outputFileNameBound = outputDirectory + "/boundary_" + std::to_string( time ) + "_particles.vtk";
 #endif
-   std::string tmpOutputFileNameBound = outputFileNameBound + ".tmp"
+   std::string tmpOutputFileNameBound = outputFileNameBound + ".tmp";
    boundary->template writeParticlesAndVariables< Writer >( tmpOutputFileNameBound, writeParticleCellIndex );
    std::filesystem::rename( tmpOutputFileNameBound, outputFileNameBound );
    logger.writeParameter( "Saved:", outputFileNameBound );
@@ -836,7 +836,7 @@ SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          std::string outputFileNameOpenBound =
             outputDirectory + "/" + openBoundaryPatch->parameters.identifier + "_" + std::to_string( time ) + "_particles.vtk";
-         std::string tmpOutputFileNameOpenBound = outputFileNameOpenBound  + ".tmp"
+         std::string tmpOutputFileNameOpenBound = outputFileNameOpenBound  + ".tmp";
          openBoundaryPatch->template writeParticlesAndVariables< Writer >( tmpOutputFileNameOpenBound, writeParticleCellIndex );
          std::filesystem::rename( tmpOutputFileNameOpenBound, outputFileNameOpenBound );
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
