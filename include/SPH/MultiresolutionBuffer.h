@@ -112,10 +112,10 @@ public:
       const IndexType numberOfOverlapLayers = ownParticles->getOverlapWidth();
 
       bufferOrientation = 0.f;
-      VectorType bufferPosition = ownOrig;
+      bufferPosition = ownOrig;
+      bufferWidth = 1.5f * searchRadius; //TODO: Creative constant
       IndexVectorType zoneOrigCoords = 0.;
       IndexVectorType zoneDims = ownDims;
-      bufferWidth = 1.5f * searchRadius; //TODO: Creative constant
       //int interfaceAxis = 0;
 
       //NOTE: The comparison could be done w.r.t. origin in coordinates, this would removed the need for eps
