@@ -97,6 +97,60 @@ public:
    MultiresolutionBoundary() = default;
 
    // -----------------------------------------------------------------------------------------------------------------------
+   // needs to be called after the object is initialized
+   template< typename ParticleSetPointer >
+   void
+   initZones( const ParticleSetPointer& ownParticles,
+              const ParticleSetPointer& nbParticles,
+              const int maxNumberOfPtcsPerCell = 75 )
+   {
+      const RealType searchRadius = ownParticles->getSearchRadius();
+      const VectorType ownOrig = ownParticles->getGridOrigin();
+      const VectorType neighborOrig = nbParticles->getGridOrigin();
+      const IndexVectorType ownDims = ownParticles->getGridDimensions();
+      const IndexVectorType ownDimsWithOverlap = ownParticles->getGridDimensionsWithOverlap();
+      const IndexType numberOfOverlapLayers = ownParticles->getOverlapWidth();
+
+      bufferOrientation = 0.f;
+      VectorType bufferPosition = ownOrig;
+      IndexVectorType zoneOrigCoords = 0.;
+      IndexVectorType zoneDims = ownDims;
+      bufferWidth = 1.5f * searchRadius; //TODO: Creative constant
+      //int interfaceAxis = 0;
+
+      //NOTE: The comparison could be done w.r.t. origin in coordinates, this would removed the need for eps
+      const RealType eps = searchRadius * 1e-5;
+      for( int d = 0; d < VectorType::getSize(); ++d ) {
+
+         if( ownOrig[ d ] - neighborOrig[ d ] > eps ) { // left, normal points inward (+1)
+            bufferOrientation[ d ] = 1.f;
+            zoneDims[ d ] = 2;
+            //interfaceAxis = d;
+            break;
+         }
+
+         if( ownOrig[ d ] - neighborOrig[ d ]  < ( -1.f ) * eps ) { // rigt, norma points iward (-1)
+            bufferOrientation[ d ] = -1.f;
+            bufferPosition[ d ] = ownOrig[ d ] + ownDims[ d ] * searchRadius;
+            zoneOrigCoords[ d ] = ownDims[ d ] + numberOfOverlapLayers - 1;
+            zoneDims[ d ] = 2;
+            //interfaceAxis = d;
+            break;
+         }
+      }
+
+      zone.setNumberOfParticlesPerCell( maxNumberOfPtcsPerCell );
+      zone.assignCells( zoneOrigCoords, zoneDims, ownDimsWithOverlap );
+
+      // Set size of multi-resoluton algorithm arrays (NOTE: Consider setSize function)
+      const IndexType n_alloc = this->getNumberOfAllocatedParticles();
+      particlesToFluid.setSize( n_alloc );
+      particlesToRemove.setSize( n_alloc );
+      particlesToBuffer.setSize( n_alloc );
+      retypeMarker.setSize( n_alloc );
+   }
+
+   /*
    void
    initZones( const IndexVectorType zoneOriginIdx_left,
               const IndexVectorType zoneDimensions_left,
@@ -125,6 +179,7 @@ public:
 
       // FIXME FIXME Requires dp, dp is in model params, what to do!
       // FIXME FIXME just put dp to multiresolution file
+      // NOTE: What about connecting the width to search radius instead of  dp?
       const RealType dp = 0.002;
 
       //FIXME: With two subdomains, we can start with signle zone
@@ -144,14 +199,16 @@ public:
          this->bufferWidth = 4 * 0.001;  // dp times refinement factor
       }
 
-      const IndexType numberOfAllocatedParticles = this->getNumberOfAllocatedParticles();
-      particlesToFluid.setSize( numberOfAllocatedParticles );
-      particlesToRemove.setSize( numberOfAllocatedParticles );
-      particlesToBuffer.setSize( numberOfAllocatedParticles );  //TODO: Set sizes
-      retypeMarker.setSize( numberOfAllocatedParticles );       //TODO: rename
+      // Set size of multi-resoluton algorithm arrays
+      const IndexType n_alloc = this->getNumberOfAllocatedParticles();
+      particlesToFluid.setSize( n_alloc );
+      particlesToRemove.setSize( n_alloc );
+      particlesToBuffer.setSize( n_alloc );  //TODO: Set sizes
+      retypeMarker.setSize( n_alloc );       //TODO: rename
 
       //FIXME: Set variables on boundary particles so the paraview doesn't ouput nonsense
    }
+   */
    // -----------------------------------------------------------------------------------------------------------------------
    template< typename ModelParams >
    void
@@ -904,7 +961,7 @@ shiftParticles( FluidPointer& fluid, ModelParams& modelParams )
    //IndexType fluidToBufferCount;
 
    // temporary arrays
-   IndexArrayType retypeMarker;
+   IndexArrayType retypeMarker; //TODO: rename
 
    IndexArrayType particlesToFluid;
    IndexArrayType particlesToRemove;

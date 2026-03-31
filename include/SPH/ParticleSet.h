@@ -35,6 +35,7 @@ class ParticleSet
    using IntegratorVariablesPointerType = typename Pointers::SharedPointer< IntegratorVariables, DeviceType >;
 
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
+   using IndexType = typename SPHTraitsType::GlobalIndexType; //TODO: Merge with global index type
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
@@ -93,8 +94,7 @@ class ParticleSet
                             const IndexVectorType& subdomainGridOriginGlobalCoords,
                             const int numberOfOverlapLayers,
                             const Containers::StaticVector< 2, int >& numberOfSubdomains,
-                            const VectorType& subdomainOrigin, //REMOVE
-                            TNL::Logger& logger )
+                            const VectorType& subdomainOrigin )
    {
       this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
 
@@ -125,6 +125,40 @@ class ParticleSet
       //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
       //synchronizer.initialize( this->distributedParticles );
       //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
+   }
+
+   template< typename GridType >
+   void
+   initializeAsDistributed( const IndexType numberOfParticles,
+                            const IndexType numberOfAllocatedParticles,
+                            const GridType& localGrid,
+                            const IndexVectorType& localOriginCoordinates,
+                            const GridType& globalGrid,
+                            const int numberOfOverlapLayers,
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains = 0 ) //TODO: Depends on decomposition
+   {
+      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
+      this->particles->setSize( numberOfAllocatedParticles );
+      this->particles->setNumberOfParticles( numberOfParticles );
+      this->particles->setSearchRadius( localGrid.getSpaceSteps()[ 0 ] );
+      this->particles->setGridDimensions( localGrid.getDimensions() );
+      this->particles->setGridOrigin( localGrid.getOrigin() ); //TODO: Remove, particles should be determined solely by grid index
+      this->particles->setOverlapWidth( numberOfOverlapLayers );
+
+      this->particles->setGridReferentialOrigin( globalGrid.getOrigin() );
+      this->particles->setGridOriginGlobalCoords( localOriginCoordinates );
+
+      this->variables->setSize( numberOfAllocatedParticles );
+      this->integratorVariables->setSize( numberOfAllocatedParticles );
+
+      //TODO: Why we even need this?
+      this->distributedParticles->setDistributedGridParameters( localGrid.getSpaceSteps()[ 0 ],
+                                                                globalGrid.getDimensions(),
+                                                                globalGrid.getOrigin(),
+                                                                localGrid.getDimensions(),
+                                                                localOriginCoordinates,
+                                                                numberOfOverlapLayers,
+                                                                numberOfSubdomains );
    }
 //#endif
 

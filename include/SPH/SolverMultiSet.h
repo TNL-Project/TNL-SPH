@@ -3,7 +3,9 @@
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
+#include <TNL/Meshes/Grid.h>
 
+#include "DecompositionTopology.h"
 #include "Fluid.h"
 #include "Boundary.h"
 #include "OpenBoundaryBuffers.h"
@@ -78,6 +80,20 @@ public:
    // protected
    void
    initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  );
+
+   // protected
+   /**
+      Construct one MultiresolutionBoundary per directed interface
+
+      interfacesOf(i) returns one Interface per neighbor face of subdomain i.
+      For a linear 3-subdomain case:
+        subdomain 0: one interface  (neighbor 1)
+        subdomain 1: two interfaces (neighbors 0 and 2)
+        subdomain 2: one interface  (neighbor 1)
+      Total: 4 directed = 2 physical interfaces -> 4 patches, 2 update pairs.
+   */
+   void
+   initMultiResolutionBundaryPatches();
 
    // protected
    void
@@ -239,11 +255,17 @@ public:
 
 //protected:
 
+   using GridType = TNL::Meshes::Grid< SPHConfig::spaceDimension, RealType >;
+   using Topology = DecompositionTopologyFlat< GridType >;
+   Topology topology;
+
    int numberOfSubsets = 0;
    std::vector< FluidPointer > fluidSets;
    std::vector< BoundaryPointer > boundarySets;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
    std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;
+
+
 
    Model model;
    ModelParams modelParams;
