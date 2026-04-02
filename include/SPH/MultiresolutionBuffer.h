@@ -94,9 +94,12 @@ public:
    using MfdVectorType = typename MFD::BaseVectorType;
    using MfdMatrixType = typename MFD::BaseMatrixType;
 
+   static constexpr RealType bufferWidthFactorConst = 1.5f;
+
    MultiresolutionBoundary() = default;
 
    // -----------------------------------------------------------------------------------------------------------------------
+
    // needs to be called after the object is initialized
    template< typename ParticleSetPointer >
    void
@@ -113,10 +116,10 @@ public:
 
       bufferOrientation = 0.f;
       bufferPosition = ownOrig;
-      bufferWidth = 1.5f * searchRadius; //TODO: Creative constant
+      bufferWidth = bufferWidthFactorConst * searchRadius;
       IndexVectorType zoneOrigCoords = 0.;
       IndexVectorType zoneDims = ownDims;
-      //int interfaceAxis = 0;
+      interfaceAxis = 0;
 
       //NOTE: The comparison could be done w.r.t. origin in coordinates, this would removed the need for eps
       const RealType eps = searchRadius * 1e-5;
@@ -125,7 +128,7 @@ public:
          if( ownOrig[ d ] - neighborOrig[ d ] > eps ) { // left, normal points inward (+1)
             bufferOrientation[ d ] = 1.f;
             zoneDims[ d ] = 2;
-            //interfaceAxis = d;
+            interfaceAxis[ d ] = 1;
             break;
          }
 
@@ -134,7 +137,7 @@ public:
             bufferPosition[ d ] = ownOrig[ d ] + ownDims[ d ] * searchRadius;
             zoneOrigCoords[ d ] = ownDims[ d ] + numberOfOverlapLayers - 1;
             zoneDims[ d ] = 2;
-            //interfaceAxis = d;
+            interfaceAxis[ d ] = 1;
             break;
          }
       }
@@ -150,113 +153,71 @@ public:
       retypeMarker.setSize( n_alloc );
    }
 
-   /*
-   void
-   initZones( const IndexVectorType zoneOriginIdx_left,
-              const IndexVectorType zoneDimensions_left,
-              const IndexVectorType zoneOriginIdx_right,
-              const IndexVectorType zoneDimensions_right,
-              const IndexVectorType gridDimensionsWithOverlap,  //FIXME: Which of two grids is this one?
-              const int subdomainIdx,
-              const IndexType numberOfParticlesPerCell = 75 )
-   {
-      //dp get from arguments
-      //const IndexVectorType subdomainGridDimension = this->getParticles()->getGridDimensions();
-      //const IndexVectorType subdomainGridDimensionWithOverlap = this->getParticles()->getGridDimensionsWithOverlap();
-      //const int numberOfOverlapLayers = this->getParticles()->getNumberOfOverlapLayers();
-      //const IndexVectorType zoneOriginIdx_left = { 0, 0 };
-      //const IndexVectorType zoneDimensions_left = { 2, subdomainGridDimension[ 1 ] };
-      //const IndexVectorType zoneOriginIdx_right = { subdomainGridDimension[ 0 ] + numberOfOverlapLayers, 0 };
-      //const IndexVectorType zoneDimensions_right = { 2, subdomainGridDimension[ 1 ] };
-
-      //FIXME: Two zones
-      //zone_left.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      //zone_left.assignCells( zoneOriginIdx_left, zoneDimensions_left, gridDimensionsWithOverlap );
-
-      //zone_right.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      //zone_right.assignCells( zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap );
-      const RealType searchRadius = this->getParticles()->getSearchRadius();
-
-      // FIXME FIXME Requires dp, dp is in model params, what to do!
-      // FIXME FIXME just put dp to multiresolution file
-      // NOTE: What about connecting the width to search radius instead of  dp?
-      const RealType dp = 0.002;
-
-      //FIXME: With two subdomains, we can start with signle zone
-      if( subdomainIdx == 0 ) {
-         zone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         zone.assignCells( zoneOriginIdx_right, zoneDimensions_right, gridDimensionsWithOverlap );
-         this->bufferOrientation = { -1.f, 0 };
-         this->bufferPosition =
-            this->getParticles()->getGridOrigin() + this->getParticles()->getGridDimensions() * searchRadius;
-         this->bufferWidth = 4 * 0.002;
-      }
-      else if( subdomainIdx == 1 ) {
-         zone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-         zone.assignCells( zoneOriginIdx_left, zoneDimensions_left, gridDimensionsWithOverlap );
-         this->bufferOrientation = { 1.f, 0 };
-         this->bufferPosition = this->getParticles()->getGridOrigin();
-         this->bufferWidth = 4 * 0.001;  // dp times refinement factor
-      }
-
-      // Set size of multi-resoluton algorithm arrays
-      const IndexType n_alloc = this->getNumberOfAllocatedParticles();
-      particlesToFluid.setSize( n_alloc );
-      particlesToRemove.setSize( n_alloc );
-      particlesToBuffer.setSize( n_alloc );  //TODO: Set sizes
-      retypeMarker.setSize( n_alloc );       //TODO: rename
-
-      //FIXME: Set variables on boundary particles so the paraview doesn't ouput nonsense
-   }
-   */
-   // -----------------------------------------------------------------------------------------------------------------------
    template< typename ModelParams >
    void
    initMassNodes( ModelParams& modelParams, const int subdomainIdx, const RealType refinemnetFactor )
    {
-      // std::cout << "=== INIT MASS NODES =================== " << std::endl;
       const RealType searchRadius = this->getParticles()->getSearchRadius();
-      // std::cout << "Search radius: " << searchRadius << std::endl;
-      // std::cout << "Grid origin: " << this->getParticles()->getGridOrigin() << std::endl;
-      // std::cout << "Grid origin with overlap: " << this->getParticles()->getGridOriginWithOverlap() << std::endl;
-      // std::cout << "Grid dimensions: " << this->getParticles()->getGridDimensions() << std::endl;
-      // std::cout << "Grid dimensions with overlap: " << this->getParticles()->getGridDimensionsWithOverlap() << std::endl;
-      // std::cout << "Domain size: " << this->getParticles()->getGridOrigin() + this->getParticles()->getGridDimensions() *
-      // searchRadius << std::endl; std::cout << "Domain size with overlap: " <<
-      // this->getParticles()->getGridOriginWithOverlap() + this->getParticles()->getGridDimensionsWithOverlap() * searchRadius
-      // << std::endl; std::cout << "======================================= " << std::endl;
+      const VectorType subdomainSize = searchRadius * this->getParticles()->getGridDimensions();
+      const IndexType overlapWidth = this->getParticles()->getOverlapWidth();
+      const RealType local_dp = refinemnetFactor * modelParams.dp;
 
-      const RealType height = 1.f;
-      const RealType dp = refinemnetFactor * modelParams.dp;
-      const int numberOfMassNodes = height / dp;
-      massNodes.setSize( numberOfMassNodes );
+      // Get the range to create mass nodes
+      IndexVectorType begin = 0;
+      IndexVectorType end = 0;
+      IndexType n_massNodes = 1;
 
-      RealType massNodes_xCoord;
-      VectorType massNodes_normal;
-      if( subdomainIdx == 0 ) {
-         massNodes_xCoord = this->getParticles()->getGridOriginWithOverlap()[ 0 ]
-                          + this->getParticles()->getGridDimensionsWithOverlap()[ 0 ] * searchRadius;
-         massNodes_normal = { -1.f, 0 };
+      for( int d = 0; d < VectorType::getSize(); d++ ){
+         if( interfaceAxis[ d ] == 0 ){
+            begin[ d ] = 1; //FIXME 0 is right, 1 is for debug
+            end[ d ] = subdomainSize[ d ] / local_dp;
+            n_massNodes *= end[ d ];
+         }
+         else{
+            begin[ d ]= 0;
+            end[ d ] = 1;
+         }
       }
-      else if( subdomainIdx == 1 ) {
-         massNodes_xCoord = this->getParticles()->getGridOriginWithOverlap()[ 0 ];
-         massNodes_normal = { 1.f, 0 };
-      }
-      else {
-         std::cerr << "Invalid buffer count." << std::endl;
-      }
+      massNodes.setSize( n_massNodes );
 
-      auto points_massNodes_view = this->massNodes.points.getView();
-      auto normals_massNodes_view = this->massNodes.normal.getView();
+      // Initialize tha mass points coordinates
+      const VectorType nodeNormal = bufferOrientation;
+      const IndexVectorType unitVect = 1;
+      const IndexVectorType perpAxis = unitVect - interfaceAxis;
+      const VectorType nodeStartingPoint = bufferPosition + ( -1 ) * overlapWidth * searchRadius * bufferOrientation; //TODO: In for above?
 
-      auto generateMassNodesCoordinates = [ = ] __cuda_callable__( int i ) mutable
+      // Strides for linearisation over perpendicular axes only
+      /*
+         Strides for linearisation over perpendicular axes only.
+         Interface axis stride stays 0 — idx[interfaceAxis] is always 0.
+         In 2D with x as interface axis: stride = {0, 1} gives i = idx[1]
+         In 2D with y as interface axis: stride = {1, 0} gives i = idx[0]
+         In 3D with x as interface axis: stride = {0, ny, 1} gives i = idx[1]*nz + idx[2]
+         General: stride[d] = product of end[k] for all perp k > d
+       */
+      IndexVectorType stride = 0;
       {
-         const VectorType r = { massNodes_xCoord, dp * ( i + 1 ) };
-         points_massNodes_view[ i ] = r;
-         normals_massNodes_view[ i ] = massNodes_normal;
+         IndexType running = 1;
+         // Walk axes in reverse to build strides for perp axes only
+         for( int d = VectorType::getSize() - 1; d >= 0; d-- ) {
+            if( perpAxis[ d ] == 1 ) {
+               stride[ d ] = running;
+               running *= end[ d ];
+            }
+         }
+      }
+
+      auto points_nodes_view = this->massNodes.points.getView();
+      auto normals_nodes_view = this->massNodes.normal.getView();
+      auto generateMassNodesCoordinates = [ = ] __cuda_callable__( const IndexVectorType idx ) mutable
+      {
+         // Linearise: dot product of idx and stride (interface axis contributes 0)
+         IndexType i = ( idx, stride );;
+         const VectorType r = nodeStartingPoint + local_dp * ( idx + 1 ) * perpAxis;
+         points_nodes_view[ i ] = r;
+         normals_nodes_view[ i ] = nodeNormal;
       };
-      Algorithms::parallelFor< DeviceType >(
-         1, numberOfMassNodes, generateMassNodesCoordinates );  //FIXME 0 is right, 1 for debug
+      Algorithms::parallelFor< DeviceType >( begin, end, generateMassNodesCoordinates );
    }
 
    // -----------------------------------------------------------------------------------------------------------------------
@@ -968,6 +929,7 @@ shiftParticles( FluidPointer& fluid, ModelParams& modelParams )
    IndexArrayType particlesToBuffer;
 
    // buffer referential position (TODO: Use openbc config?)
+   IndexVectorType interfaceAxis;
    VectorType bufferPosition;
    VectorType bufferOrientation;  //FIXME: temp
    RealType bufferWidth;          // FIXME: temp
