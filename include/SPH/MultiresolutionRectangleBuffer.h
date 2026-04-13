@@ -210,26 +210,33 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
    void
    initMassNodes( ModelParams& modelParams, const int subdomainIdx, const RealType refinemnetFactor )
    {
-      const RealType searchRadius = this->getParticles()->getSearchRadius();
-      const VectorType subdomainSize = searchRadius * this->getParticles()->getGridDimensions();
-      const IndexType overlapWidth = this->getParticles()->getOverlapWidth();
       const RealType local_dp = refinemnetFactor * modelParams.dp;
 
-      // Get the range to create mass nodes
-      IndexVectorType begin = 0;
-      IndexVectorType end = 0;
-      IndexType n_massNodes = 1;
+      auto planeNodeCount = [&]( int faceAxis, int perpAxis ) -> IndexType {
+         RealType extent = frameFrontDims_[ perpAxis ];
+         // Each lower-priority face axis that is also perpendicular to perpAxis claims local_dp on each end
+         for( int d = 0; d < faceAxis; d++ )
+            if( d != perpAxis )
+               extent -= 2.f * local_dp;
+         return static_cast< IndexType >( TNL::max( 0.f, extent ) / local_dp );
+      };
 
-      for( int d = 0; d < VectorType::getSize(); d++ ){
-         if( interfaceAxis[ d ] == 0 ){
-            begin[ d ] = 1; //FIXME 0 is right, 1 is for debug
-            end[ d ] = subdomainSize[ d ] / local_dp;
-            n_massNodes *= end[ d ];
-         }
-         else{
-            begin[ d ]= 0;
-            end[ d ] = 1;
-         }
+      auto perpOriginOffset = [&]( int faceAxis, int perpAxis ) -> RealType {
+         RealType offset = 0.f;
+         for( int d = 0; d < faceAxis; d++ )
+            if( d != perpAxis )
+               offset += local_dp;
+         return offset;
+      };
+
+      // Count total nodes across all 2*dim faces
+      IndexType totalNodes = 0;
+      for( int d = 0; d < VectorType::getSize(); d++ ) {
+         IndexType faceNodes = 1;
+         for( int pd = 0; pd < VectorType::getSize(); pd++ )
+            if( pd != d )
+               faceNodes *= planeNodeCount( d, pd );
+         totalNodes += 2 * faceNodes;   // min and max face
       }
       massNodes.setSize( n_massNodes );
 
@@ -551,7 +558,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       auto toGridCoord = [=] __cuda_callable__ ( const VectorType& r ) -> IndexVectorType
       {
          IndexVectorType gc;
-         gc = TNL::Floor( ( r - frameFrontOrigin ) * inv_sr ) //TODO: Static cast?
+         gc = TNL::Floor( ( r - frameFrontOrigin ) * inv_sr ); //TODO: Static cast?
          return gc;
       };
 
@@ -724,13 +731,21 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       const VectorType bufferPosition = this->bufferPosition;
       const VectorType bufferOrientation = this->bufferOrientation;
 
+      // Retype fluid to buffer:
+      // - outer zone and is outside the frame
+      // - inner zone and is inside the frame
       auto checkFluidParticles = [ = ] __cuda_callable__( int i ) mutable
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r = r_view[ p ];
-         const VectorType r_relative = bufferPosition - r;
+         const IndexVectorType gc = TNL::Floor( ( r - frameFrontOrigin ) * inv_sr );
+         const bool inside = isInsideBox( gc, frameFronOriginCoords, frameFrontDims );
 
-         if( ( r_relative, bufferOrientation ) > 0 ) {
+         if( inside && inner_overlap ) {
+            particlesToBuffer_view[ i ] = p;
+            return 1;
+         }
+         else if( !inside && outer_overlap ) {
             particlesToBuffer_view[ i ] = p;
             return 1;
          }
