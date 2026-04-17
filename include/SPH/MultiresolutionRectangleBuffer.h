@@ -213,11 +213,11 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       const RealType local_dp = refinemnetFactor * modelParams.dp;
 
       auto planeNodeCount = [&]( int faceAxis, int perpAxis ) -> IndexType {
-         RealType extent = frameFrontDims_[ perpAxis ];
+         RealType extent = frameBackSize[ perpAxis ];
          // Each lower-priority face axis that is also perpendicular to perpAxis claims local_dp on each end
          for( int d = 0; d < faceAxis; d++ )
             if( d != perpAxis )
-               extent -= 2.f * local_dp;
+               extent -= 2.f * local_dp; //TODO: Why is there 2?
          return static_cast< IndexType >( TNL::max( 0.f, extent ) / local_dp );
       };
 
@@ -239,45 +239,82 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
          totalNodes += 2 * faceNodes;   // min and max face
       }
       massNodes.setSize( n_massNodes );
+      auto points_view = massNodes.points.getView();
+      auto normals_view = massNodes.normal.getView();
 
-      // Initialize tha mass points coordinates
-      const VectorType nodeNormal = bufferOrientation;
-      const IndexVectorType unitVect = 1;
-      const IndexVectorType perpAxis = unitVect - interfaceAxis;
-      const VectorType nodeStartingPoint = bufferPosition + ( -1 ) * overlapWidth * searchRadius * bufferOrientation; //TODO: In for above?
+      // Generate nodes face by face
+      IndexType offset = 0;
+      for( int d = 0; d < dim; d++ ) {
+         for( int sign : { -1, +1 } ) {
 
-      // Strides for linearisation over perpendicular axes only
-      /*
-         Strides for linearisation over perpendicular axes only.
-         Interface axis stride stays 0 — idx[interfaceAxis] is always 0.
-         In 2D with x as interface axis: stride = {0, 1} gives i = idx[1]
-         In 2D with y as interface axis: stride = {1, 0} gives i = idx[0]
-         In 3D with x as interface axis: stride = {0, ny, 1} gives i = idx[1]*nz + idx[2]
-         General: stride[d] = product of end[k] for all perp k > d
-       */
-      IndexVectorType stride = 0;
-      {
-         IndexType running = 1;
-         // Walk axes in reverse to build strides for perp axes only
-         for( int d = VectorType::getSize() - 1; d >= 0; d-- ) {
-            if( perpAxis[ d ] == 1 ) {
-               stride[ d ] = running;
-               running *= end[ d ];
+            // Inward normal
+            VectorType normal = 0.f;
+            normal[ d ] = ( sign < 0 ) ? 1.f : -1.f;
+            if( inner_overlap )
+               normal[ d ] *= -1.f;
+
+            // Physical coordinate on the interface axis
+            const RealType ifaceCoord = ( sign < 0 )
+                  ? frameBackOrigin[ d ]
+                  : frameBackOrigin[ d ] + frameBackSize[ d ];
+
+            // parallelFor range: [0,1) on d, [0, count) on perp axes
+            IndexVectorType begin = 0, end = 0;
+            end[ d ] = 1;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d )
+                  end[ pd ] = planeNodeCount( d, pd );
+
+            // Strides for linearisation (perp axes only, reverse order)
+            IndexVectorType stride = 0;
+            {
+               IndexType running = 1;
+               for( int pd = dim - 1; pd >= 0; pd-- ) {
+                  if( pd == d ) continue;
+                  stride[ pd ] = running;
+                  running *= end[ pd ];
+               }
             }
+
+            // Physical start of the node grid on each perp axis
+            VectorType perpStart = frameFrontOrigin_;
+            perpStart[ d ] = ifaceCoord;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d )
+                  perpStart[ pd ] += perpOriginOffset( d, pd );
+
+            //TODO: Can I just the variables present in the scope or do I need this?
+            const IndexType faceOffset = offset;
+            const int iAxis = d;
+            const VectorType norm = normal;
+            const VectorType pStart = perpStart;
+
+            auto generate = [=] __cuda_callable__ ( const IndexVectorType idx ) mutable
+            {
+               // Linearise: sum over perp axes only
+               IndexType i = faceOffset;
+               for( int pd = 0; pd < dim; pd++ )
+                  i += idx[ pd ] * stride[ pd ];
+
+               // Physical position
+               VectorType r = pStart;
+               for( int pd = 0; pd < dim; pd++ )
+                  if( pd != iAxis )
+                     r[ pd ] += local_dp * ( idx[ pd ] + 1 );
+
+               points_view[ i ] = r;
+               normals_view[ i ] = norm;
+            };
+            Algorithms::parallelFor< DeviceType >( begin, end, generate );
+
+            // Advance offset by number of nodes on this face
+            IndexType faceNodes = 1;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d ) faceNodes *= end[ pd ];
+            offset += faceNodes;
          }
       }
 
-      auto points_nodes_view = this->massNodes.points.getView();
-      auto normals_nodes_view = this->massNodes.normal.getView();
-      auto generateMassNodesCoordinates = [ = ] __cuda_callable__( const IndexVectorType idx ) mutable
-      {
-         // Linearise: dot product of idx and stride (interface axis contributes 0)
-         IndexType i = ( idx, stride );;
-         const VectorType r = nodeStartingPoint + local_dp * ( idx + 1 ) * perpAxis;
-         points_nodes_view[ i ] = r;
-         normals_nodes_view[ i ] = nodeNormal;
-      };
-      Algorithms::parallelFor< DeviceType >( begin, end, generateMassNodesCoordinates );
    }
 
    template< typename FluidPointer, typename ModelParams >
