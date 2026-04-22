@@ -111,23 +111,24 @@ public:
 
    // helper functions
    __cuda_callable__
-   bool
-   isInsideBox( const VectorType& point; const VectorType& boxOrigin, const VectorType& boxSize )
+   static bool
+   isInsideBox( const VectorType& point, const VectorType& boxOrigin, const VectorType& boxSize )
    {
       bool isInside = true;
       for( int d = 0; d < VectorType::getSize(); d++ )
-         if( ( point[ d ] < boxOrigin[ d ] ) || ( point[ d ] >= ( domainOrigin[ d ] + boxSize[ d ] ) ) )
+         if( ( point[ d ] < boxOrigin[ d ] ) || ( point[ d ] >= ( boxOrigin[ d ] + boxSize[ d ] ) ) )
             isInside = false;
       return isInside;
    }
 
+   //FIXME: Do I need the boxOriginCoords or not? (I think i don't need them)
    __cuda_callable__
-   bool
-   isInsideBox( const IndexVectorType& coords; const IndexArrayType& boxOriginCoords, const IndexVectorType& boxDims )
+   static bool
+   isInsideBox( const IndexVectorType& coords, const IndexArrayType& boxOriginCoords, const IndexVectorType& boxDims )
    {
       bool isInside = true;
-      for( int i = 0; i < getParticlesDimension(); i++ )
-         if( ( coords[ i ] < 0 ) || ( coords[ i ] >= gridDimensionsWithOverlap[ i ] ) )
+      for( int i = 0; i < ParticlesType::getParticlesDimension(); i++ )
+         if( ( coords[ i ] < 0 ) || ( coords[ i ] >= boxDims[ i ] ) )
             isInside = false;
       return isInside;
    }
@@ -137,7 +138,7 @@ public:
    void
    initZones( const ParticleSetPointer& ownParticles,
               const ParticleSetPointer& nbParticles,
-              const int maxNumberOfPtcsPerCell = 75 )
+              const int maxPtcsPerCell = 75 )
 /*
 initZonesRectangular( const ParticleSetPointer& ownParticles,
                       const Containers::Array< BufferSideType, Devices::Host >& sides,
@@ -147,15 +148,15 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
                       const int maxPtcsPerCell = 75 )
 */
    {
-      sides_  = sides;
+      //sides_  = sides;
 
       const VectorType globalOrig = ownParticles->getGridReferentialOrigin();
-      const VectorType ownOrigin = ownParticles->getGridOrigin();
-      const VectorType nbOrigin = nbParticles->getGridOrigin();
+      const VectorType ownOrig = ownParticles->getGridOrigin();
+      const VectorType nbOrig = nbParticles->getGridOrigin();
       const IndexVectorType ownDims = ownParticles->getGridDimensions();
       const IndexVectorType nbDims = nbParticles->getGridDimensions();
       const IndexVectorType ownDimsWithOverlap = ownParticles->getGridDimensionsWithOverlap();
-      const RealType own_sr = ownParticles->getSeachRadius();
+      const RealType own_sr = ownParticles->getSearchRadius();
       const RealType nb_sr = nbParticles->getSearchRadius();
       const IndexType overlapWidth = ownParticles->getOverlapWidth();
       const VectorType unitVect = 1;
@@ -166,28 +167,28 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
 
       assert( !(inner_overlap && outer_overlap) && "inner_overlap and outer_overlap cannot both be true!" );
 
-      bufferWidth = bufferWidthFactorConst * searchRadius;
+      bufferWidth = bufferWidthFactorConst * own_sr;
       // if zone is inner - compute from neighbors params
       if( inner_overlap ){
-         frameOrigin = nbOrig;
-         frameFrontOriginCoors = TNL::Floor( ( nbOrig - globalOrig ) / searchRadius );
+         frameFrontOrigin = nbOrig;
+         frameFrontOriginCoords = TNL::floor( ( nbOrig - globalOrig ) / own_sr );
          frameFrontDims = resolutionFactor * nbDims;
-         frameFrontEnd = frameOrigin + frameDims;
+         frameFrontEnd = frameFrontOrigin + frameFrontDims;
          frameOrientation = -1;
 
          frameBackOrigin = frameFrontOrigin + bufferWidth * unitVect;
-         frameBackSize = frameFrontSize - 2 * bufferWidth * unitVect
+         frameBackSize = frameFrontDims * nb_sr - 2 * bufferWidth * unitVect;
       }
       // if zone is outer - compute from local params
       else if( outer_overlap ) {
          frameFrontOrigin = ownOrig;
          frameFrontOriginCoords = 0;
-         franeFrontDims = ownDims;
-         frameFrontEnd = frameOrigin + frameDims;
+         frameFrontDims = ownDims;
+         frameFrontEnd = frameFrontOrigin + frameFrontDims;
          frameOrientation = 1;
 
          frameBackOrigin = frameFrontOrigin - bufferWidth * unitVect;
-         frameBackSize = frameFrontSize + 2 * bufferWidth * unitVect
+         frameBackSize = frameFrontDims * own_sr + 2 * bufferWidth * unitVect;
       }
       else {
          assert( false && "initZones: Invalid overlap state: neither inner_overlap nor outer_overlap is true!" );
@@ -195,8 +196,15 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
 
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
       //TODO: Alternatively use the two concentric frameFront and frameBack
-      zone.assignCellsFrame( frameFrontOrigin, frameDims, frameOrientation * frameWidth, ownDimesWithOverlap );
-      bufferWidth = bufferWidthFactorConst * searchRadius;
+      std::cout << "INIT: assignCellsFrame:\n"
+          << "  frameFrontOrigin: " << frameFrontOrigin << "\n"
+          << "  frameFrontDims:   " << frameFrontDims << "\n"
+          << "  frameOrientation: " << frameOrientation << "\n"
+          << "  frameWidth:       " << frameWidth << "\n"
+          << "  computed orient*width: " << (frameOrientation * frameWidth) << "\n"
+          << "  ownDimsWithOverlap: " << ownDimsWithOverlap << std::endl;
+
+      zone.assignCellsFrame( frameFrontOrigin, frameFrontDims, frameOrientation * frameWidth, ownDimsWithOverlap );
 
       // Set size of multi-resoluton algorithm arrays (NOTE: Consider setSize function)
       const IndexType n_alloc = this->getNumberOfAllocatedParticles();
@@ -230,13 +238,13 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       };
 
       // Count total nodes across all 2*dim faces
-      IndexType totalNodes = 0;
+      IndexType n_massNodes = 0;
       for( int d = 0; d < VectorType::getSize(); d++ ) {
          IndexType faceNodes = 1;
          for( int pd = 0; pd < VectorType::getSize(); pd++ )
             if( pd != d )
                faceNodes *= planeNodeCount( d, pd );
-         totalNodes += 2 * faceNodes;   // min and max face
+         n_massNodes += 2 * faceNodes;   // min and max face
       }
       massNodes.setSize( n_massNodes );
       auto points_view = massNodes.points.getView();
@@ -244,7 +252,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
 
       // Generate nodes face by face
       IndexType offset = 0;
-      for( int d = 0; d < dim; d++ ) {
+      for( int d = 0; d < VectorType::getSize(); d++ ) {
          for( int sign : { -1, +1 } ) {
 
             // Inward normal
@@ -261,7 +269,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
             // parallelFor range: [0,1) on d, [0, count) on perp axes
             IndexVectorType begin = 0, end = 0;
             end[ d ] = 1;
-            for( int pd = 0; pd < dim; pd++ )
+            for( int pd = 0; pd < VectorType::getSize(); pd++ )
                if( pd != d )
                   end[ pd ] = planeNodeCount( d, pd );
 
@@ -269,7 +277,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
             IndexVectorType stride = 0;
             {
                IndexType running = 1;
-               for( int pd = dim - 1; pd >= 0; pd-- ) {
+               for( int pd = VectorType::getSize() - 1; pd >= 0; pd-- ) {
                   if( pd == d ) continue;
                   stride[ pd ] = running;
                   running *= end[ pd ];
@@ -277,9 +285,9 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
             }
 
             // Physical start of the node grid on each perp axis
-            VectorType perpStart = frameFrontOrigin_;
+            VectorType perpStart = frameFrontOrigin;
             perpStart[ d ] = ifaceCoord;
-            for( int pd = 0; pd < dim; pd++ )
+            for( int pd = 0; pd < VectorType::getSize(); pd++ )
                if( pd != d )
                   perpStart[ pd ] += perpOriginOffset( d, pd );
 
@@ -293,12 +301,12 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
             {
                // Linearise: sum over perp axes only
                IndexType i = faceOffset;
-               for( int pd = 0; pd < dim; pd++ )
+               for( int pd = 0; pd < VectorType::getSize(); pd++ )
                   i += idx[ pd ] * stride[ pd ];
 
                // Physical position
                VectorType r = pStart;
-               for( int pd = 0; pd < dim; pd++ )
+               for( int pd = 0; pd < VectorType::getSize(); pd++ )
                   if( pd != iAxis )
                      r[ pd ] += local_dp * ( idx[ pd ] + 1 );
 
@@ -309,7 +317,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
 
             // Advance offset by number of nodes on this face
             IndexType faceNodes = 1;
-            for( int pd = 0; pd < dim; pd++ )
+            for( int pd = 0; pd < VectorType::getSize(); pd++ )
                if( pd != d ) faceNodes *= end[ pd ];
             offset += faceNodes;
          }
@@ -574,7 +582,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
       };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, moveBufferParticles );
+      Algorithms::parallelFor< DeviceType >( 0, n_buffer, moveBufferParticles );
 
       // reset retype marker
       auto retypeMarker_view = retypeMarker.getView();
@@ -590,12 +598,19 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       //const VectorType frameBackSize = frameBackSize;
       //bool inner_overlap = inner_overlap;
       //bool outer_overlap = outer_overlap;
+      const VectorType frameFrontOrigin = this->frameFrontOrigin;
+      const VectorType frameBackOrigin = this->frameBackOrigin;
+      const VectorType frameBackSize = this->frameBackSize;
+      const IndexVectorType frameFrontDims = this->frameFrontDims;
+      const IndexVectorType frameFrontOriginCoords = this->frameFrontOriginCoords;
+      const bool inner_overlap = this->inner_overlap;
+      const bool outer_overlap = this->outer_overlap;
 
       // Helper lambda: convert physical position to own grid integer coords.
       auto toGridCoord = [=] __cuda_callable__ ( const VectorType& r ) -> IndexVectorType
       {
          IndexVectorType gc;
-         gc = TNL::Floor( ( r - frameFrontOrigin ) * inv_sr ); //TODO: Static cast?
+         gc = TNL::floor( ( r - frameFrontOrigin ) * inv_sr ); //TODO: Static cast?
          return gc;
       };
 
@@ -604,10 +619,10 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       // - inner zone + is outside
       auto identifyRetype = [=] __cuda_callable__ ( IndexType i ) mutable
       {
-         const IndexVectorType gc = toGridCoord( view_r[ i ] );
+         const IndexVectorType gc = toGridCoord( view_r_buffer[ i ] );
          bool inside = isInsideBox( gc, frameFrontOriginCoords, frameFrontDims );
 
-         if( inside && outer_overlap) {
+         if( inside && outer_overlap ) {
             retypeMarker_view[ i ] = 1;
             return 1;
          }
@@ -625,7 +640,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       // TODO (?): If we would use buffer width corresponding to search radius, we can use grid to compare positions
       auto identifyRemove = [=] __cuda_callable__ ( IndexType i ) mutable
       {
-         bool inside = isInsideBox( view_r[ i ], frameBackOrigin, frameBackSize );
+         bool inside = isInsideBox( view_r_buffer[ i ], frameBackOrigin, frameBackSize );
          if( inside && inner_overlap ) {
             retypeMarker_view[ i ] = 2;
             return 1;
@@ -636,7 +651,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
          }
          return 0;
       };
-      numberOfPtcsToRemove = Algorithms::reduce< DeviceType >( 0, n, identifyRemove );
+      numberOfPtcsToRemove = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRemove );
    }
 
    void
@@ -765,8 +780,13 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       const IndexType numberOfZoneParticles = this->zone.getNumberOfParticles();
 
       const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
-      const VectorType bufferPosition = this->bufferPosition;
-      const VectorType bufferOrientation = this->bufferOrientation;
+      const IndexVectorType frameFrontDims = this->frameFrontDims;
+      const VectorType frameFrontOrigin = this->frameFrontOrigin;
+      const IndexVectorType frameFrontOriginCoords = this->frameFrontOriginCoords;
+      const bool inner_overlap = this->inner_overlap;
+      const bool outer_overlap = this->outer_overlap;
+      const RealType sr = this->getParticles()->getSearchRadius();
+      const RealType inv_sr = 1.f / sr;
 
       // Retype fluid to buffer:
       // - outer zone and is outside the frame
@@ -775,8 +795,8 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r = r_view[ p ];
-         const IndexVectorType gc = TNL::Floor( ( r - frameFrontOrigin ) * inv_sr );
-         const bool inside = isInsideBox( gc, frameFronOriginCoords, frameFrontDims );
+         const IndexVectorType gc = TNL::floor( ( r - frameFrontOrigin ) * inv_sr );
+         const bool inside = isInsideBox( gc, frameFrontOriginCoords, frameFrontDims );
 
          if( inside && inner_overlap ) {
             particlesToBuffer_view[ i ] = p;
@@ -840,6 +860,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
    {
       massNodes.massFlux = 0;
 
+      /*
       accumulateMasses( fluid_neihgbor, modelParams, dt );
       moveBufferParticles( dt );
       sortBufferParticles();
@@ -853,6 +874,36 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       createBufferParticles( modelParams );
       interpolateVariables( fluid_neihgbor, modelParams );
       this->searchForNeighbors();
+      */
+
+      std::cout << "accumulateMasses start" << std::endl;
+      accumulateMasses( fluid_neihgbor, modelParams, dt );
+      std::cout << "moveBufferParticles start" << std::endl;
+      moveBufferParticles( dt );
+      std::cout << "sortBufferParticles start" << std::endl;
+      sortBufferParticles();
+      std::cout << "removeBufferParticles start" << std::endl;
+      removeBufferParticles();
+      std::cout << "convertBufferToFluid start" << std::endl;
+      convertBufferToFluid( fluid_own );
+      std::cout << "updateParticlesInZone start" << std::endl;
+      zone.updateParticlesInZone( fluid_own->getParticles() );
+      std::cout << "getFluidParticlesEneringTheBuffer start" << std::endl;
+      getFluidParticlesEneringTheBuffer( fluid_own );
+      std::cout << "convertFluidToBuffer start" << std::endl;
+      convertFluidToBuffer( fluid_own );
+      std::cout << "updateMassNodes start" << std::endl;
+      updateMassNodes( modelParams, dt );
+      std::cout << "massNodes.sort start" << std::endl;
+      massNodes.sort();
+      std::cout << "createBufferParticles start" << std::endl;
+      createBufferParticles( modelParams );
+      std::cout << "interpolateVariables start" << std::endl;
+      interpolateVariables( fluid_neihgbor, modelParams );
+      std::cout << "searchForNeighbors start" << std::endl;
+      this->searchForNeighbors();
+      std::cout << "Pipeline finished" << std::endl;
+
 
       numberOfPtcsToRemove = 0;
       numberOfPtcsToRetype = 0;
@@ -900,9 +951,10 @@ protected:
    IndexVectorType subdomainEndCoords;
 
    //renamed
-   IndexVectorType frameFronOriginCoords;
-   IndexVectorType frameFronDims;
-   IndexVectorType frameFronEnd;
+   VectorType frameFrontOrigin;
+   IndexVectorType frameFrontOriginCoords;
+   IndexVectorType frameFrontDims;
+   IndexVectorType frameFrontEnd;
 
    VectorType frameBackOrigin;
    VectorType frameBackSize;
