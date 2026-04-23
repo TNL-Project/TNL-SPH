@@ -48,10 +48,14 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger ); //FIXME: Wrong function
 
    // initialize topology
+   std::cout << "topology.loadFromConfig()" << std::endl;
    topology.loadFromConfig( parameters, parametersSubdomains );
+   std::cout << "topology.finalizeLinear()" << std::endl;
    topology.finalizeLinear(); //FIXME: Do only if linear, maybe hide this into the topology
    // initialize particle sets
+   std::cout << "initParticleSets()" << std::endl;
    initParticleSets( parameters, parametersSubdomains, logger );
+   std::cout << "initMultiResolutionBundaryPatches()" << std::endl;
    initMultiResolutionBundaryPatches();
 #endif
 
@@ -78,8 +82,11 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
       const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
 
+      std::cout << "multiresolutionBoundaryPatches[ " << i << " ]->initMassNodes()" << std::endl;
       multiresolutionBoundaryPatches[ i ]->initMassNodes( modelParams, i, refinementFactor );
+      std::cout << "Done." << std::endl;
    }
+   std::cout << "---> multiresolutionBoundaryPatches initialized."  << std::endl;
 
    // init time stepping
    timeStepping.setTimeStep( parameters.getParameter< RealType >( "initial-time-step" ) );
@@ -92,11 +99,15 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
    outputDirectory = parameters.getParameter< std::string >( "output-directory" );
    particlesFormat = parameters.getParameter< std::string >( "particles-format" );
 
+   std::cout << "readParticlesFiles()" << std::endl;
+
 #ifdef HAVE_MPI
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
 #else
    readParticlesFiles( parameters, parametersSubdomains, logger );
 #endif
+
+   std::cout << "Done." << std::endl;
 
    // initialize the measuretool
    logger.writeSeparator();
@@ -161,6 +172,9 @@ SolverMultiSet< Model >::initMultiResolutionBundaryPatches()
 
    int mrbIdx = 0;
    for( int i = 0; i < topology.getNumberOfSubdomains(); i++ ) {
+      const std::string key = "subdomain-" + std::to_string( i ) + "-";
+      const float rf = parametersSubdomains.getParameter< float >( key + "refinement-factor" );
+
       for( const auto& iface : topology.getInterfacesOfSubdomain( i ) ) {
 
          multiresolutionBoundaryPatches[ mrbIdx ]->initializeAsDistributed(
@@ -173,7 +187,8 @@ SolverMultiSet< Model >::initMultiResolutionBundaryPatches()
 
          multiresolutionBoundaryPatches[ mrbIdx ]->initZones(
             fluidSets[ iface.ownIdx ]->getParticles(),
-            fluidSets[ iface.neighborIdx ]->getParticles() ); //FIXME: Add max number of particles per cell, compute from params
+            fluidSets[ iface.neighborIdx ]->getParticles(),
+            rf ); //FIXME: Add max number of particles per cell, compute from params, I also dont need rf
 
          mrbIdx++;
       }
@@ -350,18 +365,18 @@ SolverMultiSet< Model >::performNeighborSearch( TNL::Logger& logger, bool perfor
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
-         //std::cout << "Search fluid set i: " << i << std::endl;
+         std::cout << "Search fluid set i: " << i << std::endl;
          fluidSets[ i ]->searchForNeighbors();
          if( verbose == "full" )
             logger.writeParameter( "Fluid search procedure:", "Done." );
 
          if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
-            //std::cout << "Searching boundary set i: " << i << std::endl;
+            std::cout << "Searching boundary set i: " << i << std::endl;
             boundarySets[ i ]->searchForNeighbors();
             if( verbose == "full" )
                logger.writeParameter( "Boundary search procedure:", "Done." );
          }
-         //std::cout << "Searching multiresolution patch i: " << i << std::endl;
+         std::cout << "Searching multiresolution patch i: " << i << std::endl;
          multiresolutionBoundaryPatches[ i ]->searchForNeighbors();
          if( verbose == "full" )
             logger.writeParameter( "Multiresolution patch search procedure:", "Done." );
@@ -469,11 +484,14 @@ SolverMultiSet< Model >::applyMultiresolutionBC()
 {
    // express the terms manually
 
+   std::cout << "---> Updating multiresolution buffer 0" << std::endl;
    multiresolutionBoundaryPatches[ 0 ]->updateInterfaceBuffer(
          fluidSets[ 0 ], fluidSets[ 1 ], modelParams, timeStepping.getTimeStep(), 0 );
    //std::cout << "/ * * * * * * * * * * * * *  * * * * * * * * * * ** * * * * * * * * ** * * * /" << std::endl;
+   std::cout << "---> Updating multiresolution buffer 1" << std::endl;
    multiresolutionBoundaryPatches[ 1 ]->updateInterfaceBuffer(
          fluidSets[ 1 ], fluidSets[ 0 ], modelParams, timeStepping.getTimeStep(), 1 );
+   std::cout << "Multiresolution buffer updates." << std::endl;
 }
 
 template< typename Model >

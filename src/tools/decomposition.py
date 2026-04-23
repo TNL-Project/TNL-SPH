@@ -30,6 +30,24 @@ class SubdomainGrid:
     fluid_n:       int   = 0
     boundary_n:    int   = 0
 
+#TODO: Is this necessary?
+@dataclass
+class RectangularRefinementDef:
+    """
+    Describes a nested rectangular fine region inside a coarse domain.
+    The coarse domain covers the full domain; particles inside fine_* bounds
+    are skipped during coarse particle generation.
+    fine_factor: refinement factor for the fine region (< 1.0)
+    """
+    fine_factor: float
+    fine_x_min:  float
+    fine_x_max:  float
+    fine_y_min:  float
+    fine_y_max:  float
+    fine_z_min:  float = -math.inf
+    fine_z_max:  float =  math.inf
+
+
 def build_subdomain_grids(defs: List[SubdomainDef], setup: dict) -> List[SubdomainGrid]:
     """
     Convert physical SubdomainDefs into SubdomainGrid objects.
@@ -91,6 +109,32 @@ def build_subdomain_grids(defs: List[SubdomainDef], setup: dict) -> List[Subdoma
         ))
 
     return grids
+
+def build_rectangular_subdomain_grids(
+        rdef:  RectangularRefinementDef,
+        setup: dict
+) -> tuple:   # returns (coarse_grid, fine_grid)
+    """
+    Build two SubdomainGrid objects for a rectangular nested refinement:
+      - coarse_grid: covers the full domain (factor = 1.0)
+      - fine_grid:   covers the fine rectangle (factor = rdef.fine_factor)
+
+    The coarse grid's phys bounds are the full domain — the caller is
+    responsible for skipping particles inside the fine region during
+    particle generation (use the 'exclusion_box' returned alongside).
+    """
+    # Reuse the existing linear builder for both grids
+    coarse_def = SubdomainDef(factor=1.0)   # full domain
+    fine_def   = SubdomainDef(
+        factor = rdef.fine_factor,
+        x_min  = rdef.fine_x_min,  x_max = rdef.fine_x_max,
+        y_min  = rdef.fine_y_min,  y_max = rdef.fine_y_max,
+        z_min  = rdef.fine_z_min,  z_max = rdef.fine_z_max,
+    )
+    coarse_grid, fine_grid = build_subdomain_grids([coarse_def, fine_def], setup)
+    coarse_grid.index = 0
+    fine_grid.index   = 1
+    return coarse_grid, fine_grid
 
 def write_distributed_domain_params(grids: List[SubdomainGrid], setup: dict) -> None:
     h0    = setup["search_radius"]
