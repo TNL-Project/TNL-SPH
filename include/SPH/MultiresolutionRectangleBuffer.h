@@ -105,7 +105,8 @@ public:
    using MfdMatrixType = typename MFD::BaseMatrixType;
    using MfdVectorPackType = Containers::StaticArray< VectorType::getSize(), MfdVectorType >; //TODO: Remove for pure 3D
 
-   static constexpr RealType bufferWidthFactorConst = 1.5f;
+   //static constexpr RealType bufferWidthFactorConst = 1.5f; //FIXME IT CAN NOT BE LARGER THEN THE CELL WIDTH (I would like to have like this, but then, removal of particles needs to be changed)
+   static constexpr RealType bufferWidthFactorConst = 1; //FIXME IT CAN NOT BE LARGER THEN THE CELL WIDTH (I would like to have like this, but then, removal of particles needs to be changed)
    static constexpr int frameWidth = 2;
 
    MultiresolutionBoundary() = default;
@@ -117,7 +118,7 @@ public:
    {
       bool isInside = true;
       for( int d = 0; d < VectorType::getSize(); d++ )
-         if( ( point[ d ] < boxOrigin[ d ] ) || ( point[ d ] >= ( boxOrigin[ d ] + boxSize[ d ] ) ) )
+         if( ( point[ d ] < boxOrigin[ d ] ) || ( point[ d ] > ( boxOrigin[ d ] + boxSize[ d ] ) ) ) //FIXME FIXME Disgusting trick to prevent PhysCoords instead of GirdCoords
             isInside = false;
       return isInside;
    }
@@ -203,6 +204,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
          frameBackOrigin = frameFrontOrigin + bufferWidth * unitVect;
          //frameBackSize = frameFrontDims * nb_sr - 2 * bufferWidth * unitVect;
          frameBackSize = frameFrontDims * own_sr - 2 * bufferWidth * unitVect;
+         frameBackDims = frameFrontDims - 2;
       }
       // if zone is outer - compute from local params
       else if( outer_overlap ) {
@@ -214,10 +216,39 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
 
          frameBackOrigin = frameFrontOrigin - bufferWidth * unitVect;
          frameBackSize = frameFrontDims * own_sr + 2 * bufferWidth * unitVect;
+         frameBackDims = frameFrontDims + 2;
       }
       else {
          assert( false && "initZones: Invalid overlap state: neither inner_overlap nor outer_overlap is true!" );
       }
+
+      std::cout << "=== DEBUG ZONE INIT START ===\n";
+
+      std::cout << "own_sr: " << own_sr << "\n";
+      std::cout << "bufferWidthFactorConst: " << bufferWidthFactorConst << "\n";
+      std::cout << "bufferWidth: " << bufferWidth << "\n";
+
+      std::cout << "inner_overlap: " << inner_overlap << "\n";
+      std::cout << "outer_overlap: " << outer_overlap << "\n";
+
+      std::cout << "nbOrig: " << nbOrig << "\n";
+      std::cout << "globalOrig: " << globalOrig << "\n";
+      std::cout << "nbDims: " << nbDims << "\n";
+      std::cout << "ownDims: " << ownDims << "\n";
+      std::cout << "resolutionFactor: " << resolutionFactor << "\n";
+
+      std::cout << "unitVect: " << unitVect << "\n";
+
+      std::cout << "frameFrontOrigin: " << frameFrontOrigin << "\n";
+      std::cout << "frameFrontOriginCoords: " << frameFrontOriginCoords << "\n";
+      std::cout << "frameFrontDims: " << frameFrontDims << "\n";
+      std::cout << "frameFrontEnd: " << frameFrontEnd << "\n";
+      std::cout << "frameOrientation: " << frameOrientation << "\n";
+
+      std::cout << "frameBackOrigin: " << frameBackOrigin << "\n";
+      std::cout << "frameBackSize: " << frameBackSize << "\n";
+
+      std::cout << "=== DEBUG ZONE INIT END ===\n";
 
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
       //TODO: Alternatively use the two concentric frameFront and frameBack
@@ -804,6 +835,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       const VectorType frameFrontOrigin = this->frameFrontOrigin;
       const VectorType frameBackOrigin = this->frameBackOrigin;
       const VectorType frameBackSize = this->frameBackSize;
+      const IndexVectorType frameBackDims = this->frameBackDims;
       const IndexVectorType frameFrontDims = this->frameFrontDims;
       const IndexVectorType frameFrontOriginCoords = this->frameFrontOriginCoords;
       const bool inner_overlap = this->inner_overlap;
@@ -815,12 +847,19 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       std::cout << "frameFrontOrigin: " << frameFrontOrigin << "\n";
       std::cout << "frameBackOrigin: " << frameBackOrigin << "\n";
       std::cout << "frameBackSize: " << frameBackSize << "\n";
+      std::cout << "frameBackDims: " << frameBackDims << "\n";
 
       std::cout << "frameFrontDims: " << frameFrontDims << "\n";
       std::cout << "frameFrontOriginCoords: " << frameFrontOriginCoords << "\n";
 
       std::cout << "inner_overlap: " << inner_overlap << "\n";
       std::cout << "outer_overlap: " << outer_overlap << "\n";
+      std::cout << "******** \n";
+      std::cout << "particles_orig: " << this->getParticles()->getGridOrigin() << "\n";
+      std::cout << "particles_orig_with_overlap: " << this->getParticles()->getGridOriginWithOverlap() << "\n";
+      std::cout << "particles_ref_orig: " << this->getParticles()->getGridReferentialOrigin() << "\n";
+      std::cout << "particles_dim: " << this->getParticles()->getGridDimensions() << "\n";
+      std::cout << "particles_dim_with_overlap: " <<  this->getParticles()->getGridDimensionsWithOverlap() << "\n";
       std::cout << "===================================================" << std::endl;
 
 
@@ -853,13 +892,42 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       };
       numberOfPtcsToRetype = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRetype );
 
+      // // Remove invalid buffe particles
+      // // - outer zone - is outside the ( subdomain box + zone width )
+      // // - inner zone - is insde the ( subdomain box - zone width )
+      // // TODO (?): If we would use buffer width corresponding to search radius, we can use grid to compare positions
+      // auto identifyRemove = [=] __cuda_callable__ ( IndexType i ) mutable
+      // {
+      //    //const IndexVectorType gc =
+      //    bool inside = isInsideBox( view_r_buffer[ i ], frameBackOrigin, frameBackSize );
+      //    //DEBUG
+      //    if( view_r_buffer[ i ][1] >= 0.3 )
+      //       printf( "[ x:%f, y:%f,  inside: %d ] ", view_r_buffer[ i ][0], view_r_buffer[ i ][1], inside );
+      //    //\DEBUG
+      //    if( inside && inner_overlap ) {
+      //       retypeMarker_view[ i ] = 2;
+      //       return 1;
+      //    }
+      //    else if( !inside && outer_overlap ) {
+      //       retypeMarker_view[ i ] = 2;
+      //       return 1;
+      //    }
+      //    return 0;
+      // };
+      // numberOfPtcsToRemove = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRemove );
+
       // Remove invalid buffe particles
       // - outer zone - is outside the ( subdomain box + zone width )
       // - inner zone - is insde the ( subdomain box - zone width )
       // TODO (?): If we would use buffer width corresponding to search radius, we can use grid to compare positions
       auto identifyRemove = [=] __cuda_callable__ ( IndexType i ) mutable
       {
-         bool inside = isInsideBox( view_r_buffer[ i ], frameBackOrigin, frameBackSize );
+         const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameBackOrigin ) * inv_sr ); //for outer
+         bool inside = isInsideBox( gc, frameBackDims );
+         //DEBUG
+         if( view_r_buffer[ i ][1] >= 0.3 )
+            printf( "[ x:%f, y:%f,  inside: %d ] ", view_r_buffer[ i ][0], view_r_buffer[ i ][1], inside );
+         //\DEBUG
          if( inside && inner_overlap ) {
             retypeMarker_view[ i ] = 2;
             return 1;
@@ -1039,7 +1107,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
          const bool inside = isInsideBox( gc, frameFrontDims );
          //DEBUG
          //if(i<5){
-            printf( "[ x:%f, y:%f, gcx: %d, gcy: %d, inside: %d ] ", r[0], r[1], gc[0], gc[1], inside );
+         //   printf( "[ x:%f, y:%f, gcx: %d, gcy: %d, inside: %d ] ", r[0], r[1], gc[0], gc[1], inside );
          //}
          //\DEBUG
 
@@ -1220,6 +1288,7 @@ protected:
    IndexVectorType frameFrontDims;
    IndexVectorType frameFrontEnd;
 
+   IndexVectorType frameBackDims;
    VectorType frameBackOrigin;
    VectorType frameBackSize;
 

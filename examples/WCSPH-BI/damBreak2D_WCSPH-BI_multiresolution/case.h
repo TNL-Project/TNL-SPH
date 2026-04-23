@@ -44,39 +44,60 @@ int main( int argc, char* argv[] )
 
       // search for neighbros
       sph.timeMeasurement.start( "search" );
-      //TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 1 ], sph.modelParams );
+      TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 0 ], sph.modelParams );
+      TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 1 ], sph.modelParams );
+      sph.writeLog( log, "Remove particles out of domain...", "" );
+      std::cout << "Remove particles out of domain." << std::endl;
       sph.removeParticlesOutOfDomain( log );
+      sph.writeLog( log, "Remove particles out of domain...", "Done." );
 
       //sph.performNeighborSearch( log, true );
+      sph.writeLog( log, "Search...", "" );
+      std::cout << "Search for neighbors." << std::endl;
       sph.performNeighborSearch( log  );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
 
       // perform interaction with given model
+      std::cout << "On my way to interact" << std::endl;
       sph.timeMeasurement.start( "interact" );
       sph.interact();
       BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 0 ], sph.boundarySets[ 0 ], sph.modelParams, sph.timeStepping.getTimeStep() );
+      std::cout << "Interaction done for set 0." << std::endl;
       BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 1 ], sph.boundarySets[ 1 ], sph.modelParams, sph.timeStepping.getTimeStep() );
+      std::cout << "Interaction done for set 1." << std::endl;
       sph.timeMeasurement.stop( "interact" );
       sph.writeLog( log, "Interact...", "Done." );
 
       // in case of variable time step, compute the step
       sph.computeTimeStep();
+      std::cout << "I have new time step." << std::endl;
+
 
       //integrate
       sph.timeMeasurement.start( "integrate" );
       sph.integrator->integratStepVerlet( sph.fluidSets[ 0 ], sph.boundarySets[ 0 ], sph.timeStepping, false );
+      std::cout << "Integration done for set 0." << std::endl;
       sph.integrator->integratStepVerlet( sph.fluidSets[ 1 ], sph.boundarySets[ 1 ], sph.timeStepping, false );
+      std::cout << "Integration done for set 1." << std::endl;
       sph.timeMeasurement.stop( "integrate" );
       sph.writeLog( log, "Integrate...", "Done." );
 
       // output particle data
+      std::cout << "Making snapshot" << std::endl;
       sph.makeSnapshot( log );
+      std::cout << "Snapshot done" << std::endl;
       // check timers and if measurement or interpolation should be performed, is performed
       //sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
 
+      //DEBUG
+      //if( sph.timeStepping.getTime() > 0.870)
+      //   sph.save( log, false );
+
       // update MR buffer
+      std::cout << "Applying MR buffer condition" << std::endl;
       sph.applyMultiresolutionBC();
+      std::cout << "Done" << std::endl;
 
       // update time step
       sph.updateTime();

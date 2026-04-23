@@ -65,8 +65,8 @@ public:
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
-   //using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
-   using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
+   //using BCType = TNL::SPH::WCSPH_BCTypes::BIConsistent_numeric;
+   using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
    using EOS = TNL::SPH::EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< SPHConfig >;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
