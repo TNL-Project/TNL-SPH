@@ -439,6 +439,14 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
    const int w    = TNL::abs( frameWidth );
    const int sign = ( frameWidth >= 0 ) ? 1 : -1;  // +1 outward, -1 inward
 
+   std::cout << "\n[assignCellsFrame] ========================================\n"
+             << "  frameFrontOrigin : " << frameFrontOrigin << "\n"
+             << "  frameFrontDims   : " << frameFrontDims   << "\n"
+             << "  frameWidth       : " << frameWidth << "  (w=" << w << ", sign=" << sign << ")\n"
+             << "  gridSize         : " << gridSize         << "\n"
+             << "  spaceDimension   : " << dim              << "\n"
+             << "============================================================\n";
+
    // -----------------------------------------------------------------------
    // Pass 1 — count total cells across all layers and faces on CPU.
    // One layer = one shell at offset k from the frame boundary.
@@ -501,9 +509,11 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 
    for( int layer = 0; layer < w; layer++ ) {
       const int expand = sign * layer;
+      std::cout << " &&& expand: " << expand << std::endl;
 
       for( int d = 0; d < dim; d++ ) {
          for( int s : { -1, +1 } ) {
+            std::cout << " &&&&& d: " << d << " s: " << s << std::endl;
 
             // Cell coordinate on the interface axis for this face+layer
             const GlobalIndexType ifaceCoord = ( s < 0 )
@@ -542,7 +552,8 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
             }
 
             // Clamp ifaceCoord — skip face entirely if outside domain
-            if( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] ) {
+            if( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] ) { //FIXME:
+            //if( ifaceCoord < -1 || ifaceCoord >= ( gridSize[ d ] - 1 ) ) { //FIXME:
                // Still advance offset by the face node count
                GlobalIndexType faceNodes = 1;
                for( int pd = 0; pd < dim; pd++ )
@@ -559,12 +570,14 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 
             // DEBUG PLAYGROUND
             std::cout
-                << "layer: " << layer
-                << ", faceOffset: " << faceOffset
-                << ", iAxis: " << iAxis
-                << ", iCoord: " << iCoord
-                << ", pOrigin: " << pOrigin
-                << ", gs: " << gs
+                << " ===> layer: " << layer
+                << " ===> , faceOffset: " << faceOffset
+                << " ===> , iAxis: " << iAxis
+                << " ===> , iCoord: " << iCoord
+                << " ===> , pOrigin: " << pOrigin
+                << " ===> , end: " << end
+                << " ===> , stride: " << stride
+                << " ===> , gs: " << gs
                 << std::endl;
             //\DEBUG PLAYGROUND
 
@@ -585,6 +598,197 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
                // Skip if outside domain (clamped count should prevent this,
                // but guard against rounding at corners)
                for( int pd = 0; pd < dim; pd++ )
+                  if( c[ pd ] < 0 || c[ pd ] >= gs[ pd ] ) return; //FIXME
+                  //if( c[ pd ] < -1 || c[ pd ] >= ( gs[ pd ] - 1 ) ) return; //FIXME
+
+               printf(" [ %d, %d ] ", c[0], c[1]);
+               cellsInZone_view[ i ] = CellIndexer::EvaluateCellIndex( c, gs );
+            };
+
+            if constexpr( dim == 2 )
+               Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0}, end, fill );
+            else
+               Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0,0}, end, fill );
+            std::cout << std::endl;
+
+            GlobalIndexType faceNodes = 1;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d ) faceNodes *= end[ pd ];
+            offset += faceNodes;
+         }
+      }
+   }
+}
+
+/*
+template< typename ParticleConfig, typename DeviceType >
+void
+ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
+   const IndexVectorType frameFrontOrigin,
+   const IndexVectorType frameFrontDims,
+   const int             frameWidth,
+   const IndexVectorType gridSize )
+{
+   constexpr int dim = ParticleConfig::spaceDimension;
+   const int w    = TNL::abs( frameWidth );
+   const int sign = ( frameWidth >= 0 ) ? 1 : -1;  // +1 outward, -1 inward
+
+   std::cout << "\n[assignCellsFrame] ========================================\n"
+             << "  frameFrontOrigin : " << frameFrontOrigin << "\n"
+             << "  frameFrontDims   : " << frameFrontDims   << "\n"
+             << "  frameWidth       : " << frameWidth << "  (w=" << w << ", sign=" << sign << ")\n"
+             << "  gridSize         : " << gridSize         << "\n"
+             << "  spaceDimension   : " << dim              << "\n"
+             << "============================================================\n";
+
+   // -----------------------------------------------------------------------
+   // Pass 1 — count total cells across all layers and faces on CPU.
+   // One layer = one shell at offset k from the frame boundary.
+   // -----------------------------------------------------------------------
+   this->numberOfCellsInZone = 0;
+
+   auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
+   {
+      const int expand = sign * layer;
+
+      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
+      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+
+      for( int d = 0; d < faceAxis; d++ )
+         if( d != perpAxis ) {
+            faceOrigin++;
+            faceEnd--;
+         }
+
+      faceOrigin = TNL::max( faceOrigin, 0 );
+      faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+
+      return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
+   };
+
+   std::cout << "\n[Pass 1] Counting cells per layer/face\n";
+   for( int layer = 0; layer < w; layer++ ) {
+      const int expand = sign * layer;
+      GlobalIndexType layerTotal = 0;
+      std::cout << "  [layer " << layer << "] expand=" << expand << "\n";
+
+      for( int d = 0; d < dim; d++ ) {
+         std::cout << "    [axis d=" << d << "]\n";
+
+         for( int s : { -1, +1 } ) {
+            GlobalIndexType faceNodes = 1;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d )
+                  faceNodes *= clampedFaceCount( layer, d, sign, pd );
+            this->numberOfCellsInZone += faceNodes;
+            layerTotal += faceNodes;
+            std::cout << "      [face s=" << std::setw(2) << s << "]  faceNodes=" << faceNodes
+                      << "  (runningTotal=" << this->numberOfCellsInZone << ")\n";
+         }
+      }
+      std::cout << "  [layer " << layer << "] subtotal=" << layerTotal << "\n";
+   }
+   std::cout << "[Pass 1] DONE — numberOfCellsInZone=" << this->numberOfCellsInZone << "\n";
+
+   cellsInZone.resize( this->numberOfCellsInZone );
+   numberOfParticlesInCell.resize( this->numberOfCellsInZone );
+   particlesInZone.resize( this->numberOfCellsInZone * numberOfParticlesPerCell );
+
+   std::cout << "\n[Resize] cellsInZone         = " << this->numberOfCellsInZone << "\n"
+             << "[Resize] numberOfParticlesInCell = " << this->numberOfCellsInZone << "\n"
+             << "[Resize] particlesInZone         = " << this->numberOfCellsInZone * numberOfParticlesPerCell
+             << "  (perCell=" << numberOfParticlesPerCell << ")\n";
+
+   auto cellsInZone_view = this->cellsInZone.getView();
+
+   // -----------------------------------------------------------------------
+   // Pass 2 — fill cells layer by layer, face by face.
+   // -----------------------------------------------------------------------
+   GlobalIndexType offset = 0;
+
+   std::cout << "\n[Pass 2] Filling cells\n";
+   for( int layer = 0; layer < w; layer++ ) {
+      const int expand = sign * layer;
+      std::cout << "\n  [layer " << layer << "] expand=" << expand
+                << "  offset-at-layer-start=" << offset << "\n";
+
+      for( int d = 0; d < dim; d++ ) {
+         std::cout << "    [axis d=" << d << "]\n";
+
+         for( int s : { -1, +1 } ) {
+            const GlobalIndexType ifaceCoord = ( s < 0 )
+                  ? frameFrontOrigin[ d ] - expand - ( sign > 0 ? 1 : 0 )
+                  : frameFrontOrigin[ d ] + frameFrontDims[ d ] + expand - ( sign > 0 ? 0 : 1 );
+
+            IndexVectorType begin = 0, end = 0;
+            end[ d ] = 1;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d )
+                  end[ pd ] = clampedFaceCount( layer, d, sign, pd );
+
+            IndexVectorType stride = 0;
+            {
+               GlobalIndexType running = 1;
+               for( int pd = dim - 1; pd >= 0; pd-- ) {
+                  if( pd == d ) continue;
+                  stride[ pd ] = running;
+                  running     *= end[ pd ];
+               }
+            }
+
+            IndexVectorType perpOrigin = 0;
+            perpOrigin[ d ] = ifaceCoord;
+            for( int pd = 0; pd < dim; pd++ ) {
+               if( pd == d ) continue;
+               GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+               for( int d2 = 0; d2 < d; d2++ )
+                  if( d2 != pd ) o++;
+               perpOrigin[ pd ] = TNL::max( o, 0 );
+            }
+
+            GlobalIndexType faceNodes = 1;
+            for( int pd = 0; pd < dim; pd++ )
+               if( pd != d ) faceNodes *= end[ pd ];
+
+            const bool outOfDomain = ( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] );
+
+            std::cout << "      [face s=" << std::setw(2) << s << "]"
+                      << "  ifaceCoord=" << ifaceCoord
+                      << "  perpOrigin=" << perpOrigin
+                      << "  end="        << end
+                      << "  stride="     << stride
+                      << "  faceNodes="  << faceNodes
+                      << "  offset="     << offset;
+
+            if( outOfDomain ) {
+               std::cout << "  => SKIPPED (ifaceCoord=" << ifaceCoord
+                         << " outside [0," << gridSize[ d ] << "))\n";
+               offset += faceNodes;
+               continue;
+            }
+
+            std::cout << "  => FILLING cellsInZone[" << offset
+                      << ".." << offset + faceNodes - 1 << "]\n";
+
+            const GlobalIndexType    faceOffset  = offset;
+            const int          iAxis       = d;
+            const GlobalIndexType    iCoord      = ifaceCoord;
+            const IndexVectorType pOrigin  = perpOrigin;
+            const IndexVectorType gs       = gridSize;
+
+            auto fill = [=] __cuda_callable__ ( const IndexVectorType idx ) mutable
+            {
+               GlobalIndexType i = faceOffset;
+               for( int pd = 0; pd < dim; pd++ )
+                  i += idx[ pd ] * stride[ pd ];
+
+               IndexVectorType c = pOrigin;
+               c[ iAxis ] = iCoord;
+               for( int pd = 0; pd < dim; pd++ )
+                  if( pd != iAxis )
+                     c[ pd ] += idx[ pd ];
+
+               for( int pd = 0; pd < dim; pd++ )
                   if( c[ pd ] < 0 || c[ pd ] >= gs[ pd ] ) return;
 
                cellsInZone_view[ i ] = CellIndexer::EvaluateCellIndex( c, gs );
@@ -595,14 +799,19 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
             else
                Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0,0}, end, fill );
 
-            GlobalIndexType faceNodes = 1;
-            for( int pd = 0; pd < dim; pd++ )
-               if( pd != d ) faceNodes *= end[ pd ];
             offset += faceNodes;
          }
       }
+      std::cout << "  [layer " << layer << "] offset-at-layer-end=" << offset << "\n";
    }
+
+   std::cout << "\n[Pass 2] DONE — final offset=" << offset
+             << "  (expected numberOfCellsInZone=" << this->numberOfCellsInZone << ")"
+             << ( offset == this->numberOfCellsInZone ? "  [OK]\n" : "  [MISMATCH!]\n" );
+   std::cout << "[assignCellsFrame] ==================== END ================\n\n";
 }
+*/
+
 
 template< typename ParticleConfig, typename DeviceType >
 template< typename Array >
@@ -786,6 +995,7 @@ ParticleZone< ParticleConfig, DeviceType >::writeProlog( TNL::Logger& logger ) c
    logger.writeParameter( "Number of cells in zone:", numberOfCellsInZone, 1 );
 }
 
+/*
 template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
@@ -883,6 +1093,125 @@ ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
 
    f.close();
    std::cout << "saveZoneToVTK: wrote " << n << " cells to " << filename << std::endl;
+}
+*/
+
+template< typename ParticleConfig, typename DeviceType >
+void
+ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
+   const std::string&    filename,
+   const IndexVectorType gridSize,
+   const PointType       gridOrigin,
+   const RealType        searchRadius ) const
+{
+   constexpr int dim = ParticleConfig::spaceDimension;
+
+   // Copy to host
+   TNL::Containers::Array< GlobalIndexType, TNL::Devices::Host, GlobalIndexType >
+         cells( this->numberOfCellsInZone );
+   cells = this->cellsInZone;
+
+   const GlobalIndexType n          = this->numberOfCellsInZone;
+   const int             cornersPerCell = ( dim == 2 ) ? 4 : 8;
+   const int             vtkType        = ( dim == 2 ) ? 8 : 11;  // VTK_PIXEL / VTK_VOXEL
+
+   std::ofstream f( filename );
+   if( !f )
+      throw std::runtime_error( "saveZoneToVTK: cannot open " + filename );
+
+   // -----------------------------------------------------------------------
+   // Header
+   // -----------------------------------------------------------------------
+   f << "# vtk DataFile Version 3.0\n"
+     << "ParticleZone\n"
+     << "ASCII\n"
+     << "DATASET UNSTRUCTURED_GRID\n";
+
+   // -----------------------------------------------------------------------
+   // Points — one cell = cornersPerCell points
+   // -----------------------------------------------------------------------
+   f << "POINTS " << n * cornersPerCell << " float\n";
+   for( GlobalIndexType ci = 0; ci < n; ci++ ) {
+
+      //// Decode flat index → integer grid coords
+      //GlobalIndexType idx = cells[ ci ];
+      //IndexVectorType gc  = 0;
+      //if constexpr( dim == 2 ) {
+      //   gc[ 0 ] = idx % gridSize[ 0 ];
+      //   gc[ 1 ] = idx / gridSize[ 0 ];
+      //} else {
+      //   gc[ 0 ] = idx % gridSize[ 0 ];
+      //   gc[ 1 ] = ( idx / gridSize[ 0 ] ) % gridSize[ 1 ];
+      //   gc[ 2 ] = idx / ( gridSize[ 0 ] * gridSize[ 1 ] );
+      //}
+
+      // Physical origin of this cell
+      const IndexVectorType gc = CellIndexer::GetCellCoordinates( cells[ ci ], gridSize );
+      const float x0 = gridOrigin[ 0 ] + gc[ 0 ] * searchRadius;
+      const float y0 = gridOrigin[ 1 ] + gc[ 1 ] * searchRadius;
+      const float z0 = ( dim == 3 ) ? gridOrigin[ 2 ] + gc[ 2 ] * searchRadius : 0.f;
+      const float sr = static_cast< float >( searchRadius );
+
+      // Write corners in VTK_PIXEL / VTK_VOXEL order
+      if constexpr( dim == 2 ) {
+         f << x0      << " " << y0      << " 0\n";
+         f << x0 + sr << " " << y0      << " 0\n";
+         f << x0      << " " << y0 + sr << " 0\n";
+         f << x0 + sr << " " << y0 + sr << " 0\n";
+      } else {
+         f << x0      << " " << y0      << " " << z0      << "\n";
+         f << x0 + sr << " " << y0      << " " << z0      << "\n";
+         f << x0      << " " << y0 + sr << " " << z0      << "\n";
+         f << x0 + sr << " " << y0 + sr << " " << z0      << "\n";
+         f << x0      << " " << y0      << " " << z0 + sr << "\n";
+         f << x0 + sr << " " << y0      << " " << z0 + sr << "\n";
+         f << x0      << " " << y0 + sr << " " << z0 + sr << "\n";
+         f << x0 + sr << " " << y0 + sr << " " << z0 + sr << "\n";
+      }
+   }
+
+   // -----------------------------------------------------------------------
+   // Cells
+   // -----------------------------------------------------------------------
+   f << "CELLS " << n << " " << n * ( cornersPerCell + 1 ) << "\n";
+   for( GlobalIndexType ci = 0; ci < n; ci++ ) {
+      f << cornersPerCell;
+      for( int p = 0; p < cornersPerCell; p++ )
+         f << " " << ci * cornersPerCell + p;
+      f << "\n";
+   }
+
+   // -----------------------------------------------------------------------
+   // Cell types
+   // -----------------------------------------------------------------------
+   f << "CELL_TYPES " << n << "\n";
+   for( GlobalIndexType ci = 0; ci < n; ci++ )
+      f << vtkType << "\n";
+
+   // -----------------------------------------------------------------------
+   // Cell data — flat index and grid coords for inspection in ParaView
+   // -----------------------------------------------------------------------
+   f << "CELL_DATA " << n << "\n";
+
+   f << "SCALARS flat_index int 1\nLOOKUP_TABLE default\n";
+   for( GlobalIndexType ci = 0; ci < n; ci++ )
+      f << cells[ ci ] << "\n";
+
+   f << "SCALARS gc_x int 1\nLOOKUP_TABLE default\n";
+   for( GlobalIndexType ci = 0; ci < n; ci++ )
+      f << cells[ ci ] % gridSize[ 0 ] << "\n";
+
+   f << "SCALARS gc_y int 1\nLOOKUP_TABLE default\n";
+   for( GlobalIndexType ci = 0; ci < n; ci++ )
+      f << ( cells[ ci ] / gridSize[ 0 ] ) % gridSize[ 1 ] << "\n";
+
+   if constexpr( dim == 3 ) {
+      f << "SCALARS gc_z int 1\nLOOKUP_TABLE default\n";
+      for( GlobalIndexType ci = 0; ci < n; ci++ )
+         f << cells[ ci ] / ( gridSize[ 0 ] * gridSize[ 1 ] ) << "\n";
+   }
+
+   std::cout << "saveZoneToVTK: " << n << " cells → " << filename << "\n";
 }
 
 } // Particles

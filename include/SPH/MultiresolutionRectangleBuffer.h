@@ -249,11 +249,17 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       std::cout << "frameBackSize: " << frameBackSize << "\n";
 
       std::cout << "=== DEBUG ZONE INIT END ===\n";
+      std::cout << " **** origin: " << this->getParticles()->getGridOrigin() << std::endl;
+      std::cout << " **** origin with overlap: " << this->getParticles()->getGridOriginWithOverlap() << std::endl;
+      std::cout << " **** origin glob coords: " << this->getParticles()->getGridOriginGlobalCoords() << std::endl;
+      std::cout << " **** grid dimensions: " << this->getParticles()->getGridDimensions() << std::endl;
+      std::cout << " **** grid dimensions with overlap: " << this->getParticles()->getGridDimensionsWithOverlap() << std::endl;
 
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
       //TODO: Alternatively use the two concentric frameFront and frameBack
       std::cout << "INIT: assignCellsFrame:\n"
           << "  frameFrontOrigin: " << frameFrontOrigin << "\n"
+          << "  frameFrontOriginCoords: " << frameFrontOriginCoords << "\n"
           << "  frameFrontDims:   " << frameFrontDims << "\n"
           << "  frameOrientation: " << frameOrientation << "\n"
           << "  frameWidth:       " << frameWidth << "\n"
@@ -261,13 +267,28 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
           << "  ownDimsWithOverlap: " << ownDimsWithOverlap << std::endl;
 
       //zone.assignCellsFrame( frameFrontOrigin, frameFrontDims, frameOrientation * frameWidth, ownDimsWithOverlap );
-      zone.assignCellsFrame( frameFrontOriginCoords, frameFrontDims, frameOrientation * frameWidth, ownDimsWithOverlap );
-      //zone.assignCellsFrame( frameFrontOriginCoords, (-1) * frameFrontDims, frameOrientation * frameWidth, ownDimsWithOverlap ); //FIXME: The zone is extruded in different dirrection then massnodes
-      const std::string outpufilename = "results/zone_debug" + std::to_string(own_sr) + ".vtk";
-      zone.saveZoneToVTK( outpufilename,
-                    frameFrontDims,
-                    frameFrontOrigin,
-                    ownParticles->getSearchRadius() );
+      //zone.assignCellsFrame( frameFrontOriginCoords, frameFrontDims, frameOrientation * frameWidth, ownDimsWithOverlap );
+      //---------------
+      // Trick: Resize the zone to cover one layer more
+      IndexVectorType zoneOrigin;
+      IndexVectorType zoneDimensions;
+      if( inner_overlap ){
+         zoneOrigin = frameFrontOriginCoords + 1;
+         zoneDimensions = frameFrontDims - 2;
+      }
+      if( outer_overlap ){
+         //zoneOrigin = frameFrontOriginCoords - 1;
+         zoneOrigin = 0; //NOTE: Due to grid origin with overlap
+         zoneDimensions = frameFrontDims + 2;
+      }
+      zone.assignCellsFrame( zoneOrigin, zoneDimensions, (-1) * frameOrientation * ( frameWidth + 1 ), ownDimsWithOverlap ); //FIXME: The zone is extruded in different dirrection then massnodes
+      //---------------
+      //zone.assignCellsFrame( frameFrontOriginCoords, frameFrontDims, (-1) * frameOrientation * frameWidth, ownDimsWithOverlap ); //FIXME: The zone is extruded in different dirrection then massnodes
+      const std::string outputFilename = "results/zone_L" + std::to_string( int( 1 / refinementFraction ) ) + ".vtk";
+      zone.saveZoneToVTK( outputFilename,
+                          ownDimsWithOverlap,
+                          ownParticles->getGridOriginWithOverlap(), //ownOrigin
+                          ownParticles->getSearchRadius() );
 
       // Set size of multi-resoluton algorithm arrays (NOTE: Consider setSize function)
       const IndexType n_alloc = this->getNumberOfAllocatedParticles();
