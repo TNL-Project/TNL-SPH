@@ -427,6 +427,7 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 }
 */
 
+
 template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
@@ -453,42 +454,89 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
    // -----------------------------------------------------------------------
    this->numberOfCellsInZone = 0;
 
+   // *** auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
+   // *** {
+   // ***    // Physical slab extent on perpAxis for this face at this layer,
+   // ***    // shrunk by lower-priority axes (corner ownership, same as initMassNodes).
+   // ***    // Then additionally clamped to [0, gridSize[perpAxis]).
+   // ***    //
+   // ***    // The face at layer k is offset by k cells from the frame boundary:
+   // ***    //   outward (sign=+1): frame expands by k on each side
+   // ***    //   inward  (sign=-1): frame shrinks by k on each side
+   // ***    const int expand = sign * layer;   // how many cells the frame has grown
+
+   // ***    // ------ //NOTE: FIXME: My attampt to fix the corners
+   // ***    // // Origin and end of the expanded/shrunk frame on perpAxis
+   // ***    // GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
+   // ***    // GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+
+   // ***    // ---
+   // ***    // For outward (sign=+1): perp extent expands by (layer+1) because the face
+   // ***    // sits one cell AHEAD of the expansion, so perp must match that full extent.
+   // ***    // For inward  (sign=-1): perp extent shrinks by layer (unchanged — works correctly).
+   // ***    const int perpExpand = ( sign > 0 ) ? expand + 1 : expand;
+
+   // ***    GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - perpExpand;
+   // ***    GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + perpExpand;
+
+
+   // ***    // ----- NOTE: Attempt end
+
+   // ***    // Corner ownership: lower-priority axes shrink by 1 on each end
+   // ***    for( int d = 0; d < faceAxis; d++ )
+   // ***       if( d != perpAxis ) {
+   // ***          faceOrigin++;
+   // ***          faceEnd--;
+   // ***       }
+
+   // ***    // Clamp to domain
+   // ***    faceOrigin = TNL::max( faceOrigin, 0 );
+   // ***    faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+
+   // ***    return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
+   // *** };
+
    auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
    {
-      // Physical slab extent on perpAxis for this face at this layer,
-      // shrunk by lower-priority axes (corner ownership, same as initMassNodes).
-      // Then additionally clamped to [0, gridSize[perpAxis]).
+      const int expand = sign * layer;
+
+      // d=0 faces: perp extent = current layer expansion only (no +1)
+      // d>0 faces: perp extent = expand+1 to fill corners left by d=0
+      // But only the OUTERMOST new strip — not all previous strips.
+      // The correct rule: each face axis d covers perp extent = expand+1
+      // BUT only the cells NOT covered by lower-d faces at THIS layer.
+      // Lower-d faces at this layer cover: frameFront[perpAxis] ± expand
+      // So d>0 faces add only the strip at ±(expand+1), i.e. just 1 cell wide on perpAxis
+      // for the corner region.
       //
-      // The face at layer k is offset by k cells from the frame boundary:
-      //   outward (sign=+1): frame expands by k on each side
-      //   inward  (sign=-1): frame shrinks by k on each side
-      const int expand = sign * layer;   // how many cells the frame has grown
+      // Simplified: ALL faces use perpExpand = expand (same as inward).
+      // The corner cells (the new outermost strip) are covered by d=1 faces
+      // with a special single-cell extension ONLY for the corner positions.
+      //
+      // SIMPLEST correct approach: d=0 spans full perp at expand,
+      // d=1 spans only the corner gap = 1 cell at ±(expand+1) on perpAxis.
 
-      // ------ //NOTE: FIXME: My attampt to fix the corners
-      // // Origin and end of the expanded/shrunk frame on perpAxis
-      // GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
-      // GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
+      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
 
-      // ---
-      // For outward (sign=+1): perp extent expands by (layer+1) because the face
-      // sits one cell AHEAD of the expansion, so perp must match that full extent.
-      // For inward  (sign=-1): perp extent shrinks by layer (unchanged — works correctly).
-      const int perpExpand = ( sign > 0 ) ? expand + 1 : expand;
+      // For faces with faceAxis > 0, extend perp by 1 to cover corners
+      // that d=0 faces at this same layer leave uncovered.
+      if( faceAxis == 0 ) {
+         // d=0 takes full extent at current expansion — no corners to fill
+      } else {
+         // d>0 extends by 1 to fill the corner gap left by d=0
+         faceOrigin -= 1;
+         faceEnd    += 1;
+      }
 
-      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - perpExpand;
-      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + perpExpand;
-
-
-      // ----- NOTE: Attempt end
-
-      // Corner ownership: lower-priority axes shrink by 1 on each end
+      // Corner ownership between axes of same priority at same layer:
+      // lower-d axes already claimed their strips
       for( int d = 0; d < faceAxis; d++ )
          if( d != perpAxis ) {
             faceOrigin++;
             faceEnd--;
          }
 
-      // Clamp to domain
       faceOrigin = TNL::max( faceOrigin, 0 );
       faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
 
@@ -506,7 +554,30 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
          }
       }
    }
+   //// Pass 1 — mirror Pass 2's continue condition exactly
+   //this->numberOfCellsInZone = 0;
+   //for( int layer = 0; layer < w; layer++ ) {
+   //   const int expand = sign * layer;
+   //   for( int d = 0; d < dim; d++ ) {
+   //      for( int s : { -1, +1 } ) {
+   //         const GlobalIndexType ifaceCoord = ( s < 0 )
+   //            ? frameFrontOrigin[ d ] - expand - ( sign > 0 ? 1 : 0 )
+   //            : frameFrontOrigin[ d ] + frameFrontDims[ d ] + expand - ( sign > 0 ? 0 : 1 );
+   //
+   //         // Same condition as the continue in Pass 2
+   //         if( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] )
+   //            continue;
+   //
+   //         GlobalIndexType faceNodes = 1;
+   //         for( int pd = 0; pd < dim; pd++ )
+   //            if( pd != d )
+   //               faceNodes *= clampedFaceCount( layer, d, sign, pd );
+   //         this->numberOfCellsInZone += faceNodes;
+   //      }
+   //   }
+   //}
 
+   std::cout << "---->Number of cells in zone:" << numberOfCellsInZone << std::endl;
    cellsInZone.resize( this->numberOfCellsInZone );
    numberOfParticlesInCell.resize( this->numberOfCellsInZone );
    particlesInZone.resize( this->numberOfCellsInZone * numberOfParticlesPerCell );
@@ -554,16 +625,24 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
             // Origin on each perp axis (corner ownership + clamping)
             IndexVectorType perpOrigin = 0;
             perpOrigin[ d ] = ifaceCoord;
+            // *** for( int pd = 0; pd < dim; pd++ ) {
+            // ***    if( pd == d ) continue;
+            // ***       // //NOTE: FIXME: My attampt to fix the corners
+            // ***       // GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+            // ***       const int perpExpand = ( sign > 0 ) ? expand + 1 : expand;
+            // ***       GlobalIndexType o = frameFrontOrigin[ pd ] - perpExpand;
+            // ***    // Corner ownership: lower-priority axes push origin inward
+            // ***    for( int d2 = 0; d2 < d; d2++ )
+            // ***       if( d2 != pd ) o++;
+            // ***    // Clamp
+            // ***    perpOrigin[ pd ] = TNL::max( o, 0 );
+            // *** }
             for( int pd = 0; pd < dim; pd++ ) {
                if( pd == d ) continue;
-                  // //NOTE: FIXME: My attampt to fix the corners
-                  // GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
-                  const int perpExpand = ( sign > 0 ) ? expand + 1 : expand;
-                  GlobalIndexType o = frameFrontOrigin[ pd ] - perpExpand;
-               // Corner ownership: lower-priority axes push origin inward
+               GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+               if( d > 0 ) o -= 1;   // extend to fill corner gap
                for( int d2 = 0; d2 < d; d2++ )
                   if( d2 != pd ) o++;
-               // Clamp
                perpOrigin[ pd ] = TNL::max( o, 0 );
             }
 
@@ -636,197 +715,8 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
    }
 }
 
-/*
-template< typename ParticleConfig, typename DeviceType >
-void
-ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
-   const IndexVectorType frameFrontOrigin,
-   const IndexVectorType frameFrontDims,
-   const int             frameWidth,
-   const IndexVectorType gridSize )
-{
-   constexpr int dim = ParticleConfig::spaceDimension;
-   const int w    = TNL::abs( frameWidth );
-   const int sign = ( frameWidth >= 0 ) ? 1 : -1;  // +1 outward, -1 inward
 
-   std::cout << "\n[assignCellsFrame] ========================================\n"
-             << "  frameFrontOrigin : " << frameFrontOrigin << "\n"
-             << "  frameFrontDims   : " << frameFrontDims   << "\n"
-             << "  frameWidth       : " << frameWidth << "  (w=" << w << ", sign=" << sign << ")\n"
-             << "  gridSize         : " << gridSize         << "\n"
-             << "  spaceDimension   : " << dim              << "\n"
-             << "============================================================\n";
 
-   // -----------------------------------------------------------------------
-   // Pass 1 — count total cells across all layers and faces on CPU.
-   // One layer = one shell at offset k from the frame boundary.
-   // -----------------------------------------------------------------------
-   this->numberOfCellsInZone = 0;
-
-   auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
-   {
-      const int expand = sign * layer;
-
-      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
-      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
-
-      for( int d = 0; d < faceAxis; d++ )
-         if( d != perpAxis ) {
-            faceOrigin++;
-            faceEnd--;
-         }
-
-      faceOrigin = TNL::max( faceOrigin, 0 );
-      faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
-
-      return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
-   };
-
-   std::cout << "\n[Pass 1] Counting cells per layer/face\n";
-   for( int layer = 0; layer < w; layer++ ) {
-      const int expand = sign * layer;
-      GlobalIndexType layerTotal = 0;
-      std::cout << "  [layer " << layer << "] expand=" << expand << "\n";
-
-      for( int d = 0; d < dim; d++ ) {
-         std::cout << "    [axis d=" << d << "]\n";
-
-         for( int s : { -1, +1 } ) {
-            GlobalIndexType faceNodes = 1;
-            for( int pd = 0; pd < dim; pd++ )
-               if( pd != d )
-                  faceNodes *= clampedFaceCount( layer, d, sign, pd );
-            this->numberOfCellsInZone += faceNodes;
-            layerTotal += faceNodes;
-            std::cout << "      [face s=" << std::setw(2) << s << "]  faceNodes=" << faceNodes
-                      << "  (runningTotal=" << this->numberOfCellsInZone << ")\n";
-         }
-      }
-      std::cout << "  [layer " << layer << "] subtotal=" << layerTotal << "\n";
-   }
-   std::cout << "[Pass 1] DONE — numberOfCellsInZone=" << this->numberOfCellsInZone << "\n";
-
-   cellsInZone.resize( this->numberOfCellsInZone );
-   numberOfParticlesInCell.resize( this->numberOfCellsInZone );
-   particlesInZone.resize( this->numberOfCellsInZone * numberOfParticlesPerCell );
-
-   std::cout << "\n[Resize] cellsInZone         = " << this->numberOfCellsInZone << "\n"
-             << "[Resize] numberOfParticlesInCell = " << this->numberOfCellsInZone << "\n"
-             << "[Resize] particlesInZone         = " << this->numberOfCellsInZone * numberOfParticlesPerCell
-             << "  (perCell=" << numberOfParticlesPerCell << ")\n";
-
-   auto cellsInZone_view = this->cellsInZone.getView();
-
-   // -----------------------------------------------------------------------
-   // Pass 2 — fill cells layer by layer, face by face.
-   // -----------------------------------------------------------------------
-   GlobalIndexType offset = 0;
-
-   std::cout << "\n[Pass 2] Filling cells\n";
-   for( int layer = 0; layer < w; layer++ ) {
-      const int expand = sign * layer;
-      std::cout << "\n  [layer " << layer << "] expand=" << expand
-                << "  offset-at-layer-start=" << offset << "\n";
-
-      for( int d = 0; d < dim; d++ ) {
-         std::cout << "    [axis d=" << d << "]\n";
-
-         for( int s : { -1, +1 } ) {
-            const GlobalIndexType ifaceCoord = ( s < 0 )
-                  ? frameFrontOrigin[ d ] - expand - ( sign > 0 ? 1 : 0 )
-                  : frameFrontOrigin[ d ] + frameFrontDims[ d ] + expand - ( sign > 0 ? 0 : 1 );
-
-            IndexVectorType begin = 0, end = 0;
-            end[ d ] = 1;
-            for( int pd = 0; pd < dim; pd++ )
-               if( pd != d )
-                  end[ pd ] = clampedFaceCount( layer, d, sign, pd );
-
-            IndexVectorType stride = 0;
-            {
-               GlobalIndexType running = 1;
-               for( int pd = dim - 1; pd >= 0; pd-- ) {
-                  if( pd == d ) continue;
-                  stride[ pd ] = running;
-                  running     *= end[ pd ];
-               }
-            }
-
-            IndexVectorType perpOrigin = 0;
-            perpOrigin[ d ] = ifaceCoord;
-            for( int pd = 0; pd < dim; pd++ ) {
-               if( pd == d ) continue;
-               GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
-               for( int d2 = 0; d2 < d; d2++ )
-                  if( d2 != pd ) o++;
-               perpOrigin[ pd ] = TNL::max( o, 0 );
-            }
-
-            GlobalIndexType faceNodes = 1;
-            for( int pd = 0; pd < dim; pd++ )
-               if( pd != d ) faceNodes *= end[ pd ];
-
-            const bool outOfDomain = ( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] );
-
-            std::cout << "      [face s=" << std::setw(2) << s << "]"
-                      << "  ifaceCoord=" << ifaceCoord
-                      << "  perpOrigin=" << perpOrigin
-                      << "  end="        << end
-                      << "  stride="     << stride
-                      << "  faceNodes="  << faceNodes
-                      << "  offset="     << offset;
-
-            if( outOfDomain ) {
-               std::cout << "  => SKIPPED (ifaceCoord=" << ifaceCoord
-                         << " outside [0," << gridSize[ d ] << "))\n";
-               offset += faceNodes;
-               continue;
-            }
-
-            std::cout << "  => FILLING cellsInZone[" << offset
-                      << ".." << offset + faceNodes - 1 << "]\n";
-
-            const GlobalIndexType    faceOffset  = offset;
-            const int          iAxis       = d;
-            const GlobalIndexType    iCoord      = ifaceCoord;
-            const IndexVectorType pOrigin  = perpOrigin;
-            const IndexVectorType gs       = gridSize;
-
-            auto fill = [=] __cuda_callable__ ( const IndexVectorType idx ) mutable
-            {
-               GlobalIndexType i = faceOffset;
-               for( int pd = 0; pd < dim; pd++ )
-                  i += idx[ pd ] * stride[ pd ];
-
-               IndexVectorType c = pOrigin;
-               c[ iAxis ] = iCoord;
-               for( int pd = 0; pd < dim; pd++ )
-                  if( pd != iAxis )
-                     c[ pd ] += idx[ pd ];
-
-               for( int pd = 0; pd < dim; pd++ )
-                  if( c[ pd ] < 0 || c[ pd ] >= gs[ pd ] ) return;
-
-               cellsInZone_view[ i ] = CellIndexer::EvaluateCellIndex( c, gs );
-            };
-
-            if constexpr( dim == 2 )
-               Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0}, end, fill );
-            else
-               Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0,0}, end, fill );
-
-            offset += faceNodes;
-         }
-      }
-      std::cout << "  [layer " << layer << "] offset-at-layer-end=" << offset << "\n";
-   }
-
-   std::cout << "\n[Pass 2] DONE — final offset=" << offset
-             << "  (expected numberOfCellsInZone=" << this->numberOfCellsInZone << ")"
-             << ( offset == this->numberOfCellsInZone ? "  [OK]\n" : "  [MISMATCH!]\n" );
-   std::cout << "[assignCellsFrame] ==================== END ================\n\n";
-}
-*/
 
 
 template< typename ParticleConfig, typename DeviceType >
