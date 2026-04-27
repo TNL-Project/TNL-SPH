@@ -273,8 +273,9 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       IndexVectorType zoneOrigin;
       IndexVectorType zoneDimensions;
       if( inner_overlap ){
-         zoneOrigin = frameFrontOriginCoords + 1;
-         zoneDimensions = frameFrontDims - 2;
+         zoneOrigin = frameFrontOriginCoords + 2; //NOTE +1 for overlap + 1 for rezising? and now, it should be wtih -2 in dims?
+         zoneDimensions = frameFrontDims - 2; //NOTE tuning
+         //zoneDimensions = frameFrontDims; //NOTE tuning - corresponds to NBWO?
       }
       if( outer_overlap ){
          //zoneOrigin = frameFrontOriginCoords - 1;

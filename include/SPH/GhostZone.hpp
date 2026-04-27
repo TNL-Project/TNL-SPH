@@ -464,9 +464,22 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
       //   inward  (sign=-1): frame shrinks by k on each side
       const int expand = sign * layer;   // how many cells the frame has grown
 
-      // Origin and end of the expanded/shrunk frame on perpAxis
-      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
-      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+      // ------ //NOTE: FIXME: My attampt to fix the corners
+      // // Origin and end of the expanded/shrunk frame on perpAxis
+      // GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
+      // GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+
+      // ---
+      // For outward (sign=+1): perp extent expands by (layer+1) because the face
+      // sits one cell AHEAD of the expansion, so perp must match that full extent.
+      // For inward  (sign=-1): perp extent shrinks by layer (unchanged — works correctly).
+      const int perpExpand = ( sign > 0 ) ? expand + 1 : expand;
+
+      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - perpExpand;
+      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + perpExpand;
+
+
+      // ----- NOTE: Attempt end
 
       // Corner ownership: lower-priority axes shrink by 1 on each end
       for( int d = 0; d < faceAxis; d++ )
@@ -543,7 +556,10 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
             perpOrigin[ d ] = ifaceCoord;
             for( int pd = 0; pd < dim; pd++ ) {
                if( pd == d ) continue;
-               GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+                  // //NOTE: FIXME: My attampt to fix the corners
+                  // GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+                  const int perpExpand = ( sign > 0 ) ? expand + 1 : expand;
+                  GlobalIndexType o = frameFrontOrigin[ pd ] - perpExpand;
                // Corner ownership: lower-priority axes push origin inward
                for( int d2 = 0; d2 < d; d2++ )
                   if( d2 != pd ) o++;
