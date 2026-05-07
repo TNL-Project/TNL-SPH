@@ -67,20 +67,26 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
-   SolverMultiSet() = default;
+
+   //SolverMultiSet() = default;
+
+   //SolverMultiSet() : logger( 100, std::cout ) {};
+
+   SolverMultiSet( std::ostream& out = std::cout ) : logger( 100, out ) {};
 
    void
-   init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+   init( int argc, char* argv[] );
 
    // protected
    void
-   initParticleSets( TNL::Config::ParameterContainer& parameters,
-                     TNL::Config::ParameterContainer& parametersSubdomains,
-                     TNL::Logger& logger );
+   initParticleSets();
 
    // protected
    void
-   initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger  );
+   initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
+
+   void
+   initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
    // protected
    /**
@@ -98,9 +104,7 @@ public:
 
    // protected
    void
-   readParticlesFiles( TNL::Config::ParameterContainer& parameters,
-                       TNL::Config::ParameterContainer& parametersSubdomains,
-                       TNL::Logger& logger );
+   readParticlesFiles();
 
    // protected
    void
@@ -131,13 +135,13 @@ public:
     * Perform neighbors search and fill neighborsList in Particle system variable.
     */
    void
-   performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
+   performNeighborSearch( bool performBoundarySearch = false );
 
    /**
     *
     */
    void
-   removeParticlesOutOfDomain( TNL::Logger& log );
+   removeParticlesOutOfDomain();
 
    //void
    //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
@@ -189,7 +193,7 @@ public:
     * NEW:
     */
    void
-   applyMultiresolutionBC();
+   multiresolutionUpdate();
 
    /**
     * \brief Perform interaction between all particles and all particle objects
@@ -197,6 +201,13 @@ public:
     */
    void
    interact();
+
+   /**
+    * \brief Integration wrapper
+    */
+   template< typename Stage = int >
+   void
+   integrate( const Stage integrationStage = Stage{}, const bool integrateBoundary = false );
 
    /**
     *
@@ -214,20 +225,29 @@ public:
     * \brief Check if is time to perform measurement and if is time to perform
     * measurement, perform measurement.
     */
-   template< typename SPHKernelFunction, typename EOS >
    void
-   measure( TNL::Logger& logger );
+   measure();
 
 #ifdef HAVE_MPI
 
    void
-   synchronizeDistributedSimulation( TNL::Logger& logger );
+   synchronizeDistributedSimulation();
 
    void
    resetOverlaps();
 
    void
-   performLoadBalancing( TNL::Logger& logger );
+   performLoadBalancing();
+
+   //TODO: Update to general dimensions
+   void
+   writeLoadBalancingInfo( const int gridResize );
+
+   /**
+    * \brief Wrapper around load balancing procedure.
+    */
+   void
+   balanceSubdomains();
 
 #endif
 
@@ -236,23 +256,23 @@ public:
     * available fileds.
     */
    void
-   save( TNL::Logger& save, bool writeParticleCellIndex = false  );
+   save( bool writeParticleCellIndex = false );
 
    void
-   makeSnapshot( TNL::Logger& logger );
+   makeSnapshot();
 
    void
-   writeProlog( TNL::Logger& logger, bool writeSystemInformation = true );
+   writeProlog( bool writeSystemInformation = true ) noexcept;
 
    template< typename ParameterType >
    void
-   writeLog( TNL::Logger& logger, const std::string& label, const ParameterType& value, int parameterLevel = 0 );
+   writeLog( const std::string& label, const ParameterType& value, int parameterLevel = 0 );
 
    void
-   writeInfo( TNL::Logger& logger ) noexcept;
+   writeInfo() noexcept;
 
    void
-   writeEpilog( TNL::Logger& logger ) noexcept;
+   writeEpilog() noexcept;
 
 //protected:
 
@@ -265,8 +285,6 @@ public:
    std::vector< BoundaryPointer > boundarySets;
    std::vector< OpenBoundaryPointer > openBoundaryPatches;
    std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;
-
-
 
    Model model;
    ModelParams modelParams;
@@ -283,13 +301,23 @@ public:
    std::string particlesFormat;
    SimulationMonitor simulationMonitor;
 
-   // Init parameters
+   // Initand control parameters
+   TNL::Config::ParameterContainer cliParams;
+   TNL::Config::ConfigDescription cliConfig;
+
+   TNL::Config::ParameterContainer parameters;
+   TNL::Config::ConfigDescription config;
+
+   TNL::Logger logger;
 
    // TEMP: And btw the names are AWFUL
 #ifdef HAVE_MPI
    MPI::Comm communicator = MPI_COMM_WORLD;
    TNL::Config::ConfigDescription configDistributed;
    TNL::Config::ParameterContainer parametersDistributed;
+   RealType subdomainCompTimeBackup = 0;
+   std::string loadBalancingMeasure;
+   int loadBalancingStepInterval = 1;
 #endif
 
    // Configurations and parameter configs (mostly required by initialization)

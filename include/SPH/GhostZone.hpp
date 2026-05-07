@@ -496,52 +496,82 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
    // ***    return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
    // *** };
 
-   auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
-   {
-      const int expand = sign * layer;
+//////==========================================================================
+//// WORKS IN 2D
+//   auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
+//   {
+//      const int expand = sign * layer;
+//
+//      // d=0 faces: perp extent = current layer expansion only (no +1)
+//      // d>0 faces: perp extent = expand+1 to fill corners left by d=0
+//      // But only the OUTERMOST new strip — not all previous strips.
+//      // The correct rule: each face axis d covers perp extent = expand+1
+//      // BUT only the cells NOT covered by lower-d faces at THIS layer.
+//      // Lower-d faces at this layer cover: frameFront[perpAxis] ± expand
+//      // So d>0 faces add only the strip at ±(expand+1), i.e. just 1 cell wide on perpAxis
+//      // for the corner region.
+//      //
+//      // Simplified: ALL faces use perpExpand = expand (same as inward).
+//      // The corner cells (the new outermost strip) are covered by d=1 faces
+//      // with a special single-cell extension ONLY for the corner positions.
+//      //
+//      // SIMPLEST correct approach: d=0 spans full perp at expand,
+//      // d=1 spans only the corner gap = 1 cell at ±(expand+1) on perpAxis.
+//
+//      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
+//      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+//
+//      //std::cout << "[clampedFaceCount 0]: faceAxis: " << faceAxis << ", perpAxis: " << perpAxis << ", faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
+//
+//      // For faces with faceAxis > 0, extend perp by 1 to cover corners
+//      // that d=0 faces at this same layer leave uncovered.
+//      if( faceAxis == 0 ) {
+//         // d=0 takes full extent at current expansion — no corners to fill
+//      } else {
+//         // d>0 extends by 1 to fill the corner gap left by d=0
+//         faceOrigin -= 1;
+//         faceEnd    += 1;
+//      }
+//
+//      //std::cout << "[clampedFaceCount 1]: faceAxis: " << faceAxis << ", perpAxis: " << perpAxis << ", faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
+//      // Corner ownership between axes of same priority at same layer:
+//      // lower-d axes already claimed their strips
+//      for( int d = 0; d < faceAxis; d++ )
+//         if( d != perpAxis ) {
+//            faceOrigin++;
+//            faceEnd--;
+//         }
+//
+//      //std::cout << "[clampedFaceCount 2]: faceAxis: " << faceAxis << ", perpAxis: " << perpAxis << ", faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
+//      faceOrigin = TNL::max( faceOrigin, 0 );
+//      faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+//
+//      //std::cout << "[clampedFaceCount 3]: faceAxis: " << faceAxis << ", perpAxis: " << perpAxis << ", faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
+//      return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
+//   };
+////====================================================================================== WORKS IN 2D
+auto clampedFaceCount = [&]( int layer, int faceAxis, int sign, int perpAxis ) -> GlobalIndexType
+{
+   const int expand = sign * layer;
 
-      // d=0 faces: perp extent = current layer expansion only (no +1)
-      // d>0 faces: perp extent = expand+1 to fill corners left by d=0
-      // But only the OUTERMOST new strip — not all previous strips.
-      // The correct rule: each face axis d covers perp extent = expand+1
-      // BUT only the cells NOT covered by lower-d faces at THIS layer.
-      // Lower-d faces at this layer cover: frameFront[perpAxis] ± expand
-      // So d>0 faces add only the strip at ±(expand+1), i.e. just 1 cell wide on perpAxis
-      // for the corner region.
-      //
-      // Simplified: ALL faces use perpExpand = expand (same as inward).
-      // The corner cells (the new outermost strip) are covered by d=1 faces
-      // with a special single-cell extension ONLY for the corner positions.
-      //
-      // SIMPLEST correct approach: d=0 spans full perp at expand,
-      // d=1 spans only the corner gap = 1 cell at ±(expand+1) on perpAxis.
+   GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
+   GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
 
-      GlobalIndexType faceOrigin = frameFrontOrigin[ perpAxis ] - expand;
-      GlobalIndexType faceEnd    = frameFrontOrigin[ perpAxis ] + frameFrontDims[ perpAxis ] + expand;
+   if( perpAxis > faceAxis ) {
+      // This perpAxis has not been claimed by any lower-priority face axis.
+      // Extend by 1 to fill the corner gap.
+      faceOrigin -= 1;
+      faceEnd    += 1;
+   }
+   // If perpAxis < faceAxis: axis perpAxis is lower-priority than faceAxis,
+   // meaning faceAxis=perpAxis's faces already covered those corner cells.
+   // No extension, no shrink needed — the corner cells are in a lower-d face.
 
-      // For faces with faceAxis > 0, extend perp by 1 to cover corners
-      // that d=0 faces at this same layer leave uncovered.
-      if( faceAxis == 0 ) {
-         // d=0 takes full extent at current expansion — no corners to fill
-      } else {
-         // d>0 extends by 1 to fill the corner gap left by d=0
-         faceOrigin -= 1;
-         faceEnd    += 1;
-      }
-
-      // Corner ownership between axes of same priority at same layer:
-      // lower-d axes already claimed their strips
-      for( int d = 0; d < faceAxis; d++ )
-         if( d != perpAxis ) {
-            faceOrigin++;
-            faceEnd--;
-         }
-
-      faceOrigin = TNL::max( faceOrigin, 0 );
-      faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
-
-      return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
-   };
+   faceOrigin = TNL::max( faceOrigin, 0 );
+   faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+   return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
+};
+//===========================================================
 
    for( int layer = 0; layer < w; layer++ ) {
       for( int d = 0; d < dim; d++ ) {
@@ -637,14 +667,27 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
             // ***    // Clamp
             // ***    perpOrigin[ pd ] = TNL::max( o, 0 );
             // *** }
-            for( int pd = 0; pd < dim; pd++ ) {
-               if( pd == d ) continue;
-               GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
-               if( d > 0 ) o -= 1;   // extend to fill corner gap
-               for( int d2 = 0; d2 < d; d2++ )
-                  if( d2 != pd ) o++;
-               perpOrigin[ pd ] = TNL::max( o, 0 );
-            }
+////========================================================================================
+//// WORKS in 2d
+//            for( int pd = 0; pd < dim; pd++ ) {
+//               if( pd == d ) continue;
+//               GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+//               if( d > 0 ) o -= 1;   // extend to fill corner gap
+//               for( int d2 = 0; d2 < d; d2++ )
+//                  if( d2 != pd ) o++;
+//               perpOrigin[ pd ] = TNL::max( o, 0 );
+//            }
+//
+////========================================================================================
+//FIX in 3D
+for( int pd = 0; pd < dim; pd++ ) {
+   if( pd == d ) continue;
+   GlobalIndexType o = frameFrontOrigin[ pd ] - expand;
+   if( pd > d )
+      o -= 1;   // extend to fill corner gap on this perpAxis
+   perpOrigin[ pd ] = TNL::max( o, 0 );
+}
+//========================================================================================
 
             // Clamp ifaceCoord — skip face entirely if outside domain
             if( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] ) { //FIXME:

@@ -15,17 +15,23 @@
 
 #include "tempFunctionsToConfigMultiresolution.h"
 
+#include <SPH/configInit.h>
+
 namespace TNL {
 namespace SPH {
 
 template< typename Model >
 void
-SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+SolverMultiSet< Model >::init( int argc, char* argv[] )
 {
+   try {
+      initialize< SimulationType >( argc, argv, cliParams, cliConfig, parameters, config );
+   }
+   catch ( ... ) {
+      std::cerr << std::endl;
+   }
+
    logger.writeHeader( "SPH simulation initialization." );
-
-   // FIXME: Parse config and args here!
-
 #ifdef HAVE_MPI
    // build config for distributed domain
    logger.writeParameter( "Configuration of distributed simulation:", "" );
@@ -40,6 +46,18 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
+
+   // set balancing tresholds
+   loadBalancingMeasure = parameters.getParameter< std::string >( "load-balancing-measure" );
+   loadBalancingStepInterval = parameters.getParameter< int >( "load-balancing-step-inteval" );
+   fluid->getDistributedParticles()->setParticlesCountResizeTrashold(
+         parameters.getParameter< float >( "number-of-particles-balancing-coef" ) );
+   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+         parameters.getParameter< float >( "computational-time-balancing-coef" ) );
+
+   // add timers related to synchronization and load balancing
+   timeMeasurement.addTimer( "synchronize", false );
+   timeMeasurement.addTimer( "rebalance", false );
 #else
    this->numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
    const std::string configSubdomainsPath = parameters.getParameter< std::string >( "subdomains-config" );
@@ -48,31 +66,31 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger ); //FIXME: Wrong function
 
    // initialize topology
-   std::cout << "topology.loadFromConfig()" << std::endl;
    topology.loadFromConfig( parameters, parametersSubdomains );
-   std::cout << "topology.finalizeLinear()" << std::endl;
    topology.finalizeLinear(); //FIXME: Do only if linear, maybe hide this into the topology
-   // initialize particle sets
-   std::cout << "initParticleSets()" << std::endl;
-   initParticleSets( parameters, parametersSubdomains, logger );
-   std::cout << "initMultiResolutionBundaryPatches()" << std::endl;
+   initParticleSets();
    initMultiResolutionBundaryPatches();
+   timeMeasurement.addTimer( "multiresolution-update" );
 #endif
 
    // initialize open boundary conditions
    if( parameters.getParameter< std::string >( "open-boundary-config" ) != "" ){
       initOpenBoundaryPatches( parameters, logger );
+
+      // add custom timers related to open boundary conditions
+      timeMeasurement.addTimer( "extrapolate-openbc" );
+      timeMeasurement.addTimer( "apply-openbc" );
    }
 
    // init periodic boundary conditions
-   //TODO: I don't like that open boundary buffer are selected in compile time.
-   if constexpr( Model::ModelConfigType::SPHConfig::numberOfPeriodicBuffers > 0 ) {
-      // FIXME: resolve
-      // fluid->initializePeriodicity( parameters );
-      // boundary->initializePeriodicity( parameters );
+   if( parameters.getParameter< std::string >( "periodic-boundary-config" ) != "" ){
+      initPeriodicBoundaryPatches( parameters, logger );
 
-      // timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
-      // timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
+      // add custom timers related to perioric boundary conditions
+      timeMeasurement.addTimer( "enforce-periodic-bc" );
+      timeMeasurement.addTimer( "transfer-periodic-bc" );
+      timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
+      timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
    }
 
    // init model parameters
@@ -81,12 +99,8 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
    for( int i = 0; i < numberOfSubsets; i++ ){
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
       const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
-
-      std::cout << "multiresolutionBoundaryPatches[ " << i << " ]->initMassNodes()" << std::endl;
       multiresolutionBoundaryPatches[ i ]->initMassNodes( modelParams, i, refinementFactor );
-      std::cout << "Done." << std::endl;
    }
-   std::cout << "---> multiresolutionBoundaryPatches initialized."  << std::endl;
 
    // init time stepping
    timeStepping.setTimeStep( parameters.getParameter< RealType >( "initial-time-step" ) );
@@ -99,15 +113,11 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
    outputDirectory = parameters.getParameter< std::string >( "output-directory" );
    particlesFormat = parameters.getParameter< std::string >( "particles-format" );
 
-   std::cout << "readParticlesFiles()" << std::endl;
-
 #ifdef HAVE_MPI
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
 #else
-   readParticlesFiles( parameters, parametersSubdomains, logger );
+   readParticlesFiles();
 #endif
-
-   std::cout << "Done." << std::endl;
 
    // initialize the measuretool
    logger.writeSeparator();
@@ -127,11 +137,8 @@ SolverMultiSet< Model >::init( TNL::Config::ParameterContainer& parameters, TNL:
 
 template< typename Model >
 void
-SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& parameters,
-                                           TNL::Config::ParameterContainer& parametersSubdomains,
-                                           TNL::Logger& logger )
+SolverMultiSet< Model >::initParticleSets()
 {
-
    const int numberOfSubsets = topology.getNumberOfSubdomains();
    fluidSets.resize( numberOfSubsets );
    boundarySets.resize( numberOfSubsets );
@@ -229,6 +236,25 @@ SolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContaine
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
 }
 
+template< typename Model >
+void
+SolverMultiSet< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+{
+   //FIXME: Update to multiset: logger.writeParameter( "Initialization of open boundary patches.", "" );
+   //FIXME: Update to multiset: const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
+   //FIXME: Update to multiset: const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
+
+   //FIXME: Update to multiset: // setup and parse open boundary config
+   //FIXME: Update to multiset: for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
+   //FIXME: Update to multiset:    std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+   //FIXME: Update to multiset:    configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
+   //FIXME: Update to multiset: }
+   //FIXME: Update to multiset: parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+
+   //FIXME: Update to multiset: fluid->initializePeriodicity( parameters, parametersOpenBoundary );
+   //FIXME: Update to multiset: boundary->initializePeriodicity( parameters, parametersOpenBoundary );
+}
+
 #ifdef HAVE_MPI
 template< typename Model >
 void
@@ -298,9 +324,7 @@ SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterCont
 
 template< typename Model >
 void
-SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters,
-                                             TNL::Config::ParameterContainer& parametersSubdomains,
-                                             TNL::Logger& logger )
+SolverMultiSet< Model >::readParticlesFiles()
 {
    const int numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
 
@@ -361,66 +385,63 @@ SolverMultiSet< Model >::readParticleFilesDistributed( TNL::Config::ParameterCon
 
 template< typename Model >
 void
-SolverMultiSet< Model >::performNeighborSearch( TNL::Logger& logger, bool performBoundarySearch )
+SolverMultiSet< Model >::performNeighborSearch( bool performBoundarySearch )
 {
+   timeMeasurement.start( "search" );
    for( int i = 0; i < numberOfSubsets; i++ ){
+      std::cout << "Particle set: " <<  i << std::endl;
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
-         std::cout << "Search fluid set i: " << i << std::endl;
          fluidSets[ i ]->searchForNeighbors();
-         if( verbose == "full" )
-            logger.writeParameter( "Fluid search procedure:", "Done." );
+         writeLog( "Fluid search procedure:", "Done." );
 
          if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
-            std::cout << "Searching boundary set i: " << i << std::endl;
             boundarySets[ i ]->searchForNeighbors();
-            if( verbose == "full" )
-               logger.writeParameter( "Boundary search procedure:", "Done." );
+            writeLog( "Boundary search procedure:", "Done." );
          }
-         std::cout << "Searching multiresolution patch i: " << i << std::endl;
          multiresolutionBoundaryPatches[ i ]->searchForNeighbors();
-         if( verbose == "full" )
-            logger.writeParameter( "Multiresolution patch search procedure:", "Done." );
+         writeLog( "Multiresolution patch search procedure:", "Done." );
 
       }
       else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
          // FIXME: Support
       }
    }
+   std::cout << "Fluid search - done." << std::endl;
 
    // search fluid patches
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
          if( openBoundaryPatches.size() > 0 )
             for( auto& openBoundaryPatch : openBoundaryPatches ){
                openBoundaryPatch->searchForNeighbors();
-               if( verbose == "full" )
-                  logger.writeParameter( "Open boundary patch search procedure:", "Done." );
+               writeLog( "Open boundary patch search procedure:", "Done." );
             }
    }
    else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
       // FIXME: Support
    }
+   timeMeasurement.stop( "search" );
+   writeLog("Search...", "Done." );
 }
 
 template< typename Model >
 void
-SolverMultiSet< Model >::removeParticlesOutOfDomain( TNL::Logger& log )
+SolverMultiSet< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
-      //std::cout << "Processing set i: " << i << std::endl;
+      std::cout << "Remove particles out of domain... ";
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
       fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
-      //std::cout << "WAS: " << numberOfParticlesToRemove << " IS: " << fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() << std::endl;
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-         //std::cout << "Subdomain: " << i << std::endl;
-         log.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+         writeLog( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
          // search for neighbros
          //FIXME: I can not search dist
          //timeMeasurement.start( "search" );
          //this->performNeighborSearch( log );
          //timeMeasurement.stop( "search" );
       }
+      std::cout << "... done." << std::endl;
    }
 }
 
@@ -439,21 +460,27 @@ template< typename Model >
 void
 SolverMultiSet< Model >::extrapolateOpenBC()
 {
+   timeMeasurement.start( "extrapolate-openbc" );
    //FIXME: for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
    //FIXME:    //TODO Check if open boundary buffer is really open boundary buffer
    //FIXME:    model.extrapolateOpenBoundaryData( fluid, openBoundaryPatches[ i ], modelParams, openBoundaryPatches[ i ]->config );
    //FIXME: }
+   timeMeasurement.stop( "extrapolate-openbc" );
+   writeLog( "Extrapolate open BC...", "Done." );
 }
 
 template< typename Model >
 void
 SolverMultiSet< Model >::applyOpenBC( const RealType timeStepFact )
 {
+   timeMeasurement.start( "apply-openbc" );
    //FIXME: for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
    //FIXME:    //TODO Check if open boundary buffer is really open boundary buffer
    //FIXME:    openBoundaryModel.applyOpenBoundary(
    //FIXME:       timeStepFact * timeStepping.getTimeStep(), fluid, openBoundaryPatches[ i ], openBoundaryPatches[ i ]->config );
    //FIXME: }
+   timeMeasurement.stop( "apply-openbc" );
+   writeLog( "Update open BC...", "Done." );
 }
 
 template< typename Model >
@@ -480,24 +507,26 @@ SolverMultiSet< Model >::applyPeriodicBCTransfer()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::applyMultiresolutionBC()
+SolverMultiSet< Model >::multiresolutionUpdate()
 {
-   // express the terms manually
+   //FIXME: Describe by loops
+   timeMeasurement.start( "multiresolution-update" );
 
-   std::cout << "---> Updating multiresolution buffer 0" << std::endl;
    multiresolutionBoundaryPatches[ 0 ]->updateInterfaceBuffer(
          fluidSets[ 0 ], fluidSets[ 1 ], modelParams, timeStepping.getTimeStep(), 0 );
-   //std::cout << "/ * * * * * * * * * * * * *  * * * * * * * * * * ** * * * * * * * * ** * * * /" << std::endl;
-   std::cout << "---> Updating multiresolution buffer 1" << std::endl;
    multiresolutionBoundaryPatches[ 1 ]->updateInterfaceBuffer(
          fluidSets[ 1 ], fluidSets[ 0 ], modelParams, timeStepping.getTimeStep(), 1 );
-   std::cout << "Multiresolution buffer updates." << std::endl;
+
+   timeMeasurement.stop( "multiresolution-update" );
+   writeLog( "Update multiresolution BC...", "Done.");
 }
 
 template< typename Model >
 void
 SolverMultiSet< Model >::interact()
 {
+   timeMeasurement.start( "interact" );
+
    for( int i = 0; i < numberOfSubsets; i++ ){
       // update solid boundary conditions
       //std::cout << "Set i: " << i << " updating boundary." << std::endl;
@@ -524,6 +553,9 @@ SolverMultiSet< Model >::interact()
             model.interactionWithOpenBoundary( fluidSets[ i ], multiresolutionBoundaryPatches[ i ], modelParams );
       model.finalizeInteraction( fluidSets[ i ], boundarySets[ i ], modelParams );
    }
+
+   timeMeasurement.stop( "interact" );
+   writeLog( "Interact...", "Done." );
 }
 
 template< typename Model >
@@ -541,28 +573,45 @@ SolverMultiSet< Model >::updateTime()
    timeStepping.updateTimeStep();
 }
 
+//FIXME: Need update for multiset scheme
 template< typename Model >
-template< typename SPHKernelFunction, typename EOS >
 void
-SolverMultiSet< Model >::measure( TNL::Logger& logger )
+SolverMultiSet< Model >::measure()
 {
    for( int i = 0; i < numberOfSubsets; i++ )
-      simulationMonitor.template measure< SPHKernelFunction, EOS >( fluidSets[ i ], boundarySets[ i ], modelParams, timeStepping, logger, verbose );
+      simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
+            fluidSets[ i ], boundarySets[ i ], modelParams, timeStepping, logger, verbose );
+}
+
+template< typename Model >
+template< typename Stage >
+void
+SolverMultiSet< Model >::integrate( const Stage integrationStage, const bool integrateBoundary )
+{
+   timeMeasurement.start( "integrate" );
+   for( int i = 0; i < numberOfSubsets; i++ )
+      integrator->integratStepVerlet( fluidSets[ i ], boundarySets[ i ], timeStepping, integrateBoundary );
+   timeMeasurement.stop( "integrate" );
+   writeLog( "Integrate...", "Done." );
 }
 
 #ifdef HAVE_MPI
 
 template< typename Model >
 void
-SolverMultiSet< Model >::synchronizeDistributedSimulation( TNL::Logger& logger )
+SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
 {
+   writeLog( "Starting synchronization.", "" );
+   timeMeasurement.start( "synchronize" );
    fluid->synchronizeObject();
    boundary->synchronizeObject();
+   timeMeasurement.stop( "synchronize" );
+   writeLog( "Synchronize...", "Done." );
 }
 
 template< typename Model >
 void
-SolverMultiSet< Model >::resetOverlaps()
+SPHMultiset_CFD< Model >::resetOverlaps()
 {
    //TODO: This should be paritcles method
    fluid->getParticles()->removeParitclesOutOfDomain();
@@ -571,19 +620,23 @@ SolverMultiSet< Model >::resetOverlaps()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::performLoadBalancing( TNL::Logger& logger )
+SPHMultiset_CFD< Model >::performLoadBalancing()
 {
-   //setup tresholds:
-   fluid->getDistributedParticles()->setParticlesCountResizeTrashold( 1000 );
-   //fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold( 0.05 );
 
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluid->getNumberOfParticles() ); //TODO: Remove ptcs duplicity
-   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() );
+   fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   std::pair< IndexVectorType, VectorType > subdomainAdjustment;
+   if( loadBalancingMeasure == "computationalTime" )
+      subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
+   else if( loadBalancingMeasure == "numberOfParticles" )
+      subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustment();
+   else
+      std::cerr << "Invalid load balancing metrics. Load balancing metrics is: " << loadBalancingMeasure << "." << std::endl;
+
    const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->getParticles()->getSearchRadius();
 
@@ -621,17 +674,68 @@ SolverMultiSet< Model >::performLoadBalancing( TNL::Logger& logger )
                                                                         updatedGridOrigin,
                                                                         1,
                                                                         boundary->getParticles()->getSearchRadius() );
+   writeLoadBalancingInfo( gridDimensionsAdjustment[ 0 ] );
+   this->subdomainCompTimeBackup = timeMeasurement.getTotalTime();
 
 }
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
+{
+   const std::string outputPath = outputDirectory + "/loadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
+   std::ofstream outfile;
+   outfile.open(outputPath, std::ios_base::app );
+   outfile << timeStepping.getStep() << " "
+           << timeStepping.getTime() << " "
+           << fluid->getNumberOfParticles() << " "
+           << fluid->getNumberOfAllocatedParticles() << " "
+           << boundary->getNumberOfParticles() << " "
+           << boundary->getNumberOfAllocatedParticles() << " "
+           << timeMeasurement.getTotalTime() - subdomainCompTimeBackup << " "
+           << fluid->getParticles()->getCellFirstLastParticleList().getSize() << " "
+           << gridResize << std::endl;
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::balanceSubdomains()
+{
+   if( ( timeStepping.getStep() % loadBalancingStepInterval  == 0 ) && ( timeStepping.getStep() > 1 ) ){
+
+      performNeighborSearch( true );
+
+      logger.writeSeparator();
+      writeLog( "Starting load balancing.", "" );
+      timeMeasurement.start( "rebalance" );
+      performLoadBalancing();
+      timeMeasurement.stop( "rebalance" );
+      writeLog( "Load balancing...", "Done." );
+      logger.writeSeparator();
+      TNL::MPI::Barrier( communicator );
+
+      // reset overlaps and synchronize with new domain syze
+      resetOverlaps();
+      writeLog( "Reset overlaps...", "Done." );
+      TNL::MPI::Barrier( communicator );
+
+      performNeighborSearch( true );
+      TNL::MPI::Barrier( communicator );
+
+      synchronizeDistributedSimulation();
+      TNL::MPI::Barrier( communicator );
+   }
+}
+
 
 #endif
 
 template< typename Model >
 void
-SolverMultiSet< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex )
+SolverMultiSet< Model >::save( bool writeParticleCellIndex )
 {
    if( ( verbose == "with-snapshot" ) || ( verbose == "full" ) )
-      writeInfo( logger );
+      writeInfo();
 
    const int step = timeStepping.getStep();
    const RealType time = timeStepping.getTime();
@@ -687,7 +791,7 @@ SolverMultiSet< Model >::save( TNL::Logger& logger, bool writeParticleCellIndex 
 
 template< typename Model >
 void
-SolverMultiSet< Model >::makeSnapshot( TNL::Logger& logger )
+SolverMultiSet< Model >::makeSnapshot()
 {
    const bool savePressure = true;
    if( timeStepping.checkOutputTimer( "save_results" ) ){
@@ -697,14 +801,14 @@ SolverMultiSet< Model >::makeSnapshot( TNL::Logger& logger )
             model.computePressureFromDensity( boundarySets[ i ], modelParams );
          }
      }
-     save( logger );
-     writeLog( logger, "Save results...", "Done." );
+     save();
+     writeLog( "Save results...", "Done." );
    }
 }
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInformation )
+SolverMultiSet< Model >::writeProlog( bool writeSystemInformation ) noexcept
 {
    logger.writeHeader( "SPH simulation configuration." );
    logger.writeParameter( "Case name:", caseName );
@@ -778,18 +882,16 @@ SolverMultiSet< Model >::writeProlog( TNL::Logger& logger, bool writeSystemInfor
 template< typename Model >
 template< typename ParameterType >
 void
-SolverMultiSet< Model >::writeLog( TNL::Logger& logger,
-                                    const std::string& label,
-                                    const ParameterType& value,
-                                    int parameterLevel )
+SolverMultiSet< Model >::writeLog( const std::string& label, const ParameterType& value, int parameterLevel )
 {
    if( verbose == "full" )
       logger.writeParameter( label, value, parameterLevel );
 }
 
+
 template< typename Model >
 void
-SolverMultiSet< Model >::writeInfo( TNL::Logger& logger ) noexcept
+SolverMultiSet< Model >::writeInfo() noexcept
 {
    logger.writeSeparator();
    logger.writeParameter( "Simulation time: " + std::to_string( timeStepping.getTime() )
@@ -829,7 +931,7 @@ SolverMultiSet< Model >::writeInfo( TNL::Logger& logger ) noexcept
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeEpilog( TNL::Logger& logger ) noexcept
+SolverMultiSet< Model >::writeEpilog() noexcept
 {
    logger.writeHeader( "SPH simulation successfully finished." );
    logger.writeCurrentTime( "Ended at:" );
