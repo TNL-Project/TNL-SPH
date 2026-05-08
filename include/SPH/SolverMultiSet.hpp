@@ -186,7 +186,7 @@ SolverMultiSet< Model >::initMultiResolutionBundaryPatches()
 
          multiresolutionBoundaryPatches[ mrbIdx ]->initializeAsDistributed(
             0, //FIXME: Create some estimate for the alloc size
-            20000, //FIXME: Create some estimate for the alloc size
+            60000, //FIXME: Create some estimate for the alloc size
             topology.getLocalGrid( i ),
             topology.getLocalOriginCoordinates( i ), //TODO: Breaks the structure
             topology.getGlobalGrid(),

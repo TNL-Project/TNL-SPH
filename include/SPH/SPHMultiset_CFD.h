@@ -261,7 +261,7 @@ public:
     * available fileds.
     */
    void
-   save( bool writeParticleCellIndex = false  );
+   save( bool writeParticleCellIndex = false );
 
    void
    makeSnapshot();

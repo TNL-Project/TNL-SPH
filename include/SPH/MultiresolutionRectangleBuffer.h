@@ -568,6 +568,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
                for( int pd = 0; pd < VectorType::getSize(); pd++ )
                   if( pd != iAxis )
                      r[ pd ] += local_dp * ( idx[ pd ] + 1 );
+                     //r[ pd ] += local_dp * ( idx[ pd ] ); //TODO: +1 should the +1 be there?
 
                points_view[ i ] = r;
                normals_view[ i ] = norm;
@@ -607,7 +608,8 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
       const RealType h = refinementFactor * modelParams.h;
       const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
-      const RealType dx = refinementFactor * modelParams.dp * 0.5f;  //FIXME I have no clue why there is 0.5 factor
+      //const RealType dx = refinementFactor * modelParams.dp * 0.5f;  //FIXME I have no clue why there is 0.5 factor
+      const RealType dx = std::pow( refinementFactor * modelParams.dp * 0.5f, dim - 1 );  //FIXME I have no clue why there is 0.5 factor
       const VectorType v_subdomain = 0.f;  // velocity of moving subdomain
       //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
       const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 2.75f;
@@ -1127,6 +1129,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       std::cout << "sr: " << sr << "\n";
       std::cout << "inv_sr: " << inv_sr << "\n";
       const IndexType numberOfFluidParticles = fluid->getParticles()->getNumberOfParticles();
+      std::cout << "numberOfFluidParticles: " << numberOfFluidParticles << std::endl;
       std::cout << "___________________________________________________________" << std::endl;
 
       // Retype fluid to buffer:
@@ -1135,7 +1138,7 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       auto checkFluidParticles = [ = ] __cuda_callable__( int i ) mutable
       {
          const IndexType p = zoneParticleIndices_view[ i ];
-         if( p >= numberOfFluidParticles ) {printf("\n\n================================================================================> p=%d ERROR!\n\n", p); }
+         if( p >= numberOfFluidParticles ) {printf("\n\n================================================================================> p=%d, i=%d r=[%f,%f,%f] ERROR!\n\n", p, i,  r_view[ p ][0],  r_view[ p ][1], r_view[ p ][2]); return 0; } //FIXME: THIS SHOULD NOT HAPPEND!
          const VectorType r = r_view[ p ];
          const IndexVectorType gc = TNL::floor( ( r - frameFrontOrigin ) * inv_sr );
          //const bool inside = isInsideBox( gc, frameFrontOriginCoords, frameFrontDims );
@@ -1233,6 +1236,10 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       this->searchForNeighbors();
       */
 
+      std::cout << "updateParticlesInZone start" << std::endl;
+      zone.updateParticlesInZone( fluid_own->getParticles() ); //FIXME Moved upd in 3D version due to 0.59 error
+      std::cout << "getFluidParticlesEneringTheBuffer start" << std::endl;
+
       std::cout << "accumulateMasses start" << std::endl;
       accumulateMasses( fluid_neihgbor, modelParams, dt );
       std::cout << "moveBufferParticles start" << std::endl;
@@ -1243,9 +1250,9 @@ initZonesRectangular( const ParticleSetPointer& ownParticles,
       removeBufferParticles();
       std::cout << "convertBufferToFluid start" << std::endl;
       convertBufferToFluid( fluid_own );
-      std::cout << "updateParticlesInZone start" << std::endl;
-      zone.updateParticlesInZone( fluid_own->getParticles() );
-      std::cout << "getFluidParticlesEneringTheBuffer start" << std::endl;
+      //std::cout << "updateParticlesInZone start" << std::endl;
+      //zone.updateParticlesInZone( fluid_own->getParticles() ); //FIXME Moved upd in 3D version due to 0.59 error
+      //std::cout << "getFluidParticlesEneringTheBuffer start" << std::endl;
       getFluidParticlesEneringTheBuffer( fluid_own );
       std::cout << "convertFluidToBuffer start" << std::endl;
       convertFluidToBuffer( fluid_own );
