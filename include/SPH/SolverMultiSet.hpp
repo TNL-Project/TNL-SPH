@@ -389,24 +389,22 @@ SolverMultiSet< Model >::performNeighborSearch( bool performBoundarySearch )
 {
    timeMeasurement.start( "search" );
    for( int i = 0; i < numberOfSubsets; i++ ){
-      std::cout << "Particle set: " <<  i << std::endl;
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
          fluidSets[ i ]->searchForNeighbors();
-         writeLog( "Fluid search procedure:", "Done." );
+         writeLog( "Fluid " + std::to_string( i ) + " search procedure:", "Done." );
 
          if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
             boundarySets[ i ]->searchForNeighbors();
-            writeLog( "Boundary search procedure:", "Done." );
+            writeLog( "Boundary " + std::to_string( i ) + " search procedure set:", "Done." );
          }
          multiresolutionBoundaryPatches[ i ]->searchForNeighbors();
-         writeLog( "Multiresolution patch search procedure:", "Done." );
+         writeLog( "Multiresolution patch " + std::to_string( i ) + " search procedure set:", "Done." );
 
       }
       else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
-         // FIXME: Support
+         // FIXME: Add support
       }
    }
-   std::cout << "Fluid search - done." << std::endl;
 
    // search fluid patches
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
@@ -417,7 +415,7 @@ SolverMultiSet< Model >::performNeighborSearch( bool performBoundarySearch )
             }
    }
    else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
-      // FIXME: Support
+      // FIXME: Add support
    }
    timeMeasurement.stop( "search" );
    writeLog("Search...", "Done." );
@@ -428,20 +426,18 @@ void
 SolverMultiSet< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
-      std::cout << "Remove particles out of domain... ";
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
       fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-         writeLog( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+         writeLog( "Number of out of domain removed particles set " + std::to_string( i ) + ":", numberOfParticlesOutOfDomain  );
          // search for neighbros
          //FIXME: I can not search dist
          //timeMeasurement.start( "search" );
          //this->performNeighborSearch( log );
          //timeMeasurement.stop( "search" );
       }
-      std::cout << "... done." << std::endl;
    }
 }
 
@@ -835,14 +831,11 @@ SolverMultiSet< Model >::writeProlog( bool writeSystemInformation ) noexcept
    logger.writeParameter( "Particles format", particlesFormat );
    writePrologModel( logger, modelParams );
 
-   std::cout << "NUMBER OF SETS:" << numberOfSubsets << std::endl;
    for( int i = 0; i < numberOfSubsets; i++ ){
-      std::cout << "Print objects!" << std::endl;
       logger.writeHeader( "Fluid " + std::to_string( i ) + " object information." );
       fluidSets[ i ]->writeProlog( logger );
       logger.writeHeader( "Boundary " + std::to_string( i ) + " object information:" );
       boundarySets[ i ]->writeProlog( logger );
-      std::cout << "Print done!" << std::endl;
    }
 
    if( openBoundaryPatches.size() > 0 ) {
