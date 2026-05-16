@@ -21,7 +21,7 @@ removeParticlesOutOfDensityLimits( FluidPointer& fluid, ModelParams& modelParams
    auto checkParticleDensity  = [ = ] __cuda_callable__( int i ) mutable
    {
       // if the particle is already removed, skip
-      if( r_view[ 0 ] == FLT_MAX )
+      if( r_view[ i ][ 0 ] == FLT_MAX )
          return 0;
 
       if( ( rho_view[ i ] > rhoLowerTrashold ) && ( rho_view[ i ] < rhoUpperTrashold ) ) {
