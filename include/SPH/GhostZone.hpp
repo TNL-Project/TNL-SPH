@@ -537,12 +537,23 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
        //   faceEnd    += 1;
        //}
 
-      if( perpAxis < faceAxis ) {
-         // This perpAxis has not been claimed by any lower-priority face axis.
-         // Extend by 1 to fill the corner gap.
-         faceOrigin -= 1;
-         faceEnd    += 1;
-      }
+      //WASTHERE if( perpAxis < faceAxis ) {
+      //WASTHERE    // This perpAxis has not been claimed by any lower-priority face axis.
+      //WASTHERE    // Extend by 1 to fill the corner gap.
+      //WASTHERE    faceOrigin -= 1;
+      //WASTHERE    faceEnd    += 1;
+      //WASTHERE }
+if( sign > 0 ) {
+    if( perpAxis < faceAxis ) {
+        faceOrigin -= 1;
+        faceEnd    += 1;
+    }
+} else {
+    if( perpAxis < faceAxis ) {
+        faceOrigin += 1;
+        faceEnd    -= 1;
+    }
+}
 
 
       std::cout << ">>>> clampedFaceCount: faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
@@ -709,7 +720,15 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
               //     std::cout << "@@ d2: " << d2 << " extending o to: " << o << std::endl;
               //    }
               //  }
-              if( pd < d ) o -= 1;
+
+              //WASTHERE if( pd < d ) o -= 1;
+
+    if( sign > 0 ) {
+        if( pd < d ) o -= 1;   // extend outward to fill corner gap
+    } else {
+        if( pd < d ) o += 1;   // shrink inward to avoid corner overlap
+    }
+
               perpOrigin[ pd ] = TNL::max( o, 0 );
            }
 

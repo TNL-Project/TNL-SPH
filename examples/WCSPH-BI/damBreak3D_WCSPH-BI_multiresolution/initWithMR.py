@@ -426,7 +426,7 @@ if __name__ == "__main__":
         fine_x_max  = args.fine_x_max,
         fine_y_min  = args.fine_y_min,
         fine_y_max  = args.fine_y_max,
-        fine_z_min  = args.fine_z_min,
+        fine_z_min  = setup["domain_origin_z"],
         fine_z_max  = args.fine_z_max,
     )
     print(rdef)

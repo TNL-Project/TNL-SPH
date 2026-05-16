@@ -7,6 +7,7 @@
 #include <TNL/Particles/GhostZone.h>
 #include "OpenBoundaryBuffers.h"
 #include "SPHTraits.h"
+#include <cuda/std/tuple>
 
 //FIXME: Include interpolatiion as a single module
 #include "shared/Interpolation.h"
@@ -62,7 +63,7 @@ public:
       thrust::sort_by_key( thrustDevice,
                            particlesToCreate.getData(),
                            particlesToCreate.getData() + numberOfMassNodes,
-                           thrust::make_zip_iterator( thrust::make_tuple(
+                           thrust::make_zip_iterator( cuda::std::make_tuple(
                               points.getArrayData(), normal.getArrayData(), massFlux.getArrayData(), mass.getArrayData() ) ) );
    }
 
@@ -170,6 +171,8 @@ public:
       if( inner_overlap ) {
          frameFrontOrigin = nbOrig;
          frameFrontOriginCoords = TNL::floor( ( nbOrig - globalOrig ) / own_sr );
+         frameFrontOriginGlobCoords = frameFrontOriginCoords; //TODO, take from cell indices!
+         //frameFrontOriginGlobCoords = nbParticles->getGridOriginGlobalCoords() times something,...; //TODO, take from cell indices!
          frameFrontDims = resolutionFactor * nbDims;
          frameFrontEnd = frameFrontOriginCoords + frameFrontDims;  //FIXME: maybe not necessary
          frameOrientation = -1;
@@ -183,6 +186,7 @@ public:
       else if( outer_overlap ) {
          frameFrontOrigin = ownOrig;
          frameFrontOriginCoords = 0;
+         frameFrontOriginGlobCoords = ownParticles->getGridOriginGlobalCoords();
          frameFrontDims = ownDims;
          frameFrontEnd = frameFrontOrigin + frameFrontDims;
          frameOrientation = 1;
@@ -194,6 +198,49 @@ public:
       else {
          assert( false && "initZones: Invalid overlap state: neither inner_overlap nor outer_overlap is true!" );
       }
+
+std::cout << "\n========================================\n";
+std::cout << "Zone initialization debug\n";
+std::cout << "========================================\n";
+
+std::cout << "Overlap type           : "
+          << ( inner_overlap ? "INNER" :
+               outer_overlap ? "OUTER" : "INVALID" )
+          << "\n";
+
+std::cout << "bufferWidthFactorConst : " << bufferWidthFactorConst << "\n";
+std::cout << "own_sr                 : " << own_sr << "\n";
+std::cout << "nb_sr                  : " << nb_sr << "\n";
+std::cout << "resolutionFactor       : " << resolutionFactor << "\n";
+
+std::cout << "bufferWidth            : " << bufferWidth << "\n";
+
+std::cout << "\n--- Origins ---\n";
+std::cout << "globalOrig             : " << globalOrig << "\n";
+std::cout << "ownOrig                : " << ownOrig << "\n";
+std::cout << "nbOrig                 : " << nbOrig << "\n";
+
+std::cout << "\n--- Dimensions ---\n";
+std::cout << "ownDims                : " << ownDims << "\n";
+std::cout << "nbDims                 : " << nbDims << "\n";
+
+std::cout << "\n--- Unit vector ---\n";
+std::cout << "unitVect               : " << unitVect << "\n";
+
+std::cout << "\n--- Computed frame values ---\n";
+std::cout << "frameFrontOrigin       : " << frameFrontOrigin << "\n";
+std::cout << "frameFrontOriginCoords : " << frameFrontOriginCoords << "\n";
+std::cout << "frameFrontOriginGlobCoords : " << frameFrontOriginGlobCoords << "\n";
+std::cout << "frameFrontDims         : " << frameFrontDims << "\n";
+std::cout << "frameFrontEnd          : " << frameFrontEnd << "\n";
+std::cout << "frameOrientation       : " << frameOrientation << "\n";
+
+std::cout << "\n";
+std::cout << "frameBackOrigin        : " << frameBackOrigin << "\n";
+std::cout << "frameBackSize          : " << frameBackSize << "\n";
+std::cout << "frameBackDims          : " << frameBackDims << "\n";
+
+std::cout << "========================================\n";
 
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
       //TODO: Alternatively use the two concentric frameFront and frameBack
@@ -372,7 +419,14 @@ public:
       }
 
       if constexpr( ParticlesType::getParticlesDimension() == 3 ) {
-         initMassNodesWithExcludedNormals( modelParams, refinemnetFactor );
+         TNL::Containers::Array< VectorType, TNL::Devices::Host > excluded( 1 );
+         if( outer_overlap ) {
+            excluded[ 0 ] = { 0.f, 0.f, 1.f };  // exclude +x face
+         }
+         if( inner_overlap ) {
+            excluded[ 0 ] = { 0.f, 0.f, -1.f };   // exclude +x face
+         }
+         initMassNodesWithExcludedNormals( modelParams, refinemnetFactor, excluded );
       }
    }
 
@@ -794,19 +848,33 @@ public:
 
       const RealType sr = this->getParticles()->getSearchRadius();
       const RealType inv_sr = 1.f / sr;
-      const VectorType frameFrontOrigin = this->frameFrontOrigin;
-      const VectorType frameBackOrigin = this->frameBackOrigin;
+      //const VectorType frameFrontOrigin = this->frameFrontOrigin;
+      //const VectorType frameBackOrigin = this->frameBackOrigin;
+      const VectorType refOrig = this->getParticles()->getGridReferentialOrigin();
+      //const IndexVectorType gridOriginGlobCoords = this->getParticles()->getGridOriginGlobalCoords();
+      const IndexVectorType frameFrontOriginGlobalCoords = frameFrontOriginGlobCoords;
       const IndexVectorType frameBackDims = this->frameBackDims;
       const IndexVectorType frameFrontDims = this->frameFrontDims;
       const bool inner_overlap = this->inner_overlap;
       const bool outer_overlap = this->outer_overlap;
+
+      //frame back glob coords
+      //- outer: extend (to gridOrigiGlobCoordsWithOverlap)
+      //- inner: truncate
+      IndexVectorType frameBackGlobCoords = frameFrontOriginGlobalCoords;
+      if( outer_overlap )
+         frameBackGlobCoords -= 1;
+      if( inner_overlap )
+         frameBackGlobCoords += 1;
 
       // Retype to fluid if:
       // - outer zone + is inside
       // - inner zone + is outside
       auto identifyRetype = [ = ] __cuda_callable__( IndexType i ) mutable
       {
-         const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameFrontOrigin ) * inv_sr );
+         //const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameFrontOrigin ) * inv_sr );
+         const IndexVectorType giGlobCoords = TNL::floor( ( view_r_buffer[ i ] - refOrig ) * inv_sr );
+         const IndexVectorType gc = giGlobCoords - frameFrontOriginGlobalCoords;
          bool inside = isInsideBox( gc, frameFrontDims );
 
          if( inside && outer_overlap ) {
@@ -826,7 +894,9 @@ public:
       // - inner zone - is insde the ( subdomain box - zone width )
       auto identifyRemove = [ = ] __cuda_callable__( IndexType i ) mutable
       {
-         const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameBackOrigin ) * inv_sr );
+         //const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameBackOrigin ) * inv_sr );
+         const IndexVectorType giGlobCoords = TNL::floor( ( view_r_buffer[ i ] - refOrig ) * inv_sr );
+         const IndexVectorType gc = giGlobCoords - frameBackGlobCoords;
          bool inside = isInsideBox( gc, frameBackDims );
          if( inside && inner_overlap ) {
             retypeMarker_view[ i ] = 2;
@@ -856,8 +926,8 @@ public:
       thrust::sort_by_key( thrustDevice,
                            retypeMarker_view.getArrayData(),
                            retypeMarker_view.getArrayData() + numberOfBufferPtcs,
-                           thrust::make_zip_iterator(
-                              thrust::make_tuple( r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
+                           thrust::make_zip_iterator( cuda::std::make_tuple(
+                                 r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
    }
 
    template< typename FluidPointer >
@@ -970,11 +1040,15 @@ public:
 
       const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
       const IndexVectorType frameFrontDims = this->frameFrontDims;
-      const VectorType frameFrontOrigin = this->frameFrontOrigin;
+      //const VectorType frameFrontOrigin = this->frameFrontOrigin;
       const bool inner_overlap = this->inner_overlap;
       const bool outer_overlap = this->outer_overlap;
       const RealType sr = this->getParticles()->getSearchRadius();
       const RealType inv_sr = 1.f / sr;
+      const VectorType refOrig = this->getParticles()->getGridReferentialOrigin();
+      //const IndexVectorType gridOriginGlobCoords = this->getParticles()->getGridOriginGlobalCoords();
+      const IndexVectorType frameFrontOriginGlobCoords = this->frameFrontOriginGlobCoords;
+      //const IndexVectorType gridOriginGlobCoordsWithOverlap = this->particles->getGridOriginGlobalCoordsWithOverlap();
 
       // Retype fluid to buffer:
       // - outer zone and is outside the frame
@@ -983,7 +1057,8 @@ public:
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r = r_view[ p ];
-         const IndexVectorType gc = TNL::floor( ( r - frameFrontOrigin ) * inv_sr );
+         const IndexVectorType giGlobCoords = TNL::floor( ( r - refOrig ) * inv_sr );
+         const IndexVectorType gc = giGlobCoords - frameFrontOriginGlobCoords;
          const bool inside = isInsideBox( gc, frameFrontDims );
 
          if( inside && inner_overlap ) {
@@ -1002,6 +1077,7 @@ public:
       // sort the indices
       const IndexType rangeToSort =
          ( numberOfZoneParticles > numberOfBufferParticles ) ? numberOfZoneParticles : numberOfBufferParticles;
+
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
       thrust::sort( thrustDevice, particlesToBuffer_view.getArrayData(), particlesToBuffer_view.getArrayData() + rangeToSort );
@@ -1022,6 +1098,7 @@ public:
       auto v_buffer_view = this->getVariables()->v.getView();
       auto rho_buffer_view = this->getVariables()->rho.getView();
       const auto particlesToBuffer_view = this->particlesToBuffer.getConstView();
+      const RealType sr = this->getParticles()->getSearchRadius();
 
       auto retypeFluidToBuffer = [ = ] __cuda_callable__( int i ) mutable
       {
@@ -1034,8 +1111,8 @@ public:
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfPtcsToBuffer, retypeFluidToBuffer );
       this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + numberOfPtcsToBuffer );
-      fluid->getParticles()->setNumberOfParticlesToRemove( fluid->getParticles()->getNumberOfParticlesToRemove()
-                                                           + numberOfPtcsToBuffer );
+      fluid->getParticles()->setNumberOfParticlesToRemove(
+            fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfPtcsToBuffer );
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -1125,6 +1202,7 @@ protected:
 
    //renamed
    VectorType frameFrontOrigin;
+   IndexVectorType frameFrontOriginGlobCoords;
    IndexVectorType frameFrontOriginCoords;
    IndexVectorType frameFrontDims;
    IndexVectorType frameFrontEnd;
