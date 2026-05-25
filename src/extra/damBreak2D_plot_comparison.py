@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 conf_dir = Path(__file__).parent
-example_dir = (conf_dir / ".." / ".." / ".." / "examples/WCSPH-DBC/damBreak2D_WCSPH-DBC").resolve()
-resources_dir = (conf_dir / ".." / ".." / ".." / "examples/resources/damBreak2D/damBreak2D_experimentalDataLobovsky2014" ).resolve()
+example_dir = (conf_dir /  ".." / ".." / "examples/WCSPH-DBC/damBreak2D_WCSPH-DBC").resolve()
+resources_dir = (conf_dir /  ".." / ".." / "examples/resources/damBreak2D/damBreak2D_experimentalDataLobovsky2014" ).resolve()
 
 # setup plot parameters
 plt.rcParams.update({
@@ -17,7 +17,7 @@ plt.rcParams.update({
   "font.size"  : 40
 })
 
-def plot_multiple_pressure_sensors( samples, samples_labels, output_prefix ):
+def plot_multiple_pressure_sensors( samples, samples_labels, output_prefix, example_dir, resources_dir, conf_dir ):
 
     experimental_data_files = [ "Fig18_peak_event_5_sensors_5.dat",
                                 "Fig18_peak_event_5_sensors_4.dat",
@@ -45,8 +45,18 @@ def plot_multiple_pressure_sensors( samples, samples_labels, output_prefix ):
         ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='exp.', linewidth=8, color='dimgrey', alpha=0.6 )
         ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='_Lobovsky 2014', linewidth=0.7, color='grey', alpha=1 )
 
-        for sample, sample_label, color in zip( samples, samples_labels, [ 'b', 'm', 'k' ] ):
-            data_path = example_dir / sample / "sensorsPressure.dat"
+        #for sample, sample_label, color in zip( samples, samples_labels, [ 'b', 'm', 'k' ] ):
+        #    data_path = example_dir / sample / "sensorsPressure.dat"
+
+        # Trick to combine absolute and relative paths
+        for sample, sample_label, color in zip(samples, samples_labels, ['b', 'm', 'k']):
+            sample = Path(sample)
+            if sample.is_absolute():
+                sample_dir = sample
+            else:
+                sample_dir = example_dir / sample
+            data_path = sample_dir / "sensorsPressure.dat"
+
             data = np.genfromtxt( data_path, delimiter=' ' )
             mask = nondim_time_coef * data[:, 0] < 8
             ax.plot( nondim_time_coef * data[ mask, 0 ],
@@ -64,7 +74,7 @@ def plot_multiple_pressure_sensors( samples, samples_labels, output_prefix ):
         output_plot_name = str(conf_dir) + f"/{output_prefix}_pressure_sensor_{ i + 1 }_comparison.png"
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
-def plot_multiple_water_level_sensors( samples, samples_labels, output_prefix ):
+def plot_multiple_water_level_sensors(  samples, samples_labels, output_prefix, example_dir, resources_dir, conf_dir ):
 
     experimental_data_files = [ "Fig16_WaterLevels_H1_2.dat",
                                 "Fig16_WaterLevels_H2_3.dat",
@@ -91,8 +101,18 @@ def plot_multiple_water_level_sensors( samples, samples_labels, output_prefix ):
         ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='exp.', linewidth=8, color='dimgrey', alpha=0.6 )
         ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='_Lobovsky 2014', linewidth=0.7, color='grey', alpha=1 )
 
-        for sample, sample_label, color in zip( samples, samples_labels, ['b', 'm', 'k'] ):
-            data_path = example_dir / sample / "sensorsWaterLevel.dat"
+        #for sample, sample_label, color in zip( samples, samples_labels, ['b', 'm', 'k'] ):
+        #    data_path = example_dir / sample / "sensorsWaterLevel.dat"
+
+        # Trick to combine absolute and relative paths
+        for sample, sample_label, color in zip(samples, samples_labels, ['b', 'm', 'k']):
+            sample = Path(sample)
+            if sample.is_absolute():
+                sample_dir = sample
+            else:
+                sample_dir = example_dir / sample
+            data_path = example_dir / "sensorsWaterLevel.dat"
+
             data = np.genfromtxt( data_path, delimiter=' ' )
             ax.plot( nondim_time_coef * data[ :, 0 ],
                      nondim_height_coef * data[ :, i + 1 ],

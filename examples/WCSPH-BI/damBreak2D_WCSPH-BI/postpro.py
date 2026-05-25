@@ -12,7 +12,7 @@ sys.path.append('../../../src/tools')
 case_tag = "damBreak2D_WCSPH-BI"
 example_dir = Path(__file__).parent
 resources_dir = (example_dir / ".." / ".." / "resources" / "damBreak2D" / "damBreak2D_experimentalDataLobovsky2014" ).resolve()
-results_dir = ( example_dir / "results--dp_0.001" ).resolve()
+results_dir = ( example_dir / "results" ).resolve()
 
 # setup plot parameters
 plt.rcParams.update({
