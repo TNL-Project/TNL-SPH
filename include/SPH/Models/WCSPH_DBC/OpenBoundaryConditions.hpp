@@ -1,5 +1,6 @@
 #include "OpenBoundaryConditions.h"
 #include "SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h"
+#include <cuda/std/tuple>
 
 namespace TNL {
 namespace SPH {
@@ -92,9 +93,9 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::sortBufferParticlesByMa
    thrust::sort_by_key( thrustDevice,
                         view_inletMark.getArrayData(),
                         view_inletMark.getArrayData() + numberOfBufferParticles,
-                        thrust::make_zip_iterator( thrust::make_tuple( view_r_buffer.getArrayData(),
-                                                                       view_v_buffer.getArrayData(),
-                                                                       view_rho_buffer.getArrayData() ) ) );
+                        thrust::make_zip_iterator( cuda::std::make_tuple( view_r_buffer.getArrayData(),
+                                                                          view_v_buffer.getArrayData(),
+                                                                          view_rho_buffer.getArrayData() ) ) );
 }
 
 template< typename SPHConfig, typename ModelConfig >
