@@ -268,7 +268,7 @@ def parse_args():
 
     g = ap.add_argument_group("domain geometry")
     g.add_argument("--box-length", type=float, default=1.61, help="tank length")
-    g.add_argument("--box-height", type=float, default=2.0, help="tank height")
+    g.add_argument("--box-height", type=float, default=0.6, help="tank height")
     g.add_argument("--fluid-length", type=float, default=0.6, help="initial fluid column length")
     g.add_argument("--fluid-height", type=float, default=0.3, help="initial fluid column height")
 
