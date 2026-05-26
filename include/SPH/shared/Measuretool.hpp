@@ -3,9 +3,9 @@ namespace SPH {
 
 
 template< typename SPHConfig, typename SPHSimulation >
-template< typename SPHKernelFunction, typename SPHState >
+template< typename SPHKernelFunction, typename ModelParams >
 void
-InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    // neighbor search objects
    typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -21,8 +21,8 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
    auto view_gamma_interpolation = this->gamma.getView();
 
    // loaded constants
-   const RealType h = sphState.h;
-   const RealType m = sphState.mass;
+   const RealType h = modelParams.h;
+   const RealType m = modelParams.mass;
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
    // interpolation grid constatns
@@ -91,9 +91,9 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
 }
 
 template< typename SPHConfig, typename SPHSimulation >
-template< typename SPHKernelFunction, typename SPHState >
+template< typename SPHKernelFunction, typename ModelParams >
 void
-InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    // neighbor search objects
    typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -108,8 +108,8 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( Flui
    auto view_v_interpolation = this->variables()->v.getView();
 
    // loaded constants
-   const RealType h = sphState.h;
-   const RealType m = sphState.mass;
+   const RealType h = modelParams.h;
+   const RealType m = modelParams.mass;
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
 
    // specify the offset to distinguish cell-based and vertex-based interpolation
@@ -166,11 +166,11 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( Flui
 }
 
 template< typename SPHConfig, typename SPHSimulation >
-template< typename SPHKernelFunction, typename SPHState >
+template< typename SPHKernelFunction, typename ModelParams >
 void
-InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
-   interpolateUsingGrid< SPHKernelFunction, SPHState >( fluid, boundary, sphState );
+   interpolateUsingGrid< SPHKernelFunction, ModelParams >( fluid, boundary, modelParams );
 }
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -210,11 +210,11 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFil
 }
 
 template< typename SPHConfig, typename SPHSimulation >
-template< typename SPHKernelFunction, typename EOS, typename SPHState >
+template< typename SPHKernelFunction, typename EOS, typename ModelParams >
 void
 SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
                                                               BoundaryPointer& boundary,
-                                                              SPHState& sphState )
+                                                              ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -228,11 +228,17 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& flui
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
-   const RealType h = sphState.h;
-   const RealType m = sphState.mass;
+   //const RealType h = modelParams.h;
+   //const RealType m = modelParams.mass;
+   // ----
+   const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+   const unsigned int dim = SPHConfig::spaceDimension;
+   const RealType h = refinementFactor * modelParams.h;
+   const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+   // ----
    const bool includeBoundary = this->includeBoundary;
 
-   typename EOS::ParamsType eosParams( sphState );
+   typename EOS::ParamsType eosParams( modelParams );
 
    auto view_sensorsPositions = sensorPositions.getView();
    auto view_pressureSensors = sensors.getView();
@@ -325,11 +331,11 @@ SensorInterpolation< SPHConfig, SPHSimulation >::save( const std::string outputF
 }
 
 //template< typename SPHConfig, typename SPHSimulation >
-//template<typename SPHKernelFunction, typename EOS, typename SPHState >
+//template<typename SPHKernelFunction, typename EOS, typename ModelParams >
 //void
 //SensorGeneralInterpolation< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid,
 //                                                                     BoundaryPointer& boundary,
-//                                                                     SPHState& sphState,
+//                                                                     ModelParams& modelParams,
 //                                                                     bool includeBoundary )
 //{
 //   GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
@@ -349,10 +355,10 @@ SensorInterpolation< SPHConfig, SPHSimulation >::save( const std::string outputF
 //   const auto view_field = field.getView();
 //
 //   /* CONSTANT VARIABLES */
-//   const RealType h = sphState.h;
-//   const RealType m = sphState.mass;
+//   const RealType h = modelParams.h;
+//   const RealType m = modelParams.mass;
 //
-//   typename EOS::ParamsType eosParams( sphState );
+//   typename EOS::ParamsType eosParams( modelParams );
 //
 //   auto view_sensorsPositions = sensorPositions.getView();
 //   auto view_pressureSensors = sensors.getView();
@@ -436,9 +442,9 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::getSensorData() const
 }
 
 template< typename SPHConfig, typename SPHSimulation >
-template< typename SPHKernelFunction, typename EOS, typename SPHState >
+template< typename SPHKernelFunction, typename EOS, typename ModelParams >
 void
-SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState )
+SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename ParticlesType::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -450,8 +456,8 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate( FluidPointer& fluid, 
 
    /* CONSTANT VARIABLES */
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
-   const RealType h = sphState.h;
-   const RealType m = sphState.mass;
+   const RealType h = modelParams.h;
+   const RealType m = modelParams.mass;
    const RealType levelIncrement = this->levelIncrement;
 
    auto view_sensors = sensors.getView();

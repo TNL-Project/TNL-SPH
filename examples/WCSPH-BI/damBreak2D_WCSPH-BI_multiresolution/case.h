@@ -1,147 +1,51 @@
-#include <TNL/Config/parseCommandLine.h>
-#include <TNL/Config/parseINIConfigFile.h>
-#include <TNL/Logger.h>
-
-#include <SPH/configSetup.h>
-#include <SPH/configInit.h>
 #include "template/config.h"
-
-#include <SPH/Models/WCSPH_BI/control.h>
-#include <cstdlib>
 #include <SPH/shared/removeParticlesOutOfDensityLimits.h>
 
-int main( int argc, char* argv[] )
+template< typename Simulation >
+requires std::is_same_v<
+    typename Simulation::ModelParams::IntegrationScheme,
+    TNL::SPH::IntegrationSchemes::VerletScheme< typename SPHDefs::SPHConfig >
+>
+void exec( Simulation& sph )
 {
-   // prepare client parameters
-   TNL::Config::ParameterContainer cliParams;
-   TNL::Config::ConfigDescription cliConfig;
-
-   // prepare sph parameters
-   TNL::Config::ParameterContainer parameters;
-   TNL::Config::ConfigDescription config;
-
-   try {
-      TNL::SPH::template initialize< Simulation >( argc, argv, cliParams, cliConfig, parameters, config );
-   }
-   catch ( ... ) {
-      return EXIT_FAILURE;
-   }
-
-   TNL::Logger log( 100, std::cout );
-   Simulation sph;
-   sph.init( parameters, log );
-   sph.writeProlog( log );
-
-   //while( sph.timeStepping.getStep() < 1 )
    while( sph.timeStepping.runTheSimulation() )
    {
-      std::cout << "Step: " << sph.timeStepping.getStep() << " Time: " << sph.timeStepping.getTime()
-         << " f0: "<< sph.fluidSets[ 0 ]->getNumberOfParticles()
-         << " m0: "<< sph.multiresolutionBoundaryPatches[ 0 ]->getNumberOfParticles()
-         << " f1: "<< sph.fluidSets[ 1 ]->getNumberOfParticles()
-         << " m0: "<< sph.multiresolutionBoundaryPatches[ 1 ]->getNumberOfParticles()
-         << std::endl;
-
       // search for neighbros
-      sph.timeMeasurement.start( "search" );
+      //sph.removeParticlesOutOfDensityLimits();
       TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 0 ], sph.modelParams );
       TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 1 ], sph.modelParams );
-      sph.writeLog( log, "Remove particles out of domain...", "" );
-      std::cout << "Remove particles out of domain." << std::endl;
-      sph.removeParticlesOutOfDomain( log );
-      sph.writeLog( log, "Remove particles out of domain...", "Done." );
-
-      //sph.performNeighborSearch( log, true );
-      sph.writeLog( log, "Search...", "" );
-      std::cout << "Search for neighbors." << std::endl;
-      sph.performNeighborSearch( log  );
-      sph.timeMeasurement.stop( "search" );
-      sph.writeLog( log, "Search...", "Done." );
+      sph.removeParticlesOutOfDomain();
+      sph.performNeighborSearch();
 
       // perform interaction with given model
-      std::cout << "On my way to interact" << std::endl;
-      sph.timeMeasurement.start( "interact" );
       sph.interact();
+      // custom: no-penetration bc
       BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 0 ], sph.boundarySets[ 0 ], sph.modelParams, sph.timeStepping.getTimeStep() );
-      std::cout << "Interaction done for set 0." << std::endl;
       BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 1 ], sph.boundarySets[ 1 ], sph.modelParams, sph.timeStepping.getTimeStep() );
-      std::cout << "Interaction done for set 1." << std::endl;
-      sph.timeMeasurement.stop( "interact" );
-      sph.writeLog( log, "Interact...", "Done." );
 
-      // in case of variable time step, compute the step
-      sph.computeTimeStep();
-      std::cout << "I have new time step." << std::endl;
-
-
-      //integrate
-      sph.timeMeasurement.start( "integrate" );
-      sph.integrator->integratStepVerlet( sph.fluidSets[ 0 ], sph.boundarySets[ 0 ], sph.timeStepping, false );
-      std::cout << "Integration done for set 0." << std::endl;
-      sph.integrator->integratStepVerlet( sph.fluidSets[ 1 ], sph.boundarySets[ 1 ], sph.timeStepping, false );
-      std::cout << "Integration done for set 1." << std::endl;
-      sph.timeMeasurement.stop( "integrate" );
-      sph.writeLog( log, "Integrate...", "Done." );
+      // integrate
+      sph.integrate();
 
       // output particle data
-      std::cout << "Making snapshot" << std::endl;
-      sph.makeSnapshot( log );
-      std::cout << "Snapshot done" << std::endl;
-      // check timers and if measurement or interpolation should be performed, is performed
-      //sph.template measure< SPHDefs::KernelFunction, SPHDefs::EOS >( log );
+      sph.makeSnapshot();
 
-      //DEBUG
-      //if( sph.timeStepping.getTime() > 0.870)
-      //   sph.save( log, false );
+      // apply the multi-resoltion bc
+      sph.multiresolutionUpdate();
 
-      // update MR buffer
-      std::cout << "Applying MR buffer condition" << std::endl;
-      sph.applyMultiresolutionBC();
-      std::cout << "Done" << std::endl;
+      //// check timers and if measurement or interpolation should be performed, is performed
+      sph.measure();
 
       // update time step
-      sph.updateTime();
+      sph.timeStepping.updateTimeStep();
    }
-
-   sph.writeEpilog( log );
 }
-
-/*
-
-#include "template/config.h"
 
 int main( int argc, char* argv[] )
 {
    Simulation sph;
    sph.init( argc, argv );
    sph.writeProlog();
-
-   while( sph.timeStepping.runTheSimulation() )
-   {
-      // search for neighbros
-      sph.performNeighborSearch();
-
-      // perform interaction with given model
-      sph.interact();
-
-      // in case of variable time step, compute the step
-      sph.computeTimeStep();
-
-      // make integration step with Verlet scheme
-      sph.integrateVerletStep( SPHDefs::BCType::integrateInTime() );
-
-      // check timers and if output should be performed, it is performed
-      sph.makeSnapshot();
-
-      // check timers and if measurement or interpolation should be performed, it is performed
-      sph.measure();
-
-      // update time step
-      sph.updateTime();
-   }
-
+   exec( sph );
    sph.writeEpilog();
 }
-
-*/
 

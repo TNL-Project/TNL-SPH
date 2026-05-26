@@ -545,8 +545,8 @@ SolverMultiSet< Model >::interact()
       //FIXME:       model.interactionWithOpenBoundary( fluidSets[ i ], openBoundaryPatches[ j ], modelParams );
       //FIXME:    }
       //FIXME: }
-            if( i == 1 )
-            model.interactionWithOpenBoundary( fluidSets[ i ], multiresolutionBoundaryPatches[ i ], modelParams );
+      //if( i == 1 )
+      model.interactionWithOpenBoundary( fluidSets[ i ], multiresolutionBoundaryPatches[ i ], modelParams );
       model.finalizeInteraction( fluidSets[ i ], boundarySets[ i ], modelParams );
    }
 
@@ -574,9 +574,13 @@ template< typename Model >
 void
 SolverMultiSet< Model >::measure()
 {
-   for( int i = 0; i < numberOfSubsets; i++ )
+   //for( int i = 0; i < numberOfSubsets; i++ )
+   //   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
+   //         fluidSets[ i ], boundarySets[ i ], modelParams, timeStepping, logger, verbose );
+
       simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-            fluidSets[ i ], boundarySets[ i ], modelParams, timeStepping, logger, verbose );
+            fluidSets[ 1 ], boundarySets[ 1 ], modelParams, timeStepping, logger, verbose );
+
 }
 
 template< typename Model >
