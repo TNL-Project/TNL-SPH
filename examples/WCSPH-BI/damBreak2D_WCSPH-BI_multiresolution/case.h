@@ -8,6 +8,10 @@ requires std::is_same_v<
 >
 void exec( Simulation& sph )
 {
+   MassMonitor massMonitor;
+   massMonitor.init( sph.fluidSets, sph.modelParams );
+
+
    while( sph.timeStepping.runTheSimulation() )
    {
       // search for neighbros
@@ -32,7 +36,11 @@ void exec( Simulation& sph )
       // apply the multi-resoltion bc
       sph.multiresolutionUpdate();
 
-      //// check timers and if measurement or interpolation should be performed, is performed
+      // CUSTOM: check mass conservation
+      massMonitor.sumTotalMass( sph.fluidSets );
+      massMonitor.output( sph.outputDirectory + "/massConservation.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
+
+      // check timers and if measurement or interpolation should be performed, is performed
       sph.measure();
 
       // update time step

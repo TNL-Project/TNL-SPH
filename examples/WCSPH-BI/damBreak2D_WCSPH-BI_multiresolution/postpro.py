@@ -99,6 +99,27 @@ def plot_water_level_sensors():
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
 
+def plot_mass_conservation():
+
+    mass = np.genfromtxt( results_dir / "massConservation.dat", delimiter=" " )
+    nsets = mass.shape[ 1 ] - 3;
+
+    fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
+    ax.plot( mass[ :, 1 ], mass[ :, 2 ], label='$m_{tot.}$', linewidth=2, color='k'  )
+
+    for i in range(0, nsets):
+        ax.plot( mass[ :, 1 ], mass[ :, 3 + i], label=f'$m_{i}$', linewidth=2 )
+
+    ax.set_xlabel( r'$ t $ [s]' )
+    ax.set_ylabel( r'$ m $ [kg]' )
+    ax.grid( color='black', linestyle='--', linewidth=0.5 )
+    leg = ax.legend()
+    leg.get_frame().set_edgecolor('k')
+    output_plot_name = f"results/postprocessing/mass_conservation.png"
+    print( "Plot energy: {output_plot_name}" )
+    plt.savefig( output_plot_name, bbox_inches='tight' )
+
+
 if __name__ == "__main__":
     import argparse
     import os
@@ -123,6 +144,9 @@ if __name__ == "__main__":
     plot_water_level_sensors()
 
     # Global postprocessing tools: plot time step log and energy
+    #import plotMassConservation()
+    plot_mass_conservation()
+
     #import plotTimeStep
     #plotTimeStep.plot_time_step( results_dir )
     #import plotEnergy

@@ -97,3 +97,7 @@ using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHCo
 #include <SPH/SolverMultiSet.h>
 using Simulation = TNL::SPH::SolverMultiSet< Model >;
 
+// Custom post processing tools
+#include <SPH/shared/massConservationMonitor.h>
+using MassMonitor = TNL::SPH::MassConservationMonitor< SPHDefs >;
+
