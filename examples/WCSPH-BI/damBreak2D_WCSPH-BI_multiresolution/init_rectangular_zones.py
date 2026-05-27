@@ -134,6 +134,13 @@ def generate_boundary_particles(
             ry = (j + 1) * dp
             add(x_last + layer * dp, ry, x_last - (layer + 1) * dp, ry, -1.0, 0.0)
 
+    # Top wall
+    y_top = box_height_n * dp
+    for layer in range(nl):
+        for i in range(box_length_n - nl + 1):
+            rx = (i + 1) * dp
+            add(rx, y_top + layer * dp, rx, y_top - (layer + 1) * dp, 0.0, -1.0)
+
     # Corners
     def corner(cx, cy, sx, sy):
         for layer in range(nl):
@@ -151,6 +158,8 @@ def generate_boundary_particles(
 
     corner(0.0,    0.0, -1, -1)
     corner(x_last, 0.0, +1, -1)
+    corner(0.0,    y_top, -1, +1)
+    corner(x_last, y_top, +1, +1)
 
     n = len(box_rx)
     r       = np.column_stack([box_rx,   box_ry,   np.zeros(n)])
