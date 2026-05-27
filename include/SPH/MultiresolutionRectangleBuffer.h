@@ -609,8 +609,13 @@ std::cout << "========================================\n";
       const RealType h = refinementFactor * modelParams.h;
       const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
       //const RealType dx = refinementFactor * modelParams.dp * 0.5f;  //FIXME I have no clue why there is 0.5 factor
-      const RealType dx =
-         std::pow( refinementFactor * modelParams.dp * 0.5f, dim - 1 );  //FIXME I have no clue why there is 0.5 factor
+      //const RealType dx =
+      //   //std::pow( refinementFactor * modelParams.dp * 0.5f, dim - 1 );  //FIXME I have no clue why there is 0.5 factor
+      //   std::pow( refinementFactor * modelParams.dp, dim - 1 );  //FIXME I have no clue why there is 0.5 factor
+      //----
+      const RealType trueRefinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
+      const RealType dx = std::pow( trueRefinementFactor * modelParams.dp, dim - 1 );
+      //----
       const VectorType v_subdomain = 0.f;                                // velocity of moving subdomain
       //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
       const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 2.75f;
@@ -982,10 +987,10 @@ std::cout << "========================================\n";
       auto view_particlesToCreate = massNodes.particlesToCreate.getView();
 
       //FIXME: I need refinemet factor here! Subdomain mass is different. But with refinement factor, it doesnt work!
-      //const RealType refinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
-      //const RealType particleMass = std::pow( refinementFactor, ParticlesType::spaceDimension ) * modelParams.mass;
-      const RealType particleMass =
-         ( ParticlesType::getParticlesDimension() == 2 ) ? 0.25f * modelParams.mass : 0.125f * modelParams.mass;
+      const RealType refinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
+      const RealType particleMass = std::pow( refinementFactor, ParticlesType::spaceDimension ) * modelParams.mass;
+      //const RealType particleMass =
+      //   ( ParticlesType::getParticlesDimension() == 2 ) ? 0.25f * modelParams.mass : 0.125f * modelParams.mass;
       const IndexType numberOfMassNodes = this->massNodes.numberOfMassNodes;
 
       // reset list with markers
