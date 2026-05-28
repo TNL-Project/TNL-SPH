@@ -615,6 +615,8 @@ std::cout << "========================================\n";
       //----
       const RealType trueRefinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
       const RealType dx = std::pow( trueRefinementFactor * modelParams.dp, dim - 1 );
+      const RealType dx_nb = std::pow( refinementFactor * modelParams.dp, dim - 1 );
+      const RealType dx_min = std::min( dx, dx_nb );
       //----
       const VectorType v_subdomain = 0.f;                                // velocity of moving subdomain
       //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
@@ -695,9 +697,9 @@ std::cout << "========================================\n";
          RealType m_flux_x = 0;
 
          //TODO: Should I use ( view_mFlux_massPoints[ i ] < 0.f  ) here?
-         if( ( div_r_x > div_r_trashold || drs_min < dx ) && ( view_m_massPoints[ i ] < 0.f ) )
+         if( ( div_r_x > div_r_trashold || drs_min < dx_min ) && ( view_m_massPoints[ i ] < 0.f ) )
             m_flux_x = m_x_lessZero;
-         else if( div_r_x > div_r_trashold || drs_min < dx )
+         else if( div_r_x > div_r_trashold || drs_min < dx_min )
             m_flux_x = m_x_geqZero;
          else
             m_flux_x = 0;

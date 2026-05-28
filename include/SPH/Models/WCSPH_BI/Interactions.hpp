@@ -609,7 +609,8 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
       view_gamma[ p ] += gamma_i;
    };
    //Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, particleLoop );
-   Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), particleLoop );
+   //Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), particleLoop );
+   Algorithms::parallelFor< DeviceType >( 0, fluid->getNumberOfParticles(), particleLoop );
 }
 
 //FIXME: WTF is this function
