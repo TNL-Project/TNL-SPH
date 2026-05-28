@@ -233,36 +233,36 @@ def write_distributed_domain_params_rectangular(
     # Reuse the standard writer for per-subdomain grid entries
     dec.write_distributed_domain_params(grids, setup)
 
-    # Append the fine-region block — read by initZonesRectangular
-    is_3d = "domain_size_z" in setup
-    axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
+    ## Append the fine-region block — read by initZonesRectangular
+    #is_3d = "domain_size_z" in setup
+    #axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
 
-    with open("sources/config-distributed-domain.ini", "a") as f:
-        f.write("# Fine region specification (for rectangular MRB)\n")
+    #with open("sources/config-distributed-domain.ini", "a") as f:
+    #    f.write("# Fine region specification (for rectangular MRB)\n")
 
-        # Physical origin and size of the fine region
-        for ax in axes:
-            phys_min = getattr(fine_grid, f"phys_{ax}_min")
-            phys_max = getattr(fine_grid, f"phys_{ax}_max")
-            f.write(f"fine-region-origin-{ax} = {phys_min:.7f}\n")
-            f.write(f"fine-region-size-{ax}   = {phys_max - phys_min:.7f}\n")
+    #    # Physical origin and size of the fine region
+    #    for ax in axes:
+    #        phys_min = getattr(fine_grid, f"phys_{ax}_min")
+    #        phys_max = getattr(fine_grid, f"phys_{ax}_max")
+    #        f.write(f"fine-region-origin-{ax} = {phys_min:.7f}\n")
+    #        f.write(f"fine-region-size-{ax}   = {phys_max - phys_min:.7f}\n")
 
-        # Which faces are active interfaces (not touching domain boundary)
-        # A face is a domain boundary if phys_min/max coincides with domain origin/end
-        sr = setup["search_radius"]
-        for ax in axes:
-            domain_min = setup[f"domain_origin_{ax}"]
-            domain_max = setup[f"domain_origin_{ax}"] + setup[f"domain_size_{ax}"]
-            phys_min   = getattr(fine_grid, f"phys_{ax}_min")
-            phys_max   = getattr(fine_grid, f"phys_{ax}_max")
+    #    # Which faces are active interfaces (not touching domain boundary)
+    #    # A face is a domain boundary if phys_min/max coincides with domain origin/end
+    #    sr = setup["search_radius"]
+    #    for ax in axes:
+    #        domain_min = setup[f"domain_origin_{ax}"]
+    #        domain_max = setup[f"domain_origin_{ax}"] + setup[f"domain_size_{ax}"]
+    #        phys_min   = getattr(fine_grid, f"phys_{ax}_min")
+    #        phys_max   = getattr(fine_grid, f"phys_{ax}_max")
 
-            # Face at min end: active if fine region does not touch domain boundary
-            face_min_active = abs(phys_min - domain_min) > sr * 1e-3
-            face_max_active = abs(phys_max - domain_max) > sr * 1e-3
-            f.write(f"fine-region-face-min-{ax}-active = {int(face_min_active)}\n")
-            f.write(f"fine-region-face-max-{ax}-active = {int(face_max_active)}\n")
+    #        # Face at min end: active if fine region does not touch domain boundary
+    #        face_min_active = abs(phys_min - domain_min) > sr * 1e-3
+    #        face_max_active = abs(phys_max - domain_max) > sr * 1e-3
+    #        f.write(f"fine-region-face-min-{ax}-active = {int(face_min_active)}\n")
+    #        f.write(f"fine-region-face-max-{ax}-active = {int(face_max_active)}\n")
 
-        f.write("\n")
+    #    f.write("\n")
 
 # ---------------------------------------------------------------------------
 # CLI entry point
@@ -325,8 +325,8 @@ def define_problem_bounding_box(setup):
     domain = {
         "domain_origin_x" : -2.5 * sr,
         "domain_origin_y" : -2.5 * sr,
-        "domain_size_x" : setup["box_length"] + 2.5 * sr,
-        "domain_size_y" : setup["box_height"] + 2.5 * sr,
+        "domain_size_x" : setup["box_length"] + 5.5 * sr,
+        "domain_size_y" : setup["box_height"] + 5.5 * sr,
     }
     setup.update( domain )
 
@@ -346,7 +346,7 @@ if __name__ == "__main__":
         fine_factor = 0.5,
         fine_x_min  = 1.2,
         #fine_x_max  = args.box_length,   # touches right domain boundary → no MRB face there
-        fine_x_max  = setup["domain_origin_x"] + setup["domain_size_x"] + 2.5 * setup["search_radius"],   # touches right domain boundary → no MRB face there
+        fine_x_max  = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"],   # touches right domain boundary → no MRB face there
         fine_y_min  = setup["domain_origin_y"],  # touches bottom boundary → no MRB face there
         fine_y_max  = 0.3,
     )
