@@ -68,15 +68,6 @@ public:
       config.addEntry< double >( "midpointRelaxCoef_0", "Midpoint relaxation coefficient in first iteration.", 0.f );
       config.addEntry< double >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
       config.addEntry< double >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
-
-      //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-      //}
-      //for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-      //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
-      //}
    }
 
    void
@@ -118,6 +109,27 @@ public:
       dtMin = 0.05f * dtInit;
    }
 
+   // generate refined model params
+   WCSPH_BIConfig
+   refined( const RealType searchRadius ) const
+   {
+       WCSPH_BIConfig refined = *this;
+       const int level = std::round( refined.searchRadius / searchRadius ) - 1; //FIXME: Generalize for arbitrary factor
+       const RealType refinementFactor = std::pow( refined.refinementFactor, level );
+       const unsigned int dim = SPHConfig::spaceDimension;
+
+       refined.refinementFactor = refinementFactor;
+       refined.h = refinementFactor * h;
+       refined.mass = std::pow( refinementFactor, dim ) * mass;
+       refined.massBoundary = std::pow( refinementFactor, dim ) * massBoundary;
+       refined.boundaryElementSize = std::pow( refinementFactor, dim - 1 ) * boundaryElementSize;
+       refined.dp = refinementFactor * dp;
+       refined.searchRadius = refinementFactor * searchRadius;
+       return refined;
+   }
+
+   //refinementFactor - refinement factor between two consecutive levels [-]
+   RealType refinementFactor = 0.5f;
    //dp - initial particle distance [m]
    RealType dp = 0.f;
    //h - smoothing length [m]
