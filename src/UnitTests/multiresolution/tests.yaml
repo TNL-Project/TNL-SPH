@@ -1,0 +1,20 @@
+# SPH test list
+# Run with: python run_sph_tests.py --tests tests.yaml
+#
+# Global floating-point tolerance (can be overridden per test).
+tolerance: 1.0e-9
+
+tests:
+  - name: dummy2D-center
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-center/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-center_ref.json
+
+  - name: dambreak2D-corner
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dambreak2D-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dambreak2D-corner_ref.json
+
+  # Add more test cases below:
+  # - name: anotherCase
+  #   log: results/anotherCase.log
+  #   ref: refs/anotherCase.ref.json
+  #   tolerance: 1.0e-6   # optional per-test override

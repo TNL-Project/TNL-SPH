@@ -1,0 +1,28 @@
+CONFIGURATIONS = {
+
+    "dummy-center": {
+        "description": "Centered refinement in unit square",
+        "dp": 0.002,
+        "h_coef": 1.75,
+        "box_x": 1.0,
+        "box_y": 1.0,
+        "fine_factor": 0.5,
+        "fine_x_min": 0.25,
+        "fine_x_max": 0.75,
+        "fine_y_min": 0.25,
+        "fine_y_max": 0.75,
+    },
+
+    "dambreak2D-corner": {
+        "description": "Dam break with refinement in bottom-right corner",
+        "dp": 0.002,
+        "h_coef": 1.75,
+        "box_x": 1.61,
+        "box_y": 0.6,
+        "fine_factor": 0.5,
+        "fine_x_min": 1.2,
+        "fine_x_max": None,
+        "fine_y_min": None,
+        "fine_y_max": 0.3,
+    },
+}
