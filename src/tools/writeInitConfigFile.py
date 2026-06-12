@@ -1,3 +1,36 @@
+ini_replacements = [
+    # (placeholder,                          setup key,               format spec)
+    ("placeholderSearchRadius",              "search_radius",         ""),
+    ("placeholderDomainOrigin-x",            "domain_origin_x",       ".7f"),
+    ("placeholderDomainOrigin-y",            "domain_origin_y",       ".7f"),
+    ("placeholderDomainOrigin-z",            "domain_origin_z",       ".7f"),
+    ("placeholderDomainSize-x",              "domain_size_x",         ".7f"),
+    ("placeholderDomainSize-y",              "domain_size_y",         ".7f"),
+    ("placeholderDomainSize-z",              "domain_size_z",         ".7f"),
+    ("placeholderInitParticleDistance",      "dp",                    ""),
+    ("placeholderSmoothingLength",           "smoothing_length",      ""),
+    ("placeholderMass",                      "particle_mass",         ""),
+    ("placeholderBoundaryElementSize",       "boundary_element_size", ""),
+    ("placeholderSpeedOfSound",              "speed_of_sound",        ""),
+    ("placeholderDensity",                   "density",               ""),
+    ("placeholderTimeStep",                  "time_step",             ""),
+    ("placeholderCFL",                       "cfl",                   ""),
+    ("placeholderAlpha",                     "alpha",                 ""),
+    ("placeholderDynamicVicosity",           "dynamic_viscosity",     ""),
+    ("placeholderFluidParticles",            "fluid_n",               ""),
+    ("placeholderAllocatedFluidParticles",   "fluid_n",               ""),
+    ("placeholderBoundaryParticles",         "boundary_n",            ""),
+    ("placeholderAllocatedBoundaryParticles","boundary_n",            ""),
+]
+
+header_replacements = [
+    # (placeholder,                          setup key,               format spec)
+    ("#placeholderBoundaryConditionsType",   "bc_type",               ""),
+    ("#placeholderDiffusiveTerm",            "diffusive_term",        ""),
+    ("#placeholderViscosTerm",               "viscous_term",          ""),
+    ("#placeholderTimeIntegration",          "time_integration",      ""),
+]
+
 def safe_replace(text: str, replacements: dict, setup: dict) -> str:
     for placeholder, key, fmt in replacements:
         value = setup.get(key)
@@ -6,38 +39,6 @@ def safe_replace(text: str, replacements: dict, setup: dict) -> str:
     return text
 
 def write_simulation_params(setup: dict) -> None:
-    ini_replacements = [
-        # (placeholder,                          setup key,               format spec)
-        ("placeholderSearchRadius",              "search_radius",         ""),
-        ("placeholderDomainOrigin-x",            "domain_origin_x",       ".7f"),
-        ("placeholderDomainOrigin-y",            "domain_origin_y",       ".7f"),
-        ("placeholderDomainOrigin-z",            "domain_origin_z",       ".7f"),
-        ("placeholderDomainSize-x",              "domain_size_x",         ".7f"),
-        ("placeholderDomainSize-y",              "domain_size_y",         ".7f"),
-        ("placeholderDomainSize-z",              "domain_size_z",         ".7f"),
-        ("placeholderInitParticleDistance",      "dp",                    ""),
-        ("placeholderSmoothingLength",           "smoothing_length",      ""),
-        ("placeholderMass",                      "particle_mass",         ""),
-        ("placeholderBoundaryElementSize",       "boundary_element_size", ""),
-        ("placeholderSpeedOfSound",              "speed_of_sound",        ""),
-        ("placeholderDensity",                   "density",               ""),
-        ("placeholderTimeStep",                  "time_step",             ""),
-        ("placeholderCFL",                       "cfl",                   ""),
-        ("placeholderAlpha",                     "alpha",                 ""),
-        ("placeholderDynamicVicosity",           "dynamic_viscosity",     ""),
-        ("placeholderFluidParticles",            "fluid_n",               ""),
-        ("placeholderAllocatedFluidParticles",   "fluid_n",               ""),
-        ("placeholderBoundaryParticles",         "boundary_n",            ""),
-        ("placeholderAllocatedBoundaryParticles","boundary_n",            ""),
-    ]
-
-    header_replacements = [
-        # (placeholder,                          setup key,               format spec)
-        ("#placeholderBoundaryConditionsType",   "bc_type",               ""),
-        ("#placeholderDiffusiveTerm",            "diffusive_term",        ""),
-        ("#placeholderViscosTerm",               "viscous_term",          ""),
-        ("#placeholderTimeIntegration",          "time_integration",      ""),
-    ]
 
     with open("template/config_template.ini", "r") as f:
         cfg = safe_replace(f.read(), ini_replacements, setup)

@@ -335,9 +335,11 @@ SolverMultiSet< Model >::readParticlesFiles()
          logger.writeParameter( "Reading fluid particles:", fluidFileName );
          fluidSets[ i ]->template readParticlesAndVariables< SimulationReaderType >( fluidFileName );
       }
-      const std::string boundaryFileName = parametersSubdomains.getParameter< std::string >( subdomainKey + "boundary-particles" );
-      logger.writeParameter( "Reading boundary particles:", boundaryFileName );
-      boundarySets[ i ]->template readParticlesAndVariables< SimulationReaderType >( boundaryFileName );
+      if( parametersSubdomains.getParameter< int >( subdomainKey + "boundary_n" ) != 0 ){
+         const std::string boundaryFileName = parametersSubdomains.getParameter< std::string >( subdomainKey + "boundary-particles" );
+         logger.writeParameter( "Reading boundary particles:", boundaryFileName );
+         boundarySets[ i ]->template readParticlesAndVariables< SimulationReaderType >( boundaryFileName );
+      }
    }
 
    // init open boundary patches

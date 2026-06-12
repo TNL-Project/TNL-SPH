@@ -7,3 +7,5 @@ endif()
 if( TNL-SPH_BUILD_TESTS )
    add_subdirectory( UnitTests )
 endif()
+
+add_subdirectory( UnitTests )

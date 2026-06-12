@@ -251,6 +251,7 @@ std::cout << "========================================\n";
       // Trick: Resize the zone to cover one layer more
       IndexVectorType zoneOrigin;
       IndexVectorType zoneDimensions;
+      /*
       if( inner_overlap ) {
          zoneOrigin =
             frameFrontOriginCoords + 2;        //NOTE +1 for overlap + 1 for rezising? and now, it should be wtih -2 in dims?
@@ -266,6 +267,17 @@ std::cout << "========================================\n";
                              zoneDimensions,
                              ( -1 ) * frameOrientation * ( frameWidth + 1 ),
                              ownDimsWithOverlap );  //FIXME: The zone is extruded in different dirrection then massnodes
+      */
+      //TODO: I dont like the "over-offset"
+      if( inner_overlap ) {
+         zoneOrigin =  frameFrontOriginGlobCoords + 2;
+         zoneDimensions = frameFrontDims - 2;
+      }
+      if( outer_overlap ) {
+         zoneOrigin = 3;
+         zoneDimensions = frameFrontDims - 4;
+      }
+      zone.assignCellsFrame( zoneOrigin, zoneDimensions, ( frameWidth + 1 ), ownDimsWithOverlap );
       //---------------
       //zone.assignCellsFrame( frameFrontOriginCoords, frameFrontDims, (-1) * frameOrientation * frameWidth, ownDimsWithOverlap
       //); //FIXME: The zone is extruded in different dirrection then massnodes
@@ -1153,17 +1165,43 @@ std::cout << "========================================\n";
       numberOfPtcsToBuffer = 0;
    }
 
-   void
-   writeProlog( TNL::Logger& logger, const int subdomainIdx )
-   {
-      logger.writeParameter( "Subdomain index:", subdomainIdx );
-      BaseType::writeProlog( logger );
-      logger.writeSeparator();
-      logger.writeParameter( "Buffer position:", this->bufferPosition );
-      logger.writeParameter( "Buffer orientation:", this->bufferOrientation );
-      logger.writeParameter( "Buffer width:", this->bufferWidth );
-      zone.writeProlog( logger );
-   }
+    void
+    writeProlog( TNL::Logger& logger, const int subdomainIdx )
+    {
+       logger.writeParameter( "Subdomain index:", subdomainIdx );
+       BaseType::writeProlog( logger );
+       logger.writeSeparator();
+
+       // Buffer configuration
+       logger.writeParameter( "Buffer position:", this->bufferPosition );
+       logger.writeParameter( "Buffer orientation:", this->bufferOrientation );
+       logger.writeParameter( "Buffer width:", this->bufferWidth );
+       logger.writeSeparator();
+
+       // Overlap type
+       logger.writeParameter( "Overlap type:", inner_overlap ? "INNER" : outer_overlap ? "OUTER" : "INVALID" );
+       logger.writeParameter( "Inner overlap:", inner_overlap );
+       logger.writeParameter( "Outer overlap:", outer_overlap );
+       logger.writeSeparator();
+
+       // Frame front configuration
+       logger.writeParameter( "Frame front origin:", frameFrontOrigin );
+       logger.writeParameter( "Frame front origin coords:", frameFrontOriginCoords );
+       logger.writeParameter( "Frame front origin global coords:", frameFrontOriginGlobCoords );
+       logger.writeParameter( "Frame front dims:", frameFrontDims );
+       logger.writeParameter( "Frame front end:", frameFrontEnd );
+       logger.writeParameter( "Frame orientation:", frameOrientation );
+       logger.writeSeparator();
+
+       // Frame back configuration
+       logger.writeParameter( "Frame back origin:", frameBackOrigin );
+       logger.writeParameter( "Frame back size:", frameBackSize );
+       logger.writeParameter( "Frame back dims:", frameBackDims );
+       logger.writeSeparator();
+
+       // Zone information
+       zone.writeProlog( logger );
+    }
 
    void
    writeMassNodesToVTK( const std::string& outputFileName )

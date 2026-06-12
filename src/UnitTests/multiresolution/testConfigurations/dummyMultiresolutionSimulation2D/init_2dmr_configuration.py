@@ -164,6 +164,8 @@ def parse_args():
     ap.add_argument("--config-name", type=str, default="dummy-center",
                     choices=list(CONFIGURATIONS.keys()),
                     help="named configuration to initialize")
+    ap.add_argument("--all", action="store_true",
+                    help="initialize all configurations")
     ap.add_argument("--list", action="store_true",
                     help="list available configurations and exit")
 
@@ -238,4 +240,11 @@ if __name__ == "__main__":
         "box_y":  args.box_y,
     }
 
-    init_configuration(args.config_name, overrides)
+    if args.all:
+        for name in CONFIGURATIONS:
+            print(f"\n{'='*60}")
+            print(f"Initializing configuration: {name}")
+            print(f"{'='*60}\n")
+            init_configuration(name, {})
+    else:
+        init_configuration(args.config_name, overrides)
