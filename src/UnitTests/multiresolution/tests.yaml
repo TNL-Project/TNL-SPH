@@ -13,6 +13,30 @@ tests:
     log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dambreak2D-corner/dummyMultiresolutionSimulation2D.log
     ref: testConfigurations/dambreak2D-corner_ref.json
 
+  - name: dummy-pp-corner
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-pp-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy-pp-corner_ref.json
+
+  - name: dummy-pp-corner-h2
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-pp-corner-h2/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy-pp-corner-h2_ref.json
+
+  - name: dummy-pm-corner
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-pm-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy-pm-corner_ref.json
+
+  - name: dummy-mm-corner
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-mm-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy-mm-corner_ref.json
+
+  - name: dummy-mp-corner
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-mp-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy-mp-corner_ref.json
+
+  - name: dummy-mp-corner-h2
+    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-mp-corner-h2/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy-mp-corner-h2_ref.json
+
   # Add more test cases below:
   # - name: anotherCase
   #   log: results/anotherCase.log
