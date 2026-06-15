@@ -283,6 +283,19 @@ SPHMultiset_CFD< Model >::initDistributedParticleSets( TNL::Config::ParameterCon
 }
 #endif
 
+template< typename Model>
+template< typename Func >
+void
+SPHMultiset_CFD< Model>::initUserConfig( Func&& userConfigFunction )
+{
+   const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
+   if( userConfigPath == "" )
+      return;
+
+   userConfigFunction( userConfig );
+   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger );
+}
+
 template< typename Model >
 void
 SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
@@ -292,9 +305,18 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
       fluid->template readParticlesAndVariables< SimulationReaderType >(
          parameters.getParameter< std::string >( "fluid-particles" ) );
    }
-   logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
-   boundary->template readParticlesAndVariables< SimulationReaderType >(
-      parameters.getParameter< std::string >( "boundary-particles" ) );
+   else{
+      logger.writeParameter( "Reading fluid particles:", "NO PARTICLES TO READ" );
+   }
+
+   if( parameters.getParameter< int >( "numberOfBoundaryParticles" ) != 0 ){
+      logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
+      boundary->template readParticlesAndVariables< SimulationReaderType >(
+         parameters.getParameter< std::string >( "boundary-particles" ) );
+   }
+   else{
+      logger.writeParameter( "Reading boundary particles:", "NO PARTICLES TO READ" );
+   }
 
    // init open boundary patches
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -302,9 +324,14 @@ SPHMultiset_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
-         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
-            parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+         if( parametersOpenBoundary.getParameter< int >( prefix +"numberOfParticles" ) != 0 ){
+            logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+            openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+               parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+         }
+         else{
+            logger.writeParameter( "Reading open boundary particles:", "NO PARTICLES TO READ" );
+         }
       }
    }
 }
@@ -401,12 +428,33 @@ SPHMultiset_CFD< Model >::removeParticlesOutOfDomain()
 
    if( fluid->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
       const int numberOfParticlesOutOfDomain = fluid->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
-      logger.writeParameter( "Number of out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      this->totalNumberOfParticlesOutOfDomain += numberOfParticlesOutOfDomain;
+      logger.writeParameter( "Particles out of domain removed particles:", numberOfParticlesOutOfDomain  );
+      logger.writeParameter( "Total particles of out of domain removed particles:", this->totalNumberOfParticlesOutOfDomain );
       // search for neighbros
       timeMeasurement.start( "search" );
       this->performNeighborSearch();
       timeMeasurement.stop( "search" );
    }
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::removeParticlesOutOfDensityLimits()
+{
+   const int numberOfParticlesOutOfDensityLimits = customFunctions::removeParticlesOutOfDensityLimits( fluid, modelParams );
+   if( numberOfParticlesOutOfDensityLimits > 0 ){
+      this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
+      logger.writeParameter( "Particles out of density limits:", numberOfParticlesOutOfDensityLimits  );
+      logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
+   }
+
+   //TODO: search for neighbors should follow, but assume we call this function always before the neighbor search
+   /*
+   timeMeasurement.start( "search" );
+   this->performNeighborSearch();
+   timeMeasurement.stop( "search" );
+   */
 }
 
 template< typename Model >
@@ -769,7 +817,9 @@ SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
 #else
    std::string outputFileNameFluid = outputDirectory + "/fluid_" + std::to_string( time ) + "_particles.vtk";
 #endif
-   fluid->template writeParticlesAndVariables< Writer >( outputFileNameFluid, writeParticleCellIndex );
+   std::string tmpOutputFileNameFluid = outputFileNameFluid + ".tmp";
+   fluid->template writeParticlesAndVariables< Writer >( tmpOutputFileNameFluid, writeParticleCellIndex );
+   std::filesystem::rename( tmpOutputFileNameFluid, outputFileNameFluid );
    logger.writeParameter( "Saved:", outputFileNameFluid );
 
 #ifdef HAVE_MPI
@@ -777,14 +827,18 @@ SPHMultiset_CFD< Model >::save( bool writeParticleCellIndex )
 #else
    std::string outputFileNameBound = outputDirectory + "/boundary_" + std::to_string( time ) + "_particles.vtk";
 #endif
-   boundary->template writeParticlesAndVariables< Writer >( outputFileNameBound, writeParticleCellIndex );
+   std::string tmpOutputFileNameBound = outputFileNameBound + ".tmp";
+   boundary->template writeParticlesAndVariables< Writer >( tmpOutputFileNameBound, writeParticleCellIndex );
+   std::filesystem::rename( tmpOutputFileNameBound, outputFileNameBound );
    logger.writeParameter( "Saved:", outputFileNameBound );
 
    if( openBoundaryPatches.size() ) {
       for( auto& openBoundaryPatch : openBoundaryPatches ) {
          std::string outputFileNameOpenBound =
             outputDirectory + "/" + openBoundaryPatch->parameters.identifier + "_" + std::to_string( time ) + "_particles.vtk";
-         openBoundaryPatch->template writeParticlesAndVariables< Writer >( outputFileNameOpenBound, writeParticleCellIndex );
+         std::string tmpOutputFileNameOpenBound = outputFileNameOpenBound  + ".tmp";
+         openBoundaryPatch->template writeParticlesAndVariables< Writer >( tmpOutputFileNameOpenBound, writeParticleCellIndex );
+         std::filesystem::rename( tmpOutputFileNameOpenBound, outputFileNameOpenBound );
          logger.writeParameter( "Saved:", outputFileNameOpenBound );
       }
    }

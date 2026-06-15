@@ -3,6 +3,7 @@
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
+#include <filesystem>
 
 #include "Fluid.h"
 #include "Boundary.h"
@@ -13,6 +14,9 @@
 #include "TimeMeasurement.h"
 
 #include "SimulationMonitor.h"
+
+// custom shared modules
+#include "shared/removeParticlesOutOfDensityLimits.h"
 
 namespace TNL {
 namespace SPH {
@@ -118,6 +122,13 @@ public:
     */
    void
    removeParticlesOutOfDomain();
+
+   /**
+    * Wrapper for module removeing particles out of density limits.
+    */
+   void
+   removeParticlesOutOfDensityLimits();
+   //requires ( requires { &Model::action; std::is_member_function_pointer_v< decltype( &Model::action ) >; } )
 
    //void
    //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
@@ -261,10 +272,16 @@ public:
     * available fileds.
     */
    void
-   save( bool writeParticleCellIndex = false );
+   save( bool writeParticleCellIndex = false  );
 
    void
    makeSnapshot();
+
+   /**
+    * Read and parse user coded params
+    */
+   template< typename Func >
+   void initUserConfig( Func&& userConfigFunction );
 
    void
    writeProlog( bool writeSystemInformation = true ) noexcept;
@@ -293,6 +310,10 @@ public:
 
    TimeStepping timeStepping;
    ComputationTimeMeasurement timeMeasurement;
+
+   // Track removed fluid particles
+   GlobalIndexType totalNumberOfParticlesOutOfDomain = 0;
+   GlobalIndexType totalNumberOfParticlesOutOfDensityLimits = 0;
 
    std::string caseName;
    std::string verbose = "none";
@@ -325,6 +346,10 @@ public:
 
    TNL::Config::ConfigDescription configPeriodicBoundary;
    TNL::Config::ParameterContainer parametersPeriodicBoundary;
+
+   // Configurations and parameters for user defined constants and variables
+   TNL::Config::ParameterContainer userParams;
+   TNL::Config::ConfigDescription userConfig;
 
 };
 
