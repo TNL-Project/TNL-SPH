@@ -46,19 +46,19 @@
       "number_of_allocated_particles": 0,
       "search_radius": 0.07,
       "grid_origin": [
-        0.21,
-        0.21,
-        0.21
+        0.63,
+        -0.35,
+        0.63
       ],
       "grid_origin_global_coordinates": [
-        8,
-        8,
-        8
+        14,
+        0,
+        14
       ],
       "grid_origin_global_coordinates_with_overlap": [
-        7,
-        7,
-        7
+        13,
+        -1,
+        13
       ],
       "grid_referential_origin": [
         -0.35,
@@ -66,20 +66,20 @@
         -0.35
       ],
       "grid_dimensions": [
-        6,
-        6,
-        6
+        4,
+        14,
+        4
       ],
       "domain_grid_overlap_width": 1,
       "grid_origin_with_overlap": [
-        0.14,
-        0.14,
-        0.14
+        0.56,
+        -0.42,
+        0.56
       ],
       "grid_dimension_with_overlap": [
-        8,
-        8,
-        8
+        6,
+        16,
+        6
       ]
     }
   },
@@ -130,19 +130,19 @@
       "number_of_allocated_particles": 0,
       "search_radius": 0.07,
       "grid_origin": [
-        0.21,
-        0.21,
-        0.21
+        0.63,
+        -0.35,
+        0.63
       ],
       "grid_origin_global_coordinates": [
-        8,
-        8,
-        8
+        14,
+        0,
+        14
       ],
       "grid_origin_global_coordinates_with_overlap": [
-        7,
-        7,
-        7
+        13,
+        -1,
+        13
       ],
       "grid_referential_origin": [
         -0.35,
@@ -150,20 +150,20 @@
         -0.35
       ],
       "grid_dimensions": [
-        6,
-        6,
-        6
+        4,
+        14,
+        4
       ],
       "domain_grid_overlap_width": 1,
       "grid_origin_with_overlap": [
-        0.14,
-        0.14,
-        0.14
+        0.56,
+        -0.42,
+        0.56
       ],
       "grid_dimension_with_overlap": [
-        8,
-        8,
-        8
+        6,
+        16,
+        6
       ]
     }
   },
@@ -224,48 +224,48 @@
       "inner_overlap": 1,
       "outer_overlap": 0,
       "frame_front_origin": [
-        0.21,
-        0.21,
-        0.21
+        0.63,
+        -0.35,
+        0.63
       ],
       "frame_front_origin_coords": [
-        4,
-        4,
-        4
+        7,
+        0,
+        7
       ],
       "frame_front_origin_global_coords": [
-        4,
-        4,
-        4
+        7,
+        0,
+        7
       ],
       "frame_front_dims": [
-        3,
-        3,
-        3
+        2,
+        7,
+        2
       ],
       "frame_front_end": [
+        9,
         7,
-        7,
-        7
+        9
       ],
       "frame_orientation": -1,
       "frame_back_origin": [
-        0.35,
-        0.35,
-        0.35
+        0.77,
+        -0.21,
+        0.77
       ],
       "frame_back_size": [
-        0.14,
-        0.14,
-        0.14
+        0,
+        0.7,
+        0
       ],
       "frame_back_dims": [
-        1,
-        1,
-        1
+        0,
+        5,
+        0
       ],
       "number_of_particles_per_cell": 175,
-      "number_of_cells_in_zone": 342
+      "number_of_cells_in_zone": 360
     },
     "2": {
       "subdomain_index": 1,
@@ -273,19 +273,19 @@
       "number_of_allocated_particles": 60000,
       "search_radius": 0.07,
       "grid_origin": [
-        0.21,
-        0.21,
-        0.21
+        0.63,
+        -0.35,
+        0.63
       ],
       "grid_origin_global_coordinates": [
-        8,
-        8,
-        8
+        14,
+        0,
+        14
       ],
       "grid_origin_global_coordinates_with_overlap": [
-        7,
-        7,
-        7
+        13,
+        -1,
+        13
       ],
       "grid_referential_origin": [
         -0.35,
@@ -293,20 +293,20 @@
         -0.35
       ],
       "grid_dimensions": [
-        6,
-        6,
-        6
+        4,
+        14,
+        4
       ],
       "domain_grid_overlap_width": 1,
       "grid_origin_with_overlap": [
-        0.14,
-        0.14,
-        0.14
+        0.56,
+        -0.42,
+        0.56
       ],
       "grid_dimension_with_overlap": [
-        8,
-        8,
-        8
+        6,
+        16,
+        6
       ],
       "buffer_position": [
         0,
@@ -323,9 +323,9 @@
       "inner_overlap": 0,
       "outer_overlap": 1,
       "frame_front_origin": [
-        0.21,
-        0.21,
-        0.21
+        0.63,
+        -0.35,
+        0.63
       ],
       "frame_front_origin_coords": [
         0,
@@ -333,57 +333,38 @@
         0
       ],
       "frame_front_origin_global_coords": [
-        8,
-        8,
-        8
+        14,
+        0,
+        14
       ],
       "frame_front_dims": [
-        6,
-        6,
-        6
+        4,
+        14,
+        4
       ],
       "frame_front_end": [
-        6,
-        6,
-        6
+        4,
+        13,
+        4
       ],
       "frame_orientation": 1,
       "frame_back_origin": [
-        0.14,
-        0.14,
-        0.14
-      ],
-      "frame_back_size": [
         0.56,
-        0.56,
+        -0.42,
         0.56
       ],
+      "frame_back_size": [
+        0.42,
+        1.12,
+        0.42
+      ],
       "frame_back_dims": [
-        8,
-        8,
-        8
+        6,
+        16,
+        6
       ],
       "number_of_particles_per_cell": 175,
-      "number_of_cells_in_zone": 504,
-      "host_name": "ntb",
-      "system": "Linux",
-      "release": "7.0.9-arch1-1",
-      "architecture": "AMD64",
-      "tnl_compiler": "Nvidia NVCC (13.2.78)",
-      "cpu_info": {
-        "model_name": "12th Gen Intel(R) Core(TM) i5-1235U",
-        "cores": 10,
-        "threads_per_core": 1,
-        "max_clock_rate_in_mhz": 4400,
-        "cache_l1d_l1i_l2_l3": "48, 32, 1280, 12288"
-      },
-      "gpu_info": {},
-      "name_nvidia_geforce_rtx_2050": {},
-      "architecture_86": {},
-      "gpu_cores_2048": {},
-      "global_memory_in_gb_395602": {},
-      "ecc_enabled_0": {},
-      "started_at": "Mon Jun 15 2026, 08:04:35"
+      "number_of_cells_in_zone": 576
     }
   }
 }
