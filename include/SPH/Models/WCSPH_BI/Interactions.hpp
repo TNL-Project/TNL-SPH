@@ -11,10 +11,7 @@ void
 WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
-   GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
-   GlobalIndexType numberOfParticles_bound = boundary->getParticles()->getNumberOfParticles();
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
-
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
    typename Particles::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
