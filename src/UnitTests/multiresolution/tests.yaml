@@ -5,40 +5,44 @@
 tolerance: 1.0e-9
 
 tests:
+  # ── 2D tests ───────────────────────────────────────────────────────────────
   - name: dummy2D-center
-    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-center/dummyMultiresolutionSimulation2D.log
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-center/dummyMultiresolutionSimulation2D.log
     ref: testConfigurations/dummy2D-center_ref.json
 
   - name: dambreak2D-corner
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dambreak2D-corner/dummyMultiresolutionSimulation2D.log
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dambreak2D-corner/dummyMultiresolutionSimulation2D.log
     ref: testConfigurations/dambreak2D-corner_ref.json
 
-  - name: dummy-pp-corner
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-pp-corner/dummyMultiresolutionSimulation2D.log
-    ref: testConfigurations/dummy-pp-corner_ref.json
+  - name: dummy2D-pp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-pp-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-pp-corner_ref.json
 
-  - name: dummy-pp-corner-h2
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-pp-corner-h2/dummyMultiresolutionSimulation2D.log
-    ref: testConfigurations/dummy-pp-corner-h2_ref.json
+  - name: dummy2D-pp-corner-h2
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-pp-corner-h2/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-pp-corner-h2_ref.json
 
-  - name: dummy-pm-corner
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-pm-corner/dummyMultiresolutionSimulation2D.log
-    ref: testConfigurations/dummy-pm-corner_ref.json
+  - name: dummy2D-pm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-pm-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-pm-corner_ref.json
 
-  - name: dummy-mm-corner
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-mm-corner/dummyMultiresolutionSimulation2D.log
-    ref: testConfigurations/dummy-mm-corner_ref.json
+  - name: dummy2D-mm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mm-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-mm-corner_ref.json
 
-  - name: dummy-mp-corner
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-mp-corner/dummyMultiresolutionSimulation2D.log
-    ref: testConfigurations/dummy-mp-corner_ref.json
+  - name: dummy2D-mp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mp-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-mp-corner_ref.json
 
-  - name: dummy-mp-corner-h2
-    log: ./testConfigurations/dummyMultiresolutionSimulation2D/results/dummy-mp-corner-h2/dummyMultiresolutionSimulation2D.log
-    ref: testConfigurations/dummy-mp-corner-h2_ref.json
+  - name: dummy2D-mp-corner-h2
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mp-corner-h2/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-mp-corner-h2_ref.json
 
-  # Add more test cases below:
-  # - name: anotherCase
-  #   log: results/anotherCase.log
-  #   ref: refs/anotherCase.ref.json
-  #   tolerance: 1.0e-6   # optional per-test override
+  # ── 3D tests ───────────────────────────────────────────────────────────────
+  - name: dummy3D-center
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-center/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-center_ref.json
+
+  - name: dambreak3D-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dambreak3D-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dambreak3D-corner_ref.json

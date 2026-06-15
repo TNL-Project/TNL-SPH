@@ -1,7 +1,9 @@
 CONFIGURATIONS = {
 
-    # Test simple refined block
-    "dummy-center": {
+    # ── 2D configurations ─────────────────────────────────────────────────────
+
+    "dummy2D-center": {
+        "dimension": 2,
         "description": "Centered refinement in unit square",
         "dp": 0.002,
         "h_coef": 1.75,
@@ -14,8 +16,8 @@ CONFIGURATIONS = {
         "fine_y_max": 0.75,
     },
 
-    # testcase - dambreak
     "dambreak2D-corner": {
+        "dimension": 2,
         "description": "Dam break with refinement in bottom-right corner",
         "dp": 0.002,
         "h_coef": 1.75,
@@ -28,10 +30,9 @@ CONFIGURATIONS = {
         "fine_y_max": 0.3,
     },
 
-    # Test corners
-    # (note: the subdomain limits are randomly selected)
-    "dummy-pp-corner": {
-        "description": "Centered refinement in unit square",
+    "dummy2D-pp-corner": {
+        "dimension": 2,
+        "description": "Refinement in ++ corner of unit square",
         "dp": 0.02,
         "h_coef": 1.75,
         "box_x": 1.0,
@@ -43,8 +44,9 @@ CONFIGURATIONS = {
         "fine_y_max": None,
     },
 
-    "dummy-pp-corner-h2": {
-        "description": "Centered refinement in unit square",
+    "dummy2D-pp-corner-h2": {
+        "dimension": 2,
+        "description": "Refinement in ++ corner of unit square, h=2",
         "dp": 0.02,
         "h_coef": 2,
         "box_x": 1.0,
@@ -56,8 +58,9 @@ CONFIGURATIONS = {
         "fine_y_max": None,
     },
 
-    "dummy-pm-corner": {
-        "description": "Centered refinement in unit square",
+    "dummy2D-pm-corner": {
+        "dimension": 2,
+        "description": "Refinement in +- corner of unit square",
         "dp": 0.02,
         "h_coef": 1.75,
         "box_x": 1.0,
@@ -69,8 +72,9 @@ CONFIGURATIONS = {
         "fine_y_max": 0.75,
     },
 
-    "dummy-mm-corner": {
-        "description": "Centered refinement in unit square",
+    "dummy2D-mm-corner": {
+        "dimension": 2,
+        "description": "Refinement in -- corner of unit square",
         "dp": 0.02,
         "h_coef": 1.75,
         "box_x": 1.0,
@@ -82,8 +86,9 @@ CONFIGURATIONS = {
         "fine_y_max": 0.27,
     },
 
-    "dummy-mp-corner": {
-        "description": "Centered refinement in unit square",
+    "dummy2D-mp-corner": {
+        "dimension": 2,
+        "description": "Refinement in -+ corner of unit square",
         "dp": 0.02,
         "h_coef": 1.75,
         "box_x": 1.0,
@@ -95,8 +100,9 @@ CONFIGURATIONS = {
         "fine_y_max": None,
     },
 
-    "dummy-mp-corner-h2": {
-        "description": "Centered refinement in unit square",
+    "dummy2D-mp-corner-h2": {
+        "dimension": 2,
+        "description": "Refinement in -+ corner of unit square, h=2",
         "dp": 0.02,
         "h_coef": 2,
         "box_x": 1.0,
@@ -106,6 +112,42 @@ CONFIGURATIONS = {
         "fine_x_max": 0.25,
         "fine_y_min": 0.75,
         "fine_y_max": None,
+    },
+
+    # ── 3D configurations ─────────────────────────────────────────────────────
+
+    "dummy3D-center": {
+        "dimension": 3,
+        "description": "Centered refinement in unit cube",
+        "dp": 0.02,
+        "h_coef": 1.75,
+        "box_x": 1.0,
+        "box_y": 1.0,
+        "box_z": 1.0,
+        "fine_factor": 0.5,
+        "fine_x_min": 0.25,
+        "fine_x_max": 0.75,
+        "fine_y_min": 0.25,
+        "fine_y_max": 0.75,
+        "fine_z_min": 0.25,
+        "fine_z_max": 0.75,
+    },
+
+    "dambreak3D-corner": {
+        "dimension": 3,
+        "description": "Dam break with refinement in bottom-right-front corner",
+        "dp": 0.02,
+        "h_coef": 1.75,
+        "box_x": 1.61,
+        "box_y": 0.6,
+        "box_z": 0.6,
+        "fine_factor": 0.5,
+        "fine_x_min": 1.2,
+        "fine_x_max": None,
+        "fine_y_min": None,
+        "fine_y_max": 0.3,
+        "fine_z_min": None,
+        "fine_z_max": 0.3,
     },
 
 }

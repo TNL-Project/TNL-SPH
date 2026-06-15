@@ -8,15 +8,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from configurations import CONFIGURATIONS as _ALL_CONFIGURATIONS
-CONFIGURATIONS = {k: v for k, v in _ALL_CONFIGURATIONS.items() if v.get("dimension") == 2}
+CONFIGURATIONS = {k: v for k, v in _ALL_CONFIGURATIONS.items() if v.get("dimension") == 3}
 
 example_dir = Path(__file__).parent
-project_dir = (example_dir / ".." / ".." / ".." / ".." / ".." ).resolve()
+project_dir = (example_dir / ".." / ".." / ".." / ".." / "..").resolve()
 bin_dir = project_dir / "build" / example_dir.relative_to(project_dir)
 
 
 def solve(config_path: Path):
-    solver_path = bin_dir / "dummyMultiresolutionSimulation2D"
+    solver_path = bin_dir / "dummyMultiresolutionSimulation3D"
 
     args = [
         solver_path,
@@ -40,8 +40,8 @@ def move_results(name: str):
             os.rename(f_path, results_dir / f"{name}" / f)
 
 if __name__ == "__main__":
-    argparser = argparse.ArgumentParser(description="Multiresolution test example")
-    argparser.add_argument("--config-name", type=str, default="dummy-center",
+    argparser = argparse.ArgumentParser(description="Multiresolution 3D test example")
+    argparser.add_argument("--config-name", type=str, default=None,
                            choices=list(CONFIGURATIONS.keys()),
                            help="named configuration to run")
     argparser.add_argument("--all", action="store_true",
@@ -51,13 +51,16 @@ if __name__ == "__main__":
 
     if args.all:
         for name in CONFIGURATIONS:
-            config_path = example_dir / f"sources/{name}/dummyConfig2D.ini"
+            config_path = example_dir / f"sources/{name}/dummyConfig3D.ini"
             print(f"\n{'='*60}")
             print(f"Running configuration: {name}")
             print(f"{'='*60}\n")
             solve(config_path)
             move_results(name)
     else:
-        config_path = example_dir / f"sources/{args.config_name}/dummyConfig2D.ini"
+        if args.config_name is None:
+            print("Error: --config-name is required when not using --all")
+            sys.exit(1)
+        config_path = example_dir / f"sources/{args.config_name}/dummyConfig3D.ini"
         solve(config_path)
         move_results(args.config_name)

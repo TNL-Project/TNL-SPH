@@ -60,13 +60,28 @@ except ImportError:
 
 from parse_sph_log import parse_log
 
-# ── Test configuration directory ──────────────────────────────────────────────
-_test_dir = Path(__file__).parent / "testConfigurations" / "dummyMultiresolutionSimulation2D"
-_default_tests_yaml = Path(__file__).parent / "tests.yaml"
+# ── Test configuration directories ───────────────────────────────────────────
+_this_dir     = Path(__file__).parent
+_configs_dir  = _this_dir / "testConfigurations"
+_test_dir_2d  = _configs_dir / "dummyMultiresolutionSimulation2D"
+_test_dir_3d  = _configs_dir / "dummyMultiresolutionSimulation3D"
+_default_tests_yaml = _this_dir / "tests.yaml"
 
-sys.path.insert(0, str(_test_dir))
+sys.path.insert(0, str(_configs_dir))
 from configurations import CONFIGURATIONS
 CONFIG_NAMES = list(CONFIGURATIONS.keys())
+
+_DIM_DIRS = {2: _test_dir_2d, 3: _test_dir_3d}
+_DIM_INIT_SCRIPTS = {2: "init_2dmr_configuration.py", 3: "init_3dmr_configuration.py"}
+_DIM_RUN_SCRIPTS = {2: "run.py", 3: "run.py"}
+
+
+def _dim_for_config(config_name: str) -> int:
+    return CONFIGURATIONS[config_name]["dimension"]
+
+
+def _dir_for_config(config_name: str) -> Path:
+    return _DIM_DIRS[_dim_for_config(config_name)]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -98,7 +113,6 @@ def deep_compare(expected: Any, actual: Any, path: str = '', tol: float = 1e-9) 
         for k in sorted(all_keys):
             child = f'{path}.{k}' if path else k
             if k not in expected:
-                #diffs.append(Diff(child, '<missing>', actual[k]))
                 continue
             elif k not in actual:
                 diffs.append(Diff(child, expected[k], '<missing>'))
@@ -143,11 +157,9 @@ def run_single_test(log_path: Path, ref_path: Path, tol: float = 1e-9,
 
     # Validate paths
     if not log_path.exists():
-        #print(f'  ✗  Log file not found: {log_path}')
         fail_msg(f'Log file not found: {log_path}')
         return False
     if not ref_path.exists():
-        #print(f'  ✗  Reference JSON not found: {ref_path}')
         fail_msg(f'Reference JSON not found: {ref_path}')
         return False
 
@@ -155,7 +167,6 @@ def run_single_test(log_path: Path, ref_path: Path, tol: float = 1e-9,
     try:
         actual = parse_log(log_path.read_text(encoding='utf-8'))
     except Exception as e:
-        #print(f'  ✗  Parse error: {e}')
         fail_msg(f'Parse error: {e}')
         return False
 
@@ -163,13 +174,11 @@ def run_single_test(log_path: Path, ref_path: Path, tol: float = 1e-9,
     try:
         expected = json.loads(ref_path.read_text(encoding='utf-8'))
     except Exception as e:
-        #print(f'  ✗  Could not load reference JSON: {e}')
         fail_msg(f'Could not load reference JSON: {e}')
         return False
 
     diffs = deep_compare(expected, actual, tol=tol)
     if not diffs:
-        #print('  ✓  PASS')
         pass_msg()
         return True
     else:
@@ -184,28 +193,6 @@ def run_single_test(log_path: Path, ref_path: Path, tol: float = 1e-9,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def load_test_list(path: Path) -> list[dict]:
-    """
-    Load a YAML or JSON test list.
-
-    YAML format:
-        tolerance: 1e-9          # optional global tolerance
-
-        tests:
-          - name: damBreak2D     # optional label
-            log:  results/sim.log
-            ref:  refs/sim.json
-          - name: anotherCase
-            log:  results/other.log
-            ref:  refs/other.json
-
-    JSON format (same structure):
-        {
-          "tolerance": 1e-9,
-          "tests": [
-            { "name": "damBreak2D", "log": "results/sim.log", "ref": "refs/sim.json" }
-          ]
-        }
-    """
     text = path.read_text(encoding='utf-8')
     if path.suffix in ('.yaml', '.yml'):
         if not HAS_YAML:
@@ -215,7 +202,6 @@ def load_test_list(path: Path) -> list[dict]:
         data = json.loads(text)
 
     if isinstance(data, list):
-        # bare list — no global tolerance
         return 1e-9, data
     tol = data.get('tolerance', 1e-9)
     return tol, data.get('tests', [])
@@ -284,25 +270,31 @@ def _subprocess_run(cmd: list, cwd: Path, label: str):
 
 
 def do_init(config_name: Optional[str] = None):
-    script = _test_dir / "init_2dmr_configuration.py"
-    cmd = [sys.executable, str(script)]
     if config_name:
-        cmd += ["--config-name", config_name]
+        dim = _dim_for_config(config_name)
+        test_dir = _DIM_DIRS[dim]
+        script = test_dir / _DIM_INIT_SCRIPTS[dim]
+        cmd = [sys.executable, str(script), "--config-name", config_name]
+        _subprocess_run(cmd, test_dir, f"Initializing {config_name}")
     else:
-        cmd += ["--all"]
-    target = config_name or "all configurations"
-    _subprocess_run(cmd, _test_dir, f"Initializing {target}")
+        for dim, test_dir in _DIM_DIRS.items():
+            script = test_dir / _DIM_INIT_SCRIPTS[dim]
+            cmd = [sys.executable, str(script), "--all"]
+            _subprocess_run(cmd, test_dir, f"Initializing all {dim}D configurations")
 
 
 def do_run(config_name: Optional[str] = None):
-    script = _test_dir / "run.py"
-    cmd = [sys.executable, str(script)]
     if config_name:
-        cmd += ["--config-name", config_name]
+        dim = _dim_for_config(config_name)
+        test_dir = _DIM_DIRS[dim]
+        script = test_dir / _DIM_RUN_SCRIPTS[dim]
+        cmd = [sys.executable, str(script), "--config-name", config_name]
+        _subprocess_run(cmd, test_dir, f"Running {config_name}")
     else:
-        cmd += ["--all"]
-    target = config_name or "all configurations"
-    _subprocess_run(cmd, _test_dir, f"Running {target}")
+        for dim, test_dir in _DIM_DIRS.items():
+            script = test_dir / _DIM_RUN_SCRIPTS[dim]
+            cmd = [sys.executable, str(script), "--all"]
+            _subprocess_run(cmd, test_dir, f"Running all {dim}D configurations")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

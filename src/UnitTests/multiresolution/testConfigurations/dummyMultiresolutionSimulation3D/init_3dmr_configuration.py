@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 """
-Multiresolution SPH test configuration initializer.
+Multiresolution SPH 3D test configuration initializer.
 
-Supports multiple named configurations defined in configurations.py.
+Supports multiple named configurations defined in the shared configurations.py.
 Each configuration specifies geometrical parameters only (domain size,
 refinement region bounds, particle spacing).
 
@@ -12,6 +12,8 @@ corresponding domain boundary after the bounding box is computed:
   fine_x_max=None -> domain_origin_x + domain_size_x
   fine_y_min=None -> domain_origin_y
   fine_y_max=None -> domain_origin_y + domain_size_y
+  fine_z_min=None -> domain_origin_z
+  fine_z_max=None -> domain_origin_z + domain_size_z
 """
 
 import os
@@ -32,7 +34,7 @@ import initialCondifionFunctions as ic
 import writeInitConfigFile as cf
 
 from configurations import CONFIGURATIONS as _ALL_CONFIGURATIONS
-CONFIGURATIONS = {k: v for k, v in _ALL_CONFIGURATIONS.items() if v.get("dimension") == 2}
+CONFIGURATIONS = {k: v for k, v in _ALL_CONFIGURATIONS.items() if v.get("dimension") == 3}
 
 
 def resolve_refinement_bounds(config: dict, setup: dict) -> dict:
@@ -42,6 +44,8 @@ def resolve_refinement_bounds(config: dict, setup: dict) -> dict:
         "fine_x_max": ("domain_origin_x", "domain_size_x"),
         "fine_y_min": "domain_origin_y",
         "fine_y_max": ("domain_origin_y", "domain_size_y"),
+        "fine_z_min": "domain_origin_z",
+        "fine_z_max": ("domain_origin_z", "domain_size_z"),
     }
     for fine_key, domain_key in boundary_map.items():
         if resolved.get(fine_key) is None:
@@ -59,10 +63,11 @@ def save_grid(grids: List[dec.SubdomainGrid], setup: dict, output_dir: str) -> N
     for i, g in enumerate(grids):
         ox = setup["domain_origin_x"] + h0 * g.factor * g.origin_glob_x
         oy = setup["domain_origin_y"] + h0 * g.factor * g.origin_glob_y
-        n_cells = g.dims_x * g.dims_y
-        domainGrid.domainGrid(
-            g.dims_x, g.dims_y, 1,
-            ox, oy, 0,
+        oz = setup["domain_origin_z"] + h0 * g.factor * g.origin_glob_z
+        n_cells = g.dims_x * g.dims_y * g.dims_z
+        domainGrid.domainGrid3D(
+            g.dims_x, g.dims_y, g.dims_z,
+            ox, oy, oz,
             np.zeros(n_cells),
             g.search_radius,
             f"{output_dir}/subdomain-{i}dambreak_grid.vtk"
@@ -77,7 +82,7 @@ def write_distributed_domain_params_rectangular(
 ) -> None:
     grids = [coarse_grid, fine_grid]
     h0    = setup["search_radius"]
-    axes  = ["x", "y"]
+    axes  = ["x", "y", "z"]
     fact  = 2
 
     domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
@@ -124,10 +129,10 @@ def write_distributed_domain_params_rectangular(
 
 
 def write_simulation_params(setup: dict, output_dir: str, config_name: str):
-    with open(os.path.join(_script_dir, "dummyConfig2D_template.ini"), "r") as f:
+    with open(os.path.join(_script_dir, "dummyConfig3D_template.ini"), "r") as f:
         cfg = cf.safe_replace(f.read(), cf.ini_replacements, setup)
     cfg = cfg.replace("placeholderSubdomainsConfigPath", f"{output_dir}/config-distributed-domain.ini")
-    with open(f"{output_dir}/dummyConfig2D.ini", "w") as f:
+    with open(f"{output_dir}/dummyConfig3D.ini", "w") as f:
         f.write(cfg)
 
 
@@ -137,6 +142,7 @@ def build_setup(config: dict) -> dict:
     return {
         "box_x":            config["box_x"],
         "box_y":            config["box_y"],
+        "box_z":            config["box_z"],
         "dp":               dp,
         "smoothing_length": h,
         "search_radius":    2.0 * h,
@@ -148,14 +154,16 @@ def define_problem_bounding_box(setup: dict):
     domain = {
         "domain_origin_x": -2.5 * sr,
         "domain_origin_y": -2.5 * sr,
+        "domain_origin_z": -2.5 * sr,
         "domain_size_x":   setup["box_x"] + 2.5 * sr,
         "domain_size_y":   setup["box_y"] + 2.5 * sr,
+        "domain_size_z":   setup["box_z"] + 2.5 * sr,
     }
     setup.update(domain)
 
 
 def list_configurations():
-    print("Available configurations:\n")
+    print("Available 3D configurations:\n")
     for name, cfg in CONFIGURATIONS.items():
         desc = cfg.get("description", "(no description)")
         print(f"  {name:25s}  {desc}")
@@ -163,8 +171,8 @@ def list_configurations():
 
 
 def parse_args():
-    ap = argparse.ArgumentParser(description="Multiresolution SPH test configuration generator")
-    ap.add_argument("--config-name", type=str, default="dummy-center",
+    ap = argparse.ArgumentParser(description="Multiresolution SPH 3D test configuration generator")
+    ap.add_argument("--config-name", type=str, default=None,
                     choices=list(CONFIGURATIONS.keys()),
                     help="named configuration to initialize")
     ap.add_argument("--all", action="store_true",
@@ -177,6 +185,7 @@ def parse_args():
     g.add_argument("--h-coef", type=float, default=None, help="override smoothing length coefficient")
     g.add_argument("--box-x", type=float, default=None, help="override domain x-size")
     g.add_argument("--box-y", type=float, default=None, help="override domain y-size")
+    g.add_argument("--box-z", type=float, default=None, help="override domain z-size")
 
     return ap.parse_args()
 
@@ -189,6 +198,7 @@ def init_configuration(config_name: str, overrides: dict):
         "h_coef": "h_coef",
         "box_x":  "box_x",
         "box_y":  "box_y",
+        "box_z":  "box_z",
     }
     for cli_key, cfg_key in cli_map.items():
         val = overrides.get(cli_key)
@@ -211,6 +221,8 @@ def init_configuration(config_name: str, overrides: dict):
         fine_x_max  = config["fine_x_max"],
         fine_y_min  = config["fine_y_min"],
         fine_y_max  = config["fine_y_max"],
+        fine_z_min  = config.get("fine_z_min", -float("inf")),
+        fine_z_max  = config.get("fine_z_max",  float("inf")),
     )
     print(rdef)
 
@@ -241,6 +253,7 @@ if __name__ == "__main__":
         "h_coef": args.h_coef,
         "box_x":  args.box_x,
         "box_y":  args.box_y,
+        "box_z":  args.box_z,
     }
 
     if args.all:
@@ -250,4 +263,7 @@ if __name__ == "__main__":
             print(f"{'='*60}\n")
             init_configuration(name, {})
     else:
+        if args.config_name is None:
+            print("Error: --config-name is required when not using --all")
+            sys.exit(1)
         init_configuration(args.config_name, overrides)
