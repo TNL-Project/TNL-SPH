@@ -364,26 +364,7 @@
         8
       ],
       "number_of_particles_per_cell": 175,
-      "number_of_cells_in_zone": 504,
-      "host_name": "ntb",
-      "system": "Linux",
-      "release": "7.0.9-arch1-1",
-      "architecture": "AMD64",
-      "tnl_compiler": "Nvidia NVCC (13.2.78)",
-      "cpu_info": {
-        "model_name": "12th Gen Intel(R) Core(TM) i5-1235U",
-        "cores": 10,
-        "threads_per_core": 1,
-        "max_clock_rate_in_mhz": 4400,
-        "cache_l1d_l1i_l2_l3": "48, 32, 1280, 12288"
-      },
-      "gpu_info": {},
-      "name_nvidia_geforce_rtx_2050": {},
-      "architecture_86": {},
-      "gpu_cores_2048": {},
-      "global_memory_in_gb_395602": {},
-      "ecc_enabled_0": {},
-      "started_at": "Mon Jun 15 2026, 08:04:35"
+      "number_of_cells_in_zone": 504
     }
   }
 }
