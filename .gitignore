@@ -38,3 +38,7 @@ src/Benchmarks/damBreak3D/openFPM_resources/sph_dlb
 #Documentation files
 Documentation/html
 Documentation/latex
+
+# test files
+src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/results
+src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/sources
