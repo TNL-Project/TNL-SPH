@@ -1,0 +1,292 @@
+{
+  "fluids": {
+    "0": {
+      "number_of_particles": 0,
+      "number_of_allocated_particles": 0,
+      "search_radius": 0.08,
+      "grid_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_origin_global_coordinates": [
+        0,
+        0
+      ],
+      "grid_origin_global_coordinates_with_overlap": [
+        -1,
+        -1
+      ],
+      "grid_referential_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_dimensions": [
+        15,
+        15
+      ],
+      "domain_grid_overlap_width": 1,
+      "grid_origin_with_overlap": [
+        -0.28,
+        -0.28
+      ],
+      "grid_dimension_with_overlap": [
+        17,
+        17
+      ]
+    },
+    "1": {
+      "number_of_particles": 0,
+      "number_of_allocated_particles": 0,
+      "search_radius": 0.04,
+      "grid_origin": [
+        -0.2,
+        0.68
+      ],
+      "grid_origin_global_coordinates": [
+        0,
+        22
+      ],
+      "grid_origin_global_coordinates_with_overlap": [
+        -1,
+        21
+      ],
+      "grid_referential_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_dimensions": [
+        10,
+        8
+      ],
+      "domain_grid_overlap_width": 1,
+      "grid_origin_with_overlap": [
+        -0.24,
+        0.64
+      ],
+      "grid_dimension_with_overlap": [
+        12,
+        10
+      ]
+    }
+  },
+  "boundaries": {
+    "0": {
+      "number_of_particles": 0,
+      "number_of_allocated_particles": 0,
+      "search_radius": 0.08,
+      "grid_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_origin_global_coordinates": [
+        0,
+        0
+      ],
+      "grid_origin_global_coordinates_with_overlap": [
+        -1,
+        -1
+      ],
+      "grid_referential_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_dimensions": [
+        15,
+        15
+      ],
+      "domain_grid_overlap_width": 1,
+      "grid_origin_with_overlap": [
+        -0.28,
+        -0.28
+      ],
+      "grid_dimension_with_overlap": [
+        17,
+        17
+      ]
+    },
+    "1": {
+      "number_of_particles": 0,
+      "number_of_allocated_particles": 0,
+      "search_radius": 0.04,
+      "grid_origin": [
+        -0.2,
+        0.68
+      ],
+      "grid_origin_global_coordinates": [
+        0,
+        22
+      ],
+      "grid_origin_global_coordinates_with_overlap": [
+        -1,
+        21
+      ],
+      "grid_referential_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_dimensions": [
+        10,
+        8
+      ],
+      "domain_grid_overlap_width": 1,
+      "grid_origin_with_overlap": [
+        -0.24,
+        0.64
+      ],
+      "grid_dimension_with_overlap": [
+        12,
+        10
+      ]
+    }
+  },
+  "buffers": {
+    "1": {
+      "subdomain_index": 0,
+      "number_of_particles": 0,
+      "number_of_allocated_particles": 60000,
+      "search_radius": 0.08,
+      "grid_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_origin_global_coordinates": [
+        0,
+        0
+      ],
+      "grid_origin_global_coordinates_with_overlap": [
+        -1,
+        -1
+      ],
+      "grid_referential_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_dimensions": [
+        15,
+        15
+      ],
+      "domain_grid_overlap_width": 1,
+      "grid_origin_with_overlap": [
+        -0.28,
+        -0.28
+      ],
+      "grid_dimension_with_overlap": [
+        17,
+        17
+      ],
+      "buffer_width": 0.08,
+      "overlap_type": "INNER",
+      "inner_overlap": 1,
+      "outer_overlap": 0,
+      "frame_front_origin": [
+        -0.2,
+        0.68
+      ],
+      "frame_front_origin_coords": [
+        0,
+        11
+      ],
+      "frame_front_origin_global_coords": [
+        0,
+        11
+      ],
+      "frame_front_dims": [
+        5,
+        4
+      ],
+      "frame_front_end": [
+        5,
+        15
+      ],
+      "frame_orientation": -1,
+      "frame_back_origin": [
+        -0.12,
+        0.76
+      ],
+      "frame_back_size": [
+        0.24,
+        0.16
+      ],
+      "frame_back_dims": [
+        3,
+        2
+      ],
+      "number_of_particles_per_cell": 175,
+      "number_of_cells_in_zone": 50
+    },
+    "2": {
+      "subdomain_index": 1,
+      "number_of_particles": 0,
+      "number_of_allocated_particles": 60000,
+      "search_radius": 0.04,
+      "grid_origin": [
+        -0.2,
+        0.68
+      ],
+      "grid_origin_global_coordinates": [
+        0,
+        22
+      ],
+      "grid_origin_global_coordinates_with_overlap": [
+        -1,
+        21
+      ],
+      "grid_referential_origin": [
+        -0.2,
+        -0.2
+      ],
+      "grid_dimensions": [
+        10,
+        8
+      ],
+      "domain_grid_overlap_width": 1,
+      "grid_origin_with_overlap": [
+        -0.24,
+        0.64
+      ],
+      "grid_dimension_with_overlap": [
+        12,
+        10
+      ],
+      "buffer_width": 0.04,
+      "overlap_type": "OUTER",
+      "inner_overlap": 0,
+      "outer_overlap": 1,
+      "frame_front_origin": [
+        -0.2,
+        0.68
+      ],
+      "frame_front_origin_coords": [
+        0,
+        0
+      ],
+      "frame_front_origin_global_coords": [
+        0,
+        22
+      ],
+      "frame_front_dims": [
+        10,
+        8
+      ],
+      "frame_front_end": [
+        10,
+        8
+      ],
+      "frame_orientation": 1,
+      "frame_back_origin": [
+        -0.24,
+        0.64
+      ],
+      "frame_back_size": [
+        0.48,
+        0.4
+      ],
+      "frame_back_dims": [
+        12,
+        10
+      ],
+      "number_of_particles_per_cell": 175,
+      "number_of_cells_in_zone": 96
+    }
+  }
+}

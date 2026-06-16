@@ -36,6 +36,7 @@ class ParticleSet
    using IntegratorVariablesPointerType = typename Pointers::SharedPointer< IntegratorVariables, DeviceType >;
 
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
+   using IndexType = typename SPHTraitsType::GlobalIndexType; //TODO: Merge with global index type
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
@@ -83,7 +84,7 @@ class ParticleSet
       this->particles->setGridOriginGlobalCoords( zeroVector );
    }
 
-#ifdef HAVE_MPI
+//#ifdef HAVE_MPI
    void
    initializeAsDistributed( const unsigned int numberOfParticles,
                             const unsigned int numberOfAllocatedParticles,
@@ -94,11 +95,9 @@ class ParticleSet
                             const IndexVectorType& subdomainGridOriginGlobalCoords,
                             const int numberOfOverlapLayers,
                             const Containers::StaticVector< 2, int >& numberOfSubdomains,
-                            const VectorType& subdomainOrigin, //REMOVE
-                            TNL::Logger& logger )
+                            const VectorType& subdomainOrigin )
    {
       this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
-      const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
 
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setNumberOfParticles( numberOfParticles );
@@ -107,7 +106,9 @@ class ParticleSet
       this->particles->setGridDimensions( subdomainGridDimension );
       this->particles->setGridOrigin( subdomainOrigin ); //REMOVE
       this->particles->setOverlapWidth( numberOfOverlapLayers );
-      this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      //const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
+      //this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+      this->particles->setGridReferentialOrigin( domainOrigin );
       this->particles->setGridOriginGlobalCoords( subdomainGridOriginGlobalCoords );
 
       this->variables->setSize( numberOfAllocatedParticles );
@@ -126,7 +127,41 @@ class ParticleSet
       //synchronizer.initialize( this->distributedParticles );
       //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
    }
-#endif
+
+   template< typename GridType >
+   void
+   initializeAsDistributed( const IndexType numberOfParticles,
+                            const IndexType numberOfAllocatedParticles,
+                            const GridType& localGrid,
+                            const IndexVectorType& localOriginCoordinates,
+                            const GridType& globalGrid,
+                            const int numberOfOverlapLayers,
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains = 0 ) //TODO: Depends on decomposition
+   {
+      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
+      this->particles->setSize( numberOfAllocatedParticles );
+      this->particles->setNumberOfParticles( numberOfParticles );
+      this->particles->setSearchRadius( localGrid.getSpaceSteps()[ 0 ] );
+      this->particles->setGridDimensions( localGrid.getDimensions() );
+      this->particles->setGridOrigin( localGrid.getOrigin() ); //TODO: Remove, particles should be determined solely by grid index
+      this->particles->setOverlapWidth( numberOfOverlapLayers );
+
+      this->particles->setGridReferentialOrigin( globalGrid.getOrigin() );
+      this->particles->setGridOriginGlobalCoords( localOriginCoordinates );
+
+      this->variables->setSize( numberOfAllocatedParticles );
+      this->integratorVariables->setSize( numberOfAllocatedParticles );
+
+      //TODO: Why we even need this?
+      this->distributedParticles->setDistributedGridParameters( localGrid.getSpaceSteps()[ 0 ],
+                                                                globalGrid.getDimensions(),
+                                                                globalGrid.getOrigin(),
+                                                                localGrid.getDimensions(),
+                                                                localOriginCoordinates,
+                                                                numberOfOverlapLayers,
+                                                                numberOfSubdomains );
+   }
+//#endif
 
    void
    initializePeriodicity( TNL::Config::ParameterContainer& parameters,
@@ -371,7 +406,6 @@ protected:
    VariablesPointerType variables;
    // variables corresponding to local particles requred by selected integration scheme
    IntegratorVariablesPointerType integratorVariables;
-
 };
 
 }

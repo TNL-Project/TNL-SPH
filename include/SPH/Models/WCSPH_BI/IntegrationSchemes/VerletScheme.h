@@ -55,6 +55,7 @@ class IntegrationSchemeVariables
    VectorArrayType v_old_swap;
 };
 
+
 template< typename SPHConfig >
 class VerletScheme
 {

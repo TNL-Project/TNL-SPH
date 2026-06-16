@@ -1,6 +1,6 @@
 from contextlib import redirect_stdout
 
-def DomainGrid( gridSize_x, gridSize_y, gridSize_z, gridBegin_x, gridBegin_y, gridBegin_z, gridSector, searchRadius, name ):
+def domainGrid( gridSize_x, gridSize_y, gridSize_z, gridBegin_x, gridBegin_y, gridBegin_z, gridSector, searchRadius, name ):
     with open( name, 'w' ) as f:
         with redirect_stdout(f):
             print( "# vtk DataFile Version 3.0" )
@@ -17,7 +17,7 @@ def DomainGrid( gridSize_x, gridSize_y, gridSize_z, gridBegin_x, gridBegin_y, gr
             for i in range( gridSize_x * gridSize_y * 1 ):
                 print( gridSector[ i ] )
 
-def DomainGrid3D( gridSize_x, gridSize_y, gridSize_z, gridBegin_x, gridBegin_y, gridBegin_z, gridSector, searchRadius, name ):
+def domainGrid3D( gridSize_x, gridSize_y, gridSize_z, gridBegin_x, gridBegin_y, gridBegin_z, gridSector, searchRadius, name ):
     with open( name, 'w' ) as f:
         with redirect_stdout(f):
             print( "# vtk DataFile Version 3.0" )

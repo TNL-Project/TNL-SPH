@@ -30,6 +30,14 @@ public:
       const float q = r / h;
       return ( 1.f + 2.f * q) * ( 2.f - q ) * ( 2.f - q ) * ( 2.f - q ) * ( 2.f - q ) * wConst;
    }
+
+   __cuda_callable__
+   static float F2( float r, float h )
+   {
+      const float wConst = -2.7852f /( h * h * h * h );
+      const float q = r / h;
+      return ( 1.f - 0.5f * q ) * ( 1.f - 0.5f * q ) * ( 2.f * q - 1.f ) * wConst;
+   }
 };
 
 template< typename SPHConfig >

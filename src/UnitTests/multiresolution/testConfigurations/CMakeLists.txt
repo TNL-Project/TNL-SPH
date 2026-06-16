@@ -1,0 +1,2 @@
+add_subdirectory(dummyMultiresolutionSimulation2D)
+add_subdirectory(dummyMultiresolutionSimulation3D)

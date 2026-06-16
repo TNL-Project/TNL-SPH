@@ -1,0 +1,88 @@
+# SPH test list
+# Run with: python run_sph_tests.py --tests tests.yaml
+#
+# Global floating-point tolerance (can be overridden per test).
+tolerance: 1.0e-9
+
+tests:
+  # ── 2D tests ───────────────────────────────────────────────────────────────
+  - name: dummy2D-center
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-center/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-center_ref.json
+
+  - name: dambreak2D-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dambreak2D-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dambreak2D-corner_ref.json
+
+  - name: dummy2D-pp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-pp-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-pp-corner_ref.json
+
+  - name: dummy2D-pp-corner-h2
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-pp-corner-h2/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-pp-corner-h2_ref.json
+
+  - name: dummy2D-pm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-pm-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-pm-corner_ref.json
+
+  - name: dummy2D-mm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mm-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-mm-corner_ref.json
+
+  - name: dummy2D-mp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mp-corner/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-mp-corner_ref.json
+
+  - name: dummy2D-mp-corner-h2
+    log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mp-corner-h2/dummyMultiresolutionSimulation2D.log
+    ref: testConfigurations/dummy2D-mp-corner-h2_ref.json
+
+  # ── 3D tests ───────────────────────────────────────────────────────────────
+  - name: dummy3D-center
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-center/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-center_ref.json
+
+  - name: dambreak3D-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dambreak3D-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dambreak3D-corner_ref.json
+
+  - name: dummy3D-ppp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-ppp-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-ppp-corner_ref.json
+
+  - name: dummy3D-ppp-corner-h2
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-ppp-corner-h2/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-ppp-corner-h2_ref.json
+
+  - name: dummy3D-ppm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-ppm-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-ppm-corner_ref.json
+
+  - name: dummy3D-pmp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-pmp-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-pmp-corner_ref.json
+
+  - name: dummy3D-pmm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-pmm-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-pmm-corner_ref.json
+
+  - name: dummy3D-mpp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-mpp-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-mpp-corner_ref.json
+
+  - name: dummy3D-mpm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-mpm-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-mpm-corner_ref.json
+
+  - name: dummy3D-mmp-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-mmp-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-mmp-corner_ref.json
+
+  - name: dummy3D-mmm-corner
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-mmm-corner/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-mmm-corner_ref.json
+
+  - name: dummy3D-mmm-corner-h2
+    log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-mmm-corner-h2/dummyMultiresolutionSimulation3D.log
+    ref: testConfigurations/dummy3D-mmm-corner-h2_ref.json

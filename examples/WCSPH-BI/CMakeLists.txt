@@ -1,5 +1,7 @@
 add_subdirectory(damBreak2D_WCSPH-BI)
+add_subdirectory(damBreak2D_WCSPH-BI_multiresolution)
 add_subdirectory(damBreak3D_WCSPH-BI)
+add_subdirectory(damBreak3D_WCSPH-BI_multiresolution)
 add_subdirectory(movingSquare2D_WCSPH-BI)
 add_subdirectory(openChannel3D_WCSPH-BI)
 add_subdirectory(poiseuilleFlowWithOpenBoundary2D_WCSPH-BI)

@@ -33,7 +33,8 @@ public:
       typename ParticleSystem::NeighborsLoopParams searchInBound( boundary->getParticles() );
 
       /* CONSTANT VARIABLES */
-      const RealType dp = sphState.dp;
+      const RealType refinementFactor = searchRadius / ( 2.f * sphState.h );
+      const RealType dp = refinementFactor * sphState.dp;
       const RealType r_box = sphState.r_boxFactor * dp;
       const RealType minimalDistanceFactor = sphState.minimalDistanceFactor;
       const RealType elasticFactor = sphState.elasticFactor;
@@ -53,6 +54,7 @@ public:
          const VectorType r_j = view_points_bound[ j ];
          const VectorType r_ji = r_j - r_i;
          const RealType drs = l2Norm( r_ji );
+
          if (drs <= searchRadius )
          {
             const VectorType v_j = view_v_bound[ j ];
@@ -80,6 +82,7 @@ public:
             if( r0 - r_n <= minimalDistanceFactor * dp ){
                *ve_i = ( *ve_i ) - ( 1.f + elasticFactor ) * v_n * n_j;
                *ae_i = ( *ae_i ) - ( 1.f + elasticFactor ) * dvdt_n * n_j;
+
             }
          }
       };
@@ -92,9 +95,7 @@ public:
 
          VectorType ve_i = v_i;
          VectorType ae_i = dvdt_i;
-
          ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, elasticBounce, &ve_i, &ae_i );
-
          view_v[ i ] = ve_i;
          view_a[ i ] = ae_i;
 
