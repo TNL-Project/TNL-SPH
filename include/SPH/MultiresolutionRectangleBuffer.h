@@ -16,16 +16,6 @@
 namespace TNL {
 namespace SPH {
 
-template< typename VectorType, typename RealType, typename IndexType >
-struct BufferSide
-{
-   VectorType orientation;    // inward unit normal for this face
-   VectorType position;       // a point on the interface plane (face centre)
-   RealType width;            // buffer width (physical, outward from position)
-   IndexType massNodeOffset;  // start index into the shared mass node array
-   IndexType massNodeCount;   // number of mass nodes on this face
-};
-
 //TODO: Consider MassNodes to be standard ParticleSet with custom variables
 template< typename SPHCaseConfig >
 class MassNodes
@@ -374,9 +364,6 @@ public:
       const VectorType frameBackSize = getFrameBackDimensions() * sr;
       const VectorType frameBackOrigin = getFrameBackOriginGlobalCoordinates() * sr +
          this->getParticles()->getGridReferentialOrigin();
-
-      //const
-
 
       // Returns true if this face should be skipped
       auto isExcluded = [ & ]( const VectorType& normal ) -> bool
@@ -1186,7 +1173,7 @@ protected:
    IndexArrayType particlesToRemove;
    IndexArrayType particlesToBuffer;
 
-   // WHAT WE ACTUALLY NEED
+   // Geometric definition of the interface
    bool inner_overlap;
    bool outer_overlap;
 

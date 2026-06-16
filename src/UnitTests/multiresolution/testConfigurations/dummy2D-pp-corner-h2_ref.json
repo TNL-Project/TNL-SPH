@@ -174,14 +174,6 @@
         17,
         17
       ],
-      "buffer_position": [
-        0,
-        0
-      ],
-      "buffer_orientation": [
-        0,
-        0
-      ],
       "buffer_width": 0.08,
       "overlap_type": "INNER",
       "inner_overlap": 1,
@@ -255,14 +247,6 @@
       "grid_dimension_with_overlap": [
         12,
         6
-      ],
-      "buffer_position": [
-        0,
-        0
-      ],
-      "buffer_orientation": [
-        0,
-        0
       ],
       "buffer_width": 0.04,
       "overlap_type": "OUTER",

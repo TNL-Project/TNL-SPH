@@ -209,16 +209,6 @@
         11,
         11
       ],
-      "buffer_position": [
-        0,
-        0,
-        0
-      ],
-      "buffer_orientation": [
-        0,
-        0,
-        0
-      ],
       "buffer_width": 0.16,
       "overlap_type": "INNER",
       "inner_overlap": 1,
@@ -307,16 +297,6 @@
         10,
         10,
         10
-      ],
-      "buffer_position": [
-        0,
-        0,
-        0
-      ],
-      "buffer_orientation": [
-        0,
-        0,
-        0
       ],
       "buffer_width": 0.08,
       "overlap_type": "INNER",
