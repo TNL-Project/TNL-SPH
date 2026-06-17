@@ -10,9 +10,6 @@
 
 #include "../../../SPHTraits.h"
 
-#ifdef HAVE_MPI
-#include "../../../shared/utils.h"
-#endif
 
 namespace TNL {
 namespace SPH {

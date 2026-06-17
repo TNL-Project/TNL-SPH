@@ -6,10 +6,6 @@
 #include <thrust/gather.h>
 #include "BoundaryConditionsTypes.h"
 
-#ifdef HAVE_MPI
-#include "../../shared/utils.h"
-#endif
-
 namespace TNL {
 namespace SPH {
 

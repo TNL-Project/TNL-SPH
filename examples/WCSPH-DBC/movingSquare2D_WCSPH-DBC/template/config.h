@@ -95,6 +95,4 @@ using ForceMonitor = TNL::SPH::EvaluateForces< SPHDefs >;
 // PST
 #include <SPH/shared/PST.h>
 using PST = TNL::SPH::PST::Simple< ParticlesType, SPHDefs >;
-#include <SPH/SolverMultiSet.h>
-using Simulation = TNL::SPH::SolverMultiSet< Model >;
 

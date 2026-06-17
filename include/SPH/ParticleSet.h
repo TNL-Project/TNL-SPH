@@ -10,9 +10,6 @@
 #include "OpenBoundaryConfig.h"
 #include "PeriodicBoundaryBuffers.h"
 
-#if HAVE_MPI
-#include "shared/utils.h"
-#endif
 
 #include <TNL/Particles/DistributedParticles.h>
 #include <TNL/Particles/DistributedParticlesSynchronizer.h>
