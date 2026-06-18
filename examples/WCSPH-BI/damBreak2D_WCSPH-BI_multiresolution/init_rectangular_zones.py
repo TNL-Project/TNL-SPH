@@ -318,6 +318,7 @@ def build_setup(args) -> dict:
         "bc_type":          args.bc_type,
         "diffusive_term":   args.diffusive_term,
         "viscous_term":     args.viscous_term,
+        "fine_alloc_fact":  2,
     }
 
 def define_problem_bounding_box(setup):

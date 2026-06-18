@@ -141,7 +141,7 @@ def write_distributed_domain_params(grids: List[SubdomainGrid], setup: dict) -> 
     h0    = setup["search_radius"]
     is_3d = "domain_size_z" in setup
     axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
-    fact = 2  # TODO
+    fact = setup.get("fine_alloc_fact", 2)
 
     domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
 
@@ -156,7 +156,7 @@ def write_distributed_domain_params(grids: List[SubdomainGrid], setup: dict) -> 
                 "boundary-particles":   f"sources/subdomain-{i}-dambreak_boundary.vtk",
                 "fluid_n":              g.fluid_n,
                 "boundary_n":           g.boundary_n,
-                "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else setup["fluid_n"],
+                "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else fact * setup["fluid_n"],
                 "boundary_n_allocated": fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"],
                 "refinement-factor":    g.factor,
             }
