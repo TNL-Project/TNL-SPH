@@ -70,7 +70,6 @@ public:
    using EOS = TNL::SPH::EquationsOfState::None< SPHConfig >;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
-   using DensityFilter = TNL::SPH::DensityFilters::None;
 };
 
 using SPHDefs = SPHParams< Device >;
