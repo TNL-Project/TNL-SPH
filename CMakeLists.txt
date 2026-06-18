@@ -121,3 +121,4 @@ endif()
 # Add project subdirectories
 add_subdirectory(include)
 add_subdirectory(examples)
+add_subdirectory(src)
