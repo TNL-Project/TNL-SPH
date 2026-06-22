@@ -69,6 +69,12 @@ public:
       config.addEntry< double >( "midpointRelaxCoef_0", "Midpoint relaxation coefficient in first iteration.", 0.f );
       config.addEntry< double >( "midpointResidualMinimalDecay", "Midpoint relaxation coefficient in first iteration.", 0.2f );
       config.addEntry< double >( "midpointRelaxCoefIncrement", "Midpoint relaxation coefficient increment.", 0.2f );
+      // parameters of midpoint integration scheme with Anderson acceleration
+      config.addEntry< bool >( "useAndersonAcceleration", "Enable Anderson acceleration for the midpoint iteration.", true );
+      config.addEntry< int >( "andersonHistoryDepth", "Anderson acceleration iteration history length.", 3 );
+      config.addEntry< double >( "andersonBeta", "Anderson acceleration damping applied to the residual itself.", 1.0 );
+      config.addEntry< double >( "andersonRegularization", "Anderson acceleration relative Tikhonov regularization of the small Gram matrix.", 1e-8 );
+      config.addEntry< double >( "andersonGammaSafeguard", "Anderson acceleration safeguard threshold for the sum of gamma_i.", 1e2 );
    }
 
    void
@@ -106,6 +112,12 @@ public:
       midpointRelaxCoef_0 = parameters.getParameter< double >( "midpointRelaxCoef_0" );
       midpointResidualMinimalDecay = parameters.getParameter< double >( "midpointResidualMinimalDecay" );
       midpointRelaxCoefIncrement = parameters.getParameter< double >( "midpointRelaxCoefIncrement" );
+      // parameters of midpoint integration scheme with Anderson acceleration
+      useAndersonAcceleration = parameters.getParameter< bool >( "useAndersonAcceleration" );
+      andersonHistoryDepth = parameters.getParameter< int >( "andersonHistoryDepth" );
+      andersonBeta = parameters.getParameter< RealType >( "andersonBeta" );
+      andersonRegularization = parameters.getParameter< RealType >( "andersonRegularization" );
+      andersonGammaSafeguard = parameters.getParameter< RealType >( "andersonGammaSafeguard" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * dtInit;
@@ -215,6 +227,17 @@ public:
    RealType midpointResidualMinimalDecay = 0.2f;
    //midpointRelaxCoefIncrement - midpoint increment of realxation coefficinet [-]
    RealType midpointRelaxCoefIncrement = 0;
+
+   //Parameters of midpoint integration scheme with Anderson acceleration
+   bool useAndersonAcceleration = true;
+   // andersonHistoryDept - iteration history length
+   int andersonHistoryDepth = 3;
+   //andersonBeta - damping applied to the residual itself
+   RealType andersonBeta = 1.f;
+   //andersonBeta - relative Tikhonov regularization of the small Gram matrix
+   RealType andersonRegularization = 1e-8;
+   //andersonGammaSafeguard - if sum of gamma_i exceeds the safeguar
+   RealType andersonGammaSafeguard = 1e2;
 
    //gravity - external forces [m^2 / s].
    VectorType gravity = 0.f;
