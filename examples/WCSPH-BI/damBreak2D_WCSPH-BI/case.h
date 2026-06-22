@@ -115,7 +115,7 @@ requires (
          TNL::SPH::IntegrationSchemes::MidpointScheme< typename Simulation::SPHConfig >
    > ||
    std::is_same_v< typename Simulation::ModelParams::IntegrationScheme,
-        TNL::SPH::IntegrationSchemes::MidpointWithAnderson< typename Simulation::SPHConfig >
+        TNL::SPH::IntegrationSchemes::MidpointSchemeWithAnderson< typename Simulation::SPHConfig >
    >
 )
 void
