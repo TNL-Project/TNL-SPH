@@ -5,26 +5,19 @@ import sys
 import subprocess
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
-import vtk
-from vtk.numpy_interface import dataset_adapter as dsa
+import readVtkParticles
+import normalizeVectors
 
 def generate_geometry_with_dualsphysics_gencase( dp ):
     subprocess.check_call( [ './generateGeometryWithDualSPHysicsGenCase.sh', str( dp ) ], cwd='./template/generateGeometryWithDualSPHysicsGenCase/' )
 
 def process_dam_break_fluid_particles( setup ):
-    reader = vtk.vtkPolyDataReader()
-    reader.SetFileName( f'./sources/genCaseGeometries/dambreak_fluid_dp{setup[ "dp" ]}.vtk' )
-    reader.ReadAllScalarsOn()
-    reader.ReadAllVectorsOn()
-    reader.Update()
+    r, data = readVtkParticles.read_vtk_particles( f'./sources/genCaseGeometries/dambreak_fluid_dp{setup[ "dp" ]}.vtk' )
 
-    polydata = reader.GetOutput()
-    np_points_fluid = dsa.WrapDataObject( polydata ).Points
-
-    fluid_n = len( np_points_fluid )
-    fluid_r = np.array( np_points_fluid, dtype=float ) #!!
-    fluid_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
-    fluid_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
+    fluid_n = len( r )
+    fluid_r = r
+    fluid_v = np.array( data[ 'Vel' ], dtype=float )
+    fluid_rho = data[ 'Rhop' ]
     fluid_p = np.zeros( fluid_n )
     fluid_ptype = np.zeros( fluid_n )
 
@@ -33,32 +26,18 @@ def process_dam_break_fluid_particles( setup ):
     setup[ "fluid_n" ] = fluid_n
 
 def process_dam_break_boundary_particles( setup ):
-    reader = vtk.vtkPolyDataReader()
-    reader.SetFileName( f'./sources/genCaseGeometries/dambreak_bound_dp{setup[ "dp" ]}.vtk' )
-    reader.ReadAllScalarsOn()
-    reader.ReadAllVectorsOn()
-    reader.Update()
+    r, data = readVtkParticles.read_vtk_particles( f'./sources/genCaseGeometries/dambreak_bound_dp{setup[ "dp" ]}.vtk' )
 
-    polydata = reader.GetOutput()
-    np_points_box = dsa.WrapDataObject( polydata ).Points
-
-    box_n = len( np_points_box )
-    box_r = np.array( np_points_box, dtype=float ) #!!
+    box_n = len( r )
+    box_r = r
     box_v = np.zeros( ( box_n, 3 ) )
     box_rho = setup[ 'density' ] * np.ones( box_n )
     box_p = np.zeros( box_n )
     box_elementSizes = ( setup[ "dp" ]**2 ) * np.ones( box_n )
     box_ptype = np.zeros( box_n )
-    box_normals = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Normal' ], dtype=float )
+    box_normals = np.array( data[ 'Normal' ], dtype=float )
     # scale normals
-    zero_normals_count = 0
-    for i in range( 0,  len( box_normals ) ):
-        normal = box_normals[ i, : ]
-        normal_size = np.sqrt( normal[ 0 ]**2 + normal[ 1 ]**2 + normal[ 2 ]**2 )
-        if( normal_size < 1e-12 ):
-            print( f"- Normals error: particle {i} at position {box_r[ i ]} has normal {normal} with size {normal_size}." )
-            zero_normals_count += 1
-        box_normals[ i, : ] = normal / normal_size
+    box_normals, zero_normals_count = normalizeVectors.normalize_vectors( box_normals )
     print( f"- Number of undefined normals: {zero_normals_count}." )
 
     boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype, normals=box_normals,
@@ -66,12 +45,12 @@ def process_dam_break_boundary_particles( setup ):
     saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_boundary.vtk" )
 
     setup[ "boundary_n" ] = box_n
-    setup[ "domain_origin_x" ] = min( np_points_box[ :, 0 ] )
-    setup[ "domain_origin_y" ] = min( np_points_box[ :, 1 ] )
-    setup[ "domain_origin_z" ] = min( np_points_box[ :, 2 ] )
-    setup[ "domain_end_x" ] = max( np_points_box[ :, 0 ] )
-    setup[ "domain_end_y" ] = max( np_points_box[ :, 1 ] )
-    setup[ "domain_end_z" ] = max( np_points_box[ :, 2 ] )
+    setup[ "domain_origin_x" ] = min( r[ :, 0 ] )
+    setup[ "domain_origin_y" ] = min( r[ :, 1 ] )
+    setup[ "domain_origin_z" ] = min( r[ :, 2 ] )
+    setup[ "domain_end_x" ] = max( r[ :, 0 ] )
+    setup[ "domain_end_y" ] = max( r[ :, 1 ] )
+    setup[ "domain_end_z" ] = max( r[ :, 2 ] )
 
 def compute_domain_size( setup ):
     search_radius = setup[ "search_radius" ]
