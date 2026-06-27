@@ -47,6 +47,7 @@ class SPHConfig
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointSchemeWithAnderson.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointSchemeWithEnergySecant.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK4Scheme.h>
 #include <SPH/TimeStep.h>
 
@@ -71,7 +72,7 @@ public:
    using EOS = TNL::SPH::EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::BIConservative_numeric;
    using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
-   using IntegrationScheme = TNL::SPH::IntegrationSchemes::MidpointScheme< SPHConfig >;
+   using IntegrationScheme = TNL::SPH::IntegrationSchemes::MidpointSchemeWithEnergySecant< SPHConfig >;
 };
 
 using SPHDefs = SPHParams< Device >;

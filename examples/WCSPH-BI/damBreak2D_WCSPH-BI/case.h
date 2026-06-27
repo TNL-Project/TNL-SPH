@@ -116,6 +116,9 @@ requires (
    > ||
    std::is_same_v< typename Simulation::ModelParams::IntegrationScheme,
         TNL::SPH::IntegrationSchemes::MidpointSchemeWithAnderson< typename Simulation::SPHConfig >
+   > ||
+   std::is_same_v< typename Simulation::ModelParams::IntegrationScheme,
+        TNL::SPH::IntegrationSchemes::MidpointSchemeWithEnergySecant< typename Simulation::SPHConfig >
    >
 )
 void
