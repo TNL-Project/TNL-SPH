@@ -4,6 +4,8 @@ import numpy as np
 import sys
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
+import writeInitConfigFile as cf
+import computeDomainSize
 
 def compute_hydrostatic_density( ry, fluid_height, rho0, speed_of_sound ):
     hydrostaticPressure = rho0 * 9.81 * ( fluid_height - ry )
@@ -126,72 +128,6 @@ def generate_dam_break_boundary_particles( setup ):
     setup[ "domain_end_x" ] = max( box_rx )
     setup[ "domain_end_y" ] = max( box_ry )
 
-def compute_domain_size( setup ):
-    search_radius = setup[ "search_radius" ]
-    # Resize domain by one layer of cells
-    eps = 1.005
-    eps_sloshing = 1.2
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
-    domain_end_y = eps_sloshing * ( setup[ "domain_end_y" ] + search_radius )
-    domain_size_x = domain_end_x - domain_origin_x
-    domain_size_y = domain_end_y - domain_origin_y
-
-    extra_parameters = {
-        "domain_origin_x" : domain_origin_x,
-        "domain_origin_y" : domain_origin_y,
-        "domain_size_x" : domain_size_x,
-        "domain_size_y" : domain_size_y,
-    }
-    setup.update( extra_parameters )
-
-def write_simulation_params( setup ):
-    # write parameters to config file
-    with open( 'template/config_template.ini', 'r' ) as file :
-      config_file = file.read()
-
-    config_file = config_file.replace( 'placeholderSearchRadius', f'{ setup[ "search_radius" ] }' )
-    config_file = config_file.replace( 'placeholderDomainOrigin-x', f'{setup[ "domain_origin_x" ]:.5f}' )
-    config_file = config_file.replace( 'placeholderDomainOrigin-y', f'{setup[ "domain_origin_y" ]:.5f}' )
-    config_file = config_file.replace( 'placeholderDomainSize-x', f'{setup[ "domain_size_x" ]:.5f}' )
-    config_file = config_file.replace( 'placeholderDomainSize-y', f'{setup[ "domain_size_y" ]:.5f}' )
-
-    config_file = config_file.replace( 'placeholderInitParticleDistance', f'{ setup[ "dp" ] }' )
-    config_file = config_file.replace( 'placeholderSmoothingLength', f'{ setup[ "smoothing_length" ] }' )
-    config_file = config_file.replace( 'placeholderMass', f'{ setup[ "particle_mass" ] }' )
-    config_file = config_file.replace( 'placeholderSpeedOfSound', f'{ setup[ "speed_of_sound" ] }' )
-    config_file = config_file.replace( 'placeholderDensity', f'{ setup[ "density" ] }' )
-    config_file = config_file.replace( 'placeholderTimeStep', f'{ setup[ "time_step" ] }' )
-    config_file = config_file.replace( 'placeholderCFL', f'{ setup[ "cfl" ] }' )
-    config_file = config_file.replace( 'placeholderAlpha', f'{ setup[ "alpha" ] }' )
-    config_file = config_file.replace( 'placeholderDynamicVicosity', f'{ setup[ "dynamic_viscosity" ] }' )
-    config_file = config_file.replace( 'placeholderFluidParticles', f'{ setup[ "fluid_n" ] }' )
-    config_file = config_file.replace( 'placeholderAllocatedFluidParticles', f'{ setup[ "fluid_n" ] }' )
-    config_file = config_file.replace( 'placeholderBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
-    config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
-
-    with open( 'sources/config.ini', 'w' ) as file:
-      file.write( config_file )
-
-    # write parameters to config header file
-    with open( 'template/config_template.h', 'r' ) as file :
-      config_file = file.read()
-
-    config_file = config_file.replace( '#placeholderBoundaryConditionsType',  setup[ "bc_type" ] )
-    config_file = config_file.replace( '#placeholderDiffusiveTerm', setup[ "diffusive_term" ] )
-    config_file = config_file.replace( '#placeholderViscosTerm', setup[ "viscous_term" ] )
-
-    with open( 'template/config.h', 'w' ) as file:
-      file.write( config_file )
-
-def configure_and_write_measuretool_parameters( setup ):
-    # write parameters to config file
-    with open( 'template/config-measuretool_template.ini', 'r' ) as file :
-      config_file = file.read()
-    with open( 'sources/config-measuretool.ini', 'w' ) as file:
-      file.write( config_file )
-
 if __name__ == "__main__":
     import sys
     import argparse
@@ -263,10 +199,10 @@ if __name__ == "__main__":
     generate_dam_break_boundary_particles( dambreak_setup )
 
     # setup parameters
-    compute_domain_size( dambreak_setup )
+    computeDomainSize.compute_domain_size(dambreak_setup)
 
     print( "Complete example setup:" )
     pprint( dambreak_setup )
     # write simulation params
-    write_simulation_params( dambreak_setup )
-    configure_and_write_measuretool_parameters( dambreak_setup )
+    cf.write_simulation_params(dambreak_setup)
+    cf.write_measuretool_params(dambreak_setup)
