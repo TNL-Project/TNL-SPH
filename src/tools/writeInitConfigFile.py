@@ -31,6 +31,12 @@ header_replacements = [
     ("#placeholderTimeIntegration",          "time_integration",      ""),
 ]
 
+mt_repmacements = [
+    # (placeholder,                          setup key,           format spec)
+    ("placeholderInitParticleDistance",      "dp",                    ""),
+    ("placeholderSmoothingLength",           "smoothing_length",      ""),
+]
+
 def safe_replace(text: str, replacements: dict, setup: dict) -> str:
     for placeholder, key, fmt in replacements:
         value = setup.get(key)
@@ -51,9 +57,6 @@ def write_simulation_params(setup: dict) -> None:
         f.write(hdr)
 
 def write_measuretool_params(setup: dict) -> None:
-    mt_repmacements = [
-        # (placeholder,                          setup key,           format spec)
-    ]
 
     with open("template/config-measuretool_template.ini", "r") as f:
         cfg = safe_replace(f.read(), mt_repmacements, setup)
