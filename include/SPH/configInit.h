@@ -3,6 +3,7 @@
 #include <TNL/Config/parseCommandLine.h>
 #include <TNL/Config/parseINIConfigFile.h>
 #include <SPH/configSetup.h>
+#include <SPH/parseConfigFile.h>
 #include <cstdlib>
 
 namespace TNL {
@@ -60,7 +61,7 @@ initialize( int argc,
 
    const std::string configPath = cliParams.getParameter< std::string >( "config" );
    try {
-       parameters = TNL::Config::parseINIConfigFile( configPath, config );
+        parameters = TNL::SPH::parseConfigFile( configPath, config );
    }
    catch ( const std::exception& e ) {
        std::cerr << "Failed to parse the configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;

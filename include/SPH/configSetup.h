@@ -3,6 +3,7 @@
 #include <TNL/Devices/Host.h>
 #include <TNL/MPI.h>
 #include <TNL/Config/ConfigDescription.h>
+#include <SPH/parseConfigFile.h>
 
 namespace TNL {
 namespace SPH {
@@ -140,7 +141,7 @@ parseOpenBoundaryConfig( const std::string& configOpenBoundaryPath,
    if( configOpenBoundaryPath != "" ) {
       logger.writeParameter( "Parsing open boundaries simulation config.", "" );
       try {
-          parametersOpenBoundary = TNL::Config::parseINIConfigFile( configOpenBoundaryPath, configOpenBoundary );
+          parametersOpenBoundary = TNL::SPH::parseConfigFile( configOpenBoundaryPath, configOpenBoundary );
       }
       catch ( const std::exception& e ) {
           std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath << " due to the following error:\n" << e.what() << std::endl;
@@ -162,7 +163,7 @@ parseDistributedConfig( const std::string& configPath,
    if( configPath != "" ) {
       logger.writeParameter( "Parsing distributed simulation config.", "" );
       try {
-          params = TNL::Config::parseINIConfigFile( configPath, config );
+          params = TNL::SPH::parseConfigFile( configPath, config );
       }
       catch ( const std::exception& e ) {
           std::cerr << "Failed to parse the measuretool configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
@@ -184,7 +185,7 @@ parseUserDefinedConfig( const std::string& configPath,
    if( configPath != "" ) {
       logger.writeParameter( "Parsing user defined params config.", "" );
       try {
-          params = TNL::Config::parseINIConfigFile( configPath, config );
+          params = TNL::SPH::parseConfigFile( configPath, config );
       }
       catch ( const std::exception& e ) {
           std::cerr << "Failed to parse the user defined params config file " << configPath << " due to the following error:\n" << e.what() << std::endl;
