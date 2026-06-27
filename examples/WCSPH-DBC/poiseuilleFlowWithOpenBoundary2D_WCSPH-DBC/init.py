@@ -188,23 +188,7 @@ def write_simulation_params( setup ):
       file.write( config_file )
 
 def write_domain_background_grid( setup ):
-    #TODO: Rename the DomainGrid function
-    search_radius = setup[ "search_radius" ]
-    grid_size_x = round( setup[ "domain_size_x" ] / search_radius )
-    grid_size_y = round( setup[ "domain_size_y" ] / search_radius )
-    grid_origin_x = setup[ "domain_origin_x" ]
-    grid_origin_y = setup[ "domain_origin_y" ]
-    grid_sectors = np.zeros( grid_size_x * grid_size_y )
-
-    domainGrid.DomainGrid( grid_size_x,
-                           grid_size_y,
-                           0,
-                           grid_origin_x,
-                           grid_origin_y,
-                           0,
-                           grid_sectors,
-                           search_radius,
-                           "sources/openchannel_grid.vtk" )
+    domainGrid.write_domain_grid( setup, "sources/openchannel_grid.vtk" )
 
 if __name__ == "__main__":
     import sys

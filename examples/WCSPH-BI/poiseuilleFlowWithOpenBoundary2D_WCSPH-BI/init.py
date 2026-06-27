@@ -5,6 +5,7 @@ import sys
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import domainGrid
+import writeInitConfigFile as cf
 
 def generate_channel_fluid_particles( setup ):
     dp = setup[ "dp" ]
@@ -127,86 +128,9 @@ def compute_domain_size( setup ):
     }
     setup.update( extra_parameters )
 
-def write_simulation_params( setup ):
-
-    # write parameters to config file
-    with open( 'template/config_template.ini', 'r' ) as file :
-      config_file = file.read()
-
-    config_file = config_file.replace( 'placeholderSearchRadius', str( round( setup[ "search_radius" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-x', str( round( setup[ "domain_origin_x" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-y', str( round( setup[ "domain_origin_y" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-x', str( round( setup[ "domain_size_x" ], 5  ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-y', str( round( setup[ "domain_size_y" ], 5  ) ) )
-
-    config_file = config_file.replace( 'placeholderInitParticleDistance', str( setup[ "dp" ] ) )
-    config_file = config_file.replace( 'placeholderSmoothingLength', str( round( setup[ "smoothing_lenght" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderMass', str( setup[ "particle_mass" ] ) )
-    config_file = config_file.replace( 'placeholderSpeedOfSound', str( setup[ "speed_of_sound" ] ) )
-    config_file = config_file.replace( 'placeholderDensity', str( setup[ "density" ] ) )
-    config_file = config_file.replace( 'placeholderTimeStep', str( setup[ "time_step" ] ) )
-    config_file = config_file.replace( 'placeholderFluidParticles', str( setup[ "fluid_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( 2 * setup[ "fluid_n" ] ) )
-    config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
-
-    with open( 'sources/config.ini', 'w' ) as file:
-      file.write( config_file )
-
-    # write parameters to config file
-    with open( 'template/config-open-boundary_template.ini', 'r' ) as file :
-      config_file = file.read()
-
-    config_file = config_file.replace( 'placeholderInletParticles', str( setup[ "inlet_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedInletParticles', str( setup[ "inlet_n" ] ) ) #TODO 3 *
-    config_file = config_file.replace( 'placeholderOutletParticles', str( setup[ "outlet_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedOutletParticles', str( 3 * setup[ "outlet_n" ] ) )
-
-    config_file = config_file.replace( 'placeholderInletOrientation_x', str( setup[ "inlet_orientation_x" ] ) )
-    config_file = config_file.replace( 'placeholderInletOrientation_y', str( setup[ "inlet_orientation_y" ] ) )
-    config_file = config_file.replace( 'placeholderInletVelocity_x', str( setup[ "inlet_velocity_x" ] ) )
-    config_file = config_file.replace( 'placeholderInletVelocity_y', str( setup[ "inlet_velocity_y" ] ) )
-    config_file = config_file.replace( 'placeholderInletPosition1_x', str( setup[ "inlet_position_x" ]  + setup[ "dp" ] / 2 ) ) #TODO
-    config_file = config_file.replace( 'placeholderInletPosition1_y', str( setup[ "inlet_position_y" ] ) )
-    config_file = config_file.replace( 'placeholderInletPosition2_x', str( setup[ "inlet_position_x" ]  + setup[ "dp" ] / 2 ) ) #TODO
-    config_file = config_file.replace( 'placeholderInletPosition2_y', str( setup[ "inlet_position_y" ] + setup[ "inlet_height" ] - setup[ "dp" ] / 2 ) ) #TODO
-    config_file = config_file.replace( 'placeholderInletDensity', str( setup[ "density" ] ) )
-    config_file = config_file.replace( 'placeholderInletWidth_x', str( round( setup[ "inlet_width" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderInletWidth_y', str( 0. ) )
-
-    config_file = config_file.replace( 'placeholderOutletOrientation_x', str( setup[ "outlet_orientation_x" ] ) )
-    config_file = config_file.replace( 'placeholderOutletOrientation_y', str( setup[ "outlet_orientation_y" ] ) )
-    config_file = config_file.replace( 'placeholderOutletVelocity_x', str( setup[ "outlet_velocity_x" ] ) )
-    config_file = config_file.replace( 'placeholderOutletVelocity_y', str( setup[ "outlet_velocity_y" ] ) )
-    config_file = config_file.replace( 'placeholderOutletPosition1_x', str( setup[ "outlet_position_x" ] - setup[ "dp" ] / 2 ) ) #TODO
-    config_file = config_file.replace( 'placeholderOutletPosition1_y', str( setup[ "outlet_position_y" ] ) )
-    config_file = config_file.replace( 'placeholderOutletPosition2_x', str( setup[ "outlet_position_x" ] - setup[ "dp" ] / 2 ) ) #FIXME
-    config_file = config_file.replace( 'placeholderOutletPosition2_y', str( setup[ "outlet_position_y" ] + setup[ "outlet_height" ] - setup[ "dp" ] / 2  ) )
-    config_file = config_file.replace( 'placeholderOutletDensity', str( setup[ "density" ] ) )
-    config_file = config_file.replace( 'placeholderOutletWidth_x', str( round( setup[ "outlet_width" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderOutletWidth_y', str( 0. ) )
-
-    with open( 'sources/config-open-boundary.ini', 'w' ) as file:
-      file.write( config_file )
 
 def write_domain_background_grid( setup ):
-    #TODO: Rename the DomainGrid function
-    search_radius = setup[ "search_radius" ]
-    grid_size_x = round( setup[ "domain_size_x" ] / search_radius )
-    grid_size_y = round( setup[ "domain_size_y" ] / search_radius )
-    grid_origin_x = setup[ "domain_origin_x" ]
-    grid_origin_y = setup[ "domain_origin_y" ]
-    grid_sectors = np.zeros( grid_size_x * grid_size_y )
-
-    domainGrid.DomainGrid( grid_size_x,
-                           grid_size_y,
-                           0,
-                           grid_origin_x,
-                           grid_origin_y,
-                           0,
-                           grid_sectors,
-                           search_radius,
-                           "sources/openchannel_grid.vtk" )
+    domainGrid.write_domain_grid( setup, "sources/openchannel_grid.vtk" )
 
 if __name__ == "__main__":
     import sys
@@ -226,8 +150,6 @@ if __name__ == "__main__":
     g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
     g.add_argument("--speed-of-sound", type=float, default=34.3, help="speed of sound")
     g.add_argument("--cfl", type=float, default=0.25, help="referential density of the fluid")
-    #g = argparser.add_argument_group("control parameters")
-    #g.add_argument("--example-dir", type=Path, default=1000, help="referential density of the fluid")
 
     args = argparser.parse_args()
 
@@ -249,6 +171,10 @@ if __name__ == "__main__":
         # inlet boundary condition
         "inlet_position_x" : 0.,
         "inlet_position_y" : 0. + args.dp,
+        "inlet_position1_x" : 0. + args.dp / 2,
+        "inlet_position1_y" : 0. + args.dp,
+        "inlet_position2_x" : 0. + args.dp / 2,
+        "inlet_position2_y" : args.channel_height - args.dp / 2,
         "inlet_orientation_x" : 1.,
         "inlet_orientation_y" : 0.,
         "inlet_layers" : 4, #TODO: Compute based on kernel width
@@ -261,6 +187,10 @@ if __name__ == "__main__":
         # outlet boundary condition
         "outlet_position_x" : args.channel_length,
         "outlet_position_y" : 0. + args.dp,
+        "outlet_position1_x" : args.channel_length - args.dp / 2,
+        "outlet_position1_y" : 0. + args.dp,
+        "outlet_position2_x" : args.channel_length - args.dp / 2,
+        "outlet_position2_y" : args.channel_height - args.dp / 2,
         "outlet_orientation_x" : -1.,
         "outlet_orientation_y" : 0.,
         "outlet_layers" : 4, #TODO: Compute based on kernel width
@@ -286,6 +216,8 @@ if __name__ == "__main__":
     generate_channel_boundary_particles( openchannel_setup )
     generate_channel_open_boundary_particles( openchannel_setup, "inlet" )
     generate_channel_open_boundary_particles( openchannel_setup, "outlet" )
+    openchannel_setup[ "allocated_inlet_n" ] = openchannel_setup[ "inlet_n" ]
+    openchannel_setup[ "allocated_outlet_n" ] = 3 * openchannel_setup[ "outlet_n" ]
 
     # setup parameters
     compute_domain_size( openchannel_setup )
@@ -293,7 +225,8 @@ if __name__ == "__main__":
     print( "Complete example setup:" )
     pprint( openchannel_setup )
     # write simulation params
-    write_simulation_params( openchannel_setup )
+    cf.write_simulation_params( openchannel_setup )
+    cf.write_open_boundary_params( openchannel_setup )
 
     #write linked list background grid
     write_domain_background_grid( openchannel_setup )

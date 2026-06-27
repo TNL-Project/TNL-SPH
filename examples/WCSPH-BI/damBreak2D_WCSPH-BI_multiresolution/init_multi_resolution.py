@@ -206,12 +206,15 @@ def save_grid(grids: List[SubdomainGrid], setup: dict) -> None:
     for i, g in enumerate(grids):
         ox = setup["domain_origin_x"] + h0 * g.factor * g.origin_glob_x
         oy = setup["domain_origin_y"] + h0 * g.factor * g.origin_glob_y
-        n_cells = g.dims_x * g.dims_y
-        domainGrid.domainGrid(
-            g.dims_x, g.dims_y, 1,
-            ox, oy, 0,
-            np.zeros(n_cells),   # deprecated gridSector
-            g.search_radius,
+        subdomain_setup = {
+            "search_radius": g.search_radius,
+            "domain_size_x": g.dims_x * g.search_radius,
+            "domain_size_y": g.dims_y * g.search_radius,
+            "domain_origin_x": ox,
+            "domain_origin_y": oy,
+        }
+        domainGrid.write_domain_grid(
+            subdomain_setup,
             f"sources/subdomain-{i}dambreak_grid.vtk"
         )
 
