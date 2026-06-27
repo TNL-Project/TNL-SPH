@@ -1,3 +1,5 @@
+import os
+
 ini_replacements = [
     # (placeholder,                          setup key,               format spec)
     ("placeholderSearchRadius",              "search_radius",         ""),
@@ -81,10 +83,11 @@ def write_simulation_params(setup: dict) -> None:
     with open("sources/config.ini", "w") as f:
         f.write(cfg)
 
-    with open("template/config_template.h", "r") as f:
-        hdr = safe_replace(f.read(), header_replacements, setup)
-    with open("template/config.h", "w") as f:
-        f.write(hdr)
+    if os.path.exists("template/config_template.h"):
+        with open("template/config_template.h", "r") as f:
+            hdr = safe_replace(f.read(), header_replacements, setup)
+        with open("template/config.h", "w") as f:
+            f.write(hdr)
 
 def write_open_boundary_params(setup: dict) -> None:
 
@@ -99,3 +102,16 @@ def write_measuretool_params(setup: dict) -> None:
         cfg = safe_replace(f.read(), mt_repmacements, setup)
     with open("sources/config-measuretool.ini", "w") as f:
         f.write(cfg)
+
+def save_params_to_json(data: dict, filename: str):
+
+    #FIX: We need to somehow deal with the
+    def json_converter(obj):
+        if isinstance(obj, np.generic):      # np.float32, np.int64, np.bool_, ...
+            return obj.item()                # Convert to native Python type
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()              # Convert arrays to lists
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4, default=json_converter)
