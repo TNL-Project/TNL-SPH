@@ -19,15 +19,64 @@
 namespace TNL::SPH {
 
 /**
+ * \brief Recursively flattens nested JSON objects into a flat key-value structure.
+ *
+ * Organizational subsections (keys not in the schema with object values) are
+ * merged into the parent.  Keys that ARE in the schema are left untouched,
+ * so string-typed entries like "measuretool" keep their nested object for
+ * later serialization.  This allows users to group related parameters under
+ * arbitrary subsection names purely for readability — the grouping is transparent
+ * to the rest of the solver.
+ *
+ * \param data        The JSON object to flatten (modified in place).
+ * \param description Schema used to distinguish real entries from grouping keys.
+ */
+inline void
+flattenJSON( nlohmann::json& data, const TNL::Config::ConfigDescription& description )
+{
+   if( ! data.is_object() )
+      return;
+
+   nlohmann::json flattened = nlohmann::json::object();
+
+   for( auto it = data.begin(); it != data.end(); ++it ) {
+      const std::string& key = it.key();
+
+      // If the key is a known schema entry, keep it as-is (e.g. "measuretool"
+      // is a string entry whose value is a nested object for later re-parsing).
+      if( description.getEntry( key ) != nullptr ) {
+         flattened[ key ] = std::move( it.value() );
+         continue;
+      }
+
+      // If the key is NOT in the schema and the value is an object, treat it
+      // as an organizational grouping and recurse into its children.
+      if( it.value().is_object() ) {
+         flattenJSON( it.value(), description );
+         for( auto sub = it.value().begin(); sub != it.value().end(); ++sub )
+            flattened[ sub.key() ] = std::move( sub.value() );
+      }
+      else {
+         // Not in the schema, not an object — keep it so the undefined-options
+         // check downstream can report it.
+         flattened[ key ] = std::move( it.value() );
+      }
+   }
+
+   data = std::move( flattened );
+}
+
+/**
  * \brief Parses a JSONC string (JSON with comments) into a
  *        \ref TNL::Config::ParameterContainer.
  *
  * Core parsing routine used by both \ref parseJSONConfigFile (file input) and
- * inline subsection parsing.  When a string-typed entry receives a JSON object
- * or array as its value, the value is serialized back to a JSON string via
- * \c nlohmann::json::dump().  This enables nested configuration subsections:
- * the caller stores the serialized string and later re-parses it with a
- * sub-schema (see SimulationMonitor for the "measuretool" subsection).
+ * inline subsection parsing.  Nested organizational subsections (keys not in
+ * the schema) are flattened before parsing, so users may group parameters
+ * under arbitrary names for readability.  When a string-typed entry receives
+ * a JSON object as its value, the value is serialized back to a JSON string
+ * via \c nlohmann::json::dump() — this enables inline config subsections that
+ * are re-parsed with a sub-schema (see SimulationMonitor for "measuretool").
  *
  * \param jsonString  JSONC content as a string.
  * \param sourceLabel  Human-readable label for error messages (e.g. file path).
@@ -47,6 +96,9 @@ parseJSONConfigString( const std::string& jsonString,
 
    if( ! data.is_object() )
       throw std::runtime_error( "The configuration source " + sourceLabel + " must contain a JSON object at the top level." );
+
+   // Flatten organizational subsections before parsing
+   flattenJSON( data, description );
 
    std::set< std::string > undefinedOptions;
 
