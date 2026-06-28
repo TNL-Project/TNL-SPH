@@ -94,8 +94,10 @@ def write_simulation_params(setup: dict) -> None:
    cfg_setup.setdefault("allocated_boundary_n", cfg_setup.get("boundary_n", 0))
    cfg_setup.setdefault("boundary_element_size", 0)
 
-   with open("template/config_template.ini", "r") as f:
-      cfg = safe_replace(f.read(), ini_replacements, cfg_setup)
+   with open("template/config_template.jsonc", "r") as f:
+       cfg = safe_replace(f.read(), ini_replacements, setup)
+   with open("sources/config.jsonc", "w") as f:
+       f.write(cfg)
 
    # Handle the open-boundary-patches count placeholder, which expands to a
    # multi-line value (count + config file path) or 0 when no patches exist.
@@ -117,8 +119,8 @@ def write_simulation_params(setup: dict) -> None:
          f.write(hdr)
 
 def write_open_boundary_params(setup: dict) -> None:
-   with open("template/config-open-boundary_template.ini", "r") as f:
-      cfg = safe_replace(f.read(), open_boundary_replacements, setup)
+   with open("template/config-open-boundary_template.jsonc", "r") as f:
+       cfg = safe_replace(f.read(), open_boundary_replacements, setup)
 
    # Patch-interpolated placeholders (e.g. placeholder_inletPosition1_x).
    # Supports templates that use placeholder_{patch}* naming instead of the
@@ -154,14 +156,14 @@ def write_open_boundary_params(setup: dict) -> None:
       cfg = cfg.replace(f"placeholder_{patch}Width_y", "0.0")
       cfg = cfg.replace(f"placeholder_{patch}Width_z", "0.0")
 
-   with open("sources/config-open-boundary.ini", "w") as f:
+   with open("sources/config-open-boundary.jsonc", "w") as f:
       f.write(cfg)
 
 def write_measuretool_params(setup: dict) -> None:
-   with open("template/config-measuretool_template.ini", "r") as f:
-      cfg = safe_replace(f.read(), mt_repmacements, setup)
-   with open("sources/config-measuretool.ini", "w") as f:
-      f.write(cfg)
+    with open("template/config-measuretool_template.jsonc", "r") as f:
+        cfg = safe_replace(f.read(), mt_repmacements, setup)
+    with open("sources/config-measuretool.jsonc", "w") as f:
+        f.write(cfg)
 
 def save_params_to_json(data: dict, filename: str):
    #FIX: We need to somehow deal with the

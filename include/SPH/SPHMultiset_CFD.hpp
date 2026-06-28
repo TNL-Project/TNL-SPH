@@ -40,7 +40,8 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
    // load and parse config for distributed domain
    std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger );
+   const std::string distributedDomainInline = parameters.getParameter< std::string >( "distributed-domain" );
+   parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger, distributedDomainInline );
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
@@ -63,7 +64,9 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
 #endif
 
    // initialize open boundary conditions
-   if( parameters.getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = parameters.getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = parameters.getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       initOpenBoundaryPatches( parameters, logger );
 
       // add custom timers related to open boundary conditions
@@ -72,7 +75,9 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
    }
 
    // init periodic boundary conditions
-   if( parameters.getParameter< std::string >( "periodic-boundary-config" ) != "" ){
+   const bool hasPeriodicBcFile = parameters.getParameter< std::string >( "periodic-boundary-config" ) != "";
+   const bool hasPeriodicBcInline = parameters.getParameter< std::string >( "periodic-boundary" ) != "";
+   if( hasPeriodicBcFile || hasPeriodicBcInline ){
       initPeriodicBoundaryPatches( parameters, logger );
 
       // add custom timers related to perioric boundary conditions
@@ -172,13 +177,14 @@ SPHMultiset_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContain
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
 
    // setup and parse open boundary config
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
-   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
    // get global domain properetis
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
@@ -206,13 +212,14 @@ SPHMultiset_CFD< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterCon
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
    const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
+   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodic-boundary" );
 
    // setup and parse open boundary config
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
-   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, periodicBoundaryInline );
 
    fluid->initializePeriodicity( parameters, parametersOpenBoundary );
    boundary->initializePeriodicity( parameters, parametersOpenBoundary );
@@ -289,11 +296,12 @@ void
 SPHMultiset_CFD< Model>::initUserConfig( Func&& userConfigFunction )
 {
    const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
-   if( userConfigPath == "" )
+   const std::string userDefinedInline = parameters.getParameter< std::string >( "user-defined" );
+   if( userConfigPath == "" && userDefinedInline == "" )
       return;
 
    userConfigFunction( userConfig );
-   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger );
+   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger, userDefinedInline );
 }
 
 template< typename Model >

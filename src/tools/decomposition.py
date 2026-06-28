@@ -138,6 +138,14 @@ def build_rectangular_subdomain_grids(
     return coarse_grid, fine_grid
 
 def write_distributed_domain_params(grids: List[SubdomainGrid], setup: dict) -> None:
+    """Write subdomain configuration to JSONC file.
+
+    Following the DBC distributed-domain pattern, this writes a standalone
+    JSONC file with a top-level "subdomains" object whose keys are the
+    flattened subdomain parameters. The calling code can add additional
+    top-level keys (e.g. "fine-region") after calling this function by using
+    the returned data dict.
+    """
     h0    = setup["search_radius"]
     is_3d = "domain_size_z" in setup
     axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
@@ -145,45 +153,32 @@ def write_distributed_domain_params(grids: List[SubdomainGrid], setup: dict) -> 
 
     domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
 
-    with open("sources/config-distributed-domain.ini", "w") as f:
-        f.write("# Subdomain information\n\n")
-        for i, g in enumerate(grids):
-            prefix = f"subdomain-{i}-"
+    subdomains: dict = {}
+    for i, g in enumerate(grids):
+        prefix = f"subdomain-{i}-"
 
-            # Axis-independent entries
-            params = {
-                "fluid-particles":      f"sources/subdomain-{i}-dambreak_fluid.vtk",
-                "boundary-particles":   f"sources/subdomain-{i}-dambreak_boundary.vtk",
-                "fluid_n":              g.fluid_n,
-                "boundary_n":           g.boundary_n,
-                "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else fact * setup["fluid_n"],
-                "boundary_n_allocated": fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"],
-                "refinement-factor":    g.factor,
-            }
+        # Axis-independent entries
+        subdomains[f"{prefix}fluid-particles"]      = f"sources/subdomain-{i}-dambreak_fluid.vtk"
+        subdomains[f"{prefix}boundary-particles"]   = f"sources/subdomain-{i}-dambreak_boundary.vtk"
+        subdomains[f"{prefix}fluid_n"]              = g.fluid_n
+        subdomains[f"{prefix}boundary_n"]           = g.boundary_n
+        subdomains[f"{prefix}fluid_n_allocated"]    = fact * g.fluid_n if fact * g.fluid_n > 0 else fact * setup["fluid_n"]
+        subdomains[f"{prefix}boundary_n_allocated"] = fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"]
+        subdomains[f"{prefix}refinement-factor"]    = g.factor
 
-            # Axis-dependent entries — grouped by keyword, not by axis
-            ax_groups = {
-                "origin-global-coords": {},
-                "grid-dimensions":      {},
-                "origin":               {},
-                "size":                 {},
-            }
-            for ax in axes:
-                origin_glob = getattr(g, f"origin_glob_{ax}")
-                dims        = getattr(g, f"dims_{ax}")
-                origin_phys = domain_origin[ax] + g.search_radius * origin_glob
-                size_phys   = g.search_radius * dims
+        # Axis-dependent entries — grouped by keyword, not by axis
+        for ax in axes:
+            origin_glob = getattr(g, f"origin_glob_{ax}")
+            dims        = getattr(g, f"dims_{ax}")
+            origin_phys = domain_origin[ax] + g.search_radius * origin_glob
+            size_phys   = g.search_radius * dims
 
-                ax_groups["origin-global-coords"][ax] = origin_glob
-                ax_groups["grid-dimensions"][ax]      = dims
-                ax_groups["origin"][ax]               = f"{origin_phys:.7f}"
-                ax_groups["size"][ax]                 = f"{size_phys:.7f}"
+            subdomains[f"{prefix}origin-global-coords-{ax}"] = origin_glob
+            subdomains[f"{prefix}grid-dimensions-{ax}"]      = dims
+            subdomains[f"{prefix}origin-{ax}"]               = f"{origin_phys:.7f}"
+            subdomains[f"{prefix}size-{ax}"]                 = f"{size_phys:.7f}"
 
-            # Flatten: all x/y/z for each keyword before moving to the next
-            for keyword, ax_values in ax_groups.items():
-                for ax, value in ax_values.items():
-                    params[f"{keyword}-{ax}"] = value
-
-            for k, v in params.items():
-                f.write(f"{prefix}{k} = {v}\n")
-            f.write("\n")
+    import json
+    output: dict = {"subdomains": subdomains}
+    with open("sources/config-distributed-domain.jsonc", "w") as f:
+        json.dump(output, f, indent=4)

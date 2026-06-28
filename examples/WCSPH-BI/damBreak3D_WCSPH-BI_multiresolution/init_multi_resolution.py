@@ -261,37 +261,46 @@ def write_distributed_domain_params_rectangular(
         coarse_grid, fine_grid, setup: dict
 ) -> None:
     """
-    Writes standard per-subdomain grid entries then appends the [fine-region]
-    block (origin, size, active faces) that MultiresolutionBoundary::
-    initZonesRectangular reads.
+    Writes standard per-subdomain grid entries plus a [fine-region] block
+    (origin, size, active faces) that MultiresolutionBoundary::
+    initZonesRectangular reads. Outputs JSONC format.
     """
+    import json
+
     grids = [coarse_grid, fine_grid]
+
+    # -- Reuse the standard writer to build the subdomains dict --
     dec.write_distributed_domain_params(grids, setup)
+
+    # -- Read back the JSON, add fine-region, rewrite --
+    with open("sources/config-distributed-domain.jsonc", "r") as f:
+        data = json.load(f)
 
     axes = ["x", "y", "z"]
     sr   = setup["search_radius"]
 
-    with open("sources/config-distributed-domain.ini", "a") as f:
-        f.write("# Fine region specification (for rectangular MRB)\n")
+    data["fine-region"] = {}
+    fr = data["fine-region"]
 
-        for ax in axes:
-            phys_min = getattr(fine_grid, f"phys_{ax}_min")
-            phys_max = getattr(fine_grid, f"phys_{ax}_max")
-            f.write(f"fine-region-origin-{ax} = {phys_min:.7f}\n")
-            f.write(f"fine-region-size-{ax}   = {phys_max - phys_min:.7f}\n")
+    for ax in axes:
+        phys_min = getattr(fine_grid, f"phys_{ax}_min")
+        phys_max = getattr(fine_grid, f"phys_{ax}_max")
+        fr[f"fine-region-origin-{ax}"] = phys_min
+        fr[f"fine-region-size-{ax}"]   = phys_max - phys_min
 
-        for ax in axes:
-            domain_min = setup[f"domain_origin_{ax}"]
-            domain_max = domain_min + setup[f"domain_size_{ax}"]
-            phys_min   = getattr(fine_grid, f"phys_{ax}_min")
-            phys_max   = getattr(fine_grid, f"phys_{ax}_max")
+    for ax in axes:
+        domain_min = setup[f"domain_origin_{ax}"]
+        domain_max = domain_min + setup[f"domain_size_{ax}"]
+        phys_min   = getattr(fine_grid, f"phys_{ax}_min")
+        phys_max   = getattr(fine_grid, f"phys_{ax}_max")
 
-            face_min_active = abs(phys_min - domain_min) > sr * 1e-3
-            face_max_active = abs(phys_max - domain_max) > sr * 1e-3
-            f.write(f"fine-region-face-min-{ax}-active = {int(face_min_active)}\n")
-            f.write(f"fine-region-face-max-{ax}-active = {int(face_max_active)}\n")
+        face_min_active = int(abs(phys_min - domain_min) > sr * 1e-3)
+        face_max_active = int(abs(phys_max - domain_max) > sr * 1e-3)
+        fr[f"fine-region-face-min-{ax}-active"] = face_min_active
+        fr[f"fine-region-face-max-{ax}-active"] = face_max_active
 
-        f.write("\n")
+    with open("sources/config-distributed-domain.jsonc", "w") as f:
+        json.dump(data, f, indent=4)
 
 
 # ---------------------------------------------------------------------------

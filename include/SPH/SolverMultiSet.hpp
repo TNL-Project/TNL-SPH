@@ -41,8 +41,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
    // load and parse config for distributed domain
-   std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger );
+    std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
+    const std::string distributedDomainInline = parameters.getParameter< std::string >( "distributed-domain" );
+    parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger, distributedDomainInline );
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
@@ -60,10 +61,11 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    timeMeasurement.addTimer( "rebalance", false );
 #else
    this->numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
-   const std::string configSubdomainsPath = parameters.getParameter< std::string >( "subdomains-config" );
-   for( int subset = 0; subset < numberOfSubsets; subset++ )
-      TNL::SPH::configSubdomain( subset, this->configSubdomains );
-   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger ); //FIXME: Wrong function
+    const std::string configSubdomainsPath = parameters.getParameter< std::string >( "subdomains-config" );
+    const std::string subdomainsInline = parameters.getParameter< std::string >( "subdomains" );
+    for( int subset = 0; subset < numberOfSubsets; subset++ )
+       TNL::SPH::configSubdomain( subset, this->configSubdomains );
+    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger, subdomainsInline ); //FIXME: Wrong function
 
    // initialize topology
    topology.loadFromConfig( parameters, parametersSubdomains );
@@ -74,7 +76,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
 #endif
 
    // initialize open boundary conditions
-   if( parameters.getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = parameters.getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = parameters.getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       initOpenBoundaryPatches( parameters, logger );
 
       // add custom timers related to open boundary conditions
@@ -82,9 +86,11 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
       timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   // init periodic boundary conditions
-   if( parameters.getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      initPeriodicBoundaryPatches( parameters, logger );
+    // init periodic boundary conditions
+    const bool hasPeriodicBcFile = parameters.getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = parameters.getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       initPeriodicBoundaryPatches( parameters, logger );
 
       // add custom timers related to perioric boundary conditions
       timeMeasurement.addTimer( "enforce-periodic-bc" );
@@ -211,13 +217,14 @@ SolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContaine
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
 
    // setup and parse open boundary config
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
-   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
    // get global domain properetis
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );

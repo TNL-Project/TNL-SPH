@@ -289,10 +289,71 @@ def split_to_subdomains( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
     print( "\n" )
 
 
+def build_distributed_domain_json( setup ):
+    import json
+    import numpy as np
+
+    subdomains_x = setup[ "subdomains_x" ]
+    subdomains_y = setup[ "subdomains_y" ]
+
+    data = {}
+    for subdomain_x in range( subdomains_x ):
+        for subdomain_y in range( subdomains_y ):
+            key_prefix = f"subdomain-x-{subdomain_x}-y-{subdomain_y}-"
+            entry = {}
+            entry[ f"{key_prefix}fluid-particles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-fluid.vtk"
+            entry[ f"{key_prefix}boundary-particles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-boundary.vtk"
+            entry[ f"{key_prefix}fluid_n" ] = int( setup[ f"{key_prefix}fluid_n" ] )
+            entry[ f"{key_prefix}boundary_n" ] = int( setup[ f"{key_prefix}box_n" ] )
+            entry[ f"{key_prefix}fluid_n_allocated" ] = 2 * int( setup[ f"{key_prefix}fluid_n" ] )
+            entry[ f"{key_prefix}boundary_n_allocated" ] = 3 * int( setup[ f"{key_prefix}box_n" ] )
+
+            subdomain_grid_origin_x = setup[ f"subdomains_origin_x" ][ subdomain_x ]
+            subdomain_grid_origin_y = setup[ f"subdomains_origin_y" ][ subdomain_y ]
+            entry[ f"{key_prefix}origin-x" ] = float( round( subdomain_grid_origin_x, 7 ) )
+            entry[ f"{key_prefix}origin-y" ] = float( round( subdomain_grid_origin_y, 7 ) )
+            entry[ f"{key_prefix}origin-z" ] = float( round( setup[ 'domain_origin_z' ], 7 ) )
+
+            subdomain_grid_origin_glob_coords_x = setup[ f"subgrids_origin_coords_x" ][ subdomain_x ]
+            subdomain_grid_origin_glob_coords_y = setup[ f"subgrids_origin_coords_y" ][ subdomain_y ]
+            entry[ f"{key_prefix}origin-global-coords-x" ] = int( subdomain_grid_origin_glob_coords_x )
+            entry[ f"{key_prefix}origin-global-coords-y" ] = int( subdomain_grid_origin_glob_coords_y )
+            entry[ f"{key_prefix}origin-global-coords-z" ] = 0 + int( setup[ 'overlap_width' ] )
+
+            subdomain_size_x = setup[ f"subdomains_size_x" ][ subdomain_x ]
+            subdomain_size_y = setup[ f"subdomains_size_y" ][ subdomain_y ]
+            entry[ f"{key_prefix}size-x" ] = float( round( subdomain_size_x, 7 ) )
+            entry[ f"{key_prefix}size-y" ] = float( round( subdomain_size_y, 7 ) )
+            entry[ f"{key_prefix}size-z" ] = float( round( setup[ 'domain_size_z' ], 7 ) )
+
+            subdomain_grid_dims_x = setup[ f"subgrids_dimensions_x" ][ subdomain_x ]
+            subdomain_grid_dims_y = setup[ f"subgrids_dimensions_y" ][ subdomain_y ]
+            entry[ f"{key_prefix}grid-dimensions-x" ] = int( subdomain_grid_dims_x )
+            entry[ f"{key_prefix}grid-dimensions-y" ] = int( subdomain_grid_dims_y )
+            entry[ f"{key_prefix}grid-dimensions-z" ] = ( int )( np.ceil( setup[ 'domain_size_z'] / setup[ 'search_radius' ] ) )
+
+            data.update( entry )
+    return data
+
+def build_distributed_domain_json_string( setup ):
+    import json
+    import numpy as np
+
+    data = build_distributed_domain_json( setup )
+
+    def json_converter(obj):
+        if isinstance(obj, np.generic):
+            return obj.item()
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+    return json.dumps( data, indent=8, default=json_converter )
+
 def write_simulation_params( setup ):
 
     # write parameters to config file
-    with open( 'template/config_template.ini', 'r' ) as file :
+    with open( 'template/config_template.jsonc', 'r' ) as file :
       config_file = file.read()
 
     config_file = config_file.replace( 'placeholderSearchRadius', str( round( setup[ "search_radius" ], 7 ) ) )
@@ -318,59 +379,29 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderSubdomains-x', str( setup[ "subdomains_x" ] ) )
     config_file = config_file.replace( 'placeholderSubdomains-y', str( setup[ "subdomains_y" ] ) )
 
+    # Replace distributed domain placeholder with generated JSON content
+    dd_json = build_distributed_domain_json_string( setup )
+    config_file = config_file.replace( 'placeholderDistributedDomainContent', dd_json )
 
-    with open( 'sources/config.ini', 'w' ) as file:
+    with open( 'sources/config.jsonc', 'w' ) as file:
       file.write( config_file )
 
 def write_distributed_domain_params( setup ):
-    subdomains_x = setup[ "subdomains_x" ]
-    subdomains_y = setup[ "subdomains_y" ]
+    import json
+    import numpy as np
 
-    # write paramerters to new created config file related to decomposition
-    with open( 'sources/config-distributed-domain.ini', "w") as file:
-        #file.write( f'# Distributed subdomains global informations\n' )
-        #file.write( f'number-of-subdomains = { setup[ f"number_of_subdomains" ]}\n' )
-        #file.write( f'subdomains-x = { subdomains_x }\n' )
-        #file.write( f'subdomains-y = { subdomains_y }\n' )
-        #file.write( f'domainOrigin-x = { setup[ "domain_origin_x" ]:.5}\n' )
-        #file.write( f'domainOrigin-y = { setup[ "domain_origin_y" ]:.5}\n' )
-        #file.write( f'domainSize-x = { setup[ "domain_size_x" ]:.5}\n' )
-        #file.write( f'domainSize-y = { setup[ "domain_size_y" ]:.5}\n' )
+    data = build_distributed_domain_json( setup )
 
-        #file.write( f'\n' )
-        file.write( f'# Subdomains informations\n' );
-        for subdomain_x in range( subdomains_x ):
-            for subdomain_y in range( subdomains_y ):
-                key_prefix = f"subdomain-x-{subdomain_x}-y-{subdomain_y}-"
-                #file.write( f'subdomain-x = { subdomain_x }\n' )
-                #file.write( f'subdomain-y = { subdomain_y }\n' )
-                file.write( f"{key_prefix}fluid-particles = sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-fluid.vtk\n" )
-                file.write( f"{key_prefix}boundary-particles = sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-boundary.vtk\n" )
-                file.write( f'{key_prefix}fluid_n = { setup[ f"{key_prefix}fluid_n" ] }\n' )
-                file.write( f'{key_prefix}boundary_n = { setup[ f"{key_prefix}box_n" ] }\n' )
-                file.write( f'{key_prefix}fluid_n_allocated = { 2*setup[ f"{key_prefix}fluid_n" ] }\n' )
-                file.write( f'{key_prefix}boundary_n_allocated = { 3*setup[ f"{key_prefix}box_n" ] }\n' )
-                subdomain_grid_origin_x = setup[ f"subdomains_origin_x" ][ subdomain_x ]
-                subdomain_grid_origin_y = setup[ f"subdomains_origin_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}origin-x = { subdomain_grid_origin_x:.7f}\n" )
-                file.write( f"{key_prefix}origin-y = { subdomain_grid_origin_y:.7f}\n" )
-                file.write( f"{key_prefix}origin-z = { setup[ 'domain_origin_z' ]:.7f}\n" ) #2D decomposition
-                subdomain_grid_origin_glob_coords_x = setup[ f"subgrids_origin_coords_x" ][ subdomain_x ]
-                subdomain_grid_origin_glob_coords_y = setup[ f"subgrids_origin_coords_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}origin-global-coords-x = { subdomain_grid_origin_glob_coords_x }\n" )
-                file.write( f"{key_prefix}origin-global-coords-y = { subdomain_grid_origin_glob_coords_y }\n" )
-                file.write( f"{key_prefix}origin-global-coords-z = { 0 + setup[ 'overlap_width' ]}\n" ) #2D decomposition
-                subdomain_size_x = setup[ f"subdomains_size_x" ][ subdomain_x ]
-                subdomain_size_y = setup[ f"subdomains_size_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}size-x = { subdomain_size_x:.7f}\n" )
-                file.write( f"{key_prefix}size-y = { subdomain_size_y:.7f}\n" )
-                file.write( f"{key_prefix}size-z = { setup[ 'domain_size_z' ]:.7f}\n" ) #2D decomposition
-                subdomain_grid_dims_x = setup[ f"subgrids_dimensions_x" ][ subdomain_x ]
-                subdomain_grid_dims_y = setup[ f"subgrids_dimensions_y" ][ subdomain_y ]
-                file.write( f"{key_prefix}grid-dimensions-x = { subdomain_grid_dims_x }\n" )
-                file.write( f"{key_prefix}grid-dimensions-y = { subdomain_grid_dims_y }\n" )
-                file.write( f"{key_prefix}grid-dimensions-z = { ( int )( np.ceil( setup[ 'domain_size_z'] / setup[ 'search_radius' ] ) ) }\n" ) #2D decomposition
-                file.write( f'\n' )
+    def json_converter(obj):
+        if isinstance(obj, np.generic):
+            return obj.item()
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+    with open( 'sources/config-distributed-domain.jsonc', "w") as file:
+        file.write( "// Subdomains informations\n" );
+        json.dump( data, file, indent=4, default=json_converter )
 
 def write_domain_background_grid( setup ):
     import domainGrid

@@ -40,10 +40,11 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    auto& log = this->logger;
 
    this->numberOfSubsets = params.template getParameter< int >( "numberOfSubdomains" );
-   const std::string configSubdomainsPath = params.template getParameter< std::string >( "subdomains-config" );
-   for( int subset = 0; subset < this->numberOfSubsets; subset++ )
-      TNL::SPH::configSubdomain( subset, this->configSubdomains );
-   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log );
+    const std::string configSubdomainsPath = params.template getParameter< std::string >( "subdomains-config" );
+    const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
+    for( int subset = 0; subset < this->numberOfSubsets; subset++ )
+       TNL::SPH::configSubdomain( subset, this->configSubdomains );
+    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
 
    topology.loadFromConfig( params, parametersSubdomains );
    topology.finalizeLinear();
@@ -51,24 +52,28 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    initMultiResolutionBoundaryPatches();
    this->timeMeasurement.addTimer( "multiresolution-update" );
 
-   if( params.template getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   if( params.template getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      this->initPeriodicBoundaryPatches( params, log );
+    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       this->initPeriodicBoundaryPatches( params, log );
 
-      this->timeMeasurement.addTimer( "enforce-periodic-bc" );
-      this->timeMeasurement.addTimer( "transfer-periodic-bc" );
-      this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
-      this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
-   }
+       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
+       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
+       this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
+       this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
+    }
 
-   this->modelParams.init( params );
-   for( int i = 0; i < this->numberOfSubsets; i++ ){
+    this->modelParams.init( params );
+    for( int i = 0; i < this->numberOfSubsets; i++ ){
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
       const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
       multiresolutionBoundaryPatches[ i ]->initMassNodes( this->modelParams, i, refinementFactor );
@@ -108,8 +113,9 @@ SolverMultiSetBlockMultiresolution< Model >::initializeDistributedSimulation()
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
-   std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log );
+    std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
+    const std::string distributedDomainInline = params.template getParameter< std::string >( "distributed-domain" );
+    parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log, distributedDomainInline );
 
    initDistributedParticleSets( params, this->parametersDistributed, log );
 
@@ -123,21 +129,25 @@ SolverMultiSetBlockMultiresolution< Model >::initializeDistributedSimulation()
    this->timeMeasurement.addTimer( "synchronize", false );
    this->timeMeasurement.addTimer( "rebalance", false );
 
-   if( params.template getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   if( params.template getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      this->initPeriodicBoundaryPatches( params, log );
+    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       this->initPeriodicBoundaryPatches( params, log );
 
-      this->timeMeasurement.addTimer( "enforce-periodic-bc" );
-      this->timeMeasurement.addTimer( "transfer-periodic-bc" );
-      this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
-      this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
-   }
+       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
+       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
+       this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
+       this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
+    }
 
    this->modelParams.init( params );
 

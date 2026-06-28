@@ -40,8 +40,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
-   std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log );
+    std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
+    const std::string distributedDomainInline = params.template getParameter< std::string >( "distributed-domain" );
+    parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log, distributedDomainInline );
 
    initDistributedParticleSets( params, this->parametersDistributed, log );
 
@@ -58,15 +59,19 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    initParticleSets( params, log );
 #endif
 
-   if( params.template getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   if( params.template getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      this->initPeriodicBoundaryPatches( params, log );
+    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       this->initPeriodicBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
       this->timeMeasurement.addTimer( "transfer-periodic-bc" );

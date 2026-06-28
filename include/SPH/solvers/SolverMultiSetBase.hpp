@@ -16,12 +16,13 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
 
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
-   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
@@ -48,6 +49,7 @@ SolverMultiSetBase< Model >::initPeriodicBoundaryPatches( TNL::Config::Parameter
    logger.writeParameter( "Initialization of periodic boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
    const std::string periodicBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
+   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodic-boundary" );
 
    TNL::Config::ConfigDescription configPeriodicBoundary;
    TNL::Config::ParameterContainer parametersPeriodicBoundary;
@@ -56,7 +58,7 @@ SolverMultiSetBase< Model >::initPeriodicBoundaryPatches( TNL::Config::Parameter
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configPeriodicBoundary, prefix );
    }
-   parseOpenBoundaryConfig( periodicBoundaryConfigPath, parametersPeriodicBoundary, configPeriodicBoundary, logger );
+   parseOpenBoundaryConfig( periodicBoundaryConfigPath, parametersPeriodicBoundary, configPeriodicBoundary, logger, periodicBoundaryInline );
 
    fluidSets[ 0 ]->initializePeriodicity( parameters, parametersPeriodicBoundary );
    boundarySets[ 0 ]->initializePeriodicity( parameters, parametersPeriodicBoundary );
@@ -435,11 +437,12 @@ void
 SolverMultiSetBase< Model >::initUserConfig( Func&& userConfigFunction )
 {
    const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
-   if( userConfigPath == "" )
+   const std::string userDefinedInline = parameters.getParameter< std::string >( "user-defined" );
+   if( userConfigPath == "" && userDefinedInline == "" )
       return;
 
    userConfigFunction( userConfig );
-   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger );
+   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger, userDefinedInline );
 }
 
 template< typename Model >

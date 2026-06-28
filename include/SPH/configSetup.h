@@ -53,16 +53,20 @@ configSetup( TNL::Config::ConfigDescription& config,
 
     config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
     config.addEntry< std::string >( "open-boundary-config", "Configuration file for open boundary.", "" );
-    config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
-    config.addEntry< std::string >( "periodic-boundary-config", "Configuration file for periodic boundary.", "" );
+    config.addEntry< std::string >( "open-boundary", "Inline open boundary config as a JSON object. Used when open-boundary-config is empty.", "" );
+   config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
+   config.addEntry< std::string >( "periodic-boundary-config", "Configuration file for periodic boundary.", "" );
+   config.addEntry< std::string >( "periodic-boundary", "Inline periodic boundary config as a JSON object. Used when periodic-boundary-config is empty.", "" );
 
-    config.addEntry< int >( "numberOfSubdomains", "Number of particles subdomains.", 0 );
-    config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
+   config.addEntry< int >( "numberOfSubdomains", "Number of particles subdomains.", 0 );
+   config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
+   config.addEntry< std::string >( "subdomains", "Inline subdomains config as a JSON object. Used when subdomains-config is empty.", "" );
 
-    // distributed simulation parameters
-    config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
-    config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
-    config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
+   // distributed simulation parameters
+   config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
+   config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
+   config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
+   config.addEntry< std::string >( "distributed-domain", "Inline distributed domain config as a JSON object. Used when distributed-config is empty.", "" );
     config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
     config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "computationalTime" );
         config.addEntryEnum( "numberOfParticles" );
@@ -82,8 +86,9 @@ configSetup( TNL::Config::ConfigDescription& config,
     //TODO: Move this to suiteble place, it is used also for open zones
     config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
 
-    // user defined parameters
-    config.addEntry< std::string >( "user-defined-config", "Configuration file for user's custom parameters.", "" );
+   // user defined parameters
+   config.addEntry< std::string >( "user-defined-config", "Configuration file for user's custom parameters.", "" );
+   config.addEntry< std::string >( "user-defined", "Inline user-defined config as a JSON object. Used when user-defined-config is empty.", "" );
 }
 
 void
@@ -137,7 +142,8 @@ void
 parseOpenBoundaryConfig( const std::string& configOpenBoundaryPath,
                          TNL::Config::ParameterContainer& parametersOpenBoundary,
                          TNL::Config::ConfigDescription& configOpenBoundary,
-                         TNL::Logger& logger )
+                         TNL::Logger& logger,
+                         const std::string& inlineConfig = "" )
 {
    if( configOpenBoundaryPath != "" ) {
       logger.writeParameter( "Parsing open boundaries simulation config.", "" );
@@ -153,13 +159,24 @@ parseOpenBoundaryConfig( const std::string& configOpenBoundaryPath,
       }
       logger.writeParameter( "Parsing open boundaries config.", "Done." );
    }
+   else if( ! inlineConfig.empty() ) {
+      logger.writeParameter( "Parsing open boundaries config.", "inline (config.jsonc subsection)" );
+      try {
+          parametersOpenBoundary = TNL::SPH::parseJSONConfigString( inlineConfig, "inline open-boundary", configOpenBoundary );
+      }
+      catch( const std::exception& e ) {
+          std::cerr << "Failed to parse the inline open boundary configuration due to the following error:\n" << e.what() << std::endl;
+      }
+      logger.writeParameter( "Parsing open boundaries config.", "Done." );
+   }
 }
 
 void
 parseDistributedConfig( const std::string& configPath,
                         TNL::Config::ParameterContainer& params,
                         TNL::Config::ConfigDescription& config,
-                        TNL::Logger& logger )
+                        TNL::Logger& logger,
+                        const std::string& inlineConfig = "" )
 {
    if( configPath != "" ) {
       logger.writeParameter( "Parsing distributed simulation config.", "" );
@@ -167,11 +184,21 @@ parseDistributedConfig( const std::string& configPath,
           params = TNL::SPH::parseConfigFile( configPath, config );
       }
       catch ( const std::exception& e ) {
-          std::cerr << "Failed to parse the measuretool configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
+          std::cerr << "Failed to parse the distributed configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
       }
       catch (...) {
-          std::cerr << "Failed to parse the measuretool configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
+          std::cerr << "Failed to parse the distributed configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
           throw;
+      }
+      logger.writeParameter( "Parsing distributed simulation config.", "Done." );
+   }
+   else if( ! inlineConfig.empty() ) {
+      logger.writeParameter( "Parsing distributed simulation config.", "inline (config.jsonc subsection)" );
+      try {
+          params = TNL::SPH::parseJSONConfigString( inlineConfig, "inline distributed-domain", config );
+      }
+      catch( const std::exception& e ) {
+          std::cerr << "Failed to parse the inline distributed configuration due to the following error:\n" << e.what() << std::endl;
       }
       logger.writeParameter( "Parsing distributed simulation config.", "Done." );
    }
@@ -181,7 +208,8 @@ void
 parseUserDefinedConfig( const std::string& configPath,
                         TNL::Config::ParameterContainer& params,
                         TNL::Config::ConfigDescription& config,
-                        TNL::Logger& logger )
+                        TNL::Logger& logger,
+                        const std::string& inlineConfig = "" )
 {
    if( configPath != "" ) {
       logger.writeParameter( "Parsing user defined params config.", "" );
@@ -194,6 +222,16 @@ parseUserDefinedConfig( const std::string& configPath,
       catch (...) {
           std::cerr << "Failed to parse the user defined params config file " << configPath << " due to an unknown C++ exception." << std::endl;
           throw;
+      }
+      logger.writeParameter( "Parsing user defined params config.", "Done." );
+   }
+   else if( ! inlineConfig.empty() ) {
+      logger.writeParameter( "Parsing user defined params config.", "inline (config.jsonc subsection)" );
+      try {
+          params = TNL::SPH::parseJSONConfigString( inlineConfig, "inline user-defined", config );
+      }
+      catch( const std::exception& e ) {
+          std::cerr << "Failed to parse the inline user defined params config due to the following error:\n" << e.what() << std::endl;
       }
       logger.writeParameter( "Parsing user defined params config.", "Done." );
    }
