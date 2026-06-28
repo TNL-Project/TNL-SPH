@@ -87,7 +87,9 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    this->timeMeasurement.addTimer( "remesh" );
 
    log.writeSeparator();
-   if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
+   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
+   if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       log.writeParameter( "Simulation monitor initialization.", "" );
       this->simulationMonitor.init( params, this->timeStepping, log );
       log.writeParameter( "Simulation monitor initialization.", "Done." );

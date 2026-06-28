@@ -1,10 +1,10 @@
-#include <TNL/Config/parseINIConfigFile.h>
 #include <TNL/Logger.h>
 
 #include "SPHTraits.h"
 #include "TNL/Config/ConfigDescription.h"
 #include "TNL/Config/ParameterContainer.h"
 #include "TNL/Functional.h"
+#include "SPH/parseConfigFile.h"
 #include "shared/Measuretool.h"
 
 namespace TNL {
@@ -47,11 +47,26 @@ public:
       configWaterLevelSensor( measuretoolConfig, parameters );
       this->numberOfVolumetricFlowRatePlanes = parameters.getParameter< int >( "volumetric-flow-rate-planes-count" );
 
-      // parse parameters
-      TNL::Config::ParameterContainer measuretoolParameters;
-      const std::string configPath = parameters.getParameter< std::string >( "measuretool-config" );
-      logger.writeParameter( "Reading measuretool config:", configPath );
-      parseMeasuretoolConfig( measuretoolConfig, measuretoolParameters, configPath );
+       // parse parameters
+       TNL::Config::ParameterContainer measuretoolParameters;
+       const std::string configPath = parameters.getParameter< std::string >( "measuretool-config" );
+       if( ! configPath.empty() ) {
+          logger.writeParameter( "Reading measuretool config:", configPath );
+          parseMeasuretoolConfig( measuretoolConfig, measuretoolParameters, configPath );
+       }
+       else if( parameters.checkParameter( "measuretool" ) ) {
+          const std::string inlineConfig = parameters.getParameter< std::string >( "measuretool" );
+          if( ! inlineConfig.empty() ) {
+             logger.writeParameter( "Reading measuretool config:", "inline (config.jsonc subsection)" );
+             try {
+                measuretoolParameters = TNL::SPH::parseJSONConfigString( inlineConfig, "inline measuretool", measuretoolConfig );
+             }
+             catch( const std::exception& e ) {
+                std::cerr << "Failed to parse the inline measuretool configuration due to the following error:\n"
+                          << e.what() << std::endl;
+             }
+          }
+       }
       initializeInterpolations( parameters, measuretoolParameters, timeStepping, logger );
       initializePressureSensors( parameters, measuretoolParameters, timeStepping, logger );
       initializeWaterLevelSensors( parameters, measuretoolParameters, timeStepping, logger );
@@ -145,7 +160,7 @@ public:
                            const std::string& configPath )
    {
       try {
-         measuretoolParameters = TNL::Config::parseINIConfigFile( configPath, measuretoolConfig );
+         measuretoolParameters = TNL::SPH::parseConfigFile( configPath, measuretoolConfig );
       }
       catch( const std::exception& e ) {
          std::cerr << "Failed to parse the measuretool configuration file " << configPath << " due to the following error:\n"

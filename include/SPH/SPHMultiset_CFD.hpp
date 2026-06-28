@@ -105,7 +105,9 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
 
    // initialize the measuretool
    logger.writeSeparator();
-   if( parameters.getParameter< std::string >( "measuretool-config" ) != "" ) {
+   const bool hasMeasuretoolFile = parameters.getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolInline = parameters.getParameter< std::string >( "measuretool" ) != "";
+   if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       logger.writeParameter( "Simulation monitor initialization.", "" );
       simulationMonitor.init( parameters, timeStepping, logger );
       logger.writeParameter( "Simulation monitor initialization.", "Done." );

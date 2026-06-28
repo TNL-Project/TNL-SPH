@@ -19,44 +19,35 @@
 namespace TNL::SPH {
 
 /**
- * \brief Parses a JSONC configuration file (JSON with comments) into a
+ * \brief Parses a JSONC string (JSON with comments) into a
  *        \ref TNL::Config::ParameterContainer.
  *
- * This function is a drop-in replacement for \ref TNL::Config::parseINIConfigFile.
- * It reads a flat JSON object whose keys match the entries defined in the
- * \ref TNL::Config::ConfigDescription, converts each JSON value to the C++ type
- * declared in the schema, and populates the returned container.  Both line
- * comments (double-slash) and block comments (slash-asterisk) are supported
- * through nlohmann/json's \c ignore_comments option.
+ * Core parsing routine used by both \ref parseJSONConfigFile (file input) and
+ * inline subsection parsing.  When a string-typed entry receives a JSON object
+ * or array as its value, the value is serialized back to a JSON string via
+ * \c nlohmann::json::dump().  This enables nested configuration subsections:
+ * the caller stores the serialized string and later re-parses it with a
+ * sub-schema (see SimulationMonitor for the "measuretool" subsection).
  *
- * \param configPath  Path to the JSONC file.
- * \param description Schema describing expected entries, their types, default
- *                    values and enum constraints.
+ * \param jsonString  JSONC content as a string.
+ * \param sourceLabel  Human-readable label for error messages (e.g. file path).
+ * \param description  Schema describing expected entries, their types, default
+ *                     values and enum constraints.
  * \returns A populated \ref TNL::Config::ParameterContainer.
- * \throws std::runtime_error if the file cannot be opened, the top-level JSON
- *         value is not an object, or an unknown option is encountered.
- * \throws nlohmann::json::exception on JSON parse or type-conversion errors.
  */
 [[nodiscard]] inline TNL::Config::ParameterContainer
-parseJSONConfigFile( const std::string& configPath, const TNL::Config::ConfigDescription& description )
+parseJSONConfigString( const std::string& jsonString,
+                       const std::string& sourceLabel,
+                       const TNL::Config::ConfigDescription& description )
 {
    TNL::Config::ParameterContainer parameters;
 
-   // --- read the file -------------------------------------------------------
-   std::ifstream file( configPath );
-   if( ! file.is_open() )
-      throw std::runtime_error( "Failed to open the configuration file: " + configPath );
-
-   std::stringstream buffer;
-   buffer << file.rdbuf();
-
-   // Parse JSONC: the last argument (ignore_comments) enables line and block comments
-   nlohmann::json data = nlohmann::json::parse( buffer.str(), nullptr, /*allow_exceptions*/ true, /*ignore_comments*/ true );
+   // The last argument (ignore_comments) enables line and block comments
+   nlohmann::json data = nlohmann::json::parse( jsonString, nullptr, /*allow_exceptions*/ true, /*ignore_comments*/ true );
 
    if( ! data.is_object() )
-      throw std::runtime_error( "The configuration file " + configPath + " must contain a JSON object at the top level." );
+      throw std::runtime_error( "The configuration source " + sourceLabel + " must contain a JSON object at the top level." );
 
-   // --- iterate over all entries in the JSON object -------------------------
    std::set< std::string > undefinedOptions;
 
    for( auto it = data.begin(); it != data.end(); ++it ) {
@@ -92,7 +83,13 @@ parseJSONConfigFile( const std::string& configPath, const TNL::Config::ConfigDes
          parameters.addParameter< double >( name, v );
       }
       else if( entryType == "string" ) {
-         const auto v = value.get< std::string >();
+         // Nested JSON objects/arrays are serialized to a string so they can be
+         // re-parsed later with a sub-schema (enables inline config subsections).
+         std::string v;
+         if( value.is_object() || value.is_array() )
+            v = value.dump();
+         else
+            v = value.get< std::string >();
          const auto& entry = dynamic_cast< const TNL::Config::ConfigEntry< std::string >& >( *entryBase );
          TNL::Config::checkEnumValues( entry, name, v );
          parameters.addParameter< std::string >( name, v );
@@ -127,21 +124,42 @@ parseJSONConfigFile( const std::string& configPath, const TNL::Config::ConfigDes
          parameters.addList< std::string >( name, list );
       }
       else
-         // this will not happen if all entry types are handled above
-         throw std::runtime_error( "Function parseJSONConfigFile encountered unsupported entry type: " + entryType );
+         throw std::runtime_error( "Function parseJSONConfigString encountered unsupported entry type: " + entryType );
    }
 
    if( ! undefinedOptions.empty() ) {
-      std::string msg = "The configuration file contains the following options which are not defined in the program:\n";
+      std::string msg = "The configuration source " + sourceLabel + " contains the following options which are not defined in the program:\n";
       for( const auto& option : undefinedOptions )
          msg += " - " + option + "\n";
       throw std::runtime_error( msg );
    }
 
-   // add default values for entries that were not present in the file
    TNL::Config::addDefaultValues( description, parameters );
 
    return parameters;
+}
+
+/**
+ * \brief Parses a JSONC configuration file (JSON with comments) into a
+ *        \ref TNL::Config::ParameterContainer.
+ *
+ * Reads the file and delegates to \ref parseJSONConfigString.
+ *
+ * \param configPath  Path to the JSONC file.
+ * \param description Schema describing expected entries.
+ * \returns A populated \ref TNL::Config::ParameterContainer.
+ */
+[[nodiscard]] inline TNL::Config::ParameterContainer
+parseJSONConfigFile( const std::string& configPath, const TNL::Config::ConfigDescription& description )
+{
+   std::ifstream file( configPath );
+   if( ! file.is_open() )
+      throw std::runtime_error( "Failed to open the configuration file: " + configPath );
+
+   std::stringstream buffer;
+   buffer << file.rdbuf();
+
+   return parseJSONConfigString( buffer.str(), configPath, description );
 }
 
 /**

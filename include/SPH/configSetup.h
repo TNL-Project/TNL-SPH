@@ -73,6 +73,7 @@ configSetup( TNL::Config::ConfigDescription& config,
 
     // simulation monitor parameters
     config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
+    config.addEntry< std::string >( "measuretool", "Inline measuretool config as a JSON object. Used when measuretool-config is empty.", "" );
     config.addEntry< int >( "interpolation-planes-count", "Number of interpolation planes.", 0 );
     config.addEntry< int >( "pressure-sensors-count", "Number of pressure evalutaion sensors.", 0 );
     config.addEntry< int >( "water-level-sensors-count", "Number of water level evaluation sensors.", 0 );
