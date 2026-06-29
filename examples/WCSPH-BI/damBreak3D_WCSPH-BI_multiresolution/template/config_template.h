@@ -91,6 +91,6 @@ using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHCo
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/SolverMultiSet.h>
-using Simulation = TNL::SPH::SolverMultiSet< Model >;
+#include <SPH/solvers/SolverMultiSetBlockMultiresolution.h>
+using Simulation = TNL::SPH::SolverMultiSetBlockMultiresolution< Model >;
 

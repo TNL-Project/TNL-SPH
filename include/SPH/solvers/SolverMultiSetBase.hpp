@@ -136,7 +136,7 @@ SolverMultiSetBase< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
-      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
+      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain(); //TODO: This could directly return the count
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
@@ -151,14 +151,17 @@ template< typename Model >
 void
 SolverMultiSetBase< Model >::removeParticlesOutOfDensityLimits()
 {
-   const int numberOfParticlesOutOfDensityLimits = customFunctions::removeParticlesOutOfDensityLimits( fluidSets[ 0 ], modelParams );
-   if( numberOfParticlesOutOfDensityLimits > 0 ){
-      this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
-      logger.writeParameter( "Particles out of density limits:", numberOfParticlesOutOfDensityLimits );
-      logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
+   for( int i = 0; i < numberOfSubsets; i++ ){
+      const int numberOfParticlesOutOfDensityLimits = customFunctions::removeParticlesOutOfDensityLimits( fluidSets[ i ], modelParams );
+      if( numberOfParticlesOutOfDensityLimits > 0 ){
+         this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
+         logger.writeParameter( "Particles out of density limits (set " + std::to_string( i ) + "):", numberOfParticlesOutOfDensityLimits );
+         logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
+      }
    }
 }
 
+//FIXME: This function is broken
 template< typename Model >
 void
 SolverMultiSetBase< Model >::extrapolateOpenBC()
@@ -171,6 +174,7 @@ SolverMultiSetBase< Model >::extrapolateOpenBC()
    writeLog( "Extrapolate open BC...", "Done." );
 }
 
+//FIXME: This function is broken
 template< typename Model >
 void
 SolverMultiSetBase< Model >::applyOpenBC( const RealType timeStepFact )
@@ -184,6 +188,7 @@ SolverMultiSetBase< Model >::applyOpenBC( const RealType timeStepFact )
    writeLog( "Update open BC...", "Done." );
 }
 
+//FIXME: This function is broken
 template< typename Model >
 void
 SolverMultiSetBase< Model >::applyPeriodicBCEnforce()
@@ -199,6 +204,7 @@ SolverMultiSetBase< Model >::applyPeriodicBCEnforce()
    writeLog( "Apply periodic BC...", "Done." );
 }
 
+//FIXME: This function is broken
 template< typename Model >
 void
 SolverMultiSetBase< Model >::applyPeriodicBCTransfer()
@@ -212,6 +218,7 @@ SolverMultiSetBase< Model >::applyPeriodicBCTransfer()
    writeLog( "Transfer periodic BC...", "Done." );
 }
 
+//FIXME: This function is broken
 template< typename Model >
 void
 SolverMultiSetBase< Model >::computeTimeStep()
@@ -226,6 +233,7 @@ SolverMultiSetBase< Model >::updateTime()
    timeStepping.updateTimeStep();
 }
 
+//FIXME: This function is broken
 template< typename Model >
 void
 SolverMultiSetBase< Model >::measure()

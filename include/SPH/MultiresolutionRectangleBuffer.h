@@ -175,8 +175,8 @@ public:
 
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
 
-      IndexVectorType zoneOrigin;
-      IndexVectorType zoneDimensions;
+      IndexVectorType zoneOrigin = 0;
+      IndexVectorType zoneDimensions = 0;
       //TODO: I dont like the "over-offset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
