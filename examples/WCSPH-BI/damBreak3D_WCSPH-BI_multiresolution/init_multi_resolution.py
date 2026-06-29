@@ -31,6 +31,9 @@ import decomposition as dec
 import initialCondifionFunctions as ic
 import writeInitConfigFile as cf
 
+# initialize directories
+example_dir = Path(__file__).parent
+project_dir = (example_dir / ".." / ".." / ".." ).resolve()
 
 # ---------------------------------------------------------------------------
 # genCase helpers
@@ -52,7 +55,6 @@ def read_gencase_vtk(vtk_path: str):
     reader.ReadAllVectorsOn()
     reader.Update()
     return dsa.WrapDataObject(reader.GetOutput())
-
 
 # ---------------------------------------------------------------------------
 # Fluid particle generation  (meshgrid — no genCase dependency)
@@ -386,6 +388,17 @@ def build_setup(args) -> dict:
         "time_integration" :     args.time_integration,
     }
 
+
+def set_paraview_states_paths():
+    import re
+    template_dir = ( example_dir / "template" ).resolve()
+    for pvsmfile in sorted(template_dir.iterdir()):
+        if not pvsmfile.is_file() or ".pvsm" not in pvsmfile.name:
+            continue
+        print(pvsmfile)
+        content = pvsmfile.read_text()
+        content = content.replace("{project_dir}", str(project_dir))
+        pvsmfile.write_text(content)
 
 # ---------------------------------------------------------------------------
 # Derived genCase VTK paths  (mirrors your single-res 3D naming convention)
