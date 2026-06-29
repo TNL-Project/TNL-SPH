@@ -36,6 +36,7 @@ class SPHConfig
 };
 
 #include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/PressureGradient.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/VisousTerms.h>
 #include <SPH/Models/BoundaryViscousTerms.h>
@@ -44,6 +45,7 @@ class SPHConfig
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK4Scheme.h>
 #include <SPH/TimeStep.h>
 
 /**
@@ -60,6 +62,7 @@ public:
    using SPHConfig = SPHConfig< Device >;
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
+   using PressureGradient = TNL::SPH::PressureGradients::Symmetric< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
    using ViscousTerm = TNL::SPH::BIViscousTerms::ArtificialViscosity< SPHConfig >;
    using BoundaryViscousTerm = TNL::SPH::BoundaryViscousTerms::None< SPHConfig >;
@@ -67,8 +70,6 @@ public:
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using TimeStepping = TNL::SPH::VariableTimeStep< SPHConfig >;
    using IntegrationScheme = TNL::SPH::IntegrationSchemes::VerletScheme< SPHConfig >;
-   using DensityFilter = TNL::SPH::DensityFilters::None;
-   //using DensityFilter = TNL::SPH::DensityFilters::ShepardFilter< SPHConfig, KernelFunction >;
 };
 
 using SPHDefs = SPHParams< Device >;
