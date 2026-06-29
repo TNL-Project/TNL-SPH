@@ -26,6 +26,7 @@ sys.path.append('../../../src/tools')
 import saveParticlesVTK
 import vtk
 from vtk.numpy_interface import dataset_adapter as dsa
+from pathlib import Path
 
 import decomposition as dec
 import initialCondifionFunctions as ic
@@ -517,3 +518,4 @@ if __name__ == "__main__":
     cf.write_simulation_params(setup)
     write_distributed_domain_params_rectangular(coarse_grid, fine_grid, setup)
     cf.write_measuretool_params(setup)
+    set_paraview_states_paths()
