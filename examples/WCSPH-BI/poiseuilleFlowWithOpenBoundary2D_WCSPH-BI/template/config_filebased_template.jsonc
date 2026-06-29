@@ -1,0 +1,46 @@
+{
+    // === Control section ===
+    "case-name": "poiseuilleFlowWithOpenBoundary2D_WCSPH-BI",
+    "output-directory": "results",
+    "fluid-particles": "sources/openchannel_fluid.vtk",
+    "boundary-particles": "sources/openchannel_boundary.vtk",
+    "final-time": 2.5,
+    "snapshot-period": 0.05,
+    "verbose-intensity": "with-snapshot",
+
+    // === Particle system configuration ===
+    "numberOfParticles": placeholderFluidParticles,
+    "numberOfAllocatedParticles": placeholderAllocatedFluidParticles,
+    "numberOfBoundaryParticles": placeholderBoundaryParticles,
+    "numberOfAllocatedBoundaryParticles": placeholderAllocatedBoundaryParticles,
+
+    // === Domain ===
+    "searchRadius": placeholderSearchRadius,
+    "domainOrigin-x": placeholderDomainOrigin-x,
+    "domainOrigin-y": placeholderDomainOrigin-y,
+    "domainSize-x": placeholderDomainSize-x,
+    "domainSize-y": placeholderDomainSize-y,
+
+    // === Model parameters ===
+    "dp": placeholderInitParticleDistance,
+    "h": placeholderSmoothingLength,
+    "mass": placeholderMass,
+    "rho0": placeholderDensity,
+    "delta": 0.1,
+    "alpha": 0.02,
+    "dynamicViscosity": 0.001,
+    "speedOfSound": placeholderSpeedOfSound,
+    "eps": 0.001,
+    "external-force-x": 0,
+    "external-force-y": 0,
+
+    // === Integration ===
+    "initial-time-step": placeholderTimeStep,
+
+    // === Open boundary patches ===
+    "openBoundaryPatches": 2,
+
+    // External file-based open boundary config (alternative to inline "open-boundary" subsection).
+    // The solver reads this file when "open-boundary" is empty.
+    "open-boundary-config": "sources/config-open-boundary.jsonc"
+}
