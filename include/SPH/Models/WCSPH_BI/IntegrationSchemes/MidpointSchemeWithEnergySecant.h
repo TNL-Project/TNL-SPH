@@ -181,6 +181,10 @@ public:
       const auto rho_in_view = fluid->getIntegratorVariables()->rho_in.getConstView();
       const auto drhodt_view = fluid->getVariables()->drho.getConstView();
 
+      // bakup variables from previous iteration
+      fluid->getIntegratorVariables()->v_prev = fluid->getVariables()->v.getView();
+      fluid->getIntegratorVariables()->rho_prev = fluid->getVariables()->rho.getView();
+
       const RealType dt05 = 0.5f * dt;
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
@@ -212,16 +216,32 @@ public:
    void
    relax( FluidPointer& fluid, ModelParams& modelParams )
    {
-      RealType relaxMidpoint;
+      int enableRelaxation;
       if( midpointIteration == 0 )
-         relaxMidpoint = modelParams.midpointRelaxCoef_0;
+         enableRelaxation = 0;
       else if( midpointIteration == modelParams.midpointMaxInterations )
-         relaxMidpoint = 0.f;
+         enableRelaxation = 0;
       else
-         relaxMidpoint = midpointRelaxCoef;
+         enableRelaxation = 1;
 
-      fluid->getVariables()->a = relaxMidpoint * fluid->getIntegratorVariables()->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->a;
-      fluid->getVariables()->drho = relaxMidpoint * fluid->getIntegratorVariables()->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->drho;
+      auto alpha_rho_view = fluid->getIntegratorVariables()->alpha_c.getView();
+      auto alpha_v_view = fluid->getIntegratorVariables()->alpha_k.getView();
+
+      auto dvdt_view = fluid->getVariables()->a.getView();
+      const auto dvdt_prev_view = fluid->getIntegratorVariables()->dvdt_in.getConstView();
+      auto drhodt_view = fluid->getVariables()->drho.getView();
+      const auto drhodt_prev_view = fluid->getIntegratorVariables()->drhodt_in.getConstView();
+
+      auto init = [=] __cuda_callable__ ( int i ) mutable
+      {
+         const RealType alpha_rho_i = enableRelaxation * alpha_rho_view[ i ];
+         const RealType alpha_v_i = enableRelaxation * alpha_v_view[ i ];
+
+         drhodt_view[ i ] = alpha_rho_i * drhodt_prev_view[ i ] + ( 1.f - alpha_rho_i ) * drhodt_view[ i ];
+         dvdt_view[ i ] = alpha_v_i * dvdt_prev_view[ i ] + ( 1.f -  alpha_v_i ) * dvdt_view[ i ];
+
+      };
+      fluid->getParticles()->forAll( init );
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -246,6 +266,8 @@ public:
 
       const auto v_view = fluid->getVariables()->v.getConstView();
       const auto rho_view = fluid->getVariables()->rho.getConstView();
+      const auto v_prev_view = fluid->getIntegratorVariables()->v_prev.getConstView();
+      const auto rho_prev_view = fluid->getIntegratorVariables()->rho_prev.getConstView();
 
       auto init = [=] __cuda_callable__ ( int i ) mutable
       {
@@ -265,20 +287,27 @@ public:
          //const RealType res_dv_dt = m * std::abs( ( v_view[ i ], dvdt_view[ i ] - dvdt_in_view[ i ] ) );
          //const RealType res_drho_dt = m * std::abs( ( p_i / rho2_i ) * ( drhodt_view[ i ] - drhodt_in_view[ i ] ) );
 
-         const RealType p_k_prev = m * std::abs( ( v_prev_i, dvdt_i ) );
-         const RealType p_k_new = m * std::abs( ( v_i, dvdt_i ) );
+         const RealType p_k_i_prev = m * std::abs( ( v_prev_i, dvdt_i ) );
+         const RealType p_k_i_new = m * std::abs( ( v_i, dvdt_i ) );
 
-         const RealType p_c_prev = m * std::abs( ( p_prev_i / rho2_prev_i ) * drhodt_i );
-         const RealType p_c_new = m * std::abs( ( p_i / rho2_i ) * drhodt_i );
-
+         const RealType p_c_i_prev = m * std::abs( ( p_prev_i / rho2_prev_i ) * drhodt_i );
+         const RealType p_c_i_new = m * std::abs( ( p_i / rho2_i ) * drhodt_i );
 
          // compute eps
+         const RealType eps_k_i_prev = eps_k_view[ i ];
+         const RealType eps_k_i_new = p_k_i_new - p_k_i_prev;
+
+         const RealType eps_c_i_prev = eps_c_view[ i ];
+         const RealType eps_c_i_new = p_c_i_new - p_c_i_prev;
 
          // compute alpha
+         const RealType alpha_u_i = 1.f + eps_k_i_prev / ( eps_k_i_new - eps_k_i_prev );
+         const RealType alpha_rho_i = 1.f + eps_c_i_prev / ( eps_c_i_new - eps_c_i_prev );
 
          // update eps
-
-         //residua_view[ i ] = res_dv_dt + res_drho_dt;
+         eps_k_view[ i ] = eps_k_i_new;
+         eps_c_view[ i ] = eps_c_i_new;
+         residua_view[ i ] = eps_k_i_new + eps_c_i_new;
       };
       fluid->getParticles()->forAll( init );
 
@@ -350,11 +379,14 @@ public:
    void
    updateRelaxationFactor( ModelParams& modelParams )
    {
-      // control residuals decay (NOTE: -1 since midpointIteration are icreased at the start of the loop)
-      if( ( midpointIteration - 1 )  > 0 )
-         if( residual / residualPrevious > modelParams.midpointResidualMinimalDecay )
-            midpointRelaxCoef = modelParams.midpointRelaxCoefIncrement
-                              + ( 1.0 - modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
+      //: // control residuals decay (NOTE: -1 since midpointIteration are icreased at the start of the loop)
+      //: if( ( midpointIteration - 1 )  > 0 )
+      //:    if( residual / residualPrevious > modelParams.midpointResidualMinimalDecay )
+      //:       midpointRelaxCoef = modelParams.midpointRelaxCoefIncrement
+      //:                         + ( 1.0 - modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
+
+      // if(( midpointIteration - 1 ) == 0 )
+
 
       // backup the residuals
       residualPrevious = residual;
