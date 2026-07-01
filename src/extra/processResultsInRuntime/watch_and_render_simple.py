@@ -85,9 +85,9 @@ def render_vtk(vtk_path: Path, screenshots_dir: Path) -> bool:
         cmd = [
             PVPYTHON, OFFSCREEN_FLAG,
             str(PVPYTHON_SCRIPT),
-            str(vtk_path),
             str(state_path),
             str(out_png),
+            str(vtk_path),
         ]
 
         log.info("Rendering %-10s → %s", label, out_png.name)

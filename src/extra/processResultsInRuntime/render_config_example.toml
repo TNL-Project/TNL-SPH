@@ -16,6 +16,12 @@ patterns = [
     'boundary_[\d.]+_particles\.vtk$',
 ]
 
+# --- Multiresolution / multi-source support (optional, defaults below) ---
+# particle_filename_template = "fluid_{time}_particles.vtk"
+# expected_files_per_timestep = 1
+# group_timeout = 60.0
+# project_dir = "../../.."
+
 # label = "path/to/state.pvsm"  (relative to this file's directory)
 [states]
 pressure = "results_pressure_vertical_legend.pvsm"

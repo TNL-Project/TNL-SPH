@@ -12,9 +12,19 @@ worker_threads  = 1
 
 # VTK filename patterns to watch for (Python regex)
 patterns = [
-    'fluid_[\d.]+_particles\.vtk$',
-    #'boundary_[\d.]+_particles\.vtk$',
+    'fluid_subdomain0_[\d.]+_particles\.vtk$',
+    'fluid_subdomain1_[\d.]+_particles\.vtk$',
 ]
+
+# Template for matching particle-set filenames in .pvsm state files.
+# {id} identifies the particle set (subdomain index), {time} is the timestep.
+particle_filename_template = "fluid_subdomain{id}_{time}_particles.vtk"
+
+# Number of VTK files written per timestep — group these before rendering.
+expected_files_per_timestep = 2
+
+# Project root for resolving {project_dir} placeholders in .pvsm files.
+project_dir = "../../.."
 
 # label = "path/to/state.pvsm"  (relative to this file's directory)
 [states]
