@@ -15,7 +15,8 @@ def plot_energy( results_dir, Epot0 = 1 ):
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/energy.png"
+        output_plot_name = f"{results_dir}/postprocessing/energy.png"
+        print( "Plot energy: {output_plot_name}" )
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
         fig, ax = plt.subplots( 1, 1, figsize=( 11, 8 ) )
@@ -25,7 +26,7 @@ def plot_energy( results_dir, Epot0 = 1 ):
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/energy_change.png"
+        output_plot_name = f"{results_dir}/postprocessing/energy_change.png"
         print( "Plot energy: {output_plot_name}" )
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
@@ -44,7 +45,8 @@ def plot_energy_snapshots( results_dir, Epot0 = 1 ):
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/energy_snapshots.png"
+        output_plot_name = f"{results_dir}/postprocessing/energy_snapshots.png"
+        print( "Plot energy: {output_plot_name}" )
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
         """
@@ -103,7 +105,8 @@ def plot_not_normalized_energy_snapshots( results_dir, Epot0 = 1 ):
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/energy_snapshots.png"
+        output_plot_name = f"{results_dir}/postprocessing/energy_snapshots.png"
+        print( "Plot energy: {output_plot_name}" )
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
 def plot_not_normalized_open_boundary_energy_snapshots( results_dir, Epot0 = 1 ):
@@ -132,7 +135,8 @@ def plot_not_normalized_open_boundary_energy_snapshots( results_dir, Epot0 = 1 )
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
         leg = ax.legend()
         leg.get_frame().set_edgecolor('k')
-        output_plot_name = f"results/postprocessing/energyOpenBoundary_snapshots.png"
+        output_plot_name = f"{results_dir}/postprocessing/energyOpenBoundary_snapshots.png"
+        print( "Plot energy: {output_plot_name}" )
         plt.savefig( output_plot_name, bbox_inches='tight' )
 
 if __name__ == "__main__":
