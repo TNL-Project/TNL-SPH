@@ -47,6 +47,7 @@ class SPHConfig
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointSchemeWithAnderson.h>
+#include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointSchemeWithEnergySecant.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK4Scheme.h>
 #include <SPH/TimeStep.h>
 
