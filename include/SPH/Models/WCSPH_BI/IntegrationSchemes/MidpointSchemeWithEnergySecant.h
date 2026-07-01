@@ -256,13 +256,13 @@ public:
       auto residua_view = fluid->getIntegratorVariables()->residua.getView();
       auto eps_k_view = fluid->getIntegratorVariables()->eps_k.getView();
       auto eps_c_view = fluid->getIntegratorVariables()->eps_c.getView();
-      auto alpha_k_view = fluid->getIntegratorVariables()->alpha_k.getView();
-      auto alpha_c_view = fluid->getIntegratorVariables()->alpha_c.getView();
+      //auto alpha_k_view = fluid->getIntegratorVariables()->alpha_k.getView();
+      //auto alpha_c_view = fluid->getIntegratorVariables()->alpha_c.getView();
 
       const auto dvdt_view = fluid->getVariables()->a.getConstView();
-      const auto dvdt_in_view = fluid->getIntegratorVariables()->dvdt_in.getConstView();
+      //const auto dvdt_in_view = fluid->getIntegratorVariables()->dvdt_in.getConstView();
       const auto drhodt_view = fluid->getVariables()->drho.getConstView();
-      const auto drhodt_in_view = fluid->getIntegratorVariables()->drhodt_in.getConstView();
+      //const auto drhodt_in_view = fluid->getIntegratorVariables()->drhodt_in.getConstView();
 
       const auto v_view = fluid->getVariables()->v.getConstView();
       const auto rho_view = fluid->getVariables()->rho.getConstView();

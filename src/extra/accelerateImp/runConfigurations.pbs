@@ -3,11 +3,11 @@
 #PBS -l select=1:ncpus=1:ngpus=1:mem=16gb
 #PBS -l walltime=44:00:00
 
-module load CMake/3.29.3-GCCcore-13.3.0
-module load nvhpc-hpcx-cuda12/25.3
+module load CMake/4.0.3-GCCcore-14.3.0
+module load nvhpc-hpcx-cuda13/25.11
 
 #cd /home/haladto1/tnl-sph
 #cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DENABLE_GENCASE_DOWNLOAD=True -DCMAKE_CXX_COMPILER=g++
 
-cd /home/haladto1/tnl-sph/src/tools
+cd /home/haladto1/tnl-sph.anderson/src/tools
 ./multirunner.py
