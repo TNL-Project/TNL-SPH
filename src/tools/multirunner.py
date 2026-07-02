@@ -7,10 +7,9 @@ import json
 import sys
 import importlib.util
 import pandas as pd
-from time import strftime, gmtime
+from time import strftime
 from rich.console import Console
 from rich.table import Table
-
 
 def load_configurations( conf_path ):
     spec = importlib.util.spec_from_file_location( "configurations_module", conf_path )
@@ -23,37 +22,25 @@ def load_configurations( conf_path ):
         raise SystemExit( f"Config file {conf_path} must define a top-level 'configurations' list." )
     return module.configurations
 
-
 # initialize directories
 tools_dir = Path(__file__).parent
 project_dir = ( tools_dir / ".." / ".." ).resolve()
 examples_dir = project_dir / "examples"
 build_dir = project_dir / "build" / "examples"
 
-# storage arrays
-results = []
-results_fancy = []
-results_returncode = []
-computational_time = []
-referential_computational_time = []
-computational_time_difference_formatted = []
-cases_tags_list = []
-cases_list = []
-tests_passed_list = []
-tests_total_list = []
-tests_output_formatted = []
-tests_summary_formatted = []
-tests_logs_list = []
-errors_list = []
+# storage: one list of result dicts, each entry represents a single case run
+# keys: tag, case, returncode, comp_time, tests_passed, tests_total, error
+results_list = []
 
-def init( case_dir, conf ):
+def init( case_dir, conf, verbose=False ):
     args = []
     args += [ case_dir / "init.py" ]
     for key, value in conf.items():
         if key not in [ "case", "case-tag", "evaluation-function" ]:
             args += [ f"--{key}", str( value ) ]
 
-    print( args )
+    if verbose:
+        print( args )
     subprocess.run( args,
                     check=True,
                     stdout=subprocess.DEVNULL,
@@ -86,121 +73,108 @@ def run( case_dir ):
                         stderr=subprocess.STDOUT,
                         cwd=case_dir,
                         text=True )
-    results_returncode.append( subprocess.CalledProcessError( p.returncode, p.args ) )
-    results.append( p.returncode )
+    return p.returncode
 
 def evaluate_test_metrics( case_dir, conf ):
     evaluation_function = conf[ "evaluation-function" ]
     if evaluation_function is None:
-        tests_passed_list.append( 0 )
-        tests_total_list.append( 0 )
-        return
-    tests_passed, tests_total = evaluation_function( case_dir )
-    tests_passed_list.append( tests_passed )
-    tests_total_list.append( tests_total )
+        return 0, 0
+    return evaluation_function( case_dir )
 
 def parse_tnl_sph_output( case_dir ):
     filename = case_dir / "results" / "time_measurements.json"
     try:
         with open( filename ) as f:
-            lines = json.load( f )
-            json_str = json.dumps( lines )
-            timers_dictionary = json.loads( json_str )
+            timers_dictionary = json.load( f )
             return float( timers_dictionary[ "total" ] )
     except Exception as e:
-        print( f"parse_tnl_sph_output: File {filename} not found." )
+        print( f"parse_tnl_sph_output: Could not read {filename}: {e}" )
         return 0
 
-def run_cases( conf_list, store_results ):
+def run_cases( conf_list, store_results, verbose=False ):
     for conf in conf_list:
         case = conf[ "case" ]
-        cases_list.append( case )
-        cases_tags_list.append( conf[ "case-tag" ] )
+        tag = conf[ "case-tag" ]
         case_dir = examples_dir / case
 
-        results_len_before = len( results )
-        tests_passed_len_before = len( tests_passed_list )
-        tests_total_len_before = len( tests_total_list )
-        comp_time_len_before = len( computational_time )
+        entry = {
+            "tag": tag,
+            "case": case,
+            "returncode": -1,
+            "comp_time": 0.0,
+            "tests_passed": 0,
+            "tests_total": 0,
+            "error": "",
+        }
 
         try:
             print( f"Initializing case: {case} in {case_dir}." )
-            init( case_dir, conf )
+            init( case_dir, conf, verbose )
             print( f"Initialization finished." )
             bin_dir = build_dir / case
             print( f"Compiling case: {case} in {bin_dir}" )
             make( bin_dir )
             print( f"Executing case: {case} in {case_dir}." )
-            run( case_dir )
-            print( f"Execution finished with return code: {results[ -1 ]}." )
-            evaluate_test_metrics( case_dir, conf )
-
-            # get computational time
-            computational_time.append( parse_tnl_sph_output( case_dir ) )
+            entry[ "returncode" ] = run( case_dir )
+            print( f"Execution finished with return code: {entry[ 'returncode' ]}." )
+            entry[ "tests_passed" ], entry[ "tests_total" ] = evaluate_test_metrics( case_dir, conf )
+            entry[ "comp_time" ] = parse_tnl_sph_output( case_dir )
 
             # backup the results only if the run succeeded and store_results is set
-            if store_results and results[ -1 ] == 0:
+            if store_results and entry[ "returncode" ] == 0:
                 results_dir = case_dir / "results"
-                results_with_tag = "results_" + conf[ "case-tag" ]
+                results_with_tag = "results_" + tag
                 results_dir_renamed = case_dir / results_with_tag
                 rename( results_dir, results_dir_renamed )
-
-            errors_list.append( "" )
         except Exception as e:
-            # ensure all parallel lists keep an entry for this case
-            if len( results ) > results_len_before:
-                results[ -1 ] = -1
-            else:
-                results.append( -1 )
-            if len( tests_passed_list ) == tests_passed_len_before:
-                tests_passed_list.append( 0 )
-            if len( tests_total_list ) == tests_total_len_before:
-                tests_total_list.append( 0 )
-            if len( computational_time ) == comp_time_len_before:
-                computational_time.append( 0.0 )
-            errors_list.append( str( e ) )
+            entry[ "error" ] = str( e )
             print( f"Case {case} FAILED: {e}" )
-            continue
+
+        results_list.append( entry )
 
 def process_results():
-    # parse return codes to fancy output
-    for entry in results:
-        if entry == 0:
-            results_fancy.append( '<span style="color:green">__Success__</span>' )
-        else:
-            results_fancy.append( '<span style="color:red">__Failed__</span>' )
-
-    for i in range( len( cases_list ) ):
-        # process test results
-        tests_passed = tests_passed_list[ i ]
-        tests_total = tests_total_list[ i ]
-        if tests_passed == tests_total:
-            if tests_total > 0:
-                tests_output_string = f'<span style="color:green">__{tests_passed}/{tests_total}__</span>'
-                tests_summary_string = f'<span style="color:green">__Passed__</span>'
-            else:
-                tests_output_string = '-'
-                tests_summary_string = '-'
-        else:
-            tests_output_string = f'<span style="color:red">__{tests_passed}/{tests_total}__</span>'
-            tests_summary_string = f'<span style="color:red">__Failed__</span>'
-
-        tests_summary_formatted.append( tests_summary_string )
-        tests_output_formatted.append( tests_output_string )
+    # nothing to pre-compute: write_results and print_summary_table read results_list directly
+    pass
 
 def write_results():
-    for i in range( len( cases_list ) ):
-        print( f"Case: { cases_list[ i ] }\n{ results[ i ] }\nComputational time: { computational_time[ i ] }\n" )
+    for entry in results_list:
+        print( f"Case: {entry[ 'case' ]}\n{entry[ 'returncode' ]}\nComputational time: {entry[ 'comp_time' ]}\n" )
 
-    summary = { 'Cases' : cases_tags_list,
-                'Result' : results_fancy,
-                'Comp. time' : computational_time,
-                'Tests' : tests_output_formatted,
-                'Tests results' : tests_summary_formatted }
+    summary = {
+        'Cases':             [ entry[ "tag" ] for entry in results_list ],
+        'Result':            [ format_result_html( entry ) for entry in results_list ],
+        'Comp. time':        [ entry[ "comp_time" ] for entry in results_list ],
+        'Tests':             [ format_tests_html( entry ) for entry in results_list ],
+        'Tests results':     [ format_tests_summary_html( entry ) for entry in results_list ],
+    }
     summary_df = pd.DataFrame( summary )
-    with open(f'log_{strftime("%Y-%m-%d_%H:%M:%S")}.md', 'w') as f:
+    log_path = tools_dir / f'log_{strftime("%Y-%m-%d_%H:%M:%S")}.md'
+    with open( log_path, 'w' ) as f:
         f.write( f'Tests completed: {strftime("%Y-%m-%d %H:%M:%S")}\n' )
         f.write( summary_df.to_markdown( ) or "" )
+
+def format_result_html( entry ):
+    if entry[ "returncode" ] == 0:
+        return '<span style="color:green">__Success__</span>'
+    return '<span style="color:red">__Failed__</span>'
+
+def format_tests_html( entry ):
+    passed = entry[ "tests_passed" ]
+    total = entry[ "tests_total" ]
+    if passed == total:
+        if total > 0:
+            return f'<span style="color:green">__{passed}/{total}__</span>'
+        return '-'
+    return f'<span style="color:red">__{passed}/{total}__</span>'
+
+def format_tests_summary_html( entry ):
+    passed = entry[ "tests_passed" ]
+    total = entry[ "tests_total" ]
+    if passed == total:
+        if total > 0:
+            return f'<span style="color:green">__Passed__</span>'
+        return '-'
+    return f'<span style="color:red">__Failed__</span>'
 
 def print_summary_table():
     console = Console()
@@ -212,13 +186,13 @@ def print_summary_table():
     table.add_column( "Tests result" )
     table.add_column( "Error" )
 
-    for i in range( len( cases_tags_list ) ):
-        if results[ i ] == 0:
+    for entry in results_list:
+        if entry[ "returncode" ] == 0:
             result_str = "[green]Success[/green]"
         else:
             result_str = "[red]Failed[/red]"
-        passed = tests_passed_list[ i ]
-        total = tests_total_list[ i ]
+        passed = entry[ "tests_passed" ]
+        total = entry[ "tests_total" ]
         if total == 0:
             tests_str = "-"
             tests_result_str = "-"
@@ -228,12 +202,9 @@ def print_summary_table():
         else:
             tests_str = f"[red]{passed}/{total}[/red]"
             tests_result_str = "[red]Failed[/red]"
-        err = errors_list[ i ]
-        if err:
-            err_str = err[ :60 ]
-        else:
-            err_str = ""
-        table.add_row( cases_tags_list[ i ], result_str, str( computational_time[ i ] ), tests_str, tests_result_str, err_str )
+        err = entry[ "error" ]
+        err_str = err[ :60 ] if err else ""
+        table.add_row( entry[ "tag" ], result_str, str( entry[ "comp_time" ] ), tests_str, tests_result_str, err_str )
 
     console.print( table )
 
@@ -248,7 +219,7 @@ if __name__ == "__main__":
     # parse the command line arguments
     args = argparser.parse_args()
     conf_list = load_configurations( args.conf )
-    run_cases( conf_list, args.store_results )
+    run_cases( conf_list, args.store_results, args.verbose )
     process_results()
     write_results()
     if args.verbose:
