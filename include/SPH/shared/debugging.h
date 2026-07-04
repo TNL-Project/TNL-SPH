@@ -42,8 +42,8 @@
 //
 // Example:
 //   SPH_DEBUG_CALL_D(
-//      fluid_own->searchForNeighbors(),
-//      "fluid_own->searchForNeighbors",
+//      fluid->searchForNeighbors(),
+//      "fluid->searchForNeighbors",
 //      Debugging::checkParticlesOutDomain( fluid_own, "fluid_own" ) );
 //
 #ifndef SPH_DEBUG_CALL_D
@@ -70,13 +70,13 @@ namespace Debugging {
 // Prints per-particle details (index, position, cell coords) and a summary.
 //
 // Works on any type that exposes getPoints(), getNumberOfParticles(),
-// getNumberOfAllocatedParticles(), and getParticles() — i.e. ParticleSet
+// getNumberOfAllocatedParticles(), and getParticles() - i.e. ParticleSet
 // and its subclasses (FluidPointer, MultiresolutionBoundaryPointer, etc.).
 //
 // Pass the dereferenced object: checkParticlesOutDomain( *fluid_ptr, "fluid" )
 // or from inside a method: checkParticlesOutDomain( *this, "buffer" )
 //
-// isBuffer: labels the output as "(buffer)" — purely cosmetic.
+// isBuffer: labels the output as "(buffer)" - purely cosmetic.
 template< typename ParticleSetType >
 void
 checkParticlesOutDomain( const ParticleSetType& particles, const std::string& name, bool isBuffer = false )
@@ -99,35 +99,25 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
 
    const int dim = IndexVectorType::getSize();
 
-   // --- Header ---
-   std::cout << "\n=== checkParticlesOutDomain ===" << std::endl;
-   std::cout << "  set:         " << name << ( isBuffer ? " (buffer)" : "" ) << std::endl;
-   std::cout << "  particles:   " << n << " / " << n_alloc << " allocated"
-             << " (toRemove: " << n_remove << ")" << std::endl;
+   // header
+   std::cout << "\nDebugging start: checkParticlesOutDomain" << std::endl;
+   std::cout << "  set: " << name << ( isBuffer ? " (buffer)" : "" ) << std::endl;
+   std::cout << "  particles: " << n << " / " << n_alloc << " allocated" << " (toRemove: " << n_remove << ")" << std::endl;
    std::cout << "  searchRadius: " << searchRadius << std::endl;
-   std::cout << "  gridRefOrigin: (";
-   for( int d = 0; d < dim; d++ )
-      std::cout << gridRefOrigin[ d ] << ( d < dim - 1 ? ", " : "" );
-   std::cout << ")" << std::endl;
-   std::cout << "  gridOriginGlob: (";
-   for( int d = 0; d < dim; d++ )
-      std::cout << gridOriginGlob[ d ] << ( d < dim - 1 ? ", " : "" );
-   std::cout << ")" << std::endl;
-   std::cout << "  gridDims:    (";
-   for( int d = 0; d < dim; d++ )
-      std::cout << gridDims[ d ] << ( d < dim - 1 ? ", " : "" );
-   std::cout << ")" << std::endl;
+   std::cout << "  gridRefOrigin: " << gridRefOrigin << std::endl;
+   std::cout << "  gridOriginGlob: " << gridOriginGlob << std::endl;
+   std::cout << "  gridDims: " << gridDims << std::endl;
 
-   // --- Device kernel: check each particle ---
+   // check each particle
    auto check = [ = ] __cuda_callable__( int i ) -> int
    {
       const VectorType r = r_view[ i ];
 
-      // Skip already-removed particles (marked with FLT_MAX)
+      // skip already-removed particles (marked with FLT_MAX)
       if( r[ 0 ] == FLT_MAX )
          return 0;
 
-      // Check for NaN (NaN != NaN is the only reliable test on GPU)
+      // check for NaN (NaN != NaN is the only reliable test on GPU)
       for( int d = 0; d < dim; d++ ) {
          if( r[ d ] != r[ d ] ) {
             printf( "  [NaN] i=%d pos=(%f,%f,%f)\n", i, r[ 0 ], r[ 1 ], r[ 2 ] );
@@ -135,7 +125,7 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
          }
       }
 
-      // Check for Inf (anything beyond a sane threshold)
+      // check for Inf (anything beyond a sane threshold)
       for( int d = 0; d < dim; d++ ) {
          if( r[ d ] > 1e30f || r[ d ] < -1e30f ) {
             printf( "  [Inf] i=%d pos=(%f,%f,%f)\n", i, r[ 0 ], r[ 1 ], r[ 2 ] );
@@ -143,7 +133,7 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
          }
       }
 
-      // Check domain bounds (extended domain including overlap)
+      // check domain bounds (extended domain including overlap)
       const IndexVectorType cg = TNL::floor( ( r - gridRefOrigin ) * invSearchRadius );
       const IndexVectorType cc = cg - gridOriginGlob;
       for( int d = 0; d < dim; d++ ) {
@@ -171,12 +161,12 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
    const int bad = TNL::Algorithms::reduce< DeviceType >( 0, n, check, TNL::Plus() );
    cudaDeviceSynchronize();
 
-   // --- Summary ---
+   // summary
    if( bad == 0 )
-      std::cout << "  result:      OK — all " << n << " particles inside domain" << std::endl;
+      std::cout << "  result: OK - all " << n << " particles inside domain" << std::endl;
    else
-      std::cout << "  result:      " << bad << " bad particle(s) found" << std::endl;
-   std::cout << "=== end ===" << std::endl;
+      std::cout << "  result: " << bad << " bad particle(s) found" << std::endl;
+   std::cout << "Debugging end." << std::endl;
 }
 
 }  // namespace Debugging
