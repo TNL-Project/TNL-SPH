@@ -6,7 +6,7 @@ from pathlib import Path
 conf_dir = Path(__file__).parent
 example_dir = (conf_dir / ".." /".." / ".." / "examples/WCSPH-BI/damBreak2D_WCSPH-BI").resolve()
 resources_dir = (conf_dir / ".." / ".." / ".." /"examples/resources/damBreak2D/damBreak2D_experimentalDataLobovsky2014").resolve()
-output_dir = conf_dir / "damBreak2D_WCSPH-BI_MR"
+output_dir = conf_dir / "damBreak2D_WCSPH-BI-MR_results"
 
 # LR local
 dbp.plot_multiple_pressure_sensors(

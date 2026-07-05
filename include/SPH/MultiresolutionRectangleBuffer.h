@@ -1155,7 +1155,7 @@ public:
       std::ofstream outputFileFluid( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( nodes );
-      writer.template writeVector< typename MassNodes::VectorArrayType, RealType >( massNodes.normal, "Normal", n_mn, 0, 3 );
+       writer.template writePointData< typename MassNodes::VectorArrayType >( massNodes.normal, "Normal", n_mn, 3 );
    }
 
 protected:

@@ -54,7 +54,6 @@ class SPHConfig
  */
 #include <TNL/Particles/Readers/VTKReader.h>
 #include <TNL/Particles/Writers/VTKWriter.h>
-#include <TNL/Particles/Readers/readSPHSimulation.h>
 
 template< typename Device >
 class SPHParams

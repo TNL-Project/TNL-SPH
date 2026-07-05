@@ -16,7 +16,6 @@
  **/
 #include "../../../../Readers/VTKReader.h"
 #include "../../../../Writers/VTKWriter.h"
-#include "../../../../Readers/readSPHSimulation.h"
 
 /**
  * Case configuration
@@ -101,7 +100,7 @@ int main( int argc, char* argv[] )
     */
    using Reader = Readers::VTKReader;
    using Writer = Writers::VTKWriter< ParticleSystem >;
-   using SimulationReaderType = ReadParticles< ParticlesConfig, Reader >;
+   using SimulationReaderType = Reader;
 
    /**
     * Create instance of SPHParams class, which is object holding all the

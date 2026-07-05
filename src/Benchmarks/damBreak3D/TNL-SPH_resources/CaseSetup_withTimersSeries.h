@@ -38,10 +38,10 @@ using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel >;
  */
 #include <Readers/VTKReader.h>
 #include <Writers/VTKWriter.h>
-#include <Readers/readSPHSimulation.h>
+#include <Readers/VTKReader.h>
 using Reader = TNL::ParticleSystem::Readers::VTKReader;
 using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesSys >;
-using SimulationReaderType = TNL::ParticleSystem::ReadParticles< ParticlesParams::ParticlesConfig, Reader >;
+using SimulationReaderType = Reader;
 
 /**
  *  Used to write computation time to json format.

@@ -35,10 +35,14 @@ src/Benchmarks/damBreak3D/openFPM_resources/Particles_0.pvtp
 src/Benchmarks/damBreak3D/openFPM_resources/main.cu
 src/Benchmarks/damBreak3D/openFPM_resources/sph_dlb
 
-#Documentation files
+# Documentation files
 Documentation/html
 Documentation/latex
 
 # test files
 src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/results
 src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/sources
+
+# content in src
+src/extra/accelerateImp/spectrum-results
+src/Benchmarks/multiResolutionBenchmarks/damBreak2D_WCSPH-BI_MR-results

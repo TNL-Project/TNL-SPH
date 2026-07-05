@@ -68,10 +68,10 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    const std::string fluidFileName = params.template getParameter< std::string >( "fluid-particles" );
    const std::string boundaryFileName = params.template getParameter< std::string >( "boundary-particles" );
    log.writeParameter( "Reading fluid particles:", fluidFileName );
-   this->fluidSets[ 0 ]->template readParticlesAndVariables< typename BaseType::SimulationReaderType >( fluidFileName );
+   this->fluidSets[ 0 ]->template readParticlesAndVariables< typename BaseType::Reader >( fluidFileName );
    log.writeParameter( "Reading boundary particles:", boundaryFileName );
-   this->boundarySets[ 0 ]->template readParticlesAndVariables< typename BaseType::SimulationReaderType >( boundaryFileName );
-   this->boundarySets[ 1 ]->template readParticlesAndVariables< typename BaseType::SimulationReaderType >( boundaryFileName );
+   this->boundarySets[ 0 ]->template readParticlesAndVariables< typename BaseType::Reader >( boundaryFileName );
+   this->boundarySets[ 1 ]->template readParticlesAndVariables< typename BaseType::Reader >( boundaryFileName );
 
    this->modelParams.init( params );
 

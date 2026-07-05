@@ -73,22 +73,18 @@ class SHTCVariables
    void
    readVariables( ReaderType& reader )
    {
-      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
-      //FIXME
-      if constexpr( SPHConfig::spaceDimension == 2 )
-         reader.template readParticleVariable2D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
-      if constexpr( SPHConfig::spaceDimension == 3 )
-         reader.template readParticleVariable3D< VectorArrayType, typename ScalarArrayType::ValueType >( v, "Velocity" );
+      reader.template readParticleVariable< ScalarArrayType >( rho, "Density" );
+      reader.template readParticleVariable< VectorArrayType >( v, "Velocity" );
    }
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType firstActiveParticle = 0 )
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
-      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
-      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 );
-      //writer.template writeVector< MatrixArrayType, RealType >( A, "Distortion", numberOfParticles, firstActiveParticle, 9 );
+      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
+      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, 1 );
+      writer.template writePointData< VectorArrayType >( v, "Velocity", numberOfParticles, 3 );
+      //writer.template writePointData< MatrixArrayType >( A, "Distortion", numberOfParticles, 9 );
    }
 
 };
@@ -128,11 +124,7 @@ public:
    readVariables( ReaderType& reader )
    {
       Base::readVariables( reader );
-      //FIXME
-      if constexpr( SPHConfig::spaceDimension == 2 )
-         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" );
-      if constexpr( SPHConfig::spaceDimension == 3 )
-         reader.template readParticleVariable< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" );
+      reader.template readParticleVariable< VectorArrayType >( n, "Normals" );
    }
 };
 

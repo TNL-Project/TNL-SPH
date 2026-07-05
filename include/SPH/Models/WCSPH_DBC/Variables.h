@@ -58,32 +58,27 @@ class FluidVariables
       particles->reorderArray( v, v_swap );
    }
 
-   template< typename ReaderType >
-   void
-   readVariables( ReaderType& reader )
-   {
-      reader.template readParticleVariable< ScalarArrayType, typename ScalarArrayType::ValueType >( rho, "Density" );
-      //FIXME
-      if constexpr( SPHConfig::spaceDimension == 2 )
-         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( v, "Velocity" );
-      if constexpr( SPHConfig::spaceDimension == 3 )
-         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( v, "Velocity" );
-   }
+    template< typename ReaderType >
+    void
+    readVariables( ReaderType& reader )
+    {
+       reader.template readParticleVariable< ScalarArrayType >( rho, "Density" );
+       reader.template readParticleVariable< VectorArrayType >( v, "Velocity" );
+    }
 
-   template< typename WriterType >
-   void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType firstActiveParticle = 0 )
-   {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, firstActiveParticle, 1 );
-      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, firstActiveParticle, 1 );
-      writer.template writeVector< VectorArrayType, RealType >( v, "Velocity", numberOfParticles, firstActiveParticle, 3 ); //FIXME This part of code is slow and wrong.
-   }
+    template< typename WriterType >
+    void
+    writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+    {
+       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
+       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, 1 );
+       writer.template writePointData< VectorArrayType >( v, "Velocity", numberOfParticles, 3 );
+    }
 
 #ifdef HAVE_MPI
    template< typename Synchronizer, typename DistributedParticlesPointer >
    void
-   synchronizeVariables( Synchronizer& synchronizer,
-                         DistributedParticlesPointer& distributedParticles )
+   synchronizeVariables( Synchronizer& synchronizer, DistributedParticlesPointer& distributedParticles )
    {
       synchronizer.synchronize( rho, distributedParticles );
       synchronizer.synchronize( v, distributedParticles );
@@ -154,7 +149,7 @@ public:
    {
       BaseType::readVariables( reader );
       try {
-         reader.template readParticleVariable< MarkerArrayType, typename MarkerArrayType::ValueType >( marker, "Ptype" );
+         reader.template readParticleVariable< MarkerArrayType >( marker, "Ptype" );
       }
       catch ( const std::exception& e ){
          std::cout << "Warning: Uanble to read boundary particles variable 'Ptype': " << e.what() << std::endl;
@@ -166,7 +161,7 @@ public:
    writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
    {
       BaseType::writeVariables( writer, numberOfParticles );
-      writer.template writePointData< MarkerArrayType >( marker, "Ptype", numberOfParticles, 0, 1 );
+       writer.template writePointData< MarkerArrayType >( marker, "Ptype", numberOfParticles, 1 );
    }
 };
 
@@ -219,15 +214,8 @@ public:
    readVariables( ReaderType& reader )
    {
       Base::readVariables( reader );
-      //FIXME
-      if constexpr( SPHConfig::spaceDimension == 2 ){
-         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
-         reader.template readParticleVariable2D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
-      }
-      if constexpr( SPHConfig::spaceDimension == 3 ){
-         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( ghostNodes, "GhostNodes" ); //FIXME!
-         reader.template readParticleVariable3D< VectorArrayType, typename VectorArrayType::ValueType::ValueType >( n, "Normals" ); //FIXME!
-      }
+      reader.template readParticleVariable< VectorArrayType >( ghostNodes, "GhostNodes" );
+      reader.template readParticleVariable< VectorArrayType >( n, "Normals" );
    }
 };
 

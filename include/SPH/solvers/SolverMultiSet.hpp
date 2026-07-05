@@ -202,7 +202,7 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
 {
    if( parameters.getParameter< int >( "numberOfParticles" ) != 0 ){
       logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
-      this->fluid()->template readParticlesAndVariables< typename BaseType::SimulationReaderType >(
+      this->fluid()->template readParticlesAndVariables< typename BaseType::Reader >(
          parameters.getParameter< std::string >( "fluid-particles" ) );
    }
    else{
@@ -211,7 +211,7 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
 
    if( parameters.getParameter< int >( "numberOfBoundaryParticles" ) != 0 ){
       logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
-      this->boundary()->template readParticlesAndVariables< typename BaseType::SimulationReaderType >(
+      this->boundary()->template readParticlesAndVariables< typename BaseType::Reader >(
          parameters.getParameter< std::string >( "boundary-particles" ) );
    }
    else{
@@ -224,7 +224,7 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
          if( this->parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ) != 0 ){
             logger.writeParameter( "Reading open boundary particles:", this->parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
-            this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::SimulationReaderType >(
+            this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::Reader >(
                this->parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
          }
          else{
@@ -246,17 +246,17 @@ SolverMultiSet< Model >::readParticleFilesDistributed( TNL::Config::ParameterCon
    const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
 
    logger.writeParameter( "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
-   this->fluid()->template readParticlesAndVariables< typename BaseType::SimulationReaderType >(
+   this->fluid()->template readParticlesAndVariables< typename BaseType::Reader >(
       parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
    logger.writeParameter( "Reading boundary particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
-   this->boundary()->template readParticlesAndVariables< typename BaseType::SimulationReaderType >(
+   this->boundary()->template readParticlesAndVariables< typename BaseType::Reader >(
       parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
 
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    if( this->openBoundaryPatches.size() > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = subdomainKey + "buffer-" + std::to_string( i + 1 ) + "-";
-         this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::SimulationReaderType >(
+         this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::Reader >(
             parametersDistributed.getParameter< std::string >( prefix + "particles" ) );
       }
    }

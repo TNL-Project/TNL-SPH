@@ -333,12 +333,12 @@ SolverMultiSet< Model >::readParticlesFiles()
       if( parametersSubdomains.getParameter< int >( subdomainKey + "fluid_n" ) != 0 ){
          const std::string fluidFileName = parametersSubdomains.getParameter< std::string >( subdomainKey + "fluid-particles" );
          logger.writeParameter( "Reading fluid particles:", fluidFileName );
-         fluidSets[ i ]->template readParticlesAndVariables< SimulationReaderType >( fluidFileName );
+         fluidSets[ i ]->template readParticlesAndVariables< Reader >( fluidFileName );
       }
       if( parametersSubdomains.getParameter< int >( subdomainKey + "boundary_n" ) != 0 ){
          const std::string boundaryFileName = parametersSubdomains.getParameter< std::string >( subdomainKey + "boundary-particles" );
          logger.writeParameter( "Reading boundary particles:", boundaryFileName );
-         boundarySets[ i ]->template readParticlesAndVariables< SimulationReaderType >( boundaryFileName );
+         boundarySets[ i ]->template readParticlesAndVariables< Reader >( boundaryFileName );
       }
    }
 
@@ -349,7 +349,7 @@ SolverMultiSet< Model >::readParticlesFiles()
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
          logger.writeParameter( "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
-         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+         openBoundaryPatches[ i ]->template readParticlesAndVariables< Reader >(
             parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
       }
    }
@@ -368,17 +368,17 @@ SolverMultiSet< Model >::readParticleFilesDistributed( TNL::Config::ParameterCon
 
    // read particle data
    logger.writeParameter( "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
-   fluid->template readParticlesAndVariables< SimulationReaderType >(
+   fluid->template readParticlesAndVariables< Reader >(
       parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
    logger.writeParameter( "Reading boundary particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
-   boundary->template readParticlesAndVariables< SimulationReaderType >(
+   boundary->template readParticlesAndVariables< Reader >(
       parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
 
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    if( openBoundaryPatches.size() > 0 ) {  //TODO: I dont like this.
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = subdomainKey + "buffer-" + std::to_string( i + 1 ) + "-";
-         openBoundaryPatches[ i ]->template readParticlesAndVariables< SimulationReaderType >(
+         openBoundaryPatches[ i ]->template readParticlesAndVariables< Reader >(
             parametersDistributed.getParameter< std::string >( prefix + "particles" ) );
       }
    }

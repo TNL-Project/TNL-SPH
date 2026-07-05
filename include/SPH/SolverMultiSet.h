@@ -63,7 +63,6 @@ public:
    //Reader
    using Reader = TNL::ParticleSystem::Readers::VTKReader;
    using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesType >;
-   using SimulationReaderType = TNL::ParticleSystem::ReadParticles< typename ParticlesType::Config, Reader >;
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 

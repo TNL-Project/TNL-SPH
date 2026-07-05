@@ -49,7 +49,7 @@ public:
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles, const GlobalIndexType& startingIdx = 0 ) {};
+   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles ) {};
 
 };
 

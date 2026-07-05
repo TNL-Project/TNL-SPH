@@ -332,8 +332,9 @@ class ParticleSet
    void
    readParticlesAndVariables( const std::string& inputFileName )
    {
-      ReaderType reader( inputFileName, particles->getNumberOfParticles(), particles->getNumberOfAllocatedParticles() );
-      reader.template readParticles< typename ParticleSystem::PointArrayType >( particles->getPoints() ) ;
+      ReaderType reader( inputFileName );
+      reader.detectParticleSystem();
+      reader.template loadParticles< ParticlesType >( *particles );
       variables->readVariables( reader );
    }
 
