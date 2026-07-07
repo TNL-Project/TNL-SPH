@@ -110,7 +110,7 @@ public:
    {
       bool isInside = true;
       for( int d = 0; d < VectorType::getSize(); d++ )
-         if( ( point[ d ] < boxOrigin[ d ] ) || ( point[ d ]> ( boxOrigin[ d ] + boxSize[ d ] ) ) )
+         if( ( point[ d ] < boxOrigin[ d ] ) || ( point[ d ] > ( boxOrigin[ d ] + boxSize[ d ] ) ) )
             isInside = false;
       return isInside;
    }
@@ -134,7 +134,6 @@ public:
               const RealType refinementFraction,
               const int maxPtcsPerCell = 175 )
    {
-
       //const VectorType globalOrig = ownParticles->getGridReferentialOrigin();
       const VectorType ownOrig = ownParticles->getGridOrigin();
       const VectorType nbOrig = nbParticles->getGridOrigin();
@@ -172,7 +171,6 @@ public:
          assert( false && "initZones: Invalid overlap state: neither inner_overlap nor outer_overlap is true!" );
       }
 
-
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
 
       IndexVectorType zoneOrigin = 0;
@@ -187,7 +185,7 @@ public:
          zoneOrigin = 3;
          zoneDimensions = getFrameFrontDimensions() - 4;
       }
-      zone.assignCellsFrame( zoneOrigin, zoneDimensions, ( frameWidth + 1 ), ownDimsWithOverlap );
+      zone.assignCellsFrame( zoneOrigin, zoneDimensions, frameWidth + 1, ownDimsWithOverlap );
       //---------------
       const std::string outputFilename = "results/zone_L" + std::to_string( int( 1 / refinementFraction ) ) + ".vtk";
       zone.saveZoneToVTK( outputFilename,
@@ -344,7 +342,7 @@ public:
             excluded[ 0 ] = { 0.f, 0.f, 1.f };  // exclude +x face
          }
          if( inner_overlap ) {
-            excluded[ 0 ] = { 0.f, 0.f, -1.f };   // exclude +x face
+            excluded[ 0 ] = { 0.f, 0.f, -1.f };  // exclude +x face
          }
          initMassNodesWithExcludedNormals( modelParams, refinemnetFactor, excluded );
       }
@@ -362,8 +360,8 @@ public:
       //added
       const RealType sr = this->getParticles()->getSearchRadius();
       const VectorType frameBackSize = getFrameBackDimensions() * sr;
-      const VectorType frameBackOrigin = getFrameBackOriginGlobalCoordinates() * sr +
-         this->getParticles()->getGridReferentialOrigin();
+      const VectorType frameBackOrigin =
+         getFrameBackOriginGlobalCoordinates() * sr + this->getParticles()->getGridReferentialOrigin();
 
       // Returns true if this face should be skipped
       auto isExcluded = [ & ]( const VectorType& normal ) -> bool
@@ -544,7 +542,7 @@ public:
       const RealType dx_nb = std::pow( refinementFactor * modelParams.dp, dim - 1 );
       const RealType dx_min = std::min( dx, dx_nb );
       //----
-      const VectorType v_subdomain = 0.f;                                // velocity of moving subdomain
+      const VectorType v_subdomain = 0.f;  // velocity of moving subdomain
       //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
       const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 2.75f;
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;  //TODO: rename, remove mdbc
@@ -860,7 +858,7 @@ public:
                            retypeMarker_view.getArrayData(),
                            retypeMarker_view.getArrayData() + numberOfBufferPtcs,
                            thrust::make_zip_iterator( cuda::std::make_tuple(
-                                 r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
+                              r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
    }
 
    template< typename FluidPointer >
@@ -1044,8 +1042,8 @@ public:
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfPtcsToBuffer, retypeFluidToBuffer );
       this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + numberOfPtcsToBuffer );
-      fluid->getParticles()->setNumberOfParticlesToRemove(
-            fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfPtcsToBuffer );
+      fluid->getParticles()->setNumberOfParticlesToRemove( fluid->getParticles()->getNumberOfParticlesToRemove()
+                                                           + numberOfPtcsToBuffer );
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -1063,7 +1061,7 @@ public:
       sortBufferParticles();
       removeBufferParticles();
       convertBufferToFluid( fluid_own );
-      fluid_own->searchForNeighbors(); //TODO: Helped to resolve some problems in 3D by removing invalid particles
+      fluid_own->searchForNeighbors();  //TODO: Helped to resolve some problems in 3D by removing invalid particles
       zone.updateParticlesInZone( fluid_own->getParticles() );
       getFluidParticlesEneringTheBuffer( fluid_own );
       convertFluidToBuffer( fluid_own );
@@ -1104,43 +1102,48 @@ public:
       return frameDimensions + 2 * this->getParticles()->getOverlapWidth() * frameOrientation;
    }
 
-    void
-    writeProlog( TNL::Logger& logger, const int subdomainIdx )
-    {
-       logger.writeParameter( "Subdomain index:", subdomainIdx );
-       BaseType::writeProlog( logger );
-       logger.writeSeparator();
+   void
+   writeProlog( TNL::Logger& logger, const int subdomainIdx )
+   {
+      logger.writeParameter( "Subdomain index:", subdomainIdx );
+      BaseType::writeProlog( logger );
+      logger.writeSeparator();
 
-       // Buffer configuration
-       logger.writeParameter( "Buffer width:", this->bufferWidth );
-       logger.writeSeparator();
+      // Buffer configuration
+      logger.writeParameter( "Buffer width:", this->bufferWidth );
+      logger.writeSeparator();
 
-       // Overlap type
-       logger.writeParameter( "Overlap type:", inner_overlap ? "INNER" : outer_overlap ? "OUTER" : "INVALID" );
-       logger.writeParameter( "Inner overlap:", inner_overlap );
-       logger.writeParameter( "Outer overlap:", outer_overlap );
-       logger.writeSeparator();
+      // Overlap type
+      logger.writeParameter( "Overlap type:", inner_overlap ? "INNER" : outer_overlap ? "OUTER" : "INVALID" );
+      logger.writeParameter( "Inner overlap:", inner_overlap );
+      logger.writeParameter( "Outer overlap:", outer_overlap );
+      logger.writeSeparator();
 
-       // Frame front configuration
-       logger.writeParameter( "Frame front origin:", this->getParticles()->getGridReferentialOrigin() +
-             getFrameFrontOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
-       logger.writeParameter( "Frame front origin coords:", getFrameFrontOriginGlobalCoordinates() - this->getParticles()->getGridOriginGlobalCoords() );
-       logger.writeParameter( "Frame front origin global coords:", getFrameFrontOriginGlobalCoordinates() );
-       logger.writeParameter( "Frame front dims:", getFrameFrontDimensions() );
-       logger.writeParameter( "Frame front end:", getFrameFrontOriginGlobalCoordinates() + getFrameFrontDimensions() - this->getParticles()->getGridOriginGlobalCoords() );
-       logger.writeParameter( "Frame orientation:", frameOrientation );
-       logger.writeSeparator();
+      // Frame front configuration
+      logger.writeParameter( "Frame front origin:",
+                             this->getParticles()->getGridReferentialOrigin()
+                                + getFrameFrontOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
+      logger.writeParameter( "Frame front origin coords:",
+                             getFrameFrontOriginGlobalCoordinates() - this->getParticles()->getGridOriginGlobalCoords() );
+      logger.writeParameter( "Frame front origin global coords:", getFrameFrontOriginGlobalCoordinates() );
+      logger.writeParameter( "Frame front dims:", getFrameFrontDimensions() );
+      logger.writeParameter( "Frame front end:",
+                             getFrameFrontOriginGlobalCoordinates() + getFrameFrontDimensions()
+                                - this->getParticles()->getGridOriginGlobalCoords() );
+      logger.writeParameter( "Frame orientation:", frameOrientation );
+      logger.writeSeparator();
 
-       // Frame back configuration
-       logger.writeParameter( "Frame back origin:", this->getParticles()->getGridReferentialOrigin() +
-             getFrameBackOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
-       logger.writeParameter( "Frame back size:", getFrameBackDimensions() * this->getParticles()->getSearchRadius() );
-       logger.writeParameter( "Frame back dims:", getFrameBackDimensions() );
-       logger.writeSeparator();
+      // Frame back configuration
+      logger.writeParameter( "Frame back origin:",
+                             this->getParticles()->getGridReferentialOrigin()
+                                + getFrameBackOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
+      logger.writeParameter( "Frame back size:", getFrameBackDimensions() * this->getParticles()->getSearchRadius() );
+      logger.writeParameter( "Frame back dims:", getFrameBackDimensions() );
+      logger.writeSeparator();
 
-       // Zone information
-       zone.writeProlog( logger );
-    }
+      // Zone information
+      zone.writeProlog( logger );
+   }
 
    void
    writeMassNodesToVTK( const std::string& outputFileName )
@@ -1155,7 +1158,7 @@ public:
       std::ofstream outputFileFluid( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( nodes );
-       writer.template writePointData< typename MassNodes::VectorArrayType >( massNodes.normal, "Normal", n_mn, 3 );
+      writer.template writePointData< typename MassNodes::VectorArrayType >( massNodes.normal, "Normal", n_mn );
    }
 
 protected:
@@ -1181,12 +1184,11 @@ protected:
    int frameOrientation;
 
    IndexVectorType frameOriginGlobalCoordinates;
-   IndexVectorType frameDimensions; // = inner subdomain dimensions
-   RealType bufferWidth; // useful for dual time stepping
+   IndexVectorType frameDimensions;  // = inner subdomain dimensions
+   RealType bufferWidth;             // useful for dual time stepping
 
    ParticleZone zone;
 };
 
 }  //namespace SPH
 }  //namespace TNL
-

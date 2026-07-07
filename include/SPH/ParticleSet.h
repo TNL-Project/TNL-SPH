@@ -10,7 +10,6 @@
 #include "OpenBoundaryConfig.h"
 #include "PeriodicBoundaryBuffers.h"
 
-
 #include <TNL/Particles/DistributedParticles.h>
 #include <TNL/Particles/DistributedParticlesSynchronizer.h>
 
@@ -18,14 +17,12 @@ namespace TNL {
 namespace SPH {
 
 class ParticleSetMetada
-{
-
-};
+{};
 
 template< typename ParticleSystem, typename SPHCaseConfig, typename Variables, typename IntegratorVariables >
 class ParticleSet
 {
-   public:
+public:
    using DeviceType = typename ParticleSystem::Device;
    using ParticlesType = ParticleSystem;
    using ParticlePointerType = typename Pointers::SharedPointer< ParticleSystem, DeviceType >;
@@ -33,7 +30,7 @@ class ParticleSet
    using IntegratorVariablesPointerType = typename Pointers::SharedPointer< IntegratorVariables, DeviceType >;
 
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
-   using IndexType = typename SPHTraitsType::GlobalIndexType; //TODO: Merge with global index type
+   using IndexType = typename SPHTraitsType::GlobalIndexType;  //TODO: Merge with global index type
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
    using IndexVectorType = typename SPHTraitsType::IndexVectorType;
@@ -43,18 +40,23 @@ class ParticleSet
    using PeriodicBoundary = PeriodicBoundary< ParticleSystem, OpenBoundaryConfig >;
    using PeriodicBoundaryPointer = typename Pointers::SharedPointer< PeriodicBoundary, DeviceType >;
 
-//#ifdef  HAVE_MPI
+   //#ifdef  HAVE_MPI
    using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
    using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
    using DistributedParticleSynchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< DistributedParticlesType >;
-//#endif
+   //#endif
 
-   ParticleSet() : particles(), variables(), integratorVariables() {}
+   ParticleSet()
+   : particles(),
+     variables(),
+     integratorVariables()
+   {}
 
    ParticleSet( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
    : particles( size, sizeAllocated, h, numberOfCells ),
      variables( sizeAllocated ),
-     integratorVariables( sizeAllocated ) {};
+     integratorVariables( sizeAllocated )
+   {}
 
    void
    initialize( unsigned int numberOfParticles,
@@ -81,7 +83,7 @@ class ParticleSet
       this->particles->setGridOriginGlobalCoords( zeroVector );
    }
 
-//#ifdef HAVE_MPI
+   //#ifdef HAVE_MPI
    void
    initializeAsDistributed( const unsigned int numberOfParticles,
                             const unsigned int numberOfAllocatedParticles,
@@ -101,7 +103,7 @@ class ParticleSet
       this->particles->setSearchRadius( searchRadius );
 
       this->particles->setGridDimensions( subdomainGridDimension );
-      this->particles->setGridOrigin( subdomainOrigin ); //REMOVE
+      this->particles->setGridOrigin( subdomainOrigin );  //REMOVE
       this->particles->setOverlapWidth( numberOfOverlapLayers );
       //const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
       //this->particles->setGridReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
@@ -133,14 +135,15 @@ class ParticleSet
                             const IndexVectorType& localOriginCoordinates,
                             const GridType& globalGrid,
                             const int numberOfOverlapLayers,
-                            const Containers::StaticVector< 2, int >& numberOfSubdomains = 0 ) //TODO: Depends on decomposition
+                            const Containers::StaticVector< 2, int >& numberOfSubdomains = 0 )  //TODO: Depends on decomposition
    {
       this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
       this->particles->setSize( numberOfAllocatedParticles );
       this->particles->setNumberOfParticles( numberOfParticles );
       this->particles->setSearchRadius( localGrid.getSpaceSteps()[ 0 ] );
       this->particles->setGridDimensions( localGrid.getDimensions() );
-      this->particles->setGridOrigin( localGrid.getOrigin() ); //TODO: Remove, particles should be determined solely by grid index
+      this->particles->setGridOrigin(
+         localGrid.getOrigin() );  //TODO: Remove, particles should be determined solely by grid index
       this->particles->setOverlapWidth( numberOfOverlapLayers );
 
       this->particles->setGridReferentialOrigin( globalGrid.getOrigin() );
@@ -158,11 +161,10 @@ class ParticleSet
                                                                 numberOfOverlapLayers,
                                                                 numberOfSubdomains );
    }
-//#endif
+   //#endif
 
    void
-   initializePeriodicity( TNL::Config::ParameterContainer& parameters,
-                          TNL::Config::ParameterContainer& parametersOpenBoundary )
+   initializePeriodicity( TNL::Config::ParameterContainer& parameters, TNL::Config::ParameterContainer& parametersOpenBoundary )
    {
       const int numberOfPeriodicPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
       std::cout << "Number of periodic patches: " << numberOfPeriodicPatches << std::endl;
@@ -177,10 +179,8 @@ class ParticleSet
       for( int i = 0; i < numberOfPeriodicPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
          periodicPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
-         periodicPatches[ i ]->initialize( searchRadius,
-                                           gridSize,
-                                           domainOrigin );
-                                           //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
+         periodicPatches[ i ]->initialize( searchRadius, gridSize, domainOrigin );
+         //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
       }
    }
 
@@ -308,12 +308,12 @@ class ParticleSet
    void
    makeSetSearchable()
    {
-       if constexpr( ParticleSystem::specifySearchedSetExplicitly() == true ){
+      if constexpr( ParticleSystem::specifySearchedSetExplicitly() == true ) {
          const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
          this->particles->makeSetSearchable();
          this->sortVariables();
-       }
-       else if constexpr( ParticleSystem::specifySearchedSetExplicitly() == false ){
+      }
+      else if constexpr( ParticleSystem::specifySearchedSetExplicitly() == false ) {
          const GlobalIndexType numberOfParticlesToRemove = particles->getNumberOfParticlesToRemove();
          this->particles->searchForNeighbors();
          this->sortVariables();
@@ -323,7 +323,7 @@ class ParticleSet
    void
    enforcePeriodicPatches()
    {
-      for( long unsigned int i = 0; i < std::size( periodicPatches ); i++ ){
+      for( long unsigned int i = 0; i < std::size( periodicPatches ); i++ ) {
          periodicPatches[ i ]->particleZone.updateParticlesInZone( particles );
       }
    }
@@ -342,17 +342,14 @@ class ParticleSet
    void
    writeParticlesAndVariables( const std::string& outputFileName, bool writeParticleCellIndex = false )
    {
-      std::ofstream outputFileFluid ( outputFileName, std::ofstream::out );
+      std::ofstream outputFileFluid( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( *particles );
-      variables->writeVariables( writer, particles->getNumberOfParticles() );
+      variables->writeVariables( writer );
 
       if( writeParticleCellIndex == true )
-         writer.template writePointData< typename ParticleSystem::CellIndexArrayType >(
-               particles->getParticleCellIndices(),
-               "GridIndex",
-               particles->getNumberOfParticles(),
-               1 );
+         writer.template writePointData< typename ParticleSystem::CellIndexArrayType >( particles->getParticleCellIndices(),
+                                                                                        "GridIndex" );
    }
 
 #ifdef HAVE_MPI
@@ -360,14 +357,14 @@ class ParticleSet
    synchronizeObject()
    {
       // communicate number of particles to synchronize
-      this->distributedParticles->collectParticlesInInnerOverlaps( particles ); //TODO: Merge ptcs and distPtcs
+      this->distributedParticles->collectParticlesInInnerOverlaps( particles );  //TODO: Merge ptcs and distPtcs
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
       //TODO: check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
 
       // sychronize
       this->synchronizer.synchronize( this->getPoints(), distributedParticles );
       this->variables->synchronizeVariables( synchronizer, distributedParticles );
-      this->integratorVariables->synchronizeVariables( synchronizer,  distributedParticles );
+      this->integratorVariables->synchronizeVariables( synchronizer, distributedParticles );
 
       // update the number of particles inside subdomain
       const GlobalIndexType numberOfRecvParticles = this->synchronizer.getNumberOfRecvParticles();
@@ -392,7 +389,6 @@ class ParticleSet
    std::vector< PeriodicBoundaryPointer > periodicPatches;
 
 protected:
-
    // particles object
    DistributedParticlesPointerType distributedParticles;
    // particles synchronizer
@@ -406,6 +402,5 @@ protected:
    IntegratorVariablesPointerType integratorVariables;
 };
 
-}
-}
-
+}  //namespace SPH
+}  //namespace TNL

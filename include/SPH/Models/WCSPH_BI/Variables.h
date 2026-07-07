@@ -31,13 +31,13 @@ public:
    MarkerArrayType marker;
 
    GlobalIndexType highestReferentialIdx;
-   IndexArrayType  referentialIdx;
+   IndexArrayType referentialIdx;
 
    //Additional variable fields to avoid in-place sort
    ScalarArrayType rho_swap;
    VectorArrayType v_swap;
    MarkerArrayType marker_swap;
-   IndexArrayType  referentialIdx_swap;
+   IndexArrayType referentialIdx_swap;
 
    void
    setSize( const GlobalIndexType& size )
@@ -55,7 +55,11 @@ public:
       referentialIdx.setSize( size );
       referentialIdx_swap.setSize( size );
 
-      referentialIdx.forAllElements( [] __cuda_callable__( GlobalIndexType i, GlobalIndexType& value ) { value = i; } );
+      referentialIdx.forAllElements(
+         [] __cuda_callable__( GlobalIndexType i, GlobalIndexType & value )
+         {
+            value = i;
+         } );
       highestReferentialIdx = size;
    }
 
@@ -80,13 +84,13 @@ public:
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   writeVariables( WriterType& writer )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
-      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, 1 );
-      writer.template writePointData< VectorArrayType >( v, "Velocity", numberOfParticles, 3 );
-      writer.template writePointData< IndexArrayType >( referentialIdx, "ReferentialIndex", numberOfParticles, 1 );
-      writer.template writePointData< ScalarArrayType >( gamma, "Gamma", numberOfParticles, 1 );
+      writer.template writePointData< ScalarArrayType >( p, "Pressure" );
+      writer.template writePointData< ScalarArrayType >( rho, "Density" );
+      writer.template writePointData< VectorArrayType >( v, "Velocity" );
+      writer.template writePointData< IndexArrayType >( referentialIdx, "ReferentialIndex" );
+      writer.template writePointData< ScalarArrayType >( gamma, "Gamma" );
    }
 };
 
@@ -136,10 +140,10 @@ public:
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   writeVariables( WriterType& writer )
    {
-      Base::writeVariables( writer, numberOfParticles );
-      writer.template writePointData< VectorArrayType >( n, "Normals", numberOfParticles, 3 );
+      Base::writeVariables( writer );
+      writer.template writePointData< VectorArrayType >( n, "Normals" );
    }
 };
 
@@ -168,4 +172,3 @@ public:
 
 }  //namespace SPH
 }  //namespace TNL
-

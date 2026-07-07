@@ -1,224 +1,143 @@
 #pragma once
 
+#include "../../ParticleField.h"
+#include "../../VariablesBase.h"
 #include "../../SPHTraits.h"
-#include <TNL/Particles/details/thrustExecPolicySelector.h>
-#include <exception>
-#include <thrust/gather.h>
+
+#include <tuple>
+
 #include "BoundaryConditionsTypes.h"
 
 namespace TNL {
 namespace SPH {
 
+/**
+ * \brief Shared field holder for fluid-like particle sets.
+ *
+ *  field  array type      swap   read   write  notes
+ *  ------ --------------- -----  -----  -----  -----------------------------
+ *  rho    ScalarArrayType Yes    true   true   state, reordered + I/O + sync
+ *  drho   ScalarArrayType No     false  false  transient, recomputed
+ *  p      ScalarArrayType No     false  true   output only
+ *  v      VectorArrayType Yes    true   true   state, reordered + I/O + sync
+ *  a      VectorArrayType No     false  false  transient, recomputed
+ */
 template< typename SPHState >
-class FluidVariables
+class FluidVariablesBase
 {
-   public:
-   using SPHConfig = typename SPHState::SPHConfig;
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using RealType = typename SPHTraitsType::RealType;
+public:
+   using SPHTraitsType = SPHFluidTraits< typename SPHState::SPHConfig >;
    using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
-   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
-   using IndexArrayTypePointer = typename Pointers::SharedPointer< IndexArrayType, typename SPHConfig::DeviceType >;
 
-   //SPHFluidVariables() = default;
+   ParticleField< ScalarArrayType, Swap::Yes, true, true > rho{ "Density" };
+   ParticleField< ScalarArrayType, Swap::No, false, false > drho{ "Drho" };
+   ParticleField< ScalarArrayType, Swap::No, false, true > p{ "Pressure" };
+   ParticleField< VectorArrayType, Swap::Yes, true, true > v{ "Velocity" };
+   ParticleField< VectorArrayType, Swap::No, false, false > a{ "Accel" };
 
-   //SPHFluidVariables( GlobalIndexType size )
-   //: rho( size ), drho ( size ), p( size ), v( size ), a( size ), rho_swap( size ), v_swap( size ) {}
-
-   /* Variables - Fields */
-   ScalarArrayType rho;
-   ScalarArrayType drho;
-   ScalarArrayType p;
-   VectorArrayType v;
-   VectorArrayType a;
-
-   /* Additional variable fields to avoid inmpace sort. */
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-
-   void
-   setSize( const GlobalIndexType& size )
+   auto
+   allFields()
    {
-      rho.setSize( size );
-      drho.setSize( size );
-      p.setSize( size );
-      v.setSize( size );
-      a.setSize( size );
-      rho_swap.setSize( size );
-      v_swap.setSize( size );
+      return std::tie( rho, drho, p, v, a );
    }
-
-   template< typename ParticlesPointer >
-   void
-   sortVariables( ParticlesPointer& particles )
-   {
-      particles->reorderArray( rho, rho_swap );
-      particles->reorderArray( v, v_swap );
-   }
-
-    template< typename ReaderType >
-    void
-    readVariables( ReaderType& reader )
-    {
-       reader.template readParticleVariable< ScalarArrayType >( rho, "Density" );
-       reader.template readParticleVariable< VectorArrayType >( v, "Velocity" );
-    }
-
-    template< typename WriterType >
-    void
-    writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
-    {
-       writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
-       writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, 1 );
-       writer.template writePointData< VectorArrayType >( v, "Velocity", numberOfParticles, 3 );
-    }
-
-#ifdef HAVE_MPI
-   template< typename Synchronizer, typename DistributedParticlesPointer >
-   void
-   synchronizeVariables( Synchronizer& synchronizer, DistributedParticlesPointer& distributedParticles )
-   {
-      synchronizer.synchronize( rho, distributedParticles );
-      synchronizer.synchronize( v, distributedParticles );
-   }
-#endif
-
-protected:
-
 };
 
+/**
+ * \brief Fluid variables — leaf class.
+ *
+ * Inherits the fields from \ref FluidVariablesBase and the lifecycle methods
+ * from \ref VariablesBase (CRTP).
+ */
 template< typename SPHState >
-class OpenBoundaryVariables : public FluidVariables< SPHState >
+class FluidVariables : public FluidVariablesBase< SPHState >, public VariablesBase< FluidVariables< SPHState > >
+{};
+
+/**
+ * \brief Open boundary variables - fluid fields plus two index marks.
+ *
+ * The marks are sized but neither read nor written.
+ */
+template< typename SPHState >
+class OpenBoundaryVariables : public FluidVariablesBase< SPHState >, public VariablesBase< OpenBoundaryVariables< SPHState > >
 {
-   public:
-   using BaseType = FluidVariables< SPHState >;
-   using SPHTraitsType = typename BaseType::SPHTraitsType;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+public:
+   using FieldBase = FluidVariablesBase< SPHState >;
+   using SPHTraitsType = typename FieldBase::SPHTraitsType;
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
-   void
-   setSize( const GlobalIndexType& size )
-   {
-      BaseType::setSize( size );
-      particleMark.setSize( size );
-      receivingParticleMark.setSize( size );
-   }
+   ParticleField< IndexArrayType, Swap::No, false, false > particleMark{ "ParticleMark" };
+   ParticleField< IndexArrayType, Swap::No, false, false > receivingParticleMark{ "ReceivingParticleMark" };
 
-   IndexArrayType particleMark;
-   IndexArrayType receivingParticleMark;
+   auto
+   allFields()
+   {
+      return std::tuple_cat( FieldBase::allFields(), std::tie( particleMark, receivingParticleMark ) );
+   }
 };
 
+/**
+ * \brief Primary template — never instantiated; only the DBC and MDBC
+ * specializations below are used.
+ */
 template< typename SPHState >
 class BoundaryVariables : public FluidVariables< SPHState >
 {};
 
+/**
+ * \brief Boundary variables for DBC.
+ *
+ * \c marker is \c Optional: "Ptype" may be absent from some VTK input files,
+ * so \ref ParticleField::read wraps the read in try/catch automatically.
+ */
 template< typename SPHState >
-requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::DBC >
-class BoundaryVariables< SPHState > : public FluidVariables< SPHState >
+requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::DBC > class BoundaryVariables< SPHState >
+: public FluidVariablesBase< SPHState >, public VariablesBase< BoundaryVariables< SPHState > >
 {
 public:
-   using BaseType = FluidVariables< SPHState >;
-   using SPHTraitsType = typename BaseType::SPHTraitsType;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using MarkerArrayType = typename SPHTraitsType::MarkerArrayType;
+   using FieldBase = FluidVariablesBase< SPHState >;
+   using SPHTraitsType = typename FieldBase::SPHTraitsType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
-   MarkerArrayType marker;
-   MarkerArrayType marker_swap;
+   ParticleField< IndexArrayType, Swap::Yes, true, true, true > marker{ "Ptype" };
 
-   void
-   setSize( const GlobalIndexType& size )
+   auto
+   allFields()
    {
-      BaseType::setSize( size );
-      marker.setSize( size );
-      marker_swap.setSize( size );
-   }
-
-   template< typename ParticlesPointer >
-   void
-   sortVariables( ParticlesPointer& particles )
-   {
-      BaseType::sortVariables( particles );
-      particles->reorderArray( marker, marker_swap );
-   }
-
-   template< typename ReaderType >
-   void
-   readVariables( ReaderType& reader )
-   {
-      BaseType::readVariables( reader );
-      try {
-         reader.template readParticleVariable< MarkerArrayType >( marker, "Ptype" );
-      }
-      catch ( const std::exception& e ){
-         std::cout << "Warning: Uanble to read boundary particles variable 'Ptype': " << e.what() << std::endl;
-      }
-   }
-
-   template< typename WriterType >
-   void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
-   {
-      BaseType::writeVariables( writer, numberOfParticles );
-       writer.template writePointData< MarkerArrayType >( marker, "Ptype", numberOfParticles, 1 );
+      return std::tuple_cat( FieldBase::allFields(), std::tie( marker ) );
    }
 };
 
+/**
+ * \brief Boundary variables for MDBC — ghost-node boundary.
+ *
+ * \c ghostNodes and \c n are read and reordered. \c rhoGradRho_gn and
+ * \c cMatrix_gn are computation buffers only: sized with the rest, but never
+ * read, written, reordered, or synchronized.
+ */
 template< typename SPHState >
-requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::MDBC >
-class BoundaryVariables< SPHState > : public FluidVariables< SPHState >
+requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::MDBC > class BoundaryVariables< SPHState >
+: public FluidVariablesBase< SPHState >, public VariablesBase< BoundaryVariables< SPHState > >
 {
 public:
-   using Base = FluidVariables< SPHState >;
-   using SPHConfig = typename SPHState::SPHConfig;
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using FieldBase = FluidVariablesBase< SPHState >;
+   using SPHTraitsType = typename FieldBase::SPHTraitsType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
-   using IndexArrayTypePointer = typename Base::IndexArrayTypePointer;
    using VectorExtendedArrayType = typename SPHTraitsType::VectorExtendedArrayType;
    using MatrixExtendedArrayType = typename SPHTraitsType::MatrixExtendedArrayType;
 
-   void
-   setSize( const GlobalIndexType& size )
+   ParticleField< VectorArrayType, Swap::Yes, true, false > ghostNodes{ "GhostNodes" };
+   ParticleField< VectorArrayType, Swap::Yes, true, false > n{ "Normals" };
+   ParticleField< VectorExtendedArrayType, Swap::No, false, false > rhoGradRho_gn;
+   ParticleField< MatrixExtendedArrayType, Swap::No, false, false > cMatrix_gn;
+
+   auto
+   allFields()
    {
-      Base::setSize( size );
-      ghostNodes.setSize( size );
-      ghostNodes_swap.setSize( size );
-      n.setSize( size );
-      n_swap.setSize( size );
-
-      rhoGradRho_gn.setSize( size );
-      cMatrix_gn.setSize( size );
-   }
-
-   VectorArrayType ghostNodes;
-   VectorArrayType ghostNodes_swap;
-   VectorArrayType n;
-   VectorArrayType n_swap;
-
-   VectorExtendedArrayType rhoGradRho_gn;
-   MatrixExtendedArrayType cMatrix_gn;
-
-   template< typename ParticlesPointer >
-   void
-   sortVariables( ParticlesPointer& particles )
-   {
-      Base::sortVariables( particles );
-      particles->reorderArray( ghostNodes, ghostNodes_swap );
-      particles->reorderArray( n, n_swap );
-   }
-
-   template< typename ReaderType >
-   void
-   readVariables( ReaderType& reader )
-   {
-      Base::readVariables( reader );
-      reader.template readParticleVariable< VectorArrayType >( ghostNodes, "GhostNodes" );
-      reader.template readParticleVariable< VectorArrayType >( n, "Normals" );
+      return std::tuple_cat( FieldBase::allFields(), std::tie( ghostNodes, n, rhoGradRho_gn, cMatrix_gn ) );
    }
 };
 
-} // SPH
-} // TNL
+}  // namespace SPH
+}  // namespace TNL
 

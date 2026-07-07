@@ -5,7 +5,7 @@
 #include <thrust/gather.h>
 
 #ifdef HAVE_MPI
-#include "../../shared/utils.h"
+   #include "../../shared/utils.h"
 #endif
 
 namespace TNL {
@@ -18,7 +18,7 @@ class Empty
 template< typename SPHState >
 class SHTCVariables
 {
-   public:
+public:
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -79,14 +79,13 @@ class SHTCVariables
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles )
+   writeVariables( WriterType& writer )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure", numberOfParticles, 1 );
-      writer.template writePointData< ScalarArrayType >( rho, "Density", numberOfParticles, 1 );
-      writer.template writePointData< VectorArrayType >( v, "Velocity", numberOfParticles, 3 );
-      //writer.template writePointData< MatrixArrayType >( A, "Distortion", numberOfParticles, 9 );
+      writer.template writePointData< ScalarArrayType >( p, "Pressure" );
+      writer.template writePointData< ScalarArrayType >( rho, "Density" );
+      writer.template writePointData< VectorArrayType >( v, "Velocity" );
+      //writer.template writePointData< MatrixArrayType >( A, "Distortion" );
    }
-
 };
 
 template< typename SPHState >
@@ -128,7 +127,5 @@ public:
    }
 };
 
-
-} // SPH
-} // TNL
-
+}  //namespace SPH
+}  //namespace TNL

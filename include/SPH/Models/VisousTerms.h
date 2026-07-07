@@ -7,6 +7,27 @@ namespace SPH {
 namespace ViscousTerms {
 
 template< typename SPHCaseConfig >
+class None
+{
+   public:
+   using RealType = typename SPHCaseConfig::RealType;
+
+   struct ParamsType
+   {
+     template< typename SPHState >
+     __cuda_callable__
+     ParamsType( SPHState sphState ) {}
+   };
+
+   __cuda_callable__
+   static RealType
+   Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv, const ParamsType& params )
+   {
+      return 0.f;
+   }
+};
+
+template< typename SPHCaseConfig >
 class ArtificialViscosity
 {
    public:

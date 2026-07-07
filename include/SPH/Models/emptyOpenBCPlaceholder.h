@@ -11,7 +11,7 @@ configSetupOpenBoundaryModelPatch( TNL::Config::ConfigDescription& config, std::
 template< typename SPHConfig >
 class NoOpenBC : public OpenBoundaryConfig< SPHConfig >
 {
-   public:
+public:
    using Base = OpenBoundaryConfig< SPHConfig >;
 
    NoOpenBC() = default;
@@ -31,28 +31,29 @@ template< typename SPHState >
 class EmptyVariables
 {
 public:
-
    using SPHConfig = typename SPHState::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
 
    void
-   setSize( const GlobalIndexType& size ) {};
+   setSize( const GlobalIndexType& size )
+   {}
 
    template< typename ParticlesPointer >
    void
-   sortVariables( ParticlesPointer& particles ) {};
+   sortVariables( ParticlesPointer& particles )
+   {}
 
    template< typename ReaderType >
    void
-   readVariables( ReaderType& reader ) {};
+   readVariables( ReaderType& reader )
+   {}
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer, const GlobalIndexType& numberOfParticles ) {};
-
+   writeVariables( WriterType& writer )
+   {}
 };
 
-} //namespace SPH
-} //namespace TNL
-
+}  //namespace SPH
+}  //namespace TNL
