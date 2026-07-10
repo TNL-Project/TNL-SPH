@@ -13,6 +13,7 @@ from spectrum import (
     PlotConfig,
     Parameters,
     compute_all_direct,
+    compute_all,
     compute_all_general,
     plot_eigvals_panel,
     plot_eigvals_panel_random,
@@ -55,7 +56,7 @@ def _add_slider(name, vmin, vmax, vinit, col, row):
 
 sliders = {
     "c0":    _add_slider("c0",    1.0,   50.0,    10.0,    0, 0),
-    "rho0":  _add_slider("rho0",  100.0, 3000.0,  1000.0,  1, 0),
+    "nu":    _add_slider("nu",    0.0,   5e-3,    0.0,     1, 0),
     "delta": _add_slider("delta", 0.0,   1.0,     0.1,     2, 0),
     "H":     _add_slider("H",     0.001, 0.05,    0.012,   0, 1),
     "h":     _add_slider("h",     0.001, 0.05,    0.006,   1, 1),
@@ -80,7 +81,7 @@ def update(_val=None) -> None:
     # Pull current slider values. H and h are independent -- changing H never
     # touches h.
     params.c0 = float(sliders["c0"].val)
-    params.rho0 = float(sliders["rho0"].val)
+    params.nu = float(sliders["nu"].val)
     params.delta = float(sliders["delta"].val)
     params.H = float(sliders["H"].val)
     params.h = float(sliders["h"].val)
@@ -89,7 +90,10 @@ def update(_val=None) -> None:
 
     mode = radio.value_selected
 
-    gen = compute_all_general(params)
+    # Switch between compute_all (viscosity, no theta) and
+    # compute_all_general (theta support, no viscosity) by commenting one out.
+    gen = compute_all(params)
+    # gen = compute_all_general(params)
     dr = compute_all_direct(params)
 
     for ax in ax_top + ax_bot:
@@ -110,8 +114,8 @@ def update(_val=None) -> None:
                       "Hexagonal (general)", cfg.scatter_size)
         plot_mu_panel_random(ax_top[2], gen["random"], cfg, "Random (general)")
         fig.suptitle(
-            f"General spectrum  |  kernel={params.kernel}  c0={params.c0:.1f}  delta={params.delta:.2f}  "
-            f"H={params.H:.3f}  h={params.h:.3f}  theta={params.theta:.2f}",
+            f"General spectrum  |  kernel={params.kernel}  c0={params.c0:.1f}  nu={params.nu:.2e}  "
+            f"delta={params.delta:.2f}  H={params.H:.3f}  h={params.h:.3f}  theta={params.theta:.2f}",
             fontsize=cfg.title_fontsize,
         )
 
@@ -128,7 +132,7 @@ def update(_val=None) -> None:
                            cfg.scatter_size)
         plot_eigvals_panel_random(ax_top[2], dr["random"], cfg, "Random (direct)")
         fig.suptitle(
-            f"Direct spectrum  |  kernel={params.kernel}  c0={params.c0:.1f}  rho0={params.rho0:.0f}  "
+            f"Direct spectrum  |  kernel={params.kernel}  c0={params.c0:.1f}  nu={params.nu:.2e}  "
             f"delta={params.delta:.2f}  H={params.H:.3f}  h={params.h:.3f}",
             fontsize=cfg.title_fontsize,
         )
@@ -154,7 +158,7 @@ def update(_val=None) -> None:
         plot_eigvals_panel_random(ax_bot[2], dr["random"], cfg, "Random (direct)")
         fig.suptitle(
             f"General (top) + Direct (bottom)  |  kernel={params.kernel}  c0={params.c0:.1f}  "
-            f"rho0={params.rho0:.0f}  delta={params.delta:.2f}  "
+            f"nu={params.nu:.2e}  delta={params.delta:.2f}  "
             f"H={params.H:.3f}  h={params.h:.3f}  theta={params.theta:.2f}",
             fontsize=cfg.title_fontsize,
         )

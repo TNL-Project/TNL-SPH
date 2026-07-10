@@ -32,6 +32,9 @@ class Parameters:
     n_cell: int = 12
     n_images: int = 2
     xi_vals: np.ndarray | None = None
+    nu: float = 0.0
+    dim: int = 2
+    eps_visc: float = 0.01
 
     def __post_init__(self) -> None:
         # h is INDEPENDENTLY adjustable (e.g. the GUI slider). The H/2 default
@@ -62,6 +65,23 @@ KERNELS = {
     "quintic":    {"W_vec": np.vectorize(W_quintic),    "dWdr_vec": np.vectorize(dWdr_quintic),    "support": 3.0},
     "gaussian":   {"W_vec": np.vectorize(W_gaussian),   "dWdr_vec": np.vectorize(dWdr_gaussian),   "support": 3.0},
 }
+
+
+# =====================================================================
+# 2b. VISCOSITY HELPER
+#     Convert a target kinematic viscosity nu [m^2/s] into the dimensionless
+#     Monaghan-Gingold coefficient alpha, using the standard equivalence
+#     between the always-on (switch-dropped) alpha-viscosity and an
+#     effective Laplacian/physical viscosity:
+#
+#         nu_eff = alpha*c0*H / (2*(dim+2))
+#         =>  alpha = 2*(dim+2)*nu / (c0*H)
+#
+#     dim : int
+#         Spatial dimension (2 for the 2D lattices used here, 3 for 3D SPH).
+# =====================================================================
+def alpha_from_nu(nu, c0, H, dim=2):
+    return 2*(dim + 2)*nu / (c0*H)
 
 
 # =====================================================================
@@ -164,24 +184,67 @@ def build_patch_random(n_cell, h, jitter_frac=0.3, seed=0):
 # =====================================================================
 # 5. FOURIER SYMBOLS G_hat(xi), D_hat(xi), AND EIGENVALUES mu_pm(xi)
 # =====================================================================
-def compute_spectrum(rx, ry, r, Vj, H, h, xi_vals, c0, delta, W_fn=None, dWdr_fn=None):
+def compute_spectrum(rx, ry, r, Vj, H, h, xi_vals, c0, delta,
+                      nu=0.0, dim=2, eps_visc=0.01,
+                      W_fn=None, dWdr_fn=None):
+    """
+    Von Neumann (Fourier symbol) stability analysis of delta-WCSPH,
+    including the standard Monaghan-Gingold artificial viscosity.
+
+    nu : float
+        Kinematic viscosity [m^2/s]. Converted to the dimensionless
+        Monaghan-Gingold coefficient via
+            alpha = alpha_from_nu(nu, c0, H, dim) = 2*(dim+2)*nu/(c0*H)
+        nu=0 recovers the original inviscid spectrum exactly.
+    dim : int
+        Spatial dimension used in the nu -> alpha conversion (default 2).
+    eps_visc : float
+        Regularisation constant in mu_ij's denominator (standard 0.01).
+
+    Linearisation: the true Pi_ij is switched off unless v_ij.r_ij < 0
+    (approaching particles) and carries a quadratic beta*mu_ij**2 term.
+    Both are nonlinear in the velocity perturbation about the quiescent
+    background (u=0), so they cannot enter a constant-coefficient linear
+    operator. We keep only the always-on, linear-in-mu_ij piece -- the
+    known equivalence between "always-on" alpha-viscosity and an effective
+    Laplacian/physical viscosity (Monaghan 1992, 2005).
+
+    Returns G_hat, D_hat, PI_hat, mu_pm (4 values; PI_hat added).
+    """
+    alpha = alpha_from_nu(nu, c0, H, dim)
+
     _W  = W_fn if W_fn is not None else W_vec
     _dW = dWdr_fn if dWdr_fn is not None else dWdr_vec
     Wr  = _W(r, H)
     dWr = _dW(r, H)
     dWx = dWr * rx / r
-    G_hat = np.zeros(len(xi_vals), dtype=complex)
-    D_hat = np.zeros(len(xi_vals), dtype=complex)
+
+    # Linearised viscous acceleration on particle i (x-momentum, background u=0):
+    #   a_i,x^visc = alpha*c0*H**2 * sum_j Vj * dWr*rx**2/(r*(r**2+eps_visc*H**2)) * (ux_i - ux_j)
+    # Difference (Laplacian-type) quantity like D_hat -- needs (1-phase)
+    # treatment so it vanishes for a uniform velocity field.
+    visc_w = dWr * rx**2 / (r * (r**2 + eps_visc*H**2))
+
+    G_hat  = np.zeros(len(xi_vals), dtype=complex)
+    D_hat  = np.zeros(len(xi_vals), dtype=complex)
+    PI_hat = np.zeros(len(xi_vals), dtype=complex)
     for idx, xi in enumerate(xi_vals):
         k = xi / h
         phase = np.exp(1j*k*rx)
-        G_hat[idx] = np.sum(Vj*dWx*phase)
-        D_hat[idx] = np.sum(Vj*(Wr/r**2)*(1 - phase))
-    mu0   = -delta*H*c0*D_hat
-    disc  = (mu0/2)**2 - c0**2*np.abs(G_hat)**2 + 0j
+        G_hat[idx]  = np.sum(Vj*dWx*phase)
+        D_hat[idx]  = np.sum(Vj*(Wr/r**2)*(1 - phase))
+        PI_hat[idx] = np.sum(Vj*visc_w*(1 - phase))
+    PI_hat *= alpha*c0*H**2
+
+    mu0_rho  = -delta*H*c0*D_hat
+    mu0_visc = PI_hat
+    #mu0_visc = -nu*D_hat
+
+    trace = mu0_rho + mu0_visc
+    disc  = ((mu0_rho - mu0_visc)/2)**2 - c0**2*np.abs(G_hat)**2 + 0j
     sq    = np.sqrt(disc)
-    mu_pm = mu0/2 + np.array([1, -1])[:, None]*sq
-    return G_hat, D_hat, mu_pm
+    mu_pm = trace/2 + np.array([1, -1])[:, None]*sq
+    return G_hat, D_hat, PI_hat, mu_pm
 
 
 #FIXME: Again, the general vector doesnt work
@@ -242,14 +305,28 @@ def compute_spectrum_general(rx, ry, r, Vj, H, h, xi_vals, theta, c0, delta, W_f
     return G_hat, D_hat, mu_pm
 
 def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
+                        nu=0.0, dim=2, eps_visc=0.01,
                         W_fn=None, dWdr_fn=None, support_radius=None):
     """
     Directly assemble the linear stability operator from particle-particle
     interactions (periodic box L x L, n_images periodic shells for neighbour
-    search) and return eigenvalues via np.linalg.eigvals. rho0 is taken as a
-    keyword argument (default 1000.0) so callers -- e.g. the interactive GUI
-    -- can control it explicitly.
+    search) and return eigenvalues via np.linalg.eigvals.
+
+    nu : float
+        Kinematic viscosity [m^2/s]. Converted to alpha via alpha_from_nu.
+        nu=0 recovers the original inviscid operator exactly.
+    dim : int
+        Spatial dimension used in the nu -> alpha conversion (default 2).
+    eps_visc : float
+        Regularisation constant in mu_ij's denominator (standard 0.01).
+
+    Viscosity here is NOT restricted to the longitudinal (1D) case: since
+    v_ij . r_ij mixes both velocity components, the linearised Monaghan
+    viscosity couples ux and uy through the full off-diagonal blocks
+    L_ux_uy / L_uy_ux, not just the diagonal L_ux_ux / L_uy_uy blocks.
     """
+    alpha = alpha_from_nu(nu, c0, H, dim)
+
     _W  = W_fn if W_fn is not None else W_vec
     _dW = dWdr_fn if dWdr_fn is not None else dWdr_vec
     _R  = support_radius if support_radius is not None else 2*H
@@ -257,6 +334,9 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
     Gx = np.zeros((N, N))
     Gy = np.zeros((N, N))
     D  = np.zeros((N, N))
+    Pxx = np.zeros((N, N))
+    Pxy = np.zeros((N, N))
+    Pyy = np.zeros((N, N))
 
     for i in range(N):
         dxs, dys = [], []
@@ -284,6 +364,14 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
         np.add.at(Gy[i], jidx, Vjr*wy)
         np.add.at(D[i],  jidx, Vjr*wD)
 
+        # Monaghan-Gingold viscosity, always-on linearisation:
+        # w_ij = alpha*c0*H**2*Vj*dWr/(r*(r**2+eps_visc*H**2))
+        # coupling matrices Pxx=w*rx**2, Pxy=w*rx*ry, Pyy=w*ry**2
+        visc_k = alpha*c0*H**2 * dWr / (r * (r**2 + eps_visc*H**2))
+        np.add.at(Pxx[i], jidx, Vjr*visc_k*rx**2)
+        np.add.at(Pxy[i], jidx, Vjr*visc_k*rx*ry)
+        np.add.at(Pyy[i], jidx, Vjr*visc_k*ry**2)
+
     diagD = np.diag(D.sum(axis=1))
     L_rho_rho = delta*H*c0*(D - diagD)
     L_rho_ux  = -rho0*Gx
@@ -291,23 +379,18 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
     L_ux_rho  = -(c0**2/rho0)*Gx
     L_uy_rho  = -(c0**2/rho0)*Gy
 
-    #diagD = np.diag(D.sum(axis=1))
-    #L_rho_rho = delta * H * c0 * (D - diagD)
-
-    #Sx = np.diag(Gx.sum(axis=1))
-    #Sy = np.diag(Gy.sum(axis=1))
-
-    #L_rho_ux = -rho0 * (Gx - Sx)           # was: -rho0*Gx
-    #L_rho_uy = -rho0 * (Gy - Sy)           # was: -rho0*Gy
-    #L_ux_rho = -(c0**2/rho0) * (Gx + Sx)   # note: PLUS Sx here, not minus
-    #L_uy_rho = -(c0**2/rho0) * (Gy + Sy)
-
-    Z = np.zeros((N, N))
+    # Viscous velocity blocks: acceleration is a_i = w_ij*(u_i - u_j),
+    # so row i picks up +rowsum on the diagonal and -w_ij off-diagonal --
+    # the OPPOSITE sign convention to (D - diagD). Hence diag(rowsum) - P.
+    L_ux_ux = np.diag(Pxx.sum(axis=1)) - Pxx
+    L_ux_uy = np.diag(Pxy.sum(axis=1)) - Pxy
+    L_uy_ux = np.diag(Pxy.sum(axis=1)) - Pxy   # Pxy symmetric (rx*ry) by construction
+    L_uy_uy = np.diag(Pyy.sum(axis=1)) - Pyy
 
     Ltot = np.block([
         [L_rho_rho, L_rho_ux, L_rho_uy],
-        [L_ux_rho,  Z,        Z       ],
-        [L_uy_rho,  Z,        Z       ],
+        [L_ux_rho,  L_ux_ux,  L_ux_uy ],
+        [L_uy_rho,  L_uy_ux,  L_uy_uy ],
     ])
     eigvals = np.linalg.eigvals(Ltot)
     return eigvals, Ltot
@@ -343,6 +426,32 @@ class PlotConfig:
 # =====================================================================
 # 7. CONVENIENCE COMPUTE-ALL HELPERS
 # =====================================================================
+def compute_all(params: Parameters) -> dict:
+    """Fourier spectra (with viscosity) for cartesian / hex / random."""
+    kinfo = KERNELS[params.kernel]
+    kW, kdw, kR = kinfo["W_vec"], kinfo["dWdr_vec"], kinfo["support"] * params.H
+    out: dict = {}
+    rxC, ryC, rC, VjC = neighbours_cartesian(params.h, params.H, support_radius=kR)
+    G, D, _PI, mu = compute_spectrum(
+        rxC, ryC, rC, VjC, params.H, params.h, params.xi_vals,
+        params.c0, params.delta, params.nu, params.dim, params.eps_visc, kW, kdw)
+    out['cartesian'] = (G, D, mu)
+    rxH, ryH, rH, VjH = neighbours_hex(params.h, params.H, support_radius=kR)
+    G, D, _PI, mu = compute_spectrum(
+        rxH, ryH, rH, VjH, params.H, params.h, params.xi_vals,
+        params.c0, params.delta, params.nu, params.dim, params.eps_visc, kW, kdw)
+    out['hex'] = (G, D, mu)
+    rnd = []
+    for s in range(params.n_real):
+        rxR, ryR, rR, VjR = neighbours_random(params.h, params.H, seed=s, support_radius=kR)
+        G, D, _PI, mu = compute_spectrum(
+            rxR, ryR, rR, VjR, params.H, params.h, params.xi_vals,
+            params.c0, params.delta, params.nu, params.dim, params.eps_visc, kW, kdw)
+        rnd.append((G, D, mu))
+    out['random'] = rnd
+    return out
+
+
 def compute_all_general(params: Parameters) -> dict:
     """Generalised Fourier spectra for cartesian / hex / random at params.theta."""
     kinfo = KERNELS[params.kernel]
@@ -374,17 +483,20 @@ def compute_all_direct(params: Parameters) -> dict:
     xC, yC, LC, VjC = build_patch_cartesian(params.n_cell, params.h)
     out['cartesian'] = get_spectrum_direct(
         xC, yC, LC, VjC, params.H, params.h, params.c0, params.delta,
-        params.rho0, params.n_images, kW, kdw, kR)[0]
+        params.rho0, params.n_images, params.nu, params.dim, params.eps_visc,
+        kW, kdw, kR)[0]
     xH, yH, LH, VjH = build_patch_hex(params.n_cell, params.h)
     out['hex'] = get_spectrum_direct(
         xH, yH, LH, VjH, params.H, params.h, params.c0, params.delta,
-        params.rho0, params.n_images, kW, kdw, kR)[0]
+        params.rho0, params.n_images, params.nu, params.dim, params.eps_visc,
+        kW, kdw, kR)[0]
     rnd = []
     for s in range(params.n_real):
         xR, yR, LR, VjR = build_patch_random(params.n_cell, params.h, seed=s)
         rnd.append(get_spectrum_direct(
             xR, yR, LR, VjR, params.H, params.h, params.c0, params.delta,
-            params.rho0, params.n_images, kW, kdw, kR)[0])
+            params.rho0, params.n_images, params.nu, params.dim, params.eps_visc,
+            kW, kdw, kR)[0])
     out['random'] = np.concatenate(rnd)
     return out
 
@@ -455,14 +567,14 @@ if __name__ == "__main__":
     #     cartesian uses compute_spectrum_general with theta=pi/2,
     #     hex/random use plain compute_spectrum. ---
     rxC, ryC, rC, VjC = neighbours_cartesian(p.h, p.H, support_radius=kR)
-    G_c, D_c, mu_c = compute_spectrum(rxC, ryC, rC, VjC, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
+    G_c, D_c, _PI_c, mu_c = compute_spectrum(rxC, ryC, rC, VjC, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
     G_c, D_c, mu_c = compute_spectrum_general(rxC, ryC, rC, VjC, p.H, p.h, p.xi_vals, np.pi/2, p.c0, p.delta, kW, kdw)
     #plt.scatter( rxH, ryH )
     #plt.show()
     print(f"Cartesian : N_neighbours={len(rC):4d}  max Re(mu)={mu_c.real.max():.3e}  max|Im(mu)|={np.abs(mu_c.imag).max():.3e}")
 
     rxH, ryH, rH, VjH = neighbours_hex(p.h, p.H, support_radius=kR)
-    G_h, D_h, mu_h = compute_spectrum(rxH, ryH, rH, VjH, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
+    G_h, D_h, _PI_h, mu_h = compute_spectrum(rxH, ryH, rH, VjH, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
     #G_h, D_h, mu_h = compute_spectrum_general(rxH, ryH, rH, VjH, p.H, p.h, p.xi_vals, np.pi/4, c0, delta)
     #plt.scatter( rxH, ryH )
     #plt.show()
@@ -474,7 +586,7 @@ if __name__ == "__main__":
         rxR, ryR, rR, VjR = neighbours_random(p.h, p.H, seed=s, support_radius=kR)
         #plt.scatter( rxR, ryR )
         #plt.show()
-        G_r, D_r, mu_r = compute_spectrum(rxR, ryR, rR, VjR, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
+        G_r, D_r, _PI_r, mu_r = compute_spectrum(rxR, ryR, rR, VjR, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
         #_, _, mu_r = compute_spectrum_general(rxR, ryR, rR, VjR, p.H, p.h, p.xi_vals, np.pi/4, c0, delta)
         mu_rand_list.append((G_r, D_r, mu_r))
         mu_rand_arr.append(mu_r)
