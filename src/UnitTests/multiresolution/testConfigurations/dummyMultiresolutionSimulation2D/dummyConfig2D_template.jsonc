@@ -1,0 +1,73 @@
+{
+    // === Control section ===
+    // Simulation name, path to store results and path to read initial conditions
+    "control": {
+        "case-name": "dummyMultiresolutionSimulation2D",
+        "output-directory": "results",
+        "final-time": 0,
+        "snapshot-period": 0,
+        "verbose-intensity": "with-snapshot"
+    },
+
+    // === Particle system configuration ===
+    "particles": {
+        "numberOfParticles": placeholderFluidParticles,
+        "numberOfAllocatedParticles": placeholderAllocatedFluidParticles,
+        "numberOfBoundaryParticles": placeholderBoundaryParticles,
+        "numberOfAllocatedBoundaryParticles": placeholderAllocatedBoundaryParticles
+    },
+
+    // === Domain size and domain origin ===
+    "domain": {
+        "searchRadius": placeholderSearchRadius,
+        "domainOrigin-x": placeholderDomainOrigin-x,
+        "domainOrigin-y": placeholderDomainOrigin-y,
+        "domainSize-x": placeholderDomainSize-x,
+        "domainSize-y": placeholderDomainSize-y
+    },
+
+    // === SPH solver section - resolution parameters ===
+    "model": {
+        "dp": placeholderInitParticleDistance,
+        "h": placeholderSmoothingLength
+    },
+
+    // === Domain decomposition information ===
+    "numberOfSubdomains": 2,
+    "subdomains-config": "placeholderSubdomainsConfigPath",
+
+    // Inline subdomains config (alternative to "subdomains-config" file path).
+    // When uncommented, the solver reads this subsection directly.
+    // "subdomains": {
+    //     "subdomain-0-fluid-particles": "",
+    //     "subdomain-0-boundary-particles": "",
+    //     "subdomain-0-fluid_n": 0,
+    //     "subdomain-0-boundary_n": 0,
+    //     "subdomain-0-fluid_n_allocated": 0,
+    //     "subdomain-0-boundary_n_allocated": 0,
+    //     "subdomain-0-refinement-factor": 1,
+    //     "subdomain-0-origin-global-coords-x": 0,
+    //     "subdomain-0-origin-global-coords-y": 0,
+    //     "subdomain-0-grid-dimensions-x": 0,
+    //     "subdomain-0-grid-dimensions-y": 0,
+    //     "subdomain-0-origin-x": 0,
+    //     "subdomain-0-origin-y": 0,
+    //     "subdomain-0-size-x": 0,
+    //     "subdomain-0-size-y": 0,
+    //     "subdomain-1-fluid-particles": "",
+    //     "subdomain-1-boundary-particles": "",
+    //     "subdomain-1-fluid_n": 0,
+    //     "subdomain-1-boundary_n": 0,
+    //     "subdomain-1-fluid_n_allocated": 0,
+    //     "subdomain-1-boundary_n_allocated": 0,
+    //     "subdomain-1-refinement-factor": 2,
+    //     "subdomain-1-origin-global-coords-x": 0,
+    //     "subdomain-1-origin-global-coords-y": 0,
+    //     "subdomain-1-grid-dimensions-x": 0,
+    //     "subdomain-1-grid-dimensions-y": 0,
+    //     "subdomain-1-origin-x": 0,
+    //     "subdomain-1-origin-y": 0,
+    //     "subdomain-1-size-x": 0,
+    //     "subdomain-1-size-y": 0
+    // }
+}

@@ -51,13 +51,13 @@ if __name__ == "__main__":
 
     if args.all:
         for name in CONFIGURATIONS:
-            config_path = example_dir / f"sources/{name}/dummyConfig2D.ini"
+            config_path = example_dir / f"sources/{name}/dummyConfig2D.jsonc"
             print(f"\n{'='*60}")
             print(f"Running configuration: {name}")
             print(f"{'='*60}\n")
             solve(config_path)
             move_results(name)
     else:
-        config_path = example_dir / f"sources/{args.config_name}/dummyConfig2D.ini"
+        config_path = example_dir / f"sources/{args.config_name}/dummyConfig2D.jsonc"
         solve(config_path)
         move_results(args.config_name)

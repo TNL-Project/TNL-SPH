@@ -82,8 +82,8 @@ def write_distributed_domain_params_rectangular(
 
     domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
 
-    with open(f"{output_dir}/config-distributed-domain.ini", "w") as f:
-        f.write("# Subdomain information\n\n")
+    with open(f"{output_dir}/config-distributed-domain.jsonc", "w") as f:
+        f.write("// Subdomain information\n\n")
         for i, g in enumerate(grids):
             prefix = f"subdomain-{i}-"
 
@@ -124,10 +124,10 @@ def write_distributed_domain_params_rectangular(
 
 
 def write_simulation_params(setup: dict, output_dir: str, config_name: str):
-    with open(os.path.join(_script_dir, "dummyConfig2D_template.ini"), "r") as f:
+    with open(os.path.join(_script_dir, "dummyConfig2D_template.jsonc"), "r") as f:
         cfg = cf.safe_replace(f.read(), cf.ini_replacements, setup)
-    cfg = cfg.replace("placeholderSubdomainsConfigPath", f"{output_dir}/config-distributed-domain.ini")
-    with open(f"{output_dir}/dummyConfig2D.ini", "w") as f:
+    cfg = cfg.replace("placeholderSubdomainsConfigPath", f"{output_dir}/config-distributed-domain.jsonc")
+    with open(f"{output_dir}/dummyConfig2D.jsonc", "w") as f:
         f.write(cfg)
 
 

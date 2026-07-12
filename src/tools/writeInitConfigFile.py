@@ -95,21 +95,19 @@ def write_simulation_params(setup: dict) -> None:
    cfg_setup.setdefault("boundary_element_size", 0)
 
    with open("template/config_template.jsonc", "r") as f:
-       cfg = safe_replace(f.read(), ini_replacements, setup)
-   with open("sources/config.jsonc", "w") as f:
-       f.write(cfg)
+      cfg = safe_replace(f.read(), ini_replacements, setup)
 
    # Handle the open-boundary-patches count placeholder, which expands to a
    # multi-line value (count + config file path) or 0 when no patches exist.
    if "placeholderNumberOfOpenBoundaryPatches" in cfg:
       patches = cfg_setup.get("open_boundary_patches", [])
       if len(patches) > 0:
-         obc_block = f"{len(patches)}\nopen-boundary-config = sources/config-open-boundary.ini"
+         obc_block = f"{len(patches)}\nopen-boundary-config = sources/config-open-boundary.jsonc"
       else:
          obc_block = "0"
       cfg = cfg.replace("placeholderNumberOfOpenBoundaryPatches", obc_block)
 
-   with open("sources/config.ini", "w") as f:
+   with open("sources/config.jsonc", "w") as f:
       f.write(cfg)
 
    if os.path.exists("template/config_template.h"):

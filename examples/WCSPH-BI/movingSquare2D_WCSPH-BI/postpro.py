@@ -109,7 +109,7 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Dam break example postprocessing")
     argparser.add_argument("--with-paraview", default=False,
             help="perform postprocessing using paraview tools")
-    argparser.add_argument("--config", default="sources/config.ini",
+    argparser.add_argument("--config", default="sources/config.jsonc",
             help="path to the config file (relative to the path of this script)")
 
     # create folder for postprocessing results

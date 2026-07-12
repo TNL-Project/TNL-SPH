@@ -527,4 +527,27 @@ if __name__ == "__main__":
     cf.write_simulation_params(setup)
     write_distributed_domain_params_rectangular(coarse_grid, fine_grid, setup)
     cf.write_measuretool_params(setup)
+
+    # Step 9: Generate inline subdomains config variant
+    import json as _json
+    with open("sources/config-distributed-domain.jsonc", "r") as f:
+        dd_data = _json.load(f)
+    subdomains = dd_data["subdomains"]
+
+    # Format subdomain entries as indented JSON key-value lines.
+    sub_entries = list(subdomains.items())
+    sub_body = ",\n".join(
+        f'        "{k}": {_json.dumps(v)}' for k, v in sub_entries
+    )
+
+    with open("template/config_inline_template.jsonc", "r") as f:
+        inline_cfg = f.read()
+
+    # Apply the same placeholder replacements as the main config
+    inline_cfg = cf.safe_replace(inline_cfg, cf.ini_replacements, setup)
+    inline_cfg = inline_cfg.replace("placeholderSubdomainsContent", sub_body)
+
+    with open("sources/config_inline.jsonc", "w") as f:
+        f.write(inline_cfg)
+
     set_paraview_states_paths()
