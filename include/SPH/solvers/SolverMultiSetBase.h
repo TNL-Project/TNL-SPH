@@ -185,6 +185,15 @@ public:
       return boundarySets[ 0 ];
    }
 
+   GlobalIndexType
+   getTotalFluidParticlesCount() const;
+
+   GlobalIndexType
+   getTotalBoundaryParticlesCount() const;
+
+   GlobalIndexType
+   getTotalParticlesCount() const;
+
    int numberOfSubsets = 0;
    std::vector< FluidPointer > fluidSets;
    std::vector< BoundaryPointer > boundarySets;
