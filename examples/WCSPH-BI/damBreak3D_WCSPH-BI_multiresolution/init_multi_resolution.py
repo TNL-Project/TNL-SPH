@@ -534,11 +534,17 @@ if __name__ == "__main__":
         dd_data = _json.load(f)
     subdomains = dd_data["subdomains"]
 
-    # Format subdomain entries as indented JSON key-value lines.
-    sub_entries = list(subdomains.items())
-    sub_body = ",\n".join(
-        f'        "{k}": {_json.dumps(v)}' for k, v in sub_entries
-    )
+    items = list(subdomains.items())
+    lines = []
+    for idx, (k, v) in enumerate(items):
+        suffix = "," if idx < len(items) - 1 else ""
+        inner = _json.dumps(v, indent=4)
+        inner_lines = inner.split('\n')
+        lines.append(f'        "{k}": {{')
+        for il in inner_lines[1:-1]:
+            lines.append('        ' + il)
+        lines.append(f'        }}{suffix}')
+    sub_body = '\n'.join(lines).lstrip()
 
     with open("template/config_inline_template.jsonc", "r") as f:
         inline_cfg = f.read()

@@ -157,26 +157,28 @@ def write_distributed_domain_params(grids: List[SubdomainGrid], setup: dict) -> 
     for i, g in enumerate(grids):
         prefix = f"subdomain-{i}-"
 
-        # Axis-independent entries
-        subdomains[f"{prefix}fluid-particles"]      = f"sources/subdomain-{i}-dambreak_fluid.vtk"
-        subdomains[f"{prefix}boundary-particles"]   = f"sources/subdomain-{i}-dambreak_boundary.vtk"
-        subdomains[f"{prefix}fluid_n"]              = g.fluid_n
-        subdomains[f"{prefix}boundary_n"]           = g.boundary_n
-        subdomains[f"{prefix}fluid_n_allocated"]    = fact * g.fluid_n if fact * g.fluid_n > 0 else fact * setup["fluid_n"]
-        subdomains[f"{prefix}boundary_n_allocated"] = fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"]
-        subdomains[f"{prefix}refinement-factor"]    = g.factor
+        sd: dict = {
+            "fluid-particles":      f"sources/subdomain-{i}-dambreak_fluid.vtk",
+            "boundary-particles":   f"sources/subdomain-{i}-dambreak_boundary.vtk",
+            "fluid_n":              g.fluid_n,
+            "boundary_n":           g.boundary_n,
+            "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else fact * setup["fluid_n"],
+            "boundary_n_allocated": fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"],
+            "refinement-factor":    g.factor,
+        }
 
-        # Axis-dependent entries — grouped by keyword, not by axis
         for ax in axes:
             origin_glob = getattr(g, f"origin_glob_{ax}")
             dims        = getattr(g, f"dims_{ax}")
             origin_phys = domain_origin[ax] + g.search_radius * origin_glob
             size_phys   = g.search_radius * dims
 
-            subdomains[f"{prefix}origin-global-coords-{ax}"] = origin_glob
-            subdomains[f"{prefix}grid-dimensions-{ax}"]      = dims
-            subdomains[f"{prefix}origin-{ax}"]               = f"{origin_phys:.7f}"
-            subdomains[f"{prefix}size-{ax}"]                 = f"{size_phys:.7f}"
+            sd[f"origin-global-coords-{ax}"] = origin_glob
+            sd[f"grid-dimensions-{ax}"]      = dims
+            sd[f"origin-{ax}"]               = round(origin_phys, 7)
+            sd[f"size-{ax}"]                 = round(size_phys, 7)
+
+        subdomains[f"subdomain-{i}"] = sd
 
     import json
     output: dict = {"subdomains": subdomains}

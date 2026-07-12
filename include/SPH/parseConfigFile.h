@@ -50,11 +50,27 @@ flattenJSON( nlohmann::json& data, const TNL::Config::ConfigDescription& descrip
       }
 
       // If the key is NOT in the schema and the value is an object, treat it
-      // as an organizational grouping and recurse into its children.
+      // as an organizational grouping and recurse into its children.  After
+      // recursion, each child key is promoted to the parent level.  If the
+      // child key itself is not in the schema, we try "parentKey-childKey"
+      // as a fallback — this enables nested subsections like
+      //   "subdomain-0": { "fluid-particles": "..." }
+      // to be flattened to the schema key "subdomain-0-fluid-particles".
       if( it.value().is_object() ) {
          flattenJSON( it.value(), description );
-         for( auto sub = it.value().begin(); sub != it.value().end(); ++sub )
-            flattened[ sub.key() ] = std::move( sub.value() );
+         for( auto sub = it.value().begin(); sub != it.value().end(); ++sub ) {
+            const std::string& childKey = sub.key();
+            if( description.getEntry( childKey ) != nullptr ) {
+               flattened[ childKey ] = std::move( sub.value() );
+            }
+            else {
+               const std::string prefixedKey = key + "-" + childKey;
+               if( description.getEntry( prefixedKey ) != nullptr )
+                  flattened[ prefixedKey ] = std::move( sub.value() );
+               else
+                  flattened[ childKey ] = std::move( sub.value() );
+            }
+         }
       }
       else {
          // Not in the schema, not an object — keep it so the undefined-options
