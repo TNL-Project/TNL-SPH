@@ -81,7 +81,63 @@ KERNELS = {
 #         Spatial dimension (2 for the 2D lattices used here, 3 for 3D SPH).
 # =====================================================================
 def alpha_from_nu(nu, c0, H, dim=2):
+    """
+    Convert a target kinematic viscosity nu [m^2/s] into the dimensionless
+    Monaghan-Gingold coefficient alpha, using the standard equivalence
+    between the always-on (switch-dropped) alpha-viscosity and an
+    effective Laplacian/physical viscosity:
+
+        nu_eff = alpha*c0*H / (2*(dim+2))
+        =>  alpha = 2*(dim+2)*nu / (c0*H)
+
+    dim : int
+        Spatial dimension (2 for the 2D lattices used here, 3 for 3D SPH).
+    """
     return 2*(dim + 2)*nu / (c0*H)
+
+
+def solve_cubic_vectorized(p2, p1, p0):
+    """
+    Closed-form (Cardano) roots of x**3 + p2*x**2 + p1*x + p0 = 0, fully
+    vectorised over arrays of (in general complex) coefficients p2, p1, p0.
+    Returns an array of shape (*p2.shape, 3) with the three roots.
+
+    Standard depressed-cubic substitution x = t - p2/3 gives
+        t**3 + p*t + q = 0,   p = p1 - p2**2/3,   q = 2*p2**3/27 - p2*p1/3 + p0
+    with roots t_k = omega**k*u + omega**(-k)*v  (k=0,1,2), omega=exp(2j*pi/3),
+    where u is *any* cube root of (-q/2 + sqrt((q/2)**2+(p/3)**3)) and v is
+    then fixed via v = -p/(3*u) -- NOT independently cube-rooted. This is
+    the standard trick that avoids the classic "9 candidate pairs, only 3
+    valid" branch-matching problem of naively cube-rooting both terms.
+
+    A tiny-|u| fallback handles the (rare, measure-zero) degenerate case
+    where u ~ 0; np.linalg.eigvals on the corresponding 3x3 matrix remains
+    a safe way to double check any individual mode if ever in doubt.
+    """
+    p2 = np.asarray(p2, dtype=complex)
+    p1 = np.asarray(p1, dtype=complex)
+    p0 = np.asarray(p0, dtype=complex)
+
+    p = p1 - p2**2/3
+    q = 2*p2**3/27 - p2*p1/3 + p0
+    disc = (q/2)**2 + (p/3)**3
+    sqrt_disc = np.sqrt(disc)
+
+    u3 = -q/2 + sqrt_disc
+    u = u3**(1/3)   # principal complex cube root
+
+    tiny = np.abs(u) < 1e-12
+    v_direct = (-q/2 - sqrt_disc)**(1/3)
+    u_safe = np.where(tiny, 1.0, u)
+    v = np.where(tiny, v_direct, -p/(3*u_safe))
+
+    omega = np.exp(2j*np.pi/3)
+    t0 = u + v
+    t1 = omega*u + np.conj(omega)*v
+    t2 = np.conj(omega)*u + omega*v
+
+    roots = np.stack([t0, t1, t2], axis=-1) - p2[..., None]/3
+    return roots
 
 
 # =====================================================================
@@ -189,42 +245,84 @@ def compute_spectrum(rx, ry, r, Vj, H, h, xi_vals, c0, delta,
                       W_fn=None, dWdr_fn=None):
     """
     Von Neumann (Fourier symbol) stability analysis of delta-WCSPH,
-    including the standard Monaghan-Gingold artificial viscosity.
+    including a viscous term. Two standard, physically distinct viscosity
+    models are provided -- choose ONE by commenting/uncommenting the
+    corresponding block marked "OPTION A" / "OPTION B" below.
 
-    nu : float
-        Kinematic viscosity [m^2/s]. Converted to the dimensionless
-        Monaghan-Gingold coefficient via
+    OPTION A -- Monaghan-Gingold artificial viscosity (default, active)
+        Pi_ij = -alpha*c0*H*mu_ij/rho_bar_ij,
+        mu_ij =  H*(v_ij . r_ij)/(r_ij**2 + eps_visc*H**2)
+        linearised (switch and quadratic beta*mu_ij**2 term dropped, see
+        note below) into
+            a_i,x^visc = alpha*c0*H**2 * sum_j Vj*dWr*rx**2/(r*(r**2+eps_visc*H**2)) * (ux_i-ux_j)
+        i.e. weighted by rx**2 -- it is a projection onto the propagation
+        direction, so this model is anisotropic even in its linearised form.
+        alpha is reached from nu via the standard equivalence
             alpha = alpha_from_nu(nu, c0, H, dim) = 2*(dim+2)*nu/(c0*H)
-        nu=0 recovers the original inviscid spectrum exactly.
+        (Monaghan & Gingold 1983; Monaghan 1992, 2005.)
+
+    OPTION B -- Morris, Fox & Zhu (1997) physical-viscosity Laplacian
+        Directly discretises nu*Laplacian(u) as
+            a_i,x^visc = 2*nu * sum_j Vj*dWr*r/(r**2+eps_visc*H**2) * (ux_i-ux_j)
+        i.e. weighted only by the distance r (isotropic -- no directional
+        projection), and uses nu directly with no alpha/c0/H conversion.
+        This is the more standard choice when nu is meant as a genuine
+        physical kinematic viscosity rather than a shock-capturing device.
+
+    New parameters
+    ----------
+    nu : float
+        Kinematic viscosity [m^2/s]. nu=0 recovers the original inviscid
+        spectrum exactly under either option.
     dim : int
-        Spatial dimension used in the nu -> alpha conversion (default 2).
+        Spatial dimension, used only by OPTION A's nu -> alpha conversion
+        (default 2, matching these 2D lattices).
     eps_visc : float
-        Regularisation constant in mu_ij's denominator (standard 0.01).
+        Regularisation constant in the mu_ij / Laplacian denominator
+        (standard value 0.01).
 
-    Linearisation: the true Pi_ij is switched off unless v_ij.r_ij < 0
-    (approaching particles) and carries a quadratic beta*mu_ij**2 term.
-    Both are nonlinear in the velocity perturbation about the quiescent
-    background (u=0), so they cannot enter a constant-coefficient linear
-    operator. We keep only the always-on, linear-in-mu_ij piece -- the
-    known equivalence between "always-on" alpha-viscosity and an effective
-    Laplacian/physical viscosity (Monaghan 1992, 2005).
+    Linearisation note (applies to OPTION A)
+    ----------
+    The true Monaghan-Gingold Pi_ij is switched off unless v_ij.r_ij < 0
+    (approaching particles) and also carries a quadratic beta*mu_ij**2
+    term. Both are nonlinear in the velocity perturbation about the
+    quiescent background (u=0), so they cannot enter a constant-coefficient
+    linear operator. Following standard practice in the delta-SPH
+    linear-stability literature, we keep only the always-on,
+    linear-in-mu_ij piece -- the known equivalence between "always-on"
+    alpha-viscosity and an effective Laplacian/physical viscosity. OPTION B
+    has no such issue: the Morris form is already a linear Laplacian
+    discretisation, with no switch or quadratic term to drop.
 
-    Returns G_hat, D_hat, PI_hat, mu_pm (4 values; PI_hat added).
+    Returns
+    ----------
+    G_hat, D_hat, PI_hat, mu_pm
+        NOTE: return signature grew from 3 to 4 values (PI_hat added).
+        Existing call sites unpacking `G_hat, D_hat, mu_pm = compute_spectrum(...)`
+        must be updated to `G_hat, D_hat, PI_hat, mu_pm = compute_spectrum(...)`.
     """
-    alpha = alpha_from_nu(nu, c0, H, dim)
-
     _W  = W_fn if W_fn is not None else W_vec
     _dW = dWdr_fn if dWdr_fn is not None else dWdr_vec
     Wr  = _W(r, H)
     dWr = _dW(r, H)
     dWx = dWr * rx / r
 
-    # Linearised viscous acceleration on particle i (x-momentum, background u=0):
-    #   a_i,x^visc = alpha*c0*H**2 * sum_j Vj * dWr*rx**2/(r*(r**2+eps_visc*H**2)) * (ux_i - ux_j)
-    # Difference (Laplacian-type) quantity like D_hat -- needs (1-phase)
-    # treatment so it vanishes for a uniform velocity field.
-    visc_w = dWr * rx**2 / (r * (r**2 + eps_visc*H**2))
+    # ==================================================================
+    # VISCOSITY MODEL SELECTION -- uncomment exactly ONE of the two blocks
+    # ==================================================================
 
+    # --- OPTION A: Monaghan-Gingold artificial viscosity (anisotropic) ---
+    alpha = alpha_from_nu(nu, c0, H, dim)
+    visc_w         = dWr * rx**2 / (r * (r**2 + eps_visc*H**2))
+    visc_prefactor = alpha*c0*H**2
+
+    # --- OPTION B: Morris (1997) physical-viscosity Laplacian (isotropic) ---
+    # visc_w         = dWr * r / (r**2 + eps_visc*H**2)
+    # visc_prefactor = 2*nu
+
+    # This is a difference (Laplacian-type) quantity, just like D_hat, so it
+    # needs the same (1-phase) treatment (a raw undifferenced sum would not
+    # vanish for a uniform velocity field, which is unphysical for a viscous term).
     G_hat  = np.zeros(len(xi_vals), dtype=complex)
     D_hat  = np.zeros(len(xi_vals), dtype=complex)
     PI_hat = np.zeros(len(xi_vals), dtype=complex)
@@ -234,11 +332,10 @@ def compute_spectrum(rx, ry, r, Vj, H, h, xi_vals, c0, delta,
         G_hat[idx]  = np.sum(Vj*dWx*phase)
         D_hat[idx]  = np.sum(Vj*(Wr/r**2)*(1 - phase))
         PI_hat[idx] = np.sum(Vj*visc_w*(1 - phase))
-    PI_hat *= alpha*c0*H**2
+    PI_hat *= visc_prefactor
 
-    mu0_rho  = -delta*H*c0*D_hat
-    mu0_visc = PI_hat
-    #mu0_visc = -nu*D_hat
+    mu0_rho  = -delta*H*c0*D_hat      # density-diffusion trace term (unchanged)
+    mu0_visc = PI_hat                  # viscous trace term added to the velocity eq.
 
     trace = mu0_rho + mu0_visc
     disc  = ((mu0_rho - mu0_visc)/2)**2 - c0**2*np.abs(G_hat)**2 + 0j
@@ -246,25 +343,76 @@ def compute_spectrum(rx, ry, r, Vj, H, h, xi_vals, c0, delta,
     mu_pm = trace/2 + np.array([1, -1])[:, None]*sq
     return G_hat, D_hat, PI_hat, mu_pm
 
-
-#FIXME: Again, the general vector doesnt work
-def compute_spectrum_general(rx, ry, r, Vj, H, h, xi_vals, theta, c0, delta, W_fn=None, dWdr_fn=None):
+def compute_spectrum_general(rx, ry, r, Vj, H, h, xi_vals, theta, c0, delta,
+                              nu=0.0, dim=2, eps_visc=0.01, W_fn=None, dWdr_fn=None):
     """
     Same as compute_spectrum, but for a wave vector k = (k cos(theta), k sin(theta))
-    instead of being restricted to k = (k, 0).
+    instead of being restricted to k = (k, 0). Now includes the standard
+    Monaghan-Gingold artificial viscosity (see compute_spectrum's docstring
+    for the exact linearisation used -- switch and beta*mu**2 term dropped).
 
     theta : propagation angle of the wave, in radians (theta=0 reproduces
-            the original x-only compute_spectrum exactly).
+            the original x-only compute_spectrum's inviscid part exactly).
+    nu : float
+        Kinematic viscosity [m^2/s]; converted to alpha via
+        alpha_from_nu(nu, c0, H, dim) for OPTION A only (see below).
+        nu=0 disables viscosity under either option.
+    dim : int
+        Spatial dimension used in the nu -> alpha conversion (OPTION A only,
+        default 2).
+    eps_visc : float
+        Regularisation constant in the Monaghan-Gingold mu_ij denominator.
 
-    NOTE: Gx_hat and Gy_hat are computed as independent Cartesian components
-    of the kernel-gradient sum (each with the FULL 2D phase factor), then
-    combined as Gx_hat**2 + Gy_hat**2 in the discriminant. This is NOT the
-    same as projecting the kernel gradient onto k_hat first and squaring
-    that scalar -- the two only coincide for a perfectly isotropic kernel
-    sum, which is generally false on a finite lattice. Using the projected
-    scalar would artificially erase the very anisotropy this function is
-    meant to reveal.
+    Two viscosity models are available -- choose ONE by commenting/
+    uncommenting the corresponding block below (see compute_spectrum's
+    docstring for the full derivation of each):
+      OPTION A: Monaghan-Gingold (anisotropic tensor PIxx/PIxy/PIyy, alpha
+                reached from nu via alpha_from_nu). Active by default.
+      OPTION B: Morris (1997) physical-viscosity Laplacian (isotropic,
+                PIxy=0, uses nu directly).
+
+    WHY THE OLD 2-EIGENVALUE FORMULA WAS WRONG (and couldn't just take
+    viscosity as an extra term)
+    ----------
+    The previous version collapsed the 2D velocity field to a single scalar
+    by projecting the kernel-gradient sum onto the propagation direction
+    (G_hat = kdir_x*Gx_hat + kdir_y*Gy_hat) before forming the (rho, u)
+    quadratic -- this only reduces to the true 3-DOF (rho, ux, uy) physics
+    when the kernel sum is isotropic, which is generally false on a finite
+    lattice for theta != 0. Viscosity in particular acts differently on the
+    longitudinal and transverse (shear) velocity components, so there is no
+    slot for it in a formula that has already thrown the transverse
+    component away -- this is exactly why it was flagged broken instead of
+    silently extended.
+
+    Fix: assemble the genuine 3x3 linear operator for the state
+    (rho', ux', uy') at each wavevector k = (xi/h)*(cos theta, sin theta),
+
+        d/dt [rho'; ux'; uy'] = A(k) [rho'; ux'; uy']
+
+        A(k) = [[ -delta*H*c0*D_hat,     -rho0*Gx_hat,        -rho0*Gy_hat      ],
+                [ -(c0**2/rho0)*Gx_hat,   PIxx_hat,            PIxy_hat         ],
+                [ -(c0**2/rho0)*Gy_hat,   PIxy_hat,            PIyy_hat         ]]
+
+    and diagonalise it -- exactly the same physics as get_spectrum_direct,
+    just evaluated in Fourier space instead of built from a finite periodic
+    particle set. Since A(k) is only 3x3, its eigenvalues are the closed-form
+    (Cardano) roots of a cubic, computed via solve_cubic_vectorized rather
+    than a per-k np.linalg.eigvals call -- fully vectorised over xi_vals.
+    rho0 only rescales the eigenvectors, not the eigenvalues, so it is fixed
+    at 1.0 here (as in a standard von Neumann analysis); pass a different
+    rho0 if needed.
+
+    Returns
+    ----------
+    Gx_hat, Gy_hat, D_hat, PIxx_hat, PIxy_hat, PIyy_hat, mu_eigs
+        mu_eigs has shape (len(xi_vals), 3): the three eigenvalues of A(k)
+        at each xi. NOTE: this is a signature change from the previous
+        (broken) 3-value return (G_hat, D_hat, mu_pm) -- update call sites.
     """
+    alpha = alpha_from_nu(nu, c0, H, dim)
+    rho0 = 1.0  # eigenvalues of A(k) are independent of rho0 (see docstring)
+
     _W  = W_fn if W_fn is not None else W_vec
     _dW = dWdr_fn if dWdr_fn is not None else dWdr_vec
     Wr  = _W(r, H)
@@ -272,58 +420,93 @@ def compute_spectrum_general(rx, ry, r, Vj, H, h, xi_vals, theta, c0, delta, W_f
     fx = dWr * rx / r        # x-component of kernel gradient
     fy = dWr * ry / r        # y-component of kernel gradient
 
+    # ==================================================================
+    # VISCOSITY MODEL SELECTION -- uncomment exactly ONE of the two blocks
+    # (see compute_spectrum's docstring for the full derivation of each)
+    # ==================================================================
+
+    # --- OPTION A: Monaghan-Gingold artificial viscosity (anisotropic tensor) ---
+    visc_base      = dWr / (r * (r**2 + eps_visc*H**2))
+    wxx, wxy, wyy  = visc_base*rx**2, visc_base*rx*ry, visc_base*ry**2
+    visc_prefactor = alpha*c0*H**2
+
+    # --- OPTION B: Morris (1997) physical-viscosity Laplacian (isotropic) ---
+    # visc_base      = dWr * r / (r**2 + eps_visc*H**2)
+    # wxx, wxy, wyy  = visc_base, 0.0*visc_base, visc_base   # no ux-uy shear coupling
+    # visc_prefactor = 2*nu
+
     kdir_x, kdir_y = np.cos(theta), np.sin(theta)
 
-    Gx_hat = np.zeros(len(xi_vals), dtype=complex)
-    Gy_hat = np.zeros(len(xi_vals), dtype=complex)
-    D_hat  = np.zeros(len(xi_vals), dtype=complex)
+    Gx_hat   = np.zeros(len(xi_vals), dtype=complex)
+    Gy_hat   = np.zeros(len(xi_vals), dtype=complex)
+    D_hat    = np.zeros(len(xi_vals), dtype=complex)
+    PIxx_hat = np.zeros(len(xi_vals), dtype=complex)
+    PIxy_hat = np.zeros(len(xi_vals), dtype=complex)
+    PIyy_hat = np.zeros(len(xi_vals), dtype=complex)
     for idx, xi in enumerate(xi_vals):
         k = xi / h
         kx, ky = k*kdir_x, k*kdir_y
         phase = np.exp(1j*(kx*rx + ky*ry))
-        Gx_hat[idx] = np.sum(Vj*fx*phase)
-        Gy_hat[idx] = np.sum(Vj*fy*phase)
-        D_hat[idx]  = np.sum(Vj*(Wr/r**2)*(1 - phase))
+        Gx_hat[idx]   = np.sum(Vj*fx*phase)
+        Gy_hat[idx]   = np.sum(Vj*fy*phase)
+        D_hat[idx]    = np.sum(Vj*(Wr/r**2)*(1 - phase))
+        PIxx_hat[idx] = np.sum(Vj*wxx*(1 - phase))
+        PIxy_hat[idx] = np.sum(Vj*wxy*(1 - phase))
+        PIyy_hat[idx] = np.sum(Vj*wyy*(1 - phase))
+    PIxx_hat *= visc_prefactor
+    PIxy_hat *= visc_prefactor
+    PIyy_hat *= visc_prefactor
 
-    # mu0  = -delta*H*c0*D_hat
-    # disc = (mu0/2)**2 + c0**2*(Gx_hat**2 + Gy_hat**2) + 0j
-    # #disc = (mu0/2)**2 + c0**2 * (np.abs(Gx_hat)**2 + np.abs(Gy_hat)**2) + 0j
-    # sq   = np.sqrt(disc)
-    # mu_pm = mu0/2 + np.array([1, -1])[:, None]*sq
+    mu0_rho = -delta*H*c0*D_hat
 
-    # # G_hat returned here only for diagnostics/back-compat with compute_spectrum's
-    # # 3-value signature -- it's the rotation-invariant combined magnitude,
-    # # not a physically meaningful "scalar projection".
-    # G_hat = np.sqrt(Gx_hat**2 + Gy_hat**2)
-    # return G_hat, D_hat, mu_pm
+    # Characteristic polynomial of A(k) = lambda**3 - tr(A)*lambda**2 + M*lambda - det(A) = 0,
+    # i.e. lambda**3 + p2*lambda**2 + p1*lambda + p0 = 0 with:
+    a, b, c = mu0_rho, -rho0*Gx_hat, -rho0*Gy_hat
+    d, e, f = -(c0**2/rho0)*Gx_hat, PIxx_hat, PIxy_hat
+    g, h    = -(c0**2/rho0)*Gy_hat, PIyy_hat
+    tr_A  = a + e + h
+    M_A   = (a*e - b*d) + (a*h - c*g) + (e*h - f*f)
+    det_A = a*(e*h - f*f) - b*(d*h - f*g) + c*(d*f - e*g)
 
-    G_hat = kdir_x*Gx_hat + kdir_y*Gy_hat      # projection onto propagation direction
-    mu0   = -delta*H*c0*D_hat
-    disc  = (mu0/2)**2 - c0**2*np.abs(G_hat)**2 + 0j
-    sq    = np.sqrt(disc)
-    mu_pm = mu0/2 + np.array([1, -1])[:, None]*sq
-    return G_hat, D_hat, mu_pm
+    mu_eigs = solve_cubic_vectorized(-tr_A, M_A, -det_A)
+
+    return Gx_hat, Gy_hat, D_hat, PIxx_hat, PIxy_hat, PIyy_hat, mu_eigs
+
 
 def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
                         nu=0.0, dim=2, eps_visc=0.01,
                         W_fn=None, dWdr_fn=None, support_radius=None):
+
     """
     Directly assemble the linear stability operator from particle-particle
     interactions (periodic box L x L, n_images periodic shells for neighbour
-    search) and return eigenvalues via np.linalg.eigvals.
+    search) and return eigenvalues via np.linalg.eigvals. rho0 is taken as a
+    keyword argument (default 1000.0) so callers -- e.g. the interactive GUI
+    -- can control it explicitly.
 
+    New parameters
+    ----------
     nu : float
-        Kinematic viscosity [m^2/s]. Converted to alpha via alpha_from_nu.
-        nu=0 recovers the original inviscid operator exactly.
+        Kinematic viscosity [m^2/s]. nu=0 recovers the original inviscid
+        operator exactly under either viscosity model below.
     dim : int
-        Spatial dimension used in the nu -> alpha conversion (default 2).
+        Spatial dimension, used only by OPTION A's nu -> alpha conversion
+        (default 2).
     eps_visc : float
-        Regularisation constant in mu_ij's denominator (standard 0.01).
+        Regularisation constant in the viscous denominator (standard 0.01).
 
-    Viscosity here is NOT restricted to the longitudinal (1D) case: since
-    v_ij . r_ij mixes both velocity components, the linearised Monaghan
-    viscosity couples ux and uy through the full off-diagonal blocks
-    L_ux_uy / L_uy_ux, not just the diagonal L_ux_ux / L_uy_uy blocks.
+    Two viscosity models are available -- choose ONE by commenting/
+    uncommenting the corresponding block below (see compute_spectrum's
+    docstring for the full derivation of each):
+      OPTION A: Monaghan-Gingold artificial viscosity (active by default).
+                Genuinely couples ux and uy: since v_ij.r_ij mixes both
+                velocity components, the linearised term fills the full
+                off-diagonal blocks L_ux_uy / L_uy_ux, not just the
+                diagonal L_ux_ux / L_uy_uy. alpha reached from nu via
+                alpha_from_nu(nu, c0, H, dim).
+      OPTION B: Morris (1997) physical-viscosity Laplacian. Isotropic --
+                acts on ux and uy independently, so L_ux_uy = L_uy_ux = 0.
+                Uses nu directly, no alpha/c0/H conversion.
     """
     alpha = alpha_from_nu(nu, c0, H, dim)
 
@@ -334,9 +517,12 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
     Gx = np.zeros((N, N))
     Gy = np.zeros((N, N))
     D  = np.zeros((N, N))
-    Pxx = np.zeros((N, N))
-    Pxy = np.zeros((N, N))
-    Pyy = np.zeros((N, N))
+    # Viscous coupling matrices (built alongside Gx,Gy,D). Pxx/Pxy/Pyy feed
+    # OPTION A (Monaghan-Gingold); Piso feeds OPTION B (Morris).
+    Pxx  = np.zeros((N, N))
+    Pxy  = np.zeros((N, N))
+    Pyy  = np.zeros((N, N))
+    Piso = np.zeros((N, N))
 
     for i in range(N):
         dxs, dys = [], []
@@ -364,13 +550,18 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
         np.add.at(Gy[i], jidx, Vjr*wy)
         np.add.at(D[i],  jidx, Vjr*wD)
 
-        # Monaghan-Gingold viscosity, always-on linearisation:
-        # w_ij = alpha*c0*H**2*Vj*dWr/(r*(r**2+eps_visc*H**2))
-        # coupling matrices Pxx=w*rx**2, Pxy=w*rx*ry, Pyy=w*ry**2
+        # --- viscosity, always-on linearisation (both models computed; pick one post-loop) ---
+        # OPTION A (Monaghan-Gingold) pairwise weight: alpha*c0*H**2*Vj*dWr/(r*(r**2+eps_visc*H**2)),
+        # coupling matrices Pxx=w*rx**2, Pxy=w*rx*ry, Pyy=w*ry**2 (anisotropic tensor).
         visc_k = alpha*c0*H**2 * dWr / (r * (r**2 + eps_visc*H**2))
         np.add.at(Pxx[i], jidx, Vjr*visc_k*rx**2)
         np.add.at(Pxy[i], jidx, Vjr*visc_k*rx*ry)
         np.add.at(Pyy[i], jidx, Vjr*visc_k*ry**2)
+
+        # OPTION B (Morris 1997) pairwise weight: 2*nu*Vj*dWr*r/(r**2+eps_visc*H**2)
+        # (isotropic -- no rx/ry projection, so no ux-uy shear coupling).
+        visc_k_iso = 2*nu * dWr * r / (r**2 + eps_visc*H**2)
+        np.add.at(Piso[i], jidx, Vjr*visc_k_iso)
 
     diagD = np.diag(D.sum(axis=1))
     L_rho_rho = delta*H*c0*(D - diagD)
@@ -379,13 +570,36 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
     L_ux_rho  = -(c0**2/rho0)*Gx
     L_uy_rho  = -(c0**2/rho0)*Gy
 
-    # Viscous velocity blocks: acceleration is a_i = w_ij*(u_i - u_j),
-    # so row i picks up +rowsum on the diagonal and -w_ij off-diagonal --
-    # the OPPOSITE sign convention to (D - diagD). Hence diag(rowsum) - P.
+    # ==================================================================
+    # VISCOSITY MODEL SELECTION -- uncomment exactly ONE of the two blocks
+    # ==================================================================
+    # Note the acceleration is a_i = w_ij*(u_i - u_j), i.e. row i picks up
+    # +rowsum on the diagonal and -w_ij off-diagonal -- the OPPOSITE sign
+    # convention to (D - diagD) above (which represents sum_j D_ij*(rho_j-rho_i)).
+    # Hence diag(rowsum) - P here, not P - diag(rowsum).
+
+    # --- OPTION A: Monaghan-Gingold (anisotropic, ux-uy coupled) ---
     L_ux_ux = np.diag(Pxx.sum(axis=1)) - Pxx
     L_ux_uy = np.diag(Pxy.sum(axis=1)) - Pxy
-    L_uy_ux = np.diag(Pxy.sum(axis=1)) - Pxy   # Pxy symmetric (rx*ry) by construction
+    L_uy_ux = np.diag(Pxy.sum(axis=1)) - Pxy   # Pxy is symmetric (rx*ry) by construction
     L_uy_uy = np.diag(Pyy.sum(axis=1)) - Pyy
+
+    # --- OPTION B: Morris (1997) physical viscosity (isotropic, no ux-uy coupling) ---
+    # L_ux_ux = np.diag(Piso.sum(axis=1)) - Piso
+    # L_ux_uy = np.zeros((N, N))
+    # L_uy_ux = np.zeros((N, N))
+    # L_uy_uy = np.diag(Piso.sum(axis=1)) - Piso
+
+    #diagD = np.diag(D.sum(axis=1))
+    #L_rho_rho = delta * H * c0 * (D - diagD)
+
+    #Sx = np.diag(Gx.sum(axis=1))
+    #Sy = np.diag(Gy.sum(axis=1))
+
+    #L_rho_ux = -rho0 * (Gx - Sx)           # was: -rho0*Gx
+    #L_rho_uy = -rho0 * (Gy - Sy)           # was: -rho0*Gy
+    #L_ux_rho = -(c0**2/rho0) * (Gx + Sx)   # note: PLUS Sx here, not minus
+    #L_uy_rho = -(c0**2/rho0) * (Gy + Sy)
 
     Ltot = np.block([
         [L_rho_rho, L_rho_ux, L_rho_uy],
@@ -394,7 +608,6 @@ def get_spectrum_direct(x, y, L, Vj, H, h, c0, delta, rho0=1000.0, n_images=2,
     ])
     eigvals = np.linalg.eigvals(Ltot)
     return eigvals, Ltot
-
 
 # =====================================================================
 # 6. SHARED PLOT CONFIGURATION
@@ -413,6 +626,7 @@ class PlotConfig:
     color_hex_plus: str = 'teal'
     color_hex_minus: str = 'darkslategray'
     color_random: str = 'lightcoral'
+    color_shear: str = 'mediumslateblue'
     color_cartesian_direct: str = 'darkorange'
     color_hex_direct: str = 'teal'
     xlabel: str = 'Re(mu)  [1/s]'
@@ -453,24 +667,27 @@ def compute_all(params: Parameters) -> dict:
 
 
 def compute_all_general(params: Parameters) -> dict:
-    """Generalised Fourier spectra for cartesian / hex / random at params.theta."""
+    """Generalised Fourier spectra (with viscosity) for cartesian / hex / random at params.theta."""
     kinfo = KERNELS[params.kernel]
     kW, kdw, kR = kinfo["W_vec"], kinfo["dWdr_vec"], kinfo["support"] * params.H
     out: dict = {}
     rxC, ryC, rC, VjC = neighbours_cartesian(params.h, params.H, support_radius=kR)
-    out['cartesian'] = compute_spectrum_general(
+    Gx, _Gy, D, _PIxx, _PIxy, _PIyy, mu = compute_spectrum_general(
         rxC, ryC, rC, VjC, params.H, params.h, params.xi_vals,
-        params.theta, params.c0, params.delta, kW, kdw)
+        params.theta, params.c0, params.delta, params.nu, params.dim, params.eps_visc, kW, kdw)
+    out['cartesian'] = (Gx, D, mu.T)
     rxH, ryH, rH, VjH = neighbours_hex(params.h, params.H, support_radius=kR)
-    out['hex'] = compute_spectrum_general(
+    Gx, _Gy, D, _PIxx, _PIxy, _PIyy, mu = compute_spectrum_general(
         rxH, ryH, rH, VjH, params.H, params.h, params.xi_vals,
-        params.theta, params.c0, params.delta, kW, kdw)
+        params.theta, params.c0, params.delta, params.nu, params.dim, params.eps_visc, kW, kdw)
+    out['hex'] = (Gx, D, mu.T)
     rnd = []
     for s in range(params.n_real):
         rxR, ryR, rR, VjR = neighbours_random(params.h, params.H, seed=s, support_radius=kR)
-        rnd.append(compute_spectrum_general(
+        Gx, _Gy, D, _PIxx, _PIxy, _PIyy, mu = compute_spectrum_general(
             rxR, ryR, rR, VjR, params.H, params.h, params.xi_vals,
-            params.theta, params.c0, params.delta, kW, kdw))
+            params.theta, params.c0, params.delta, params.nu, params.dim, params.eps_visc, kW, kdw)
+        rnd.append((Gx, D, mu.T))
     out['random'] = rnd
     return out
 
@@ -507,8 +724,9 @@ def compute_all_direct(params: Parameters) -> dict:
 def plot_mu_panel(ax, mu_pm, config: PlotConfig, color_plus, color_minus,
                   title, scatter_size=None):
     s = config.scatter_size if scatter_size is None else scatter_size
-    ax.scatter(mu_pm[0].real, mu_pm[0].imag, s=s, c=color_plus)
-    ax.scatter(mu_pm[1].real, mu_pm[1].imag, s=s, c=color_minus)
+    colors = [color_plus, color_minus, config.color_shear]
+    for i in range(len(mu_pm)):
+        ax.scatter(mu_pm[i].real, mu_pm[i].imag, s=s, c=colors[i % len(colors)])
     ax.axhline(0, color=config.zero_line_color, lw=config.zero_line_lw)
     ax.axvline(0, color=config.zero_line_color, lw=config.zero_line_lw)
     ax.set_xlabel(config.xlabel)
@@ -517,12 +735,10 @@ def plot_mu_panel(ax, mu_pm, config: PlotConfig, color_plus, color_minus,
 
 
 def plot_mu_panel_random(ax, mu_list, config: PlotConfig, title):
-    # mu_list: list of (G_hat, D_hat, mu_pm) tuples (one per random realisation)
     for _G, _D, mu in mu_list:
-        ax.scatter(mu[0].real, mu[0].imag, s=config.scatter_size_random,
-                   c=config.color_random, alpha=config.alpha_random)
-        ax.scatter(mu[1].real, mu[1].imag, s=config.scatter_size_random,
-                   c=config.color_random, alpha=config.alpha_random)
+        for i in range(len(mu)):
+            ax.scatter(mu[i].real, mu[i].imag, s=config.scatter_size_random,
+                       c=config.color_random, alpha=config.alpha_random)
     ax.axhline(0, color=config.zero_line_color, lw=config.zero_line_lw)
     ax.axvline(0, color=config.zero_line_color, lw=config.zero_line_lw)
     ax.set_xlabel(config.xlabel)
@@ -568,7 +784,9 @@ if __name__ == "__main__":
     #     hex/random use plain compute_spectrum. ---
     rxC, ryC, rC, VjC = neighbours_cartesian(p.h, p.H, support_radius=kR)
     G_c, D_c, _PI_c, mu_c = compute_spectrum(rxC, ryC, rC, VjC, p.H, p.h, p.xi_vals, p.c0, p.delta, kW, kdw)
-    G_c, D_c, mu_c = compute_spectrum_general(rxC, ryC, rC, VjC, p.H, p.h, p.xi_vals, np.pi/2, p.c0, p.delta, kW, kdw)
+    _Gx_c, _Gy_c, _D_c, _PIxx_c, _PIxy_c, _PIyy_c, mu_eigs_c = compute_spectrum_general(
+        rxC, ryC, rC, VjC, p.H, p.h, p.xi_vals, np.pi/2, p.c0, p.delta, kW, kdw)
+    mu_c = mu_eigs_c.T
     #plt.scatter( rxH, ryH )
     #plt.show()
     print(f"Cartesian : N_neighbours={len(rC):4d}  max Re(mu)={mu_c.real.max():.3e}  max|Im(mu)|={np.abs(mu_c.imag).max():.3e}")

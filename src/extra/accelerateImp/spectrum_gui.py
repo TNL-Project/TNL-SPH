@@ -92,8 +92,8 @@ def update(_val=None) -> None:
 
     # Switch between compute_all (viscosity, no theta) and
     # compute_all_general (theta support, no viscosity) by commenting one out.
-    gen = compute_all(params)
-    # gen = compute_all_general(params)
+    # gen = compute_all(params)
+    gen = compute_all_general(params)
     dr = compute_all_direct(params)
 
     for ax in ax_top + ax_bot:
