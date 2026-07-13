@@ -29,6 +29,9 @@ ini_replacements = [
    ("placeholderAllocatedFluidParticles",   "allocated_fluid_n",     ""),
    ("placeholderBoundaryParticles",         "boundary_n",            ""),
    ("placeholderAllocatedBoundaryParticles","allocated_boundary_n",  ""),
+   ("placeholderSubdomains-x",              "subdomains_x",          ""),
+   ("placeholderSubdomains-y",              "subdomains_y",          ""),
+   ("placeholderSubdomains-z",              "subdomains_z",          ""),
 ]
 
 header_replacements = [

@@ -1,483 +1,184 @@
 #! /usr/bin/env python3
+"""Distributed (multi-GPU) SPH dam-break 3-D initial condition generator."""
 
-import math
-import numpy as np
+import json
+import os
 import sys
+import argparse
 import subprocess
+import numpy as np
+from pprint import pprint
+
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
-import vtk
-from vtk.numpy_interface import dataset_adapter as dsa
-
-def generate_geometry_with_dualsphysics_gencase( dp ):
-    subprocess.check_call( [ './generateGeometryWithDualSPHysicsGenCase.sh', str( dp ) ], cwd='./template/generateGeometryWithDualSPHysicsGenCase/' )
-
-def process_dam_break_fluid_particles( setup ):
-    reader = vtk.vtkPolyDataReader()
-    reader.SetFileName( f'./sources/genCaseGeometries/dambreak_fluid_dp{setup[ "dp" ]}.vtk' )
-    reader.ReadAllScalarsOn()
-    reader.ReadAllVectorsOn()
-    reader.Update()
-
-    polydata = reader.GetOutput()
-    np_points_fluid = dsa.WrapDataObject( polydata ).Points
-
-    fluid_n = len( np_points_fluid )
-    fluid_r = np.array( np_points_fluid, dtype=float ) #!!
-    fluid_v = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Vel' ], dtype=float )
-    fluid_rho = np.array( dsa.WrapDataObject( polydata ).PointData[ 'Rhop' ] )
-    fluid_p = np.zeros( fluid_n )
-    fluid_ptype = np.zeros( fluid_n )
-
-    fluidToWrite = saveParticlesVTK.create_pointcloud_polydata( fluid_r, fluid_v, fluid_rho, fluid_p, fluid_ptype )
-    saveParticlesVTK.save_polydata( fluidToWrite, "sources/dambreak_fluid.vtk" )
-    setup[ "fluid_n" ] = fluid_n
-
-    return fluid_r[ :, 0 ], fluid_r[ :, 1 ], fluid_r[ :, 2 ]
-
-def process_dam_break_boundary_particles( setup ):
-    reader = vtk.vtkPolyDataReader()
-    reader.SetFileName( f'./sources/genCaseGeometries/dambreak_bound_dp{setup[ "dp" ]}.vtk' )
-    reader.ReadAllScalarsOn()
-    reader.ReadAllVectorsOn()
-    reader.Update()
-
-    polydata = reader.GetOutput()
-    np_points_box = dsa.WrapDataObject( polydata ).Points
-
-    box_n = len( np_points_box )
-    box_r = np.array( np_points_box, dtype=float ) #!!
-    box_v = np.zeros( ( box_n, 3 ) )
-    box_rho = setup[ 'density' ] * np.ones( box_n )
-    box_p = np.zeros( box_n )
-    box_ptype = np.zeros( box_n )
-
-    boundToWrite = saveParticlesVTK.create_pointcloud_polydata( box_r, box_v, box_rho, box_p, box_ptype )
-    saveParticlesVTK.save_polydata( boundToWrite, "sources/dambreak_boundary.vtk" )
-
-    setup[ "boundary_n" ] = box_n
-    setup[ "domain_origin_x" ] = min( np_points_box[ :, 0 ] )
-    setup[ "domain_origin_y" ] = min( np_points_box[ :, 1 ] )
-    setup[ "domain_origin_z" ] = min( np_points_box[ :, 2 ] )
-    setup[ "domain_end_x" ] = max( np_points_box[ :, 0 ] )
-    setup[ "domain_end_y" ] = max( np_points_box[ :, 1 ] )
-    setup[ "domain_end_z" ] = max( np_points_box[ :, 2 ] )
-
-    return box_r[ :, 0 ], box_r[ :, 1 ], box_r[ :, 2 ]
-
-def compute_domain_size( setup ):
-    search_radius = setup[ "search_radius" ]
-
-    # Resize domain by one layer of cells
-    eps = 1.005
-    eps_sloshing = 1.5
-    domain_origin_x = eps * ( setup[ "domain_origin_x" ] - search_radius )
-    domain_origin_y = eps * ( setup[ "domain_origin_y" ] - search_radius )
-    domain_origin_z = eps * ( setup[ "domain_origin_z" ] - search_radius )
-    domain_end_x = eps * ( setup[ "domain_end_x" ] + search_radius )
-    domain_end_y = eps * ( setup[ "domain_end_y" ] + search_radius )
-    domain_end_z = eps_sloshing * ( setup[ "domain_end_z" ] + search_radius ) #increase size in z due to sloshing
-    domain_size_x = domain_end_x - domain_origin_x
-    domain_size_y = domain_end_y - domain_origin_y
-    domain_size_z = domain_end_z - domain_origin_z
-
-    extra_parameters = {
-        "domain_origin_x" : domain_origin_x,
-        "domain_origin_y" : domain_origin_y,
-        "domain_origin_z" : domain_origin_z,
-        "domain_size_x" : domain_size_x,
-        "domain_size_y" : domain_size_y,
-        "domain_size_z" : domain_size_z
-    }
-    setup.update( extra_parameters )
-
-def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
-    number_of_subdomains = setup[ "number_of_subdomains" ]
-    subdomains_x = setup[ "subdomains_x" ]
-    subdomains_y = setup[ "subdomains_y" ]
-    search_radius = setup[ "search_radius" ]
-    overlap_width = setup[ "overlap_width" ]
-
-    # referential origin (its not loaded by solver, added just for orientation)
-    setup[ "referential_origin_x" ] = setup[ "domain_origin_x" ] - overlap_width * search_radius
-    setup[ "referential_origin_y" ] = setup[ "domain_origin_y" ] - overlap_width * search_radius
-    setup[ "referential_origin_z" ] = setup[ "domain_origin_z" ] - overlap_width * search_radius
-
-    # initial split considering both, fluid and boundary
-    #ptcs_per_subdomain = ( int )( math.ceil( setup[ "fluid_n" ] + setup[ "boundary_n" ] ) / ( setup[ "number_of_subdomains" ] ) )
-    # initial split considering only fluid
-    ptcs_per_subdomain = ( int )( math.ceil( setup[ "fluid_n" ] ) / ( setup[ "number_of_subdomains" ] ) )
-
-    grid_splits_x = [ ]
-    grid_splits_y = [ ]
-
-    for subdomain_x in range( subdomains_x - 1 ):
-        grid_splits_x.append( math.ceil( fluid_rx[ ptcs_per_subdomain * ( subdomain_x + 1 ) ] / search_radius ) )
-    for subdomain_y in range( subdomains_y - 1 ):
-        grid_splits_y.append( math.ceil( fluid_ry[ ptcs_per_subdomain * ( subdomain_y + 1 ) ] / search_radius ) )
-
-    subgrids_dimensions_x = []
-    subgrids_origin_coords_x = []
-
-    # NOTE: There is trick to compensate the additional layer of emtpy cells - increase origins for subdomains >= 1 by 1
-    if subdomains_x == 1:
-        subgrids_origin_coords_x.append( 0 + overlap_width )
-        subgrids_dimensions_x.append( ( int )( np.ceil( setup[ "domain_size_x" ] / search_radius ) ) )
-    else:
-        for subdomain_x in range( subdomains_x ):
-            if subdomain_x == 0:
-                subgrids_dimensions_x.append( grid_splits_x[ subdomain_x ] - 0 )
-                subgrids_origin_coords_x.append( 0 )
-            elif subdomain_x == subdomains_x - 1:
-                subgrids_dimensions_x.append( math.ceil( setup[ "domain_size_x" ] / search_radius ) - grid_splits_x[ subdomain_x - 1 ] )
-                subgrids_origin_coords_x.append( np.sum( subgrids_dimensions_x[ 0 : subdomain_x ] ) )
-            else:
-                subgrids_dimensions_x.append( grid_splits_x[ subdomain_x ] - grid_splits_x[ subdomain_x - 1 ] )
-                subgrids_origin_coords_x.append( np.sum( subgrids_dimensions_x[ 0 : subdomain_x ] ) )
-
-    subgrids_dimensions_y = []
-    subgrids_origin_coords_y = []
-
-    # NOTE: There is trick to compensate the additional layer of emtpy cells - increase origins for subdomains >= 1 by 1
-    if subdomains_y == 1:
-        subgrids_origin_coords_y.append( 0 + overlap_width )
-        subgrids_dimensions_y.append( ( int )( np.ceil( setup[ "domain_size_y" ] / search_radius ) ) )
-    else:
-        for subdomain_y in range( subdomains_y ):
-            if subdomain_y == 0:
-                subgrids_dimensions_y.append( grid_splits_y[ subdomain_y ] - 0 )
-                subgrids_origin_coords_y.append( 0 )
-            elif subdomain_y == subdomains_y - 1:
-                subgrids_dimensions_y.append( setup[ "domain_size_y" ] - grid_splits_y[ subdomain_y - 1 ] )
-                subgrids_origin_coords_y.append( grid_splits_y[ subdomain_y - 1 ] )
-            else:
-                subgrids_dimensions_y.append( grid_splits_y[ subdomain_y - 1 ] - subgrids_origin_coords_y[ subdomain_y -1 ] )
-                subgrids_origin_coords_y.append( subgrids_dimensions_y[ subdomain_y - 1 ] )
-
-    # old fields
-    subdomains_origin_x = np.array( subgrids_origin_coords_x ) * search_radius + setup[ "domain_origin_x" ]
-    subdomains_size_x = np.array( subgrids_dimensions_x ) * search_radius
-
-    subdomains_origin_y = np.array( subgrids_origin_coords_y ) * search_radius + setup[ "domain_origin_y" ]
-    subdomains_size_y = np.array( subgrids_dimensions_y ) * search_radius
-
-    extra_parameters = {
-        "grid_splits_x" : grid_splits_x,
-        "grid_splits_y" : grid_splits_y,
-        "subdomains_size_x" : subdomains_size_x,
-        "subdomains_size_y" : subdomains_size_y,
-        "subgrids_dimensions_x" : subgrids_dimensions_x,
-        "subgrids_dimensions_y" : subgrids_dimensions_y,
-        "subdomains_origin_x" : subdomains_origin_x,
-        "subdomains_origin_y" : subdomains_origin_y,
-        "subgrids_origin_coords_x" : subgrids_origin_coords_x,
-        "subgrids_origin_coords_y" : subgrids_origin_coords_y,
-    }
-    setup.update( extra_parameters )
-    print( "Domain decomposition informations: " )
-    print( f"Domainsize: {setup[ 'domain_size_x' ]}, subdomains_sum: {np.sum(subgrids_dimensions_x)} ceil: {math.ceil( setup[ 'domain_size_x' ] / setup[ 'search_radius' ])}" )
-    pprint( extra_parameters )
-
-def split_to_subdomains( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
-    search_radius = setup[ "search_radius" ]
-    subdomains_x = setup[ "subdomains_x" ]
-    subdomains_y = setup[ "subdomains_y" ]
-    subdomains_origin_x = setup[ "subdomains_origin_x" ]
-    subdomains_origin_y = setup[ "subdomains_origin_y" ]
-
-    # new
-    domain_origin_x = setup[ "domain_origin_x" ]
-    domain_size_x = setup[ "domain_size_x" ]
-    subgrids_origin_coords_x = setup[ "subgrids_origin_coords_x" ]
-
-    domain_origin_y = setup[ "domain_origin_y" ]
-    domain_size_y = setup[ "domain_size_y" ]
-    subgrids_origin_coords_y = setup[ "subgrids_origin_coords_y" ]
-
-    #for subdomain_x in range( subdomains_x - 1 ):
-    #    for subdomain_y in range( subdomains_y - 1 ):
-    for subdomain_x in range( subdomains_x ):
-        for subdomain_y in range( subdomains_y ):
-            sub_fluid_rx = []; sub_fluid_ry = []; sub_fluid_rz = []
-            sub_box_rx = []; sub_box_ry = []; sub_box_rz = []
-            key_prefix = f"subdomain-x-{subdomain_x}-y-{subdomain_y}-"
-            print( f"\nProcessing subdomain x: {subdomain_x}, y: {subdomain_y}:" )
-
-            if subdomains_x == 1:
-                eps = 1.005
-                lower_limit_x = eps * setup[ "domain_origin_x" ]
-                upper_limit_x = eps * setup[ "domain_size_x" ]
-            else:
-                if subdomain_x == 0:
-                    lower_limit_x = domain_origin_x
-                    upper_limit_x = domain_origin_x + subgrids_origin_coords_x[ subdomain_x + 1 ] * search_radius
-                elif subdomain_x == subdomains_x - 1:
-                    lower_limit_x = domain_origin_x + subgrids_origin_coords_x[ subdomain_x ] * search_radius
-                    upper_limit_x = domain_origin_x + domain_size_x
-                else:
-                    lower_limit_x = domain_origin_x + subgrids_origin_coords_x[ subdomain_x ] * search_radius
-                    upper_limit_x = domain_origin_x + subgrids_origin_coords_x[ subdomain_x + 1 ] * search_radius
-
-            if subdomains_y == 1:
-                eps = 1.005
-                lower_limit_y = eps * setup[ "domain_origin_y" ]
-                upper_limit_y = eps * setup[ "domain_size_y" ]
-            else:
-                if subdomain_y == 0:
-                    lower_limit_y = domain_origin_y
-                    upper_limit_y = domain_origin_y + subgrids_origin_coords_y[ subdomain_y + 1 ] * search_radius
-                elif subdomain_y == subdomains_y - 1:
-                    lower_limit_y = domain_origin_y + subgrids_origin_coords_y[ subdomain_y ] * search_radius
-                    upper_limit_y = domain_origin_y + domain_size_y
-                else:
-                    lower_limit_y = domain_origin_y + subgrids_origin_coords_y[ subdomain_y ] * search_radius
-                    upper_limit_y = domain_origin_y + subgrids_origin_coords_y[ subdomain_y + 1 ] * search_radius
-
-            # save the part for current subdomain - fluid
-            for i in range ( len( fluid_rx ) ):
-                if( fluid_rx[ i ] > lower_limit_x ) and ( fluid_rx[ i ] <= upper_limit_x ) and ( fluid_ry[ i ] > lower_limit_y ) and ( fluid_ry[ i ] <= upper_limit_y ):
-                    sub_fluid_rx.append( fluid_rx[ i ] )
-                    sub_fluid_ry.append( fluid_ry[ i ] )
-                    sub_fluid_rz.append( fluid_rz[ i ] )
-
-                #if( fluid_rx[ i ] > lower_limit_x and fluid_rx[ i ] <= upper_limit_x + search_radius ):
-                #    sub_fluid_rx.append( fluid_rx[ i ] )
-                #    sub_fluid_ry.append( fluid_ry[ i ] )
-
-            # save the part for current subdomain - boundary
-            for i in range ( len( box_rx ) ):
-                if( box_rx[ i ] > lower_limit_x ) and ( box_rx[ i ] <= upper_limit_x ) and ( box_ry[ i ] > lower_limit_y ) and ( box_ry[ i ] <= upper_limit_y ):
-                    sub_box_rx.append( box_rx[ i ] )
-                    sub_box_ry.append( box_ry[ i ] )
-                    sub_box_rz.append( box_rz[ i ] )
-
-                #if( box_rx[ i ] > upper_limit_x and box_rx[ i ] <= upper_limit_x + search_radius ):
-                #    sub_box_rx.append( box_rx[ i ] )
-                #    sub_box_ry.append( box_ry[ i ] )
-
-            print( f"Save data for subdomain x: {subdomain_x}, y: {subdomain_y}." )
-            print( f"lower_limit_x: {lower_limit_x:.2f}, upper_limit_x: {upper_limit_x:.2f}, lower_limit_y: {lower_limit_y:.2f}, upper_limit_y: {upper_limit_y:.2f}" )
-
-            # export subdomain particles
-            sub_fluid_n = len( sub_fluid_rx )
-            sub_fluid_r = np.array( ( sub_fluid_rx, sub_fluid_ry, sub_fluid_rz ), dtype=float ).T #!!
-            sub_fluid_v = np.zeros( ( sub_fluid_n, 3 ) )
-            sub_fluid_rho = setup[ "density" ] * np.ones( sub_fluid_n )
-            sub_fluid_p = np.zeros( sub_fluid_n )
-            sub_fluid_ptype = np.zeros( sub_fluid_n )
-            sub_fluid_to_write = saveParticlesVTK.create_pointcloud_polydata(
-                    sub_fluid_r, sub_fluid_v, sub_fluid_rho, sub_fluid_p, sub_fluid_ptype )
-            saveParticlesVTK.save_polydata( sub_fluid_to_write, f"sources/dambreak_{key_prefix}fluid.vtk" )
-
-            sub_box_n = len( sub_box_rx )
-            sub_box_r = np.array( ( sub_box_rx, sub_box_ry, sub_box_rz ), dtype=float ).T #!!
-            #sub_box_ghostNodes = np.array( ( ghost_rx, ghost_ry, np.zeros( sub_box_n ) ), dtype=float ).T #!!
-            sub_box_v = np.zeros( ( sub_box_n, 3 ) )
-            sub_box_rho = setup[ "density" ] * np.ones( sub_box_n )
-            sub_box_p = np.zeros( sub_box_n )
-            sub_box_ptype = np.ones( sub_box_n )
-            sub_box_to_write = saveParticlesVTK.create_pointcloud_polydata(
-                    sub_box_r, sub_box_v, sub_box_rho, sub_box_p, sub_box_ptype ) # ghostNodes=boundary_ghostNodes )
-            saveParticlesVTK.save_polydata( sub_box_to_write, f"sources/dambreak_{key_prefix}boundary.vtk" )
-
-            #TODO: There I probably need to compute subdomain limits, resp. besides sub_flud_n and sub_box_n save also
-            #      other domain parameters.
-
-            setup[ f"{key_prefix}fluid_n" ] = sub_fluid_n
-            setup[ f"{key_prefix}box_n" ] = sub_box_n
-
-    print( "\n" )
-
-
-def build_distributed_domain_json( setup ):
-    import json
-    import numpy as np
-
-    subdomains_x = setup[ "subdomains_x" ]
-    subdomains_y = setup[ "subdomains_y" ]
-
-    data = {}
-    for subdomain_x in range( subdomains_x ):
-        for subdomain_y in range( subdomains_y ):
-            key_prefix = f"subdomain-x-{subdomain_x}-y-{subdomain_y}-"
-            entry = {}
-            entry[ f"{key_prefix}fluid-particles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-fluid.vtk"
-            entry[ f"{key_prefix}boundary-particles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-boundary.vtk"
-            entry[ f"{key_prefix}fluid_n" ] = int( setup[ f"{key_prefix}fluid_n" ] )
-            entry[ f"{key_prefix}boundary_n" ] = int( setup[ f"{key_prefix}box_n" ] )
-            entry[ f"{key_prefix}fluid_n_allocated" ] = 2 * int( setup[ f"{key_prefix}fluid_n" ] )
-            entry[ f"{key_prefix}boundary_n_allocated" ] = 3 * int( setup[ f"{key_prefix}box_n" ] )
-
-            subdomain_grid_origin_x = setup[ f"subdomains_origin_x" ][ subdomain_x ]
-            subdomain_grid_origin_y = setup[ f"subdomains_origin_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}origin-x" ] = float( round( subdomain_grid_origin_x, 7 ) )
-            entry[ f"{key_prefix}origin-y" ] = float( round( subdomain_grid_origin_y, 7 ) )
-            entry[ f"{key_prefix}origin-z" ] = float( round( setup[ 'domain_origin_z' ], 7 ) )
-
-            subdomain_grid_origin_glob_coords_x = setup[ f"subgrids_origin_coords_x" ][ subdomain_x ]
-            subdomain_grid_origin_glob_coords_y = setup[ f"subgrids_origin_coords_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}origin-global-coords-x" ] = int( subdomain_grid_origin_glob_coords_x )
-            entry[ f"{key_prefix}origin-global-coords-y" ] = int( subdomain_grid_origin_glob_coords_y )
-            entry[ f"{key_prefix}origin-global-coords-z" ] = 0 + int( setup[ 'overlap_width' ] )
-
-            subdomain_size_x = setup[ f"subdomains_size_x" ][ subdomain_x ]
-            subdomain_size_y = setup[ f"subdomains_size_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}size-x" ] = float( round( subdomain_size_x, 7 ) )
-            entry[ f"{key_prefix}size-y" ] = float( round( subdomain_size_y, 7 ) )
-            entry[ f"{key_prefix}size-z" ] = float( round( setup[ 'domain_size_z' ], 7 ) )
-
-            subdomain_grid_dims_x = setup[ f"subgrids_dimensions_x" ][ subdomain_x ]
-            subdomain_grid_dims_y = setup[ f"subgrids_dimensions_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}grid-dimensions-x" ] = int( subdomain_grid_dims_x )
-            entry[ f"{key_prefix}grid-dimensions-y" ] = int( subdomain_grid_dims_y )
-            entry[ f"{key_prefix}grid-dimensions-z" ] = ( int )( np.ceil( setup[ 'domain_size_z'] / setup[ 'search_radius' ] ) )
-
-            data.update( entry )
-    return data
-
-def build_distributed_domain_json_string( setup ):
-    import json
-    import numpy as np
-
-    data = build_distributed_domain_json( setup )
-
-    def json_converter(obj):
-        if isinstance(obj, np.generic):
-            return obj.item()
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-    return json.dumps( data, indent=8, default=json_converter )
-
-def write_simulation_params( setup ):
-
-    # write parameters to config file
-    with open( 'template/config_template.jsonc', 'r' ) as file :
-      config_file = file.read()
-
-    config_file = config_file.replace( 'placeholderSearchRadius', str( round( setup[ "search_radius" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-x', str( round( setup[ "domain_origin_x" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-y', str( round( setup[ "domain_origin_y" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainOrigin-z', str( round( setup[ "domain_origin_z" ], 5 ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-x', str( round( setup[ "domain_size_x" ], 5  ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-y', str( round( setup[ "domain_size_y" ], 5  ) ) )
-    config_file = config_file.replace( 'placeholderDomainSize-z', str( round( setup[ "domain_size_z" ], 5  ) ) )
-
-    config_file = config_file.replace( 'placeholderInitParticleDistance', str( setup[ "dp" ] ) )
-    config_file = config_file.replace( 'placeholderSmoothingLength', str( round( setup[ "smoothing_length" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderMass', str( round( setup[ "particle_mass" ], 7 ) ) )
-    config_file = config_file.replace( 'placeholderSpeedOfSound', str( setup[ "speed_of_sound" ] ) )
-    config_file = config_file.replace( 'placeholderDensity', str( setup[ "density" ] ) )
-    config_file = config_file.replace( 'placeholderTimeStep', str( round( setup[ "time_step" ], 8 ) ) )
-    config_file = config_file.replace( 'placeholderFluidParticles', str( setup[ "fluid_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( setup[ "fluid_n" ] ) )
-    config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
-    config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
-
-    config_file = config_file.replace( 'placeholderNumberOfSubdomains', str( setup[ "subdomains_x" ] * setup[ "subdomains_y" ]  ) )
-    config_file = config_file.replace( 'placeholderSubdomains-x', str( setup[ "subdomains_x" ] ) )
-    config_file = config_file.replace( 'placeholderSubdomains-y', str( setup[ "subdomains_y" ] ) )
-
-    # Replace distributed domain placeholder with generated JSON content
-    dd_json = build_distributed_domain_json_string( setup )
-    config_file = config_file.replace( 'placeholderDistributedDomainContent', dd_json )
-
-    with open( 'sources/config.jsonc', 'w' ) as file:
-      file.write( config_file )
-
-def write_distributed_domain_params( setup ):
-    import json
-    import numpy as np
-
-    data = build_distributed_domain_json( setup )
-
-    def json_converter(obj):
-        if isinstance(obj, np.generic):
-            return obj.item()
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-    with open( 'sources/config-distributed-domain.jsonc', "w") as file:
-        file.write( "// Subdomains informations\n" );
-        json.dump( data, file, indent=4, default=json_converter )
-
-def write_domain_background_grid( setup ):
-    import domainGrid
-    domainGrid.write_domain_grid( setup, "sources/dambreak_grid.vtk" )
+import readVtkParticles
+import writeInitConfigFile as cf
+import computeDomainSize
+import decomposition as dec
+import domainGrid
+
+def generate_geometry(dp: float) -> None:
+   subprocess.check_call(
+      ['./generateGeometryWithDualSPHysicsGenCase.sh', str(dp)],
+      cwd='./template/generateGeometryWithDualSPHysicsGenCase/'
+   )
+
+def process_fluid_particles(setup: dict) -> np.ndarray:
+   vtk_path = f'./sources/genCaseGeometries/dambreak_fluid_dp{setup["dp"]}.vtk'
+   points, point_data = readVtkParticles.read_vtk_particles(vtk_path)
+
+   fluid_n = len(points)
+   cloud = saveParticlesVTK.create_pointcloud_polydata(
+      points,
+      point_data['Vel'].astype(float),
+      point_data['Rhop'],
+      np.zeros(fluid_n),
+      np.zeros(fluid_n),
+   )
+   saveParticlesVTK.save_polydata(cloud, "sources/dambreak_fluid.vtk")
+   setup["fluid_n"] = fluid_n
+   return points
+
+def process_boundary_particles(setup: dict) -> np.ndarray:
+   vtk_path = f'./sources/genCaseGeometries/dambreak_bound_dp{setup["dp"]}.vtk'
+   points, _ = readVtkParticles.read_vtk_particles(vtk_path)
+
+   box_n = len(points)
+   cloud = saveParticlesVTK.create_pointcloud_polydata(
+      points,
+      np.zeros((box_n, 3)),
+      setup['density'] * np.ones(box_n),
+      np.zeros(box_n),
+      np.zeros(box_n),
+   )
+   saveParticlesVTK.save_polydata(cloud, "sources/dambreak_boundary.vtk")
+
+   setup["boundary_n"] = box_n
+   setup["domain_origin_x"] = float(np.min(points[:, 0]))
+   setup["domain_origin_y"] = float(np.min(points[:, 1]))
+   setup["domain_origin_z"] = float(np.min(points[:, 2]))
+   setup["domain_end_x"] = float(np.max(points[:, 0]))
+   setup["domain_end_y"] = float(np.max(points[:, 1]))
+   setup["domain_end_z"] = float(np.max(points[:, 2]))
+   return points
+
+def write_subdomain_vtk(grids: list, splits: dict, setup: dict) -> None:
+   density = setup["density"]
+
+   for g in grids:
+      sub_fluid_r, sub_boundary_r = splits[(g.ix, g.iy, g.iz)]
+
+      fn = len(sub_fluid_r)
+      cloud = saveParticlesVTK.create_pointcloud_polydata(
+         sub_fluid_r,
+         np.zeros((fn, 3)),
+         density * np.ones(fn),
+         np.zeros(fn),
+         np.zeros(fn),
+      )
+      saveParticlesVTK.save_polydata(
+         cloud, f"sources/dambreak_subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
+      )
+
+      bn = len(sub_boundary_r)
+      cloud = saveParticlesVTK.create_pointcloud_polydata(
+         sub_boundary_r,
+         np.zeros((bn, 3)),
+         density * np.ones(bn),
+         np.zeros(bn),
+         np.ones(bn),
+      )
+      saveParticlesVTK.save_polydata(
+         cloud, f"sources/dambreak_subdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
+      )
+
+      print(f"  [subdomain-x-{g.ix}-y-{g.iy}] fluid: {fn}, boundary: {bn}")
+
+def write_simulation_params(setup: dict, grids: list) -> None:
+   with open('template/config_template.jsonc', 'r') as f:
+      cfg = f.read()
+
+   cfg = cf.safe_replace(cfg, cf.ini_replacements, setup)
+
+   dd_data = dec.build_distributed_domain_data(grids, setup, distributed=True)
+   dd_json = json.dumps(dd_data, indent=8)
+   dd_json = dd_json.strip()[1:-1]
+   cfg = cfg.replace('placeholderDistributedDomainContent', dd_json)
+
+   with open('sources/config.jsonc', 'w') as f:
+      f.write(cfg)
+
+def parse_args():
+   ap = argparse.ArgumentParser(
+      description="Distributed (multi-GPU) SPH dam-break 3-D initial condition generator"
+   )
+
+   g = ap.add_argument_group("distribution parameters")
+   g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
+   g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
+   g.add_argument("--overlap-width", type=int, default=1, help="width of domain overlap in cells")
+
+   g = ap.add_argument_group("resolution parameters")
+   g.add_argument("--dp", type=float, default=0.02, help="initial distance between particles")
+   g.add_argument("--h-coef", type=float, default=2, help="smoothing length coefficient")
+
+   g = ap.add_argument_group("simulation parameters")
+   g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
+   g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
+   g.add_argument("--cfl", type=float, default=0.15, help="CFL condition number")
+
+   g = ap.add_argument_group("control initialization")
+   g.add_argument('--generate-geometry', default=True, action=argparse.BooleanOptionalAction,
+                   help="generate new geometry with gencase")
+
+   return ap.parse_args()
+
+def build_setup(args) -> dict:
+   dp = args.dp
+   h  = args.h_coef * dp
+   return {
+      "dp":                   dp,
+      "h_coef":               args.h_coef,
+      "density":              args.density,
+      "speed_of_sound":       args.speed_of_sound,
+      "cfl":                  args.cfl,
+      "particle_mass":        args.density * (dp ** 3),
+      "smoothing_length":     h,
+      "search_radius":        2 * h,
+      "time_step":            args.cfl * h / args.speed_of_sound,
+      "subdomains_x":         args.subdomains_x,
+      "subdomains_y":         args.subdomains_y,
+      "number_of_subdomains": args.subdomains_x * args.subdomains_y,
+      "overlap_width":        args.overlap_width,
+      "fluid_alloc_factor":   2,
+      "boundary_alloc_factor": 3,
+   }
 
 if __name__ == "__main__":
-    import sys
-    import argparse
-    import os
-    from pprint import pprint
+   args  = parse_args()
+   setup = build_setup(args)
 
-    argparser = argparse.ArgumentParser(description="Heat equation example initial condition generator")
-    g = argparser.add_argument_group("distribution parameters")
-    g.add_argument("--subdomains-x", type=int, default=3, help="number of subdomains in x direction")
-    g.add_argument("--subdomains-y", type=int, default=1, help="number of subdomains in y direction")
-    g.add_argument("--overlap-width", type=int, default=1, help="width of domain overlap in cells")
-    g = argparser.add_argument_group("resolution parameters")
-    g.add_argument("--dp", type=float, default=0.02, help="initial distance between particles")
-    g.add_argument("--h-coef", type=float, default=2, help="smoothing length coefficient")
-    g = argparser.add_argument_group("simulation parameters")
-    g.add_argument("--density", type=float, default=1000, help="referential density of the fluid")
-    g.add_argument("--speed-of-sound", type=float, default=45.17, help="speed of sound")
-    g.add_argument("--cfl", type=float, default=0.15, help="referential density of the fluid")
-    g = argparser.add_argument_group("control initialization")
-    g.add_argument( '--generate-geometry', default=True, action=argparse.BooleanOptionalAction, help="generate new geometry with gencase" )
+   for path in ("./results", "./sources"):
+      os.makedirs(path, exist_ok=True)
 
-    args = argparser.parse_args()
+   if args.generate_geometry:
+      generate_geometry(setup["dp"])
 
-    dambreak_setup = {
-        # general parameteres
-        "dp" : args.dp,
-        "h_coef" : args.h_coef,
-        "density" : args.density,
-        "speed_of_sound" : args.speed_of_sound,
-        "cfl" : args.cfl,
-        "particle_mass" : args.density * ( args.dp * args.dp * args.dp ),
-        "smoothing_length" : args.h_coef * args.dp,
-        "search_radius" :  2 * args.h_coef * args.dp,
-        "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
-        # distribution parameters
-        "subdomains_x" : args.subdomains_x,
-        "subdomains_y" : args.subdomains_y,
-        "number_of_subdomains" : args.subdomains_x * args.subdomains_y,
-        "overlap_width" : args.overlap_width
-    }
+   fluid_r = process_fluid_particles(setup)
+   box_r = process_boundary_particles(setup)
 
-    # create necessary folders
-    resultsPath = r'./results'
-    if not os.path.exists( resultsPath ):
-        os.makedirs( resultsPath )
+   setup["allocated_fluid_n"] = setup["fluid_n"]
+   setup["allocated_boundary_n"] = setup["boundary_n"]
 
-    sourcesPath = r'./sources'
-    if not os.path.exists( sourcesPath ):
-        os.makedirs( sourcesPath )
+   computeDomainSize.compute_domain_size(setup)
 
-    # generate particles using DualSPHysics genCase
-    if args.generate_geometry:
-        generate_geometry_with_dualsphysics_gencase( dambreak_setup[ "dp" ] )
+   grids = dec.decompose_domain(setup, fluid_r)
+   splits = dec.split_particles_to_subdomains(grids, fluid_r, box_r)
+   write_subdomain_vtk(grids, splits, setup)
 
-    # generate particles
-    fluid_rx, fluid_ry, fluid_rz = process_dam_break_fluid_particles( dambreak_setup )
-    box_rx, box_ry, box_rz = process_dam_break_boundary_particles( dambreak_setup )
+   print("\nComplete example setup:")
+   pprint(setup)
+   write_simulation_params(setup, grids)
+   dec.write_distributed_domain_params(grids, setup, distributed=True)
 
-    # setup parameters
-    compute_domain_size( dambreak_setup )
-
-    # split to subdomains
-    generate_subdomains_data( dambreak_setup, fluid_rx, fluid_ry, box_rx, box_ry )
-    split_to_subdomains( dambreak_setup, fluid_rx, fluid_ry, box_rx, box_ry )
-
-    # write simulation params
-    pprint( dambreak_setup )
-    write_simulation_params( dambreak_setup )
-
-    # write distributed domain information
-    write_distributed_domain_params( dambreak_setup )
-
-    #write linked list background grid
-    write_domain_background_grid( dambreak_setup )
+   domainGrid.write_domain_grid(setup, "sources/dambreak_grid.vtk")
