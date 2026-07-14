@@ -343,12 +343,10 @@ def build_distributed_domain_data(
    if distributed:
       data = {}
       for g in grids:
-         prefix = f"subdomain-x-{g.ix}-y-{g.iy}-"
+         key = f"subdomain-x-{g.ix}-y-{g.iy}"
          fluid_path = f"sources/dambreak_subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
          boundary_path = f"sources/dambreak_subdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
-         sd = build_subdomain_data(g, setup, fluid_path, boundary_path)
-         for k, v in sd.items():
-            data[f"{prefix}{k}"] = v
+         data[key] = build_subdomain_data(g, setup, fluid_path, boundary_path)
       return data
    else:
       subdomains = {}

@@ -98,7 +98,7 @@ def write_simulation_params(setup: dict) -> None:
    cfg_setup.setdefault("boundary_element_size", 0)
 
    with open("template/config_template.jsonc", "r") as f:
-      cfg = safe_replace(f.read(), ini_replacements, setup)
+      cfg = safe_replace(f.read(), ini_replacements, cfg_setup)
 
    # Handle the open-boundary-patches count placeholder, which expands to a
    # multi-line value (count + config file path) or 0 when no patches exist.
