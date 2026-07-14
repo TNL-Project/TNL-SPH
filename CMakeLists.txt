@@ -94,6 +94,14 @@ FetchContent_Declare(TNL
 set(TNL_EXPORT_INTERFACE_TARGETS OFF)  # needed for adding to the interface target
 FetchContent_MakeAvailable(TNL)
 
+FetchContent_Declare(json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(json)
+# Make nlohmann_json available to every target defined in subdirectories added below
+link_libraries(nlohmann_json::nlohmann_json)
+
 # FIXME: We should also require python with vtk module
 
 # Download the gencase from DualSPHysics
