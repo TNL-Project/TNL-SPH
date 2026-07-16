@@ -36,7 +36,7 @@ struct ParticlesWithDecomposition2DSetup
 {
    using Config = ParticlesWithDecomposition2DConfig< Device >;
    using ParticlesTraitsType = ParticlesTraits< Config, Device >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticlesTraitsType::CoordinatesType;
    using PointType = typename ParticlesTraitsType::PointType;
 
    // input parameters
@@ -44,13 +44,13 @@ struct ParticlesWithDecomposition2DSetup
    const int numberOfAllocatedParticles = 28;
 
    const float searchRadius = 0.5;
-   const PointType gridOrigin = { -searchRadius, -searchRadius };
-   const IndexVectorType gridDimensions = { 6, 5 };
+   const PointType origin = { -searchRadius, -searchRadius };
+   const CoordinatesType dimensions = { 6, 5 };
 
    // input parameters for enhanced decomposition paritlces
    const int overlapWidth = 1;
-   const PointType gridReferentialOrigin = { gridOrigin[ 0 ] - overlapWidth * searchRadius, gridOrigin[ 1 ]  - overlapWidth * searchRadius };
-   const IndexVectorType gridOriginGlobalCoords = { overlapWidth, overlapWidth };
+   const PointType referentialOrigin = { origin[ 0 ] - overlapWidth * searchRadius, origin[ 1 ]  - overlapWidth * searchRadius };
+   const CoordinatesType globalOriginCoordinates = { overlapWidth, overlapWidth };
 };
 
 TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
@@ -60,7 +60,7 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
    using Particles = TNL::Particles::ParticlesLinkedList< Setup::Config, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PointType = typename Setup::PointType;
-   using IndexVectorType = typename Setup::IndexVectorType;
+   using CoordinatesType = typename Setup::CoordinatesType;
 
    Setup setup;
    ParticlesPointer particles;
@@ -69,13 +69,13 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
    particles->setNumberOfParticles( setup.numberOfParticles );
 
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridOrigin( setup.gridOrigin );
-   particles->setGridDimensions( setup.gridDimensions );
+   particles->setOrigin( setup.origin );
+   particles->setDimensions( setup.dimensions );
 
    // input parameters for enhanced decomposition paritlces
    particles->setOverlapWidth( setup.overlapWidth );
-   particles->setGridReferentialOrigin( setup.gridReferentialOrigin );
-   particles->setGridOriginGlobalCoords( setup.gridOriginGlobalCoords );
+   particles->setReferentialOrigin( setup.referentialOrigin );
+   particles->setGlobalOriginCoordinates( setup.globalOriginCoordinates );
 
    // assign particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -88,46 +88,46 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
    EXPECT_EQ( particles->getParticleCellIndices().getSize(), 28 ); //cellList related
 
    EXPECT_EQ( particles->getSearchRadius(), 0.5 );
-   const PointType gridOrigin = { -0.5, -0.5 };
-   EXPECT_EQ( particles->getGridOrigin(), gridOrigin );
-   const IndexVectorType gridDimensions = { 6, 5 };
-   EXPECT_EQ( particles->getGridDimensions(), gridDimensions );
+   const PointType origin = { -0.5, -0.5 };
+   EXPECT_EQ( particles->getOrigin(), origin );
+   const CoordinatesType dimensions = { 6, 5 };
+   EXPECT_EQ( particles->getDimensions(), dimensions );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 56 );
 
    EXPECT_EQ( particles->getOverlapWidth(), 1 );
-   const PointType gridReferentialOrigin = { -1.0, -1.0 };
-   EXPECT_EQ( particles->getGridReferentialOrigin(), gridReferentialOrigin );
-   const IndexVectorType gridOriginGlobalCoords = { 1, 1 };
-   EXPECT_EQ( particles->getGridOriginGlobalCoords(), gridOriginGlobalCoords );
+   const PointType referentialOrigin = { -1.0, -1.0 };
+   EXPECT_EQ( particles->getReferentialOrigin(), referentialOrigin );
+   const CoordinatesType globalOriginCoordinates = { 1, 1 };
+   EXPECT_EQ( particles->getGlobalOriginCoordinates(), globalOriginCoordinates );
 
-   // NOTE: With changing overlap width, gridReferentialOrigin should be changed aswell
+   // NOTE: With changing overlap width, referentialOrigin should be changed aswell
    // test particle system computed properties
-   const PointType gridOriginWithOverlap = { -1.0, -1.0 };
-   EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap );
-   const IndexVectorType gridDimensionsWithOverlap = { 8, 7 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap );
+   const PointType originWithOverlap = { -1.0, -1.0 };
+   EXPECT_EQ( particles->getOriginWithOverlap(), originWithOverlap );
+   const CoordinatesType dimensionsWithOverlap = { 8, 7 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap );
 
    // change overlap, recompute sizes
    particles->setOverlapWidth( 3 );
-   const PointType gridOriginWithOverlap_scaledUp = { -2.0, -2.0 };
-   EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap_scaledUp );
-   const IndexVectorType gridDimensionsWithOverlap_scaledUp = { 12, 11 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap_scaledUp );
+   const PointType originWithOverlap_scaledUp = { -2.0, -2.0 };
+   EXPECT_EQ( particles->getOriginWithOverlap(), originWithOverlap_scaledUp );
+   const CoordinatesType dimensionsWithOverlap_scaledUp = { 12, 11 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap_scaledUp );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 132 );
 
    particles->setOverlapWidth( 2 );
-   const PointType gridOriginWithOverlap_scaledDown = { -1.5, -1.5 };
-   EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap_scaledDown );
-   const IndexVectorType gridDimensionsWithOverlap_scaledDown = { 10, 9 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap_scaledDown );
+   const PointType originWithOverlap_scaledDown = { -1.5, -1.5 };
+   EXPECT_EQ( particles->getOriginWithOverlap(), originWithOverlap_scaledDown );
+   const CoordinatesType dimensionsWithOverlap_scaledDown = { 10, 9 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap_scaledDown );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 90 );
 
    // change grid size
-   particles->setGridDimensions( { 3, 4 } );
-   const IndexVectorType gridDimensions_updated = { 3, 4 };
-   EXPECT_EQ( particles->getGridDimensions(), gridDimensions_updated );
-   const IndexVectorType gridDimensionsWithOverlap_updated = { 7, 8 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap_updated );
+   particles->setDimensions( { 3, 4 } );
+   const CoordinatesType dimensions_updated = { 3, 4 };
+   EXPECT_EQ( particles->getDimensions(), dimensions_updated );
+   const CoordinatesType dimensionsWithOverlap_updated = { 7, 8 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap_updated );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 56 );
 }
 
@@ -138,7 +138,7 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesDevice )
    using Particles = TNL::Particles::ParticlesLinkedList< Setup::Config, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PointType = typename Setup::PointType;
-   using IndexVectorType = typename Setup::IndexVectorType;
+   using CoordinatesType = typename Setup::CoordinatesType;
 
    Setup setup;
    ParticlesPointer particles;
@@ -147,13 +147,13 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesDevice )
    particles->setNumberOfParticles( setup.numberOfParticles );
 
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridOrigin( setup.gridOrigin );
-   particles->setGridDimensions( setup.gridDimensions );
+   particles->setOrigin( setup.origin );
+   particles->setDimensions( setup.dimensions );
 
    // input parameters for enhanced decomposition paritlces
    particles->setOverlapWidth( setup.overlapWidth );
-   particles->setGridReferentialOrigin( setup.gridReferentialOrigin );
-   particles->setGridOriginGlobalCoords( setup.gridOriginGlobalCoords );
+   particles->setReferentialOrigin( setup.referentialOrigin );
+   particles->setGlobalOriginCoordinates( setup.globalOriginCoordinates );
 
    // assign particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -166,46 +166,46 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesDevice )
    EXPECT_EQ( particles->getParticleCellIndices().getSize(), 28 ); //cellList related
 
    EXPECT_EQ( particles->getSearchRadius(), 0.5 );
-   const PointType gridOrigin = { -0.5, -0.5 };
-   EXPECT_EQ( particles->getGridOrigin(), gridOrigin );
-   const IndexVectorType gridDimensions = { 6, 5 };
-   EXPECT_EQ( particles->getGridDimensions(), gridDimensions );
+   const PointType origin = { -0.5, -0.5 };
+   EXPECT_EQ( particles->getOrigin(), origin );
+   const CoordinatesType dimensions = { 6, 5 };
+   EXPECT_EQ( particles->getDimensions(), dimensions );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 56 );
 
    EXPECT_EQ( particles->getOverlapWidth(), 1 );
-   const PointType gridReferentialOrigin = { -1.0, -1.0 };
-   EXPECT_EQ( particles->getGridReferentialOrigin(), gridReferentialOrigin );
-   const IndexVectorType gridOriginGlobalCoords = { 1, 1 };
-   EXPECT_EQ( particles->getGridOriginGlobalCoords(), gridOriginGlobalCoords );
+   const PointType referentialOrigin = { -1.0, -1.0 };
+   EXPECT_EQ( particles->getReferentialOrigin(), referentialOrigin );
+   const CoordinatesType globalOriginCoordinates = { 1, 1 };
+   EXPECT_EQ( particles->getGlobalOriginCoordinates(), globalOriginCoordinates );
 
    // test particle system computed properties
-   const PointType gridOriginWithOverlap = { -1.0, -1.0 };
-   EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap );
-   const IndexVectorType gridDimensionsWithOverlap = { 8, 7 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap );
+   const PointType originWithOverlap = { -1.0, -1.0 };
+   EXPECT_EQ( particles->getOriginWithOverlap(), originWithOverlap );
+   const CoordinatesType dimensionsWithOverlap = { 8, 7 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap );
 
-   // NOTE: With changing overlap width, gridReferentialOrigin should be changed aswell
+   // NOTE: With changing overlap width, referentialOrigin should be changed aswell
    // change overlap, recompute sizes
    particles->setOverlapWidth( 3 );
-   const PointType gridOriginWithOverlap_scaledUp = { -2.0, -2.0 };
-   EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap_scaledUp );
-   const IndexVectorType gridDimensionsWithOverlap_scaledUp = { 12, 11 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap_scaledUp );
+   const PointType originWithOverlap_scaledUp = { -2.0, -2.0 };
+   EXPECT_EQ( particles->getOriginWithOverlap(), originWithOverlap_scaledUp );
+   const CoordinatesType dimensionsWithOverlap_scaledUp = { 12, 11 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap_scaledUp );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 132 );
 
    particles->setOverlapWidth( 2 );
-   const PointType gridOriginWithOverlap_scaledDown = { -1.5, -1.5 };
-   EXPECT_EQ( particles->getGridOriginWithOverlap(), gridOriginWithOverlap_scaledDown );
-   const IndexVectorType gridDimensionsWithOverlap_scaledDown = { 10, 9 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap_scaledDown );
+   const PointType originWithOverlap_scaledDown = { -1.5, -1.5 };
+   EXPECT_EQ( particles->getOriginWithOverlap(), originWithOverlap_scaledDown );
+   const CoordinatesType dimensionsWithOverlap_scaledDown = { 10, 9 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap_scaledDown );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 90 );
 
    // change grid size
-   particles->setGridDimensions( { 3, 4 } );
-   const IndexVectorType gridDimensions_updated = { 3, 4 };
-   EXPECT_EQ( particles->getGridDimensions(), gridDimensions_updated );
-   const IndexVectorType gridDimensionsWithOverlap_updated = { 7, 8 };
-   EXPECT_EQ( particles->getGridDimensionsWithOverlap(), gridDimensionsWithOverlap_updated );
+   particles->setDimensions( { 3, 4 } );
+   const CoordinatesType dimensions_updated = { 3, 4 };
+   EXPECT_EQ( particles->getDimensions(), dimensions_updated );
+   const CoordinatesType dimensionsWithOverlap_updated = { 7, 8 };
+   EXPECT_EQ( particles->getDimensionsWithOverlap(), dimensionsWithOverlap_updated );
    EXPECT_EQ( particles->getCellFirstLastParticleList().getSize(), 56 );
 }
 
@@ -216,7 +216,7 @@ TEST( ParticlesWithDecomposition2DTest, ComputeParticleCellIndicesCuda )
    using Particles = TNL::Particles::ParticlesLinkedList< Setup::Config, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PointType = typename Setup::PointType;
-   using IndexVectorType = typename Setup::IndexVectorType;
+   using CoordinatesType = typename Setup::CoordinatesType;
 
    Setup setup;
    ParticlesPointer particles;
@@ -225,13 +225,13 @@ TEST( ParticlesWithDecomposition2DTest, ComputeParticleCellIndicesCuda )
    particles->setNumberOfParticles( setup.numberOfParticles );
 
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridOrigin( setup.gridOrigin );
-   particles->setGridDimensions( setup.gridDimensions );
+   particles->setOrigin( setup.origin );
+   particles->setDimensions( setup.dimensions );
 
    // input parameters for enhanced decomposition paritlces
    particles->setOverlapWidth( setup.overlapWidth );
-   particles->setGridReferentialOrigin( setup.gridReferentialOrigin );
-   particles->setGridOriginGlobalCoords( setup.gridOriginGlobalCoords );
+   particles->setReferentialOrigin( setup.referentialOrigin );
+   particles->setGlobalOriginCoordinates( setup.globalOriginCoordinates );
 
    // assign particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -277,9 +277,9 @@ TEST( ParticlesWithDecomposition2DTest, ComputeParticleCellIndicesCuda )
 
    // update  overlap size
    particles->setOverlapWidth( 2 );
-   // NOTE: With changing overlap width, gridReferentialOrigin should be changed aswell
+   // NOTE: With changing overlap width, referentialOrigin should be changed aswell
    const PointType shiftReferentialOrigin_overlap2 = particles->getSearchRadius() * particles->getOverlapWidth();
-   particles->setGridReferentialOrigin( particles->getGridOrigin() - shiftReferentialOrigin_overlap2 );
+   particles->setReferentialOrigin( particles->getOrigin() - shiftReferentialOrigin_overlap2 );
 
    particles->computeParticleCellIndices();
    const auto cellIndices_resizedOverlap = particles->getParticleCellIndices().getConstView();

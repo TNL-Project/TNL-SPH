@@ -119,12 +119,12 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    this->fluid()->initialize( parameters.getParameter< int >( "numberOfParticles" ),
                                parameters.getParameter< int >( "numberOfAllocatedParticles" ),
                                searchRadius,
-                               gridSize,
+                               dimensions,
                                domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluid()->getParticles()->setParticleSetLabel( 0 );
@@ -132,7 +132,7 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    this->boundary()->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
                                   parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
                                   searchRadius,
-                                  gridSize,
+                                  dimensions,
                                   domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundary()->getParticles()->setParticleSetLabel( 1 );
@@ -162,12 +162,12 @@ SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterCont
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
+   const CoordinatesType subdomainGridDimension = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+   const CoordinatesType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
 
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
    this->fluid()->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),

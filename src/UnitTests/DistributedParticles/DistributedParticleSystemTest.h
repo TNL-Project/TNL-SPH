@@ -40,21 +40,21 @@ class Particles2DSetup
    public:
    using ParticlesConfig = Particles2DConfig< Device >;
    using ParticlesTraitsType = ParticlesTraits< ParticlesConfig, Device >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticlesTraitsType::CoordinatesType;
    using PointType = typename ParticlesTraitsType::PointType;
 
-   const IndexVectorType numberOfSubdomains = { 3 , 1 };
+   const CoordinatesType numberOfSubdomains = { 3 , 1 };
 
    const int numberOfParticles = 20;
    const int numberOfAllocatedParticles = 28;
 
    const float searchRadius = 0.5;
-   const PointType gridOrigin = { -searchRadius, -searchRadius };
-   const IndexVectorType overlapSize = 1;
+   const PointType origin = { -searchRadius, -searchRadius };
+   const CoordinatesType overlapSize = 1;
    const PointType overlapWidth = searchRadius;
 
-   const IndexVectorType gridDimension = { 6, 5 };
-   const int numberOfGridCells = gridDimension[ 0 ] * gridDimension[ 1 ];
+   const CoordinatesType dimensions = { 6, 5 };
+   const int numberOfGridCells = dimensions[ 0 ] * dimensions[ 1 ];
 };
 
 template< typename Device >
@@ -62,10 +62,10 @@ struct SubdomainsParametersX3Y1
 {
    using ParticlesConfig = Particles2DConfig< Device >;
    using ParticlesTraitsType = ParticlesTraits< ParticlesConfig, Device >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticlesTraitsType::CoordinatesType;
    using PointType = typename ParticlesTraitsType::PointType;
 
-   const IndexVectorType subdomains = { 3 , 1 };
+   const CoordinatesType subdomains = { 3 , 1 };
    const int subdomainsCount = subdomains[ 0 ] * subdomains[ 1 ];
    Containers::StaticVector< 3, int > numberOfParticles = { 20, 20, 20 };
    Containers::StaticVector< 3, int > numberOfAllocatedParticles = { 30, 30, 30 };
@@ -74,14 +74,14 @@ struct SubdomainsParametersX3Y1
    const PointType subdomain1Origin = { -searchRadius, -searchRadius };
    const PointType subdomain2Origin = { 2 * searchRadius, 2 * searchRadius };
    const PointType subdomain3Origin = { 7 * searchRadius, 7 * searchRadius };
-   Containers::StaticVector< 3, PointType > gridOrigin = { subdomain1Origin, subdomain2Origin, subdomain3Origin };
-   const IndexVectorType subdomain1Dimension = { 3, 3 };
-   const IndexVectorType subdomain2Dimension = { 5, 5 };
-   const IndexVectorType subdomain3Dimension = { 4, 4 };
-   Containers::StaticVector< 3, IndexVectorType > gridDimension = { subdomain1Dimension,
+   Containers::StaticVector< 3, PointType > origin = { subdomain1Origin, subdomain2Origin, subdomain3Origin };
+   const CoordinatesType subdomain1Dimension = { 3, 3 };
+   const CoordinatesType subdomain2Dimension = { 5, 5 };
+   const CoordinatesType subdomain3Dimension = { 4, 4 };
+   Containers::StaticVector< 3, CoordinatesType > dimensions = { subdomain1Dimension,
                                                                     subdomain2Dimension,
                                                                     subdomain3Dimension };
-   const IndexVectorType overlapSize = 1;
+   const CoordinatesType overlapSize = 1;
    const PointType overlapWidth = searchRadius;
 
 };
@@ -157,17 +157,17 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
    // setup particles
    particles->setSize( subdomainsSetup.numberOfAllocatedParticles[ rank ] );
    particles->setSearchRadius( subdomainsSetup.searchRadius );
-   particles->setGridDimensions( subdomainsSetup.gridDimension[ rank ] + subdomainsSetup.overlapSize );
-   particles->setGridOrigin( subdomainsSetup.gridOrigin[ rank ] - subdomainsSetup.overlapWidth );
+   particles->setDimensions( subdomainsSetup.dimensions[ rank ] + subdomainsSetup.overlapSize );
+   particles->setOrigin( subdomainsSetup.origin[ rank ] - subdomainsSetup.overlapWidth );
    particles->setNumberOfParticles( subdomainsSetup.numberOfParticles[ rank ] );
 
    // setup distributed particles
    std::ofstream logFile( "testLog" );
    TNL::Logger logger( 0, logFile );
-   distributedParticles->setDistributedGridParameters( subdomainsSetup.gridDimension[ rank ] + subdomainsSetup.overlapSize,
-                                                       subdomainsSetup.gridOrigin[ rank ] - subdomainsSetup.overlapWidth,
-                                                       subdomainsSetup.gridDimension[ rank ],
-                                                       subdomainsSetup.gridOrigin[ rank ],
+   distributedParticles->setDistributedGridParameters( subdomainsSetup.dimensions[ rank ] + subdomainsSetup.overlapSize,
+                                                       subdomainsSetup.origin[ rank ] - subdomainsSetup.overlapWidth,
+                                                       subdomainsSetup.dimensions[ rank ],
+                                                       subdomainsSetup.origin[ rank ],
                                                        1,
                                                        subdomainsSetup.searchRadius,
                                                        subdomainsSetup.subdomains,

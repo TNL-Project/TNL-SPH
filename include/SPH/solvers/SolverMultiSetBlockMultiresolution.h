@@ -24,7 +24,7 @@ public:
    using typename BaseType::SPHConfig;
    using typename BaseType::GlobalIndexType;
    using typename BaseType::RealType;
-   using typename BaseType::IndexVectorType;
+   using typename BaseType::CoordinatesType;
    using typename BaseType::VectorType;
 
    using typename BaseType::FluidVariables;

@@ -40,7 +40,7 @@ public:
    using SPHConfig = typename Model::SPHConfig;
    using GlobalIndexType = typename ParticlesType::GlobalIndexType;
    using RealType = typename ParticlesType::RealType;
-   using IndexVectorType = typename ParticlesType::IndexVectorType;
+   using CoordinatesType = typename ParticlesType::CoordinatesType;
    using VectorType = typename ParticlesType::PointType;
 
    using FluidVariables = typename Model::FluidVariables;

@@ -83,7 +83,7 @@ public:
    using RealType = typename SolverTraitsType::RealType;
    using VectorType = typename SolverTraitsType::VectorType;
    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
-   using IndexVectorType = typename SolverTraitsType::IndexVectorType;
+   using CoordinatesType = typename SolverTraitsType::CoordinatesType;
 
    using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
    using MassNodes = MassNodes< SPHCaseConfig >;
@@ -117,7 +117,7 @@ public:
 
    __cuda_callable__
    static bool
-   isInsideBox( const IndexVectorType& coords, const IndexVectorType& boxDims )
+   isInsideBox( const CoordinatesType& coords, const CoordinatesType& boxDims )
    {
       bool isInside = true;
       for( int i = 0; i < ParticlesType::getParticlesDimension(); i++ )
@@ -134,12 +134,12 @@ public:
               const RealType refinementFraction,
               const int maxPtcsPerCell = 175 )
    {
-      //const VectorType globalOrig = ownParticles->getGridReferentialOrigin();
-      const VectorType ownOrig = ownParticles->getGridOrigin();
-      const VectorType nbOrig = nbParticles->getGridOrigin();
-      const IndexVectorType ownDims = ownParticles->getGridDimensions();
-      const IndexVectorType nbDims = nbParticles->getGridDimensions();
-      const IndexVectorType ownDimsWithOverlap = ownParticles->getGridDimensionsWithOverlap();
+      //const VectorType globalOrig = ownParticles->getReferentialOrigin();
+      const VectorType ownOrig = ownParticles->getOrigin();
+      const VectorType nbOrig = nbParticles->getOrigin();
+      const CoordinatesType ownDims = ownParticles->getDimensions();
+      const CoordinatesType nbDims = nbParticles->getDimensions();
+      const CoordinatesType ownDimsWithOverlap = ownParticles->getDimensionsWithOverlap();
       const RealType own_sr = ownParticles->getSearchRadius();
       const RealType nb_sr = nbParticles->getSearchRadius();
       const IndexType overlapWidth = ownParticles->getOverlapWidth();
@@ -157,13 +157,13 @@ public:
       bufferWidth = bufferWidthFactorConst * own_sr;
       // if zone is inner - compute from neighbors params
       if( inner_overlap ) {
-         frameOriginGlobalCoordinates = nbParticles->getGridOriginGlobalCoords() * resolutionFactor;
+         frameOriginGlobalCoordinates = nbParticles->getGlobalOriginCoordinates() * resolutionFactor;
          frameDimensions = resolutionFactor * nbDims;
          frameOrientation = -1;
       }
       // if zone is outer - compute from local params
       else if( outer_overlap ) {
-         frameOriginGlobalCoordinates = ownParticles->getGridOriginGlobalCoords();
+         frameOriginGlobalCoordinates = ownParticles->getGlobalOriginCoordinates();
          frameDimensions = ownDims;
          frameOrientation = 1;
       }
@@ -173,8 +173,8 @@ public:
 
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
 
-      IndexVectorType zoneOrigin = 0;
-      IndexVectorType zoneDimensions = 0;
+      CoordinatesType zoneOrigin = 0;
+      CoordinatesType zoneDimensions = 0;
       //TODO: I dont like the "over-offset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
@@ -190,7 +190,7 @@ public:
       const std::string outputFilename = "results/zone_L" + std::to_string( int( 1 / refinementFraction ) ) + ".vtk";
       zone.saveZoneToVTK( outputFilename,
                           ownDimsWithOverlap,
-                          ownParticles->getGridOriginWithOverlap(),  //ownOrigin
+                          ownParticles->getOriginWithOverlap(),  //ownOrigin
                           ownParticles->getSearchRadius() );
 
       // Set size of multi-resoluton algorithm arrays (NOTE: Consider setSize function)
@@ -255,14 +255,14 @@ public:
                   : frameBackOrigin[ d ] + frameBackSize[ d ];
 
             // parallelFor range: [0,1) on d, [0, count) on perp axes
-            IndexVectorType begin = 0, end = 0;
+            CoordinatesType begin = 0, end = 0;
             end[ d ] = 1;
             for( int pd = 0; pd < VectorType::getSize(); pd++ )
                if( pd != d )
                   end[ pd ] = planeNodeCount( d, pd );
 
             // Strides for linearisation (perp axes only, reverse order)
-            IndexVectorType stride = 0;
+            CoordinatesType stride = 0;
             {
                IndexType running = 1;
                for( int pd = VectorType::getSize() - 1; pd >= 0; pd-- ) {
@@ -286,7 +286,7 @@ public:
             const VectorType norm = normal;
             const VectorType pStart = perpStart;
 
-            auto generate = [=] __cuda_callable__ ( const IndexVectorType idx ) mutable
+            auto generate = [=] __cuda_callable__ ( const CoordinatesType idx ) mutable
             {
                // Linearise: sum over perp axes only
                IndexType i = faceOffset;
@@ -361,7 +361,7 @@ public:
       const RealType sr = this->getParticles()->getSearchRadius();
       const VectorType frameBackSize = getFrameBackDimensions() * sr;
       const VectorType frameBackOrigin =
-         getFrameBackOriginGlobalCoordinates() * sr + this->getParticles()->getGridReferentialOrigin();
+         getFrameBackOriginGlobalCoordinates() * sr + this->getParticles()->getReferentialOrigin();
 
       // Returns true if this face should be skipped
       auto isExcluded = [ & ]( const VectorType& normal ) -> bool
@@ -449,14 +449,14 @@ public:
             const RealType ifaceCoord = ( sign < 0 ) ? frameBackOrigin[ d ] : frameBackOrigin[ d ] + frameBackSize[ d ];
 
             // parallelFor range: [0,1) on d, [0, count) on perp axes
-            IndexVectorType begin = 0, end = 0;
+            CoordinatesType begin = 0, end = 0;
             end[ d ] = 1;
             for( int pd = 0; pd < VectorType::getSize(); pd++ )
                if( pd != d )
                   end[ pd ] = planeNodeCount( d, pd );
 
             // Strides for linearisation (perp axes only, reverse order)
-            IndexVectorType stride = 0;
+            CoordinatesType stride = 0;
             {
                IndexType running = 1;
                for( int pd = VectorType::getSize() - 1; pd >= 0; pd-- ) {
@@ -481,7 +481,7 @@ public:
             const VectorType norm = normal;
             const VectorType pStart = perpStart;
 
-            auto generate = [ = ] __cuda_callable__( const IndexVectorType idx ) mutable
+            auto generate = [ = ] __cuda_callable__( const CoordinatesType idx ) mutable
             {
                // Linearise: sum over perp axes only
                IndexType i = faceOffset;
@@ -781,18 +781,18 @@ public:
       const RealType inv_sr = 1.f / sr;
       //const VectorType frameFrontOrigin = this->frameFrontOrigin;
       //const VectorType frameBackOrigin = this->frameBackOrigin;
-      const VectorType refOrig = this->getParticles()->getGridReferentialOrigin();
-      //const IndexVectorType gridOriginGlobCoords = this->getParticles()->getGridOriginGlobalCoords();
-      const IndexVectorType frameFrontOriginGlobalCoords = getFrameFrontOriginGlobalCoordinates();
-      const IndexVectorType frameBackDims = getFrameBackDimensions();
-      const IndexVectorType frameFrontDims = getFrameFrontDimensions();
+      const VectorType refOrig = this->getParticles()->getReferentialOrigin();
+      //const CoordinatesType gridOriginGlobCoords = this->getParticles()->getGlobalOriginCoordinates();
+      const CoordinatesType frameFrontOriginGlobalCoords = getFrameFrontOriginGlobalCoordinates();
+      const CoordinatesType frameBackDims = getFrameBackDimensions();
+      const CoordinatesType frameFrontDims = getFrameFrontDimensions();
       const bool inner_overlap = this->inner_overlap;
       const bool outer_overlap = this->outer_overlap;
 
       //frame back glob coords
       //- outer: extend (to gridOrigiGlobCoordsWithOverlap)
       //- inner: truncate
-      IndexVectorType frameBackGlobCoords = frameFrontOriginGlobalCoords;
+      CoordinatesType frameBackGlobCoords = frameFrontOriginGlobalCoords;
       if( outer_overlap )
          frameBackGlobCoords -= 1;
       if( inner_overlap )
@@ -803,9 +803,9 @@ public:
       // - inner zone + is outside
       auto identifyRetype = [ = ] __cuda_callable__( IndexType i ) mutable
       {
-         //const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameFrontOrigin ) * inv_sr );
-         const IndexVectorType giGlobCoords = TNL::floor( ( view_r_buffer[ i ] - refOrig ) * inv_sr );
-         const IndexVectorType gc = giGlobCoords - frameFrontOriginGlobalCoords;
+         //const CoordinatesType gc = TNL::floor( ( view_r_buffer[ i ] - frameFrontOrigin ) * inv_sr );
+         const CoordinatesType giGlobCoords = TNL::floor( ( view_r_buffer[ i ] - refOrig ) * inv_sr );
+         const CoordinatesType gc = giGlobCoords - frameFrontOriginGlobalCoords;
          bool inside = isInsideBox( gc, frameFrontDims );
 
          if( inside && outer_overlap ) {
@@ -825,9 +825,9 @@ public:
       // - inner zone - is insde the ( subdomain box - zone width )
       auto identifyRemove = [ = ] __cuda_callable__( IndexType i ) mutable
       {
-         //const IndexVectorType gc = TNL::floor( ( view_r_buffer[ i ] - frameBackOrigin ) * inv_sr );
-         const IndexVectorType giGlobCoords = TNL::floor( ( view_r_buffer[ i ] - refOrig ) * inv_sr );
-         const IndexVectorType gc = giGlobCoords - frameBackGlobCoords;
+         //const CoordinatesType gc = TNL::floor( ( view_r_buffer[ i ] - frameBackOrigin ) * inv_sr );
+         const CoordinatesType giGlobCoords = TNL::floor( ( view_r_buffer[ i ] - refOrig ) * inv_sr );
+         const CoordinatesType gc = giGlobCoords - frameBackGlobCoords;
          bool inside = isInsideBox( gc, frameBackDims );
          if( inside && inner_overlap ) {
             retypeMarker_view[ i ] = 2;
@@ -970,16 +970,16 @@ public:
       const IndexType numberOfZoneParticles = this->zone.getNumberOfParticles();
 
       const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
-      const IndexVectorType frameFrontDims = getFrameFrontDimensions();
+      const CoordinatesType frameFrontDims = getFrameFrontDimensions();
       //const VectorType frameFrontOrigin = this->frameFrontOrigin;
       const bool inner_overlap = this->inner_overlap;
       const bool outer_overlap = this->outer_overlap;
       const RealType sr = this->getParticles()->getSearchRadius();
       const RealType inv_sr = 1.f / sr;
-      const VectorType refOrig = this->getParticles()->getGridReferentialOrigin();
-      //const IndexVectorType gridOriginGlobCoords = this->getParticles()->getGridOriginGlobalCoords();
-      const IndexVectorType frameFrontOriginGlobCoords = getFrameFrontOriginGlobalCoordinates();
-      //const IndexVectorType gridOriginGlobCoordsWithOverlap = this->particles->getGridOriginGlobalCoordsWithOverlap();
+      const VectorType refOrig = this->getParticles()->getReferentialOrigin();
+      //const CoordinatesType gridOriginGlobCoords = this->getParticles()->getGlobalOriginCoordinates();
+      const CoordinatesType frameFrontOriginGlobCoords = getFrameFrontOriginGlobalCoordinates();
+      //const CoordinatesType gridOriginGlobCoordsWithOverlap = this->particles->getGlobalOriginCoordinatesWithOverlap();
 
       // Retype fluid to buffer:
       // - outer zone and is outside the frame
@@ -988,8 +988,8 @@ public:
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r = r_view[ p ];
-         const IndexVectorType giGlobCoords = TNL::floor( ( r - refOrig ) * inv_sr );
-         const IndexVectorType gc = giGlobCoords - frameFrontOriginGlobCoords;
+         const CoordinatesType giGlobCoords = TNL::floor( ( r - refOrig ) * inv_sr );
+         const CoordinatesType gc = giGlobCoords - frameFrontOriginGlobCoords;
          const bool inside = isInsideBox( gc, frameFrontDims );
 
          if( inside && inner_overlap ) {
@@ -1078,25 +1078,25 @@ public:
    }
 
    // links
-   [[nodiscard]] const IndexVectorType
+   [[nodiscard]] const CoordinatesType
    getFrameFrontOriginGlobalCoordinates() const
    {
       return frameOriginGlobalCoordinates;
    }
 
-   [[nodiscard]] const IndexVectorType
+   [[nodiscard]] const CoordinatesType
    getFrameFrontDimensions() const
    {
       return frameDimensions;
    }
 
-   [[nodiscard]] const IndexVectorType
+   [[nodiscard]] const CoordinatesType
    getFrameBackOriginGlobalCoordinates() const
    {
       return frameOriginGlobalCoordinates + ( -1 ) * this->getParticles()->getOverlapWidth() * frameOrientation;
    }
 
-   [[nodiscard]] const IndexVectorType
+   [[nodiscard]] const CoordinatesType
    getFrameBackDimensions() const
    {
       return frameDimensions + 2 * this->getParticles()->getOverlapWidth() * frameOrientation;
@@ -1121,21 +1121,21 @@ public:
 
       // Frame front configuration
       logger.writeParameter( "Frame front origin:",
-                             this->getParticles()->getGridReferentialOrigin()
+                             this->getParticles()->getReferentialOrigin()
                                 + getFrameFrontOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
       logger.writeParameter( "Frame front origin coords:",
-                             getFrameFrontOriginGlobalCoordinates() - this->getParticles()->getGridOriginGlobalCoords() );
+                             getFrameFrontOriginGlobalCoordinates() - this->getParticles()->getGlobalOriginCoordinates() );
       logger.writeParameter( "Frame front origin global coords:", getFrameFrontOriginGlobalCoordinates() );
       logger.writeParameter( "Frame front dims:", getFrameFrontDimensions() );
       logger.writeParameter( "Frame front end:",
                              getFrameFrontOriginGlobalCoordinates() + getFrameFrontDimensions()
-                                - this->getParticles()->getGridOriginGlobalCoords() );
+                                - this->getParticles()->getGlobalOriginCoordinates() );
       logger.writeParameter( "Frame orientation:", frameOrientation );
       logger.writeSeparator();
 
       // Frame back configuration
       logger.writeParameter( "Frame back origin:",
-                             this->getParticles()->getGridReferentialOrigin()
+                             this->getParticles()->getReferentialOrigin()
                                 + getFrameBackOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
       logger.writeParameter( "Frame back size:", getFrameBackDimensions() * this->getParticles()->getSearchRadius() );
       logger.writeParameter( "Frame back dims:", getFrameBackDimensions() );
@@ -1183,8 +1183,8 @@ protected:
    int refinementLevel;
    int frameOrientation;
 
-   IndexVectorType frameOriginGlobalCoordinates;
-   IndexVectorType frameDimensions;  // = inner subdomain dimensions
+   CoordinatesType frameOriginGlobalCoordinates;
+   CoordinatesType frameDimensions;  // = inner subdomain dimensions
    RealType bufferWidth;             // useful for dual time stepping
 
    ParticleZone zone;

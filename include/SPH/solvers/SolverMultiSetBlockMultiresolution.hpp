@@ -287,12 +287,12 @@ SolverMultiSetBlockMultiresolution< Model >::initDistributedParticleSets( TNL::C
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
+   const CoordinatesType subdomainGridDimension = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+   const CoordinatesType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
 
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
    this->fluid()->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
@@ -428,7 +428,7 @@ SolverMultiSetBlockMultiresolution< Model >::save( bool writeParticleCellIndex )
 #else
       std::string outputFileNameGrid = this->outputDirectory + "/grid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-      TNL::Writers::writeBackgroundGrid( outputFileNameGrid, this->fluidSets[ i ]->getParticles()->getGridDimensions(), this->fluidSets[ i ]->getParticles()->getGridOrigin(), this->fluidSets[ i ]->getParticles()->getSearchRadius() );
+      TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, this->fluidSets[ i ]->getParticles()->getDimensions(), this->fluidSets[ i ]->getParticles()->getOrigin(), this->fluidSets[ i ]->getParticles()->getSearchRadius() );
       this->logger.writeParameter( "Saved:", outputFileNameGrid );
 
       this->simulationMonitor.save( this->logger );

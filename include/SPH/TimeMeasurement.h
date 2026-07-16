@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TNL/Benchmarks/Benchmarks.h>
+#include <TNL/Benchmarks/Benchmark.h>
 #include "TNL/Timer.h"
 #include <map>
 #include <string>

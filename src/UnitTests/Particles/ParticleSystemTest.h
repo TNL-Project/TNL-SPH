@@ -33,7 +33,7 @@ class Particles2DSetup
    public:
    using ParticlesConfig = Particles2DConfig< Device >;
    using ParticlesTraitsType = ParticlesTraits< ParticlesConfig, Device >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticlesTraitsType::CoordinatesType;
    using PointType = typename ParticlesTraitsType::PointType;
 
    const int numberOfParticles = 20;
@@ -42,9 +42,9 @@ class Particles2DSetup
    const float searchRadius = 0.5;
    const int gridXsize = 6;
    const int gridYsize = 5;
-   const PointType gridOrigin = { -searchRadius, -searchRadius };
+   const PointType origin = { -searchRadius, -searchRadius };
 
-   const IndexVectorType gridSize = { gridXsize, gridYsize };
+   const CoordinatesType dimensions = { gridXsize, gridYsize };
    const int numberOfGridCells = gridXsize * gridYsize;
 };
 
@@ -104,8 +104,8 @@ TEST( SearchForNeighbors2DTest, ParticlesPropertiesHost )
    particles->setSize( setup.numberOfAllocatedParticles );
    particles->setNumberOfParticles( setup.numberOfParticles);
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridDimensions( setup.gridSize );
-   particles->setGridOrigin( setup.gridOrigin );
+   particles->setDimensions( setup.dimensions );
+   particles->setOrigin( setup.origin );
 
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -128,8 +128,8 @@ TEST( SearchForNeighbors2DTest, ParticlesPropertiesCuda )
    particles->setSize( setup.numberOfAllocatedParticles );
    particles->setNumberOfParticles( setup.numberOfParticles);
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridDimensions( setup.gridSize );
-   particles->setGridOrigin( setup.gridOrigin );
+   particles->setDimensions( setup.dimensions );
+   particles->setOrigin( setup.origin );
 
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -152,8 +152,8 @@ TEST( SearchForNeighbors2DTest, ComputeParticleCellIndicesCuda )
    particles->setSize( setup.numberOfAllocatedParticles );
    particles->setNumberOfParticles( setup.numberOfParticles);
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridDimensions( setup.gridSize );
-   particles->setGridOrigin( setup.gridOrigin );
+   particles->setDimensions( setup.dimensions );
+   particles->setOrigin( setup.origin );
 
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -213,8 +213,8 @@ TEST( SearchForNeighbors2DTest, SortParticlesCuda )
    particles->setSize( setup.numberOfAllocatedParticles );
    particles->setNumberOfParticles( setup.numberOfParticles);
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridDimensions( setup.gridSize );
-   particles->setGridOrigin( setup.gridOrigin );
+   particles->setDimensions( setup.dimensions );
+   particles->setOrigin( setup.origin );
 
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
@@ -337,8 +337,8 @@ TEST( SearchForNeighbors2DTest, ParticlesToCellsCuda )
    particles->setSize( setup.numberOfAllocatedParticles );
    particles->setNumberOfParticles( setup.numberOfParticles);
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridDimensions( setup.gridSize );
-   particles->setGridOrigin( setup.gridOrigin );
+   particles->setDimensions( setup.dimensions );
+   particles->setOrigin( setup.origin );
 
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );

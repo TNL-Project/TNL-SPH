@@ -10,16 +10,16 @@ template< typename FluidPointer >
 int
 removeParticlesOutOfGivenBox(
    FluidPointer& fluid,
-   const typename FluidPointer::ObjectType::IndexVectorType& boxOriginGlobalCoords,
-   const typename FluidPointer::ObjectType::IndexVectorType& boxDimensions )
+    const typename FluidPointer::ObjectType::CoordinatesType& boxOriginGlobalCoords,
+    const typename FluidPointer::ObjectType::CoordinatesType& boxDimensions )
 {
    using ParticleSetType = typename FluidPointer::ObjectType;
    using DeviceType = typename ParticleSetType::DeviceType;
-   using IndexVectorType = typename ParticleSetType::IndexVectorType;
+   using CoordinatesType = typename ParticleSetType::CoordinatesType;
    using VectorType = typename ParticleSetType::VectorType;
    using RealType = typename ParticleSetType::RealType;
 
-   const VectorType gridRefOrigin = fluid->getParticles()->getGridReferentialOrigin();
+   const VectorType referentialOrigin = fluid->getParticles()->getReferentialOrigin();
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
    const RealType invSearchRadius = 1.0f / searchRadius;
 
@@ -33,15 +33,15 @@ removeParticlesOutOfGivenBox(
       if( point[ 0 ] == FLT_MAX )
          return 0;
 
-      const IndexVectorType cellGlobalCoords = TNL::floor( ( point - gridRefOrigin ) * invSearchRadius );
-      const IndexVectorType cellCoords = cellGlobalCoords - boxOriginGlobalCoords;
+      const CoordinatesType cellGlobalCoords = TNL::floor( ( point - referentialOrigin ) * invSearchRadius );
+      const CoordinatesType cellCoords = cellGlobalCoords - boxOriginGlobalCoords;
 
       // Keep particles inside the extended box [0, boxDimensions) — including
       // overlap cells. Remove only particles truly outside.
       // (Unlike Particles::isInsideDomain which uses <= 0 and >= dim-1,
       // stripping the interior boundary ring as well.)
       bool isInside = true;
-      for( int d = 0; d < IndexVectorType::getSize(); d++ )
+      for( int d = 0; d < CoordinatesType::getSize(); d++ )
          if( cellCoords[ d ] < 0 || cellCoords[ d ] >= boxDimensions[ d ] )
             isInside = false;
 

@@ -27,7 +27,7 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    openBoundaryPatches.resize( numberOfBoundaryPatches );
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
@@ -36,7 +36,7 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
       openBoundaryPatches[ i ]->initialize( parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
                                             parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
                                             searchRadius,
-                                            gridSize,
+                                            dimensions,
                                             domainOrigin );
    }
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
@@ -408,7 +408,7 @@ SolverMultiSetBase< Model >::save( bool writeParticleCellIndex )
    else
       outputFileNameGrid = outputDirectory + "/grid_subdomain" + std::to_string( 0 ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-   TNL::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ 0 ]->getParticles()->getGridDimensions(), fluidSets[ 0 ]->getParticles()->getGridOrigin(), fluidSets[ 0 ]->getParticles()->getSearchRadius() );
+   TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ 0 ]->getParticles()->getDimensions(), fluidSets[ 0 ]->getParticles()->getOrigin(), fluidSets[ 0 ]->getParticles()->getSearchRadius() );
    logger.writeParameter( "Saved:", outputFileNameGrid );
 
    simulationMonitor.save( logger );
@@ -607,7 +607,7 @@ SolverMultiSetBase< Model >::performLoadBalancing()
    fluidSets[ 0 ]->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
    fluidSets[ 0 ]->synchronizeBalancingMeasures();
 
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment;
+   std::pair< CoordinatesType, VectorType > subdomainAdjustment;
    if( loadBalancingMeasure == "computationalTime" )
       subdomainAdjustment = fluidSets[ 0 ]->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
    else if( loadBalancingMeasure == "numberOfParticles" )
@@ -615,43 +615,43 @@ SolverMultiSetBase< Model >::performLoadBalancing()
    else
       std::cerr << "Invalid load balancing metrics. Load balancing metrics is: " << loadBalancingMeasure << "." << std::endl;
 
-   const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
+   const CoordinatesType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluidSets[ 0 ]->getParticles()->getSearchRadius();
 
-   const IndexVectorType updatedGridDimensions = fluidSets[ 0 ]->getParticles()->getGridDimensions() + gridDimensionsAdjustment;
-   const VectorType updatedGridOrigin = fluidSets[ 0 ]->getParticles()->getGridOrigin() + gridOriginAdjustment;
+   const CoordinatesType updatedGridDimensions = fluidSets[ 0 ]->getParticles()->getDimensions() + gridDimensionsAdjustment;
+   const VectorType updatedOrigin = fluidSets[ 0 ]->getParticles()->getOrigin() + gridOriginAdjustment;
 
    logger.writeParameter( "Load balancing - subdomain adjustment: ", "" );
    logger.writeParameter( "Grid dimensions adjustment: ", gridDimensionsAdjustment );
    logger.writeParameter( "Grid origin adjustment: ", gridOriginAdjustment );
-   logger.writeParameter( "Old grid dimensions: ", fluidSets[ 0 ]->getParticles()->getGridDimensions() );
-   logger.writeParameter( "Old grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getGridOrigin() );
+   logger.writeParameter( "Old grid dimensions: ", fluidSets[ 0 ]->getParticles()->getDimensions() );
+   logger.writeParameter( "Old grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getOrigin() );
    logger.writeParameter( "Old firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getParticles()->setGridDimensions( updatedGridDimensions );
-      fluidSets[ i ]->getParticles()->setGridOrigin( updatedGridOrigin );
-      boundarySets[ i ]->getParticles()->setGridDimensions( updatedGridDimensions );
-      boundarySets[ i ]->getParticles()->setGridOrigin( updatedGridOrigin );
+      fluidSets[ i ]->getParticles()->setDimensions( updatedGridDimensions );
+      fluidSets[ i ]->getParticles()->setOrigin( updatedOrigin );
+      boundarySets[ i ]->getParticles()->setDimensions( updatedGridDimensions );
+      boundarySets[ i ]->getParticles()->setOrigin( updatedOrigin );
    }
 
-   const IndexVectorType updatedGridOriginGlobalCoords = fluidSets[ 0 ]->getParticles()->getGridOriginGlobalCoords() + subdomainAdjustment.second;
+   const CoordinatesType updatedOriginGlobalCoords = fluidSets[ 0 ]->getParticles()->getGlobalOriginCoordinates() + subdomainAdjustment.second;
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getParticles()->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
-      boundarySets[ i ]->getParticles()->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
+      fluidSets[ i ]->getParticles()->setGlobalOriginCoordinates( updatedOriginGlobalCoords );
+      boundarySets[ i ]->getParticles()->setGlobalOriginCoordinates( updatedOriginGlobalCoords );
    }
 
-   logger.writeParameter( "New grid dimensions: ", fluidSets[ 0 ]->getParticles()->getGridDimensions() );
-   logger.writeParameter( "New grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getGridOrigin() );
+   logger.writeParameter( "New grid dimensions: ", fluidSets[ 0 ]->getParticles()->getDimensions() );
+   logger.writeParameter( "New grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getOrigin() );
    logger.writeParameter( "New firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
    for( int i = 0; i < numberOfSubsets; i++ ){
       fluidSets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
-                                                                                  updatedGridOrigin,
+                                                                                  updatedOrigin,
                                                                                   1,
                                                                                   fluidSets[ i ]->getParticles()->getSearchRadius() );
       boundarySets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
-                                                                                     updatedGridOrigin,
+                                                                                     updatedOrigin,
                                                                                      1,
                                                                                      boundarySets[ i ]->getParticles()->getSearchRadius() );
    }

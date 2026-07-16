@@ -34,7 +34,7 @@ class Particles2DSetup
    public:
    using ParticlesConfig = Particles2DConfig< Device >;
    using ParticlesTraitsType = ParticlesTraits< ParticlesConfig, Device >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticlesTraitsType::CoordinatesType;
    using PointType = typename ParticlesTraitsType::PointType;
 
    const int numberOfParticles = 20;
@@ -43,9 +43,9 @@ class Particles2DSetup
    const float searchRadius = 0.5;
    const int gridXsize = 6;
    const int gridYsize = 5;
-   const PointType gridOrigin = { -searchRadius, -searchRadius };
+   const PointType origin = { -searchRadius, -searchRadius };
 
-   const IndexVectorType gridSize = { gridXsize, gridYsize };
+   const CoordinatesType dimensions = { gridXsize, gridYsize };
    const int numberOfGridCells = gridXsize * gridYsize;
 };
 
@@ -101,7 +101,7 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
 
    using GhostZone = ParticleZone< ParticlesSetup::ParticlesConfig >;
-   using IndexVectorType = typename GhostZone::IndexVectorType;
+   using CoordinatesType = typename GhostZone::CoordinatesType;
    using PointType = typename Particles::PointType;
 
    ParticlesSetup setup;
@@ -109,8 +109,8 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    particles->setSize( setup.numberOfAllocatedParticles );
    particles->setNumberOfParticles( setup.numberOfParticles);
    particles->setSearchRadius( setup.searchRadius );
-   particles->setGridDimensions( setup.gridSize );
-   particles->setGridOrigin( setup.gridOrigin );
+   particles->setDimensions( setup.dimensions );
+   particles->setOrigin( setup.origin );
 
    assignPoints2D( particles );
 
@@ -124,18 +124,18 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    ASSERT_TRUE( assignPoints2D( particles ) );
 
    GhostZone zone_A( 5 );
-   IndexVectorType zone_A_origin = { 1, 1 };
-   IndexVectorType zone_A_dimensions = { 1, 3 };
+   CoordinatesType zone_A_origin = { 1, 1 };
+   CoordinatesType zone_A_dimensions = { 1, 3 };
 
    GhostZone zone_B;
-   IndexVectorType zone_B_origin = { 1, 1 };
-   IndexVectorType zone_B_dimensions = { 4, 1 };
+   CoordinatesType zone_B_origin = { 1, 1 };
+   CoordinatesType zone_B_dimensions = { 4, 1 };
 
    GhostZone zone_C( 3 );
-   IndexVectorType zone_C_begin = { 2, 1 };
-   IndexVectorType zone_C_dimensions = { 2, 2 };
+   CoordinatesType zone_C_begin = { 2, 1 };
+   CoordinatesType zone_C_dimensions = { 2, 2 };
 
-   zone_A.assignCells( zone_A_origin, zone_A_dimensions, particles->getGridDimensions() );
+   zone_A.assignCells( zone_A_origin, zone_A_dimensions, particles->getDimensions() );
    zone_A.updateParticlesInZone( particles );
    const auto particlesInZoneA = zone_A.getParticlesInZone().getConstView();
 
@@ -152,7 +152,7 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    EXPECT_EQ( particlesInZoneA.getElement( 4 ), 14 );
 
    zone_B.setNumberOfParticlesPerCell( 4 );
-   zone_B.assignCells( zone_B_origin, zone_B_dimensions, particles->getGridDimensions() );
+   zone_B.assignCells( zone_B_origin, zone_B_dimensions, particles->getDimensions() );
    zone_B.updateParticlesInZone( particles );
    const auto particlesInZoneB = zone_B.getParticlesInZone().getConstView();
 
@@ -169,7 +169,7 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
    //[ 4, 1 ]
    EXPECT_EQ( particlesInZoneB.getElement( 4 ), 4 );
 
-   zone_C.assignCells( zone_C_begin, zone_C_dimensions, particles->getGridDimensions() );
+   zone_C.assignCells( zone_C_begin, zone_C_dimensions, particles->getDimensions() );
    zone_C.updateParticlesInZone( particles );
    const auto particlesInZoneC = zone_C.getParticlesInZone().getConstView();
 

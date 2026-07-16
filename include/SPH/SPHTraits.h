@@ -28,7 +28,7 @@ class SPHFluidTraits
    using VectorType = Containers::StaticVector< spaceDimension, RealType >;
    using VectorArrayType = Containers::Vector< VectorType, DeviceType, GlobalIndexType >;
    using IndexArrayType = Containers::Array< GlobalIndexType, DeviceType >;
-   using IndexVectorType = Containers::StaticVector< spaceDimension, GlobalIndexType >;
+   using CoordinatesType = Containers::StaticVector< spaceDimension, GlobalIndexType >;
 
    //types for correction matrices related to MDBC
    using MatrixType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension, SPHFluidConfig::spaceDimension >;

@@ -15,7 +15,7 @@ public:
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using IndexType = typename SPHConfig::GlobalIndexType;
-   using IndexVectorType = Containers::StaticVector< SPHConfig::spaceDimension, IndexType >;
+   using CoordinatesType = Containers::StaticVector< SPHConfig::spaceDimension, IndexType >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
@@ -34,15 +34,15 @@ public:
       this->pointMax = pointMax;
       this->orientation = orientation;
 
-      const VectorType gridOrigin = fluid->getParticles()->getGridOrigin();
-      const IndexVectorType gridDimensions = fluid->getParticles()->getGridDimensions();
+      const VectorType origin = fluid->getParticles()->getOrigin();
+      const CoordinatesType dimensions = fluid->getParticles()->getDimensions();
       const RealType searchRadius = fluid->getParticles()->getSearchRadius();
       const VectorType zoneFirstPoint = pointMin - orientation * searchRadius;
       const VectorType zoneSecondPoint = pointMax + orientation * searchRadius;
 
       // initialize the zone
       zone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      zone.assignCells( zoneFirstPoint, zoneSecondPoint, gridDimensions, gridOrigin, searchRadius );
+      zone.assignCells( zoneFirstPoint, zoneSecondPoint, dimensions, origin, searchRadius );
    }
 
    const RealType

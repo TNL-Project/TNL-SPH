@@ -82,7 +82,7 @@ public:
    using RealType = typename SolverTraitsType::RealType;
    using VectorType = typename SolverTraitsType::VectorType;
    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
-   using IndexVectorType = typename SolverTraitsType::IndexVectorType;  //TODO: Due to init
+   using CoordinatesType = typename SolverTraitsType::CoordinatesType;  //TODO: Due to init
 
    using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
    using MassNodes = MassNodes< SPHCaseConfig >;
@@ -106,17 +106,17 @@ public:
               const int maxNumberOfPtcsPerCell = 75 )
    {
       const RealType searchRadius = ownParticles->getSearchRadius();
-      const VectorType ownOrig = ownParticles->getGridOrigin();
-      const VectorType neighborOrig = nbParticles->getGridOrigin();
-      const IndexVectorType ownDims = ownParticles->getGridDimensions();
-      const IndexVectorType ownDimsWithOverlap = ownParticles->getGridDimensionsWithOverlap();
+      const VectorType ownOrig = ownParticles->getOrigin();
+      const VectorType neighborOrig = nbParticles->getOrigin();
+      const CoordinatesType ownDims = ownParticles->getDimensions();
+      const CoordinatesType ownDimsWithOverlap = ownParticles->getDimensionsWithOverlap();
       const IndexType numberOfOverlapLayers = ownParticles->getOverlapWidth();
 
       bufferOrientation = 0.f;
       bufferPosition = ownOrig;
       bufferWidth = bufferWidthFactorConst * searchRadius;
-      IndexVectorType zoneOrigCoords = 0.;
-      IndexVectorType zoneDims = ownDims;
+      CoordinatesType zoneOrigCoords = 0.;
+      CoordinatesType zoneDims = ownDims;
       interfaceAxis = 0;
 
       //NOTE: The comparison could be done w.r.t. origin in coordinates, this would removed the need for eps
@@ -156,13 +156,13 @@ public:
    initMassNodes( ModelParams& modelParams, const int subdomainIdx, const RealType refinemnetFactor )
    {
       const RealType searchRadius = this->getParticles()->getSearchRadius();
-      const VectorType subdomainSize = searchRadius * this->getParticles()->getGridDimensions();
+      const VectorType subdomainSize = searchRadius * this->getParticles()->getDimensions();
       const IndexType overlapWidth = this->getParticles()->getOverlapWidth();
       const RealType local_dp = refinemnetFactor * modelParams.dp;
 
       // Get the range to create mass nodes
-      IndexVectorType begin = 0;
-      IndexVectorType end = 0;
+      CoordinatesType begin = 0;
+      CoordinatesType end = 0;
       IndexType n_massNodes = 1;
 
       for( int d = 0; d < VectorType::getSize(); d++ ){
@@ -180,8 +180,8 @@ public:
 
       // Initialize tha mass points coordinates
       const VectorType nodeNormal = bufferOrientation;
-      const IndexVectorType unitVect = 1;
-      const IndexVectorType perpAxis = unitVect - interfaceAxis;
+      const CoordinatesType unitVect = 1;
+      const CoordinatesType perpAxis = unitVect - interfaceAxis;
       const VectorType nodeStartingPoint = bufferPosition + ( -1 ) * overlapWidth * searchRadius * bufferOrientation; //TODO: In for above?
 
       // Strides for linearisation over perpendicular axes only
@@ -193,7 +193,7 @@ public:
          In 3D with x as interface axis: stride = {0, ny, 1} gives i = idx[1]*nz + idx[2]
          General: stride[d] = product of end[k] for all perp k > d
        */
-      IndexVectorType stride = 0;
+      CoordinatesType stride = 0;
       {
          IndexType running = 1;
          // Walk axes in reverse to build strides for perp axes only
@@ -207,7 +207,7 @@ public:
 
       auto points_nodes_view = this->massNodes.points.getView();
       auto normals_nodes_view = this->massNodes.normal.getView();
-      auto generateMassNodesCoordinates = [ = ] __cuda_callable__( const IndexVectorType idx ) mutable
+      auto generateMassNodesCoordinates = [ = ] __cuda_callable__( const CoordinatesType idx ) mutable
       {
          // Linearise: dot product of idx and stride (interface axis contributes 0)
          IndexType i = ( idx, stride );;
@@ -757,7 +757,7 @@ protected:
    IndexArrayType particlesToBuffer;
 
    // buffer referential specification (TODO: Consider to use some buffer config class)
-   IndexVectorType interfaceAxis;
+   CoordinatesType interfaceAxis;
    VectorType bufferPosition;
    VectorType bufferOrientation;
    RealType bufferWidth;

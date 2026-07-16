@@ -19,12 +19,11 @@ public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
 
-   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
-   using RealType = typename SPHTraitsType::RealType;
-   using VectorType = typename SPHTraitsType::VectorType;
-   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
+    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+    using RealType = typename SPHTraitsType::RealType;
+    using VectorType = typename SPHTraitsType::VectorType;
+    using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -61,7 +60,7 @@ public:
       this->interpolatedGridEntity = interpolatedGridEntity;
 
       interpolationGrid.setOrigin( parameters.getXyz< VectorType >( prefix + "gridOrigin" ) );
-      interpolationGrid.setDimensions( parameters.getXyz< IndexVectorType >( prefix +"gridSize" ) );
+      interpolationGrid.setDimensions( parameters.getXyz< CoordinatesType >( prefix +"gridSize" ) );
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
 
       variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
@@ -88,7 +87,7 @@ protected:
    int interpolatedGridEntity;
 
    GridType interpolationGrid;
-   CoordinatesType gridDimension;
+   CoordinatesType dimensions;
    VariablesPointer variables;
    ScalarArrayType gamma;
 
@@ -106,7 +105,7 @@ class SensorInterpolation
 
    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using CoordinatesType = typename SPHTraitsType::CoordinatesType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
@@ -175,7 +174,7 @@ class SensorWaterLevel
 
    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using CoordinatesType = typename SPHTraitsType::CoordinatesType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;

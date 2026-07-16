@@ -22,7 +22,7 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    const VectorType domainOrigin = params.template getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = params.template getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = params.template getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    const int numberOfParticles = params.template getParameter< int >( "numberOfParticles" );
    const int numberOfAllocatedParticles = params.template getParameter< int >( "numberOfAllocatedParticles" );
@@ -36,7 +36,7 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    this->fluidSets[ 0 ]->initialize( numberOfParticles,
                                       numberOfAllocatedParticles,
                                       searchRadius,
-                                      gridSize,
+                                      dimensions,
                                       domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluidSets[ 0 ]->getParticles()->setParticleSetLabel( 0 );
@@ -44,7 +44,7 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    this->fluidSets[ 1 ]->initialize( 0,
                                       numberOfAllocatedParticles,
                                       searchRadius,
-                                      gridSize,
+                                      dimensions,
                                       domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluidSets[ 1 ]->getParticles()->setParticleSetLabel( 0 );
@@ -52,7 +52,7 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    this->boundarySets[ 0 ]->initialize( numberOfBoundaryParticles,
                                          numberOfAllocatedBoundaryParticles,
                                          searchRadius,
-                                         gridSize,
+                                         dimensions,
                                          domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundarySets[ 0 ]->getParticles()->setParticleSetLabel( 1 );
@@ -60,7 +60,7 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    this->boundarySets[ 1 ]->initialize( numberOfBoundaryParticles,
                                          numberOfAllocatedBoundaryParticles,
                                          searchRadius,
-                                         gridSize,
+                                         dimensions,
                                          domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundarySets[ 1 ]->getParticles()->setParticleSetLabel( 1 );

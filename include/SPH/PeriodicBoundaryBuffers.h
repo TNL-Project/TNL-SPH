@@ -11,19 +11,19 @@ class PeriodicBoundary
    using RealType = typename ParticlesType::RealType;
    using VectorType = typename ParticlesType::PointType;
    using GlobalIndexType = typename ParticlesType::GlobalIndexType;
-   using IndexVectorType = typename ParticlesType::PointType;
+   using CoordinatesType = typename ParticlesType::PointType;
 
    using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, DeviceType >;
 
    void
    initialize( RealType searchRadius,
-               IndexVectorType gridSize,
-               VectorType gridOrigin,
+               CoordinatesType dimensions,
+               VectorType origin,
                GlobalIndexType numberOfParticlesPerCell = 75 ) //TODO: Move this to config params.
    {
       //initialize the zone
       particleZone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      particleZone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, gridSize, gridOrigin, searchRadius );
+      particleZone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, dimensions, origin, searchRadius );
    }
 
    void
