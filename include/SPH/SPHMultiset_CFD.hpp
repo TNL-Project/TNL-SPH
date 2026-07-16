@@ -49,9 +49,9 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
    // set balancing tresholds
    loadBalancingMeasure = parameters.getParameter< std::string >( "load-balancing-measure" );
    loadBalancingStepInterval = parameters.getParameter< int >( "load-balancing-step-inteval" );
-   fluid->getDistributedParticles()->setParticlesCountResizeTrashold(
+   fluid->getDistributedParticles()->setParticlesCountResizeThreshold(
          parameters.getParameter< float >( "number-of-particles-balancing-coef" ) );
-   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+   fluid->getDistributedParticles()->setCompTimeResizePercentageThreshold(
          parameters.getParameter< float >( "computational-time-balancing-coef" ) );
    std::cout << "Printf: comp time balancing coef:" << parameters.getParameter< float >( "computational-time-balancing-coef" ) << std::endl;
 
@@ -432,7 +432,7 @@ void
 SPHMultiset_CFD< Model >::removeParticlesOutOfDomain()
 {
    const int numberOfParticlesToRemove = fluid->getParticles()->getNumberOfParticlesToRemove();
-   fluid->getParticles()->removeParitclesOutOfDomain();
+   fluid->getParticles()->removeParticlesOutOfDomain();
 
    if( fluid->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
       const int numberOfParticlesOutOfDomain = fluid->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
@@ -696,8 +696,8 @@ void
 SPHMultiset_CFD< Model >::resetOverlaps()
 {
    //TODO: This should be paritcles method
-   fluid->getParticles()->removeParitclesOutOfDomain();
-   boundary->getParticles()->removeParitclesOutOfDomain();
+   fluid->getParticles()->removeParticlesOutOfDomain();
+   boundary->getParticles()->removeParticlesOutOfDomain();
 }
 
 template< typename Model >
@@ -748,11 +748,11 @@ SPHMultiset_CFD< Model >::performLoadBalancing()
 
    //update distributed particles and overlaps
    //TODO: 1 stands for overlapWidth, pass as parameter
-   fluid->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+   fluid->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
                                                                      updatedGridOrigin,
                                                                      1,
                                                                      fluid->getParticles()->getSearchRadius() );
-   boundary->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+   boundary->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
                                                                         updatedGridOrigin,
                                                                         1,
                                                                         boundary->getParticles()->getSearchRadius() );
@@ -911,10 +911,10 @@ SPHMultiset_CFD< Model >::writeProlog( bool writeSystemInformation ) noexcept
       logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
       if( loadBalancingMeasure == "computationalTime" )
          logger.writeParameter( "Comp. time fraction difference to balance [-]:",
-             fluid->getDistributedParticles()->getCompTimeResizePercentageTrashold() );
+             fluid->getDistributedParticles()->getCompTimeResizePercentageThreshold() );
       else if( loadBalancingMeasure == "numberOfParticles" )
          logger.writeParameter( "Particles count fraction difference to balance [-]:",
-             fluid->getDistributedParticles()->getParticlesCountResizeTrashold() );
+             fluid->getDistributedParticles()->getParticlesCountResizeThreshold() );
    }
 #endif
    writePrologModel( logger, modelParams );

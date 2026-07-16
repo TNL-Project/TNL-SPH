@@ -16,7 +16,7 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 2;
 
    using UseWithDomainDecomposition = std::false_type;
-   using CellIndexerType = TNL::ParticleSystem::SimpleCellIndex< spaceDimension, std::index_sequence< 0, 1 > >;
+   using CellIndexerType = TNL::Particles::SimpleCellIndex< spaceDimension, std::index_sequence< 0, 1 > >;
    using NeighborListType = TNL::Algorithms::Segments::Ellpack< Device, int >;
 };
 
@@ -64,7 +64,7 @@ using ParticlesConfig = ParticleSystemConfig;
 
 // particle system
 #include <TNL/Particles/ParticlesLinkedList.h>
-using ParticleSystemType = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticleSystemType = TNL::Particles::ParticlesLinkedList< ParticlesConfig, Device >;
 
 // SPH model
 #include <SPH/Models/RSPH/Interactions.h>

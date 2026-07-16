@@ -138,7 +138,7 @@ SolverMultiSetBase< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
-      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain(); //TODO: This could directly return the count
+      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain(); //TODO: This could directly return the count
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
@@ -478,10 +478,10 @@ SolverMultiSetBase< Model >::writeProlog( bool writeSystemInformation ) noexcept
       logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
       if( loadBalancingMeasure == "computationalTime" )
          logger.writeParameter( "Comp. time fraction difference to balance [-]:",
-             fluidSets[ 0 ]->getDistributedParticles()->getCompTimeResizePercentageTrashold() );
+             fluidSets[ 0 ]->getDistributedParticles()->getCompTimeResizePercentageThreshold() );
       else if( loadBalancingMeasure == "numberOfParticles" )
          logger.writeParameter( "Particles count fraction difference to balance [-]:",
-             fluidSets[ 0 ]->getDistributedParticles()->getParticlesCountResizeTrashold() );
+             fluidSets[ 0 ]->getDistributedParticles()->getParticlesCountResizeThreshold() );
    }
 #endif
    writePrologModel( logger, modelParams );
@@ -594,8 +594,8 @@ void
 SolverMultiSetBase< Model >::resetOverlaps()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
-      boundarySets[ i ]->getParticles()->removeParitclesOutOfDomain();
+      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain();
+      boundarySets[ i ]->getParticles()->removeParticlesOutOfDomain();
    }
 }
 
@@ -646,11 +646,11 @@ SolverMultiSetBase< Model >::performLoadBalancing()
    logger.writeParameter( "New firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+      fluidSets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
                                                                                   updatedGridOrigin,
                                                                                   1,
                                                                                   fluidSets[ i ]->getParticles()->getSearchRadius() );
-      boundarySets[ i ]->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+      boundarySets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
                                                                                      updatedGridOrigin,
                                                                                      1,
                                                                                      boundarySets[ i ]->getParticles()->getSearchRadius() );

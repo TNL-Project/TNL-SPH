@@ -19,7 +19,7 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   using ParticlesZone = TNL::ParticleSystem::ParticleZone< ParticlesConfig, DeviceType >;
+   using ParticlesZone = TNL::Particles::ParticleZone< ParticlesConfig, DeviceType >;
 
    template< typename FluidPointer >
    void

@@ -7,31 +7,31 @@
  */
 #include "sources/SimulationControlConfig.h"
 #include <fstream>
-using SimulationControl = TNL::ParticleSystem::SPH::SimulationControlConfiguration::SPHSimulationControl;
+using SimulationControl = TNL::Particles::SPH::SimulationControlConfiguration::SPHSimulationControl;
 
 #include "sources/ParticlesConfig.h"
-using ParticlesParams = TNL::ParticleSystem::ParticleSystemConfig::ParticleInitialSetup< SimulationControl::DeviceType >;
+using ParticlesParams = TNL::Particles::ParticleSystemConfig::ParticleInitialSetup< SimulationControl::DeviceType >;
 
 #include "sources/SPHCaseConfig.h"
-using SPHParams = TNL::ParticleSystem::SPH::SPHConfig::SPHParamsConfig< SimulationControl::DeviceType >;
+using SPHParams = TNL::Particles::SPH::SPHConfig::SPHParamsConfig< SimulationControl::DeviceType >;
 
 /**
  * Include type of particle system.
  */
 #include <Particles/ParticlesLinkedListFloating.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesParams::ParticlesConfig, SimulationControl::DeviceType >;
+using ParticlesSys = TNL::Particles::ParticlesLinkedList< ParticlesParams::ParticlesConfig, SimulationControl::DeviceType >;
 
 /**
  * Include particular formulation of SPH method.
  */
 #include <SPH/Models/WCSPH_DBC/Interactions.h>
-using SPHModel = TNL::ParticleSystem::SPH::WCSPH_DBC< ParticlesSys, SPHParams >;
+using SPHModel = TNL::Particles::SPH::WCSPH_DBC< ParticlesSys, SPHParams >;
 
 /**
  * Include type of SPH simulation.
  */
 #include <SPH/SPH.h>
-using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel >;
+using SPHSimulation = TNL::Particles::SPH::SPHSimpleFluid< SPHModel >;
 
 /**
  * Particle system reader.
@@ -39,8 +39,8 @@ using SPHSimulation = TNL::ParticleSystem::SPH::SPHSimpleFluid< SPHModel >;
 #include <Readers/VTKReader.h>
 #include <Writers/VTKWriter.h>
 #include <Readers/VTKReader.h>
-using Reader = TNL::ParticleSystem::Readers::VTKReader;
-using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesSys >;
+using Reader = TNL::Particles::Readers::VTKReader;
+using Writer = TNL::Particles::Writers::VTKWriter< ParticlesSys >;
 using SimulationReaderType = Reader;
 
 /**

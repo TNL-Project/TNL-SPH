@@ -85,7 +85,7 @@ public:
    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
    using IndexVectorType = typename SolverTraitsType::IndexVectorType;
 
-   using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
+   using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
    using MassNodes = MassNodes< SPHCaseConfig >;
 
    using KernelFunction = typename SPHDefs::KernelFunction;
@@ -1154,7 +1154,7 @@ public:
       nodes.setNumberOfParticles( n_mn );
       nodes.getPoints() = massNodes.points;
 
-      using WriterType = TNL::ParticleSystem::Writers::VTKWriter< ParticlesType >;
+      using WriterType = TNL::Particles::Writers::VTKWriter< ParticlesType >;
       std::ofstream outputFileFluid( outputFileName, std::ofstream::out );
       WriterType writer( outputFileFluid );
       writer.writeParticles( nodes );

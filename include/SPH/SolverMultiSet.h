@@ -61,8 +61,8 @@ public:
    using MultiresolutionBoundaryPointer = Pointers::SharedPointer< MultiresolutionBoundary, DeviceType >;
 
    //Reader
-   using Reader = TNL::ParticleSystem::Readers::VTKReader;
-   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesType >;
+   using Reader = TNL::Particles::Readers::VTKReader;
+   using Writer = TNL::Particles::Writers::VTKWriter< ParticlesType >;
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 

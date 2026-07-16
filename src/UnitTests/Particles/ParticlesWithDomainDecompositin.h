@@ -7,7 +7,7 @@
 #include <Particles/ParticlesLinkedList.h>
 
 using namespace TNL;
-using namespace ParticleSystem;
+using namespace TNL::Particles;
 
 // Config for 2D particle system with decomposition
 template< typename Device >
@@ -57,7 +57,7 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesHost )
 {
    using Device = TNL::Devices::Host;
    using Setup = ParticlesWithDecomposition2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< Setup::Config, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< Setup::Config, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PointType = typename Setup::PointType;
    using IndexVectorType = typename Setup::IndexVectorType;
@@ -135,7 +135,7 @@ TEST( ParticlesWithDecomposition2DTest, ParticlesPropertiesDevice )
 {
    using Device = TNL::Devices::Cuda;
    using Setup = ParticlesWithDecomposition2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< Setup::Config, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< Setup::Config, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PointType = typename Setup::PointType;
    using IndexVectorType = typename Setup::IndexVectorType;
@@ -213,7 +213,7 @@ TEST( ParticlesWithDecomposition2DTest, ComputeParticleCellIndicesCuda )
 {
    using Device = TNL::Devices::Cuda;
    using Setup = ParticlesWithDecomposition2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< Setup::Config, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< Setup::Config, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PointType = typename Setup::PointType;
    using IndexVectorType = typename Setup::IndexVectorType;

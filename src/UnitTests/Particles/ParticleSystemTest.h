@@ -7,7 +7,7 @@
 #include <Particles/ParticlesLinkedList.h>
 
 using namespace TNL;
-using namespace ParticleSystem;
+using namespace TNL::Particles;
 
 template< typename Device >
 class Particles2DConfig
@@ -96,7 +96,7 @@ TEST( SearchForNeighbors2DTest, ParticlesPropertiesHost )
 {
    using Device = TNL::Devices::Host;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
 
    ParticlesSetup setup;
@@ -120,7 +120,7 @@ TEST( SearchForNeighbors2DTest, ParticlesPropertiesCuda )
 {
    using Device = TNL::Devices::Cuda;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
 
    ParticlesSetup setup;
@@ -144,7 +144,7 @@ TEST( SearchForNeighbors2DTest, ComputeParticleCellIndicesCuda )
 {
    using Device = TNL::Devices::Cuda;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
 
    ParticlesSetup setup;
@@ -204,7 +204,7 @@ TEST( SearchForNeighbors2DTest, SortParticlesCuda )
 {
    using Device = TNL::Devices::Cuda;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using Point = typename Particles::PointType;
 
@@ -328,7 +328,7 @@ TEST( SearchForNeighbors2DTest, ParticlesToCellsCuda )
 {
    using Device = TNL::Devices::Cuda;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using PairIndexType = typename Particles::PairIndexType;
 

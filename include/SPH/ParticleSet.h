@@ -41,9 +41,9 @@ public:
    using PeriodicBoundaryPointer = typename Pointers::SharedPointer< PeriodicBoundary, DeviceType >;
 
    //#ifdef  HAVE_MPI
-   using DistributedParticlesType = TNL::ParticleSystem::DistributedParticleSystem< ParticleSystem >;
+   using DistributedParticlesType = TNL::Particles::DistributedParticleSystem< ParticleSystem >;
    using DistributedParticlesPointerType = typename Pointers ::SharedPointer< DistributedParticlesType, DeviceType >;
-   using DistributedParticleSynchronizer = TNL::ParticleSystem::DistributedParticlesSynchronizer< DistributedParticlesType >;
+   using DistributedParticleSynchronizer = TNL::Particles::DistributedParticlesSynchronizer< DistributedParticlesType >;
    //#endif
 
    ParticleSet()

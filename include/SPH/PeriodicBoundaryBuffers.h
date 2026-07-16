@@ -13,7 +13,7 @@ class PeriodicBoundary
    using GlobalIndexType = typename ParticlesType::GlobalIndexType;
    using IndexVectorType = typename ParticlesType::PointType;
 
-   using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, DeviceType >;
+   using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, DeviceType >;
 
    void
    initialize( RealType searchRadius,

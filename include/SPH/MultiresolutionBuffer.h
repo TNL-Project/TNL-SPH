@@ -84,7 +84,7 @@ public:
    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
    using IndexVectorType = typename SolverTraitsType::IndexVectorType;  //TODO: Due to init
 
-   using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
+   using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, typename ParticlesType::DeviceType >;
    using MassNodes = MassNodes< SPHCaseConfig >;
 
    using KernelFunction = typename SPHDefs::KernelFunction;

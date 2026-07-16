@@ -8,7 +8,7 @@
 
 
 using namespace TNL;
-using namespace ParticleSystem;
+using namespace TNL::Particles;
 
 template< typename Device >
 class Particles2DConfig
@@ -97,7 +97,7 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
 {
    using Device = TNL::Devices::Cuda;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::ParticleSystem::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
 
    using GhostZone = ParticleZone< ParticlesSetup::ParticlesConfig >;

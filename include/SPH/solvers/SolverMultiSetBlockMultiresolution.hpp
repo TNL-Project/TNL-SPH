@@ -121,9 +121,9 @@ SolverMultiSetBlockMultiresolution< Model >::initializeDistributedSimulation()
 
    this->loadBalancingMeasure = params.template getParameter< std::string >( "load-balancing-measure" );
    this->loadBalancingStepInterval = params.template getParameter< int >( "load-balancing-step-inteval" );
-   this->fluid()->getDistributedParticles()->setParticlesCountResizeTrashold(
+   this->fluid()->getDistributedParticles()->setParticlesCountResizeThreshold(
          params.template getParameter< float >( "number-of-particles-balancing-coef" ) );
-   this->fluid()->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+   this->fluid()->getDistributedParticles()->setCompTimeResizePercentageThreshold(
          params.template getParameter< float >( "computational-time-balancing-coef" ) );
 
    this->timeMeasurement.addTimer( "synchronize", false );

@@ -44,7 +44,7 @@
  */
 #include "../../../../SPH/TimeStep.h"
 
-using namespace TNL::ParticleSystem;
+using namespace TNL::Particles;
 
 int main( int argc, char* argv[] )
 {
