@@ -84,83 +84,91 @@ public:
    }
 
    //#ifdef HAVE_MPI
-   void
-   initializeAsDistributed( const unsigned int numberOfParticles,
-                            const unsigned int numberOfAllocatedParticles,
-                            const RealType& searchRadius,
-                            const CoordinatesType& dimensions,
-                            const VectorType& origin,
-                            const CoordinatesType& subdomainDimensions,
-                            const CoordinatesType& globalOriginCoordinates,
-                            const int numberOfOverlapLayers,
-                            const Containers::StaticVector< 2, int >& numberOfSubdomains,
-                            const VectorType& subdomainOrigin )
-   {
-      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
+    void
+    initializeAsDistributed( const unsigned int numberOfParticles,
+                             const unsigned int numberOfAllocatedParticles,
+                             const RealType& searchRadius,
+                             const CoordinatesType& dimensions,
+                             const VectorType& origin,
+                             const CoordinatesType& subdomainDimensions,
+                             const CoordinatesType& globalOriginCoordinates,
+                             const int numberOfOverlapLayers,
+                             const Containers::StaticVector< 2, int >& numberOfSubdomains,
+                             const VectorType& subdomainOrigin )
+    {
+       this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
 
-      this->particles->setSize( numberOfAllocatedParticles );
-      this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setSearchRadius( searchRadius );
+       this->particles->setSize( numberOfAllocatedParticles );
+       this->particles->setNumberOfParticles( numberOfParticles );
+       this->particles->setSearchRadius( searchRadius );
 
-      this->particles->setDimensions( subdomainDimensions );
-      this->particles->setOrigin( subdomainOrigin );  //REMOVE
-      this->particles->setOverlapWidth( numberOfOverlapLayers );
-      //const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
-      //this->particles->setReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
-      this->particles->setReferentialOrigin( origin );
-      this->particles->setGlobalOriginCoordinates( globalOriginCoordinates );
+       this->particles->setDimensions( subdomainDimensions );
+       this->particles->setOrigin( subdomainOrigin );  //REMOVE
+       this->particles->setOverlapWidth( numberOfOverlapLayers );
+       //const VectorType shiftOriginDueToOverlaps =  searchRadius * numberOfOverlapLayers;
+       //this->particles->setReferentialOrigin( domainOrigin - shiftOriginDueToOverlaps );
+       this->particles->setReferentialOrigin( origin );
+       this->particles->setGlobalOriginCoordinates( globalOriginCoordinates );
 
-      this->variables->setSize( numberOfAllocatedParticles );
-      this->integratorVariables->setSize( numberOfAllocatedParticles );
+       this->variables->setSize( numberOfAllocatedParticles );
+       this->integratorVariables->setSize( numberOfAllocatedParticles );
 
-      this->distributedParticles->setDistributedGridParameters( searchRadius,
-                                                                 dimensions,
-                                                                 origin,
-                                                                 subdomainDimensions,
-                                                                 globalOriginCoordinates,
-                                                                numberOfOverlapLayers,
-                                                                numberOfSubdomains );
+       CoordinatesType domainDecomposition;
+       domainDecomposition[ 0 ] = numberOfSubdomains[ 0 ];
+       domainDecomposition[ 1 ] = numberOfSubdomains[ 1 ];
+       if constexpr( CoordinatesType::getSize() > 2 )
+          domainDecomposition[ 2 ] = 1;
 
-      //initialize synchronizer
-      //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
-      //synchronizer.initialize( this->distributedParticles );
-      //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
-   }
+       this->distributedParticles->setDistributedGridParameters( searchRadius,
+                                                                  dimensions,
+                                                                  origin,
+                                                                  numberOfOverlapLayers,
+                                                                  domainDecomposition );
 
-   template< typename GridType >
-   void
-   initializeAsDistributed( const IndexType numberOfParticles,
-                            const IndexType numberOfAllocatedParticles,
-                            const GridType& localGrid,
-                            const CoordinatesType& localOriginCoordinates,
-                            const GridType& globalGrid,
-                            const int numberOfOverlapLayers,
-                            const Containers::StaticVector< 2, int >& numberOfSubdomains = 0 )  //TODO: Depends on decomposition
-   {
-      this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
-      this->particles->setSize( numberOfAllocatedParticles );
-      this->particles->setNumberOfParticles( numberOfParticles );
-      this->particles->setSearchRadius( localGrid.getSpaceSteps()[ 0 ] );
-      this->particles->setDimensions( localGrid.getDimensions() );
-      this->particles->setOrigin(
-         localGrid.getOrigin() );  //TODO: Remove, particles should be determined solely by grid index
-      this->particles->setOverlapWidth( numberOfOverlapLayers );
+       //initialize synchronizer
+       //TODO: THIS REQUIRED INITIALIZED OVERLAPS! SO IT REQUIRES INITIALIZED DISTRIBUTED GRID PARAMETERS
+       //synchronizer.initialize( this->distributedParticles );
+       //synchronizer.setCommunicator( distributedParticles->getCommunicator() );
+    }
 
-      this->particles->setReferentialOrigin( globalGrid.getOrigin() );
-      this->particles->setGlobalOriginCoordinates( localOriginCoordinates );
+    template< typename GridType >
+    void
+    initializeAsDistributed( const IndexType numberOfParticles,
+                             const IndexType numberOfAllocatedParticles,
+                             const GridType& localGrid,
+                             const CoordinatesType& localOriginCoordinates,
+                             const GridType& globalGrid,
+                             const int numberOfOverlapLayers,
+                             const Containers::StaticVector< 2, int >& numberOfSubdomains = 0 )
+    {
+       this->particles = ParticlePointerType( distributedParticles->getLocalParticles() );
+       this->particles->setSize( numberOfAllocatedParticles );
+       this->particles->setNumberOfParticles( numberOfParticles );
+       this->particles->setSearchRadius( localGrid.getSpaceSteps()[ 0 ] );
+       this->particles->setDimensions( localGrid.getDimensions() );
+       this->particles->setOrigin(
+          localGrid.getOrigin() );  //TODO: Remove, particles should be determined solely by grid index
+       this->particles->setOverlapWidth( numberOfOverlapLayers );
 
-      this->variables->setSize( numberOfAllocatedParticles );
-      this->integratorVariables->setSize( numberOfAllocatedParticles );
+       this->particles->setReferentialOrigin( globalGrid.getOrigin() );
+       this->particles->setGlobalOriginCoordinates( localOriginCoordinates );
 
-      //TODO: Why we even need this?
-      this->distributedParticles->setDistributedGridParameters( localGrid.getSpaceSteps()[ 0 ],
-                                                                globalGrid.getDimensions(),
-                                                                globalGrid.getOrigin(),
-                                                                localGrid.getDimensions(),
-                                                                localOriginCoordinates,
-                                                                numberOfOverlapLayers,
-                                                                numberOfSubdomains );
-   }
+       this->variables->setSize( numberOfAllocatedParticles );
+       this->integratorVariables->setSize( numberOfAllocatedParticles );
+
+       //TODO: Why we even need this?
+       CoordinatesType domainDecomposition;
+       domainDecomposition[ 0 ] = numberOfSubdomains[ 0 ];
+       domainDecomposition[ 1 ] = numberOfSubdomains[ 1 ];
+       if constexpr( CoordinatesType::getSize() > 2 )
+          domainDecomposition[ 2 ] = 1;
+
+       this->distributedParticles->setDistributedGridParameters( localGrid.getSpaceSteps()[ 0 ],
+                                                                  globalGrid.getDimensions(),
+                                                                  globalGrid.getOrigin(),
+                                                                  numberOfOverlapLayers,
+                                                                  domainDecomposition );
+    }
    //#endif
 
    void
