@@ -87,7 +87,7 @@ include_directories(include)
 # Find or fetch dependencies
 include(FetchContent)
 FetchContent_Declare(TNL
-    GIT_REPOSITORY https://gitlab.com/tnl-project/tnl.git
+    GIT_REPOSITORY https://gitlab.com/tomashalada/tnl.git
     GIT_TAG TH/particles
     EXCLUDE_FROM_ALL
 )
