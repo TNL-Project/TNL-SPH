@@ -317,10 +317,8 @@ def build_subdomain_data(
       "boundary_n":           g.boundary_n,
       "fluid_n_allocated":    fn_alloc,
       "boundary_n_allocated": bn_alloc,
+      "refinement-factor":    g.factor,
    }
-
-   #if g.factor != 1.0:
-   #   sd["refinement-factor"] = g.factor
 
    for ax in axes:
       origin_glob = getattr(g, f"origin_glob_{ax}")
