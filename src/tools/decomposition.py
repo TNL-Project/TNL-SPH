@@ -319,8 +319,8 @@ def build_subdomain_data(
       "boundary_n_allocated": bn_alloc,
    }
 
-   if g.factor != 1.0:
-      sd["refinement-factor"] = g.factor
+   #if g.factor != 1.0:
+   #   sd["refinement-factor"] = g.factor
 
    for ax in axes:
       origin_glob = getattr(g, f"origin_glob_{ax}")
@@ -363,4 +363,4 @@ def write_distributed_domain_params(
 ) -> None:
    data = build_distributed_domain_data(grids, setup, distributed)
    with open("sources/config-distributed-domain.jsonc", "w") as f:
-      json.dump(data, f, indent=4)
+      json.dump(data, f, indent=4, sort_keys=True)
