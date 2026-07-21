@@ -115,6 +115,7 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
    if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       logger.writeParameter( "Simulation monitor initialization.", "" );
       simulationMonitor.init( parameters, timeStepping, logger );
+      simulationMonitor.setupVolumetricFlowRateZones( fluid );
       logger.writeParameter( "Simulation monitor initialization.", "Done." );
    }
 
@@ -582,6 +583,20 @@ SPHMultiset_CFD< Model >::measure()
 {
    simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
          fluid, boundary, modelParams, timeStepping, logger, verbose );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::measureFlowRate( FluidPointer& fluid )
+{
+   simulationMonitor.measureVolumetricFlowRates( fluid, modelParams, timeStepping );
+}
+
+template< typename Model >
+void
+SPHMultiset_CFD< Model >::measureFlowRate()
+{
+   simulationMonitor.measureVolumetricFlowRates( fluid, modelParams, timeStepping );
 }
 
 //template< typename Model >

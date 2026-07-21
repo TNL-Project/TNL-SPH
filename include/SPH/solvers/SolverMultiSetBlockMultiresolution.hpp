@@ -88,11 +88,12 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    log.writeSeparator();
    const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
    const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
-   if( hasMeasuretoolFile || hasMeasuretoolInline ) {
-      log.writeParameter( "Simulation monitor initialization.", "" );
-      this->simulationMonitor.init( params, this->timeStepping, log );
-      log.writeParameter( "Simulation monitor initialization.", "Done." );
-   }
+    if( hasMeasuretoolFile || hasMeasuretoolInline ) {
+       log.writeParameter( "Simulation monitor initialization.", "" );
+       this->simulationMonitor.init( params, this->timeStepping, log );
+       this->simulationMonitor.setupVolumetricFlowRateZones( this->fluidSets[ 0 ] );
+       log.writeParameter( "Simulation monitor initialization.", "Done." );
+    }
 }
 
 #ifdef HAVE_MPI
@@ -158,11 +159,12 @@ SolverMultiSetBlockMultiresolution< Model >::initializeDistributedSimulation()
    readParticleFilesDistributed( params, this->parametersDistributed, log );
 
    log.writeSeparator();
-   if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
-      log.writeParameter( "Simulation monitor initialization.", "" );
-      this->simulationMonitor.init( params, this->timeStepping, log );
-      log.writeParameter( "Simulation monitor initialization.", "Done." );
-   }
+    if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
+       log.writeParameter( "Simulation monitor initialization.", "" );
+       this->simulationMonitor.init( params, this->timeStepping, log );
+       this->simulationMonitor.setupVolumetricFlowRateZones( this->fluidSets[ 0 ] );
+       log.writeParameter( "Simulation monitor initialization.", "Done." );
+    }
 }
 #endif
 

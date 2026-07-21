@@ -246,6 +246,22 @@ SolverMultiSetBase< Model >::measure()
 }
 
 template< typename Model >
+void
+SolverMultiSetBase< Model >::measureFlowRate( FluidPointer& fluid )
+{
+   simulationMonitor.measureVolumetricFlowRates( fluid, modelParams, timeStepping );
+}
+
+template< typename Model >
+void
+SolverMultiSetBase< Model >::measureFlowRate()
+{
+   for( int i = 0; i < numberOfSubsets; i++ )
+      simulationMonitor.measureVolumetricFlowRatesStep( fluidSets[ i ], modelParams, timeStepping );
+   simulationMonitor.updateAndOutputVolumetricFlowRates( timeStepping );
+}
+
+template< typename Model >
 template< typename Stage >
 void
 SolverMultiSetBase< Model >::integrate( const Stage integrationStage, const bool integrateBoundary )

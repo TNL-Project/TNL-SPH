@@ -103,6 +103,12 @@ public:
    void
    measure();
 
+   void
+   measureFlowRate( FluidPointer& fluid );
+
+   void
+   measureFlowRate();
+
    template< typename Stage = int >
    void
    integrate( const Stage integrationStage = Stage{}, const bool integrateBoundary = false );

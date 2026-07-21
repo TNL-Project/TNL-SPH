@@ -89,8 +89,12 @@ public:
       const RealType volume = Algorithms::reduce< DeviceType >(
             0, numberOfZoneParticles, countParticles, TNL::Plus() );
 
-      // average and evaluate
       intervalVolumeSum += volume;
+   }
+
+   void
+   updateVolumetricFlowRate( const RealType dt )
+   {
       intervalTime += dt;
 
       if( intervalTime > averagingInterval ){

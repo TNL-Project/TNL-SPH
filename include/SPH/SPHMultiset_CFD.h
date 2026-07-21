@@ -201,6 +201,12 @@ public:
    void
    measure();
 
+   void
+   measureFlowRate( FluidPointer& fluid );
+
+   void
+   measureFlowRate();
+
    /**
     * \brief General integrator wrapper
     */
