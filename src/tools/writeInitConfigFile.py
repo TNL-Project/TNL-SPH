@@ -234,6 +234,12 @@ def write_measuretool_params(setup: dict) -> None:
     with open("sources/config-measuretool.jsonc", "w") as f:
         f.write(cfg)
 
+def write_user_defined_params(setup: dict, udp_replacements = []) -> None:
+    with open("template/config-user-defined_template.jsonc", "r") as f:
+        cfg = safe_replace(f.read(), udp_replacements, setup)
+    with open("sources/config-user-defined.jsonc", "w") as f:
+        f.write(cfg)
+
 def save_params_to_json(data: dict, filename: str):
    #FIX: We need to somehow deal with the
    def json_converter(obj):
