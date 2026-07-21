@@ -594,8 +594,8 @@ public:
          ParticlesType::NeighborsLoop::exec(
             i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x, &div_r_x, &drs_min );
 
-         RealType rho_x;
-         VectorType v_x;
+         RealType rho_x = 0.f;
+         VectorType v_x = 0.f;
 
          //TODO: Use LU Decomposition so we can just reuse it different RHS
          //TODO: Proper condition should be if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold )
@@ -1192,3 +1192,4 @@ protected:
 
 }  //namespace SPH
 }  //namespace TNL
+
