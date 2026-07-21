@@ -339,20 +339,24 @@ def build_distributed_domain_data(
    grids:       List[SubdomainGrid],
    setup:       dict,
    distributed: bool = False,
+   particles_filename_pattern = ""
 ) -> dict:
+   if particles_filename_pattern != "":
+       particles_filename_pattern += "_"
+
    if distributed:
       data = {}
       for g in grids:
          key = f"subdomain-x-{g.ix}-y-{g.iy}"
-         fluid_path = f"sources/dambreak_subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
-         boundary_path = f"sources/dambreak_subdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
+         fluid_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
+         boundary_path = f"sources/{particles_filename_pattern}ubdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
          data[key] = build_subdomain_data(g, setup, fluid_path, boundary_path)
       return data
    else:
       subdomains = {}
       for i, g in enumerate(grids):
-         fluid_path = f"sources/subdomain-{i}-dambreak_fluid.vtk"
-         boundary_path = f"sources/subdomain-{i}-dambreak_boundary.vtk"
+         fluid_path = f"sources/subdomain-{i}-{particles_filename_pattern}fluid.vtk"
+         boundary_path = f"sources/subdomain-{i}-{particles_filename_pattern}boundary.vtk"
          subdomains[f"subdomain-{i}"] = build_subdomain_data(g, setup, fluid_path, boundary_path)
       return {"subdomains": subdomains}
 
@@ -360,7 +364,8 @@ def write_distributed_domain_params(
    grids:       List[SubdomainGrid],
    setup:       dict,
    distributed: bool = False,
+   particles_filename_pattern = ""
 ) -> None:
-   data = build_distributed_domain_data(grids, setup, distributed)
+   data = build_distributed_domain_data(grids, setup, distributed, particles_filename_pattern)
    with open("sources/config-distributed-domain.jsonc", "w") as f:
       json.dump(data, f, indent=4, sort_keys=True)
