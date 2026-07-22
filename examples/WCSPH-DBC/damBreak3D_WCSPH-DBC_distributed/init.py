@@ -100,7 +100,7 @@ def write_simulation_params(setup: dict, grids: list) -> None:
 
    cfg = cf.safe_replace(cfg, cf.ini_replacements, setup)
 
-   dd_data = dec.build_distributed_domain_data(grids, setup, distributed=True)
+   dd_data = dec.build_distributed_domain_data(grids, setup, distributed=True, particles_filename_pattern="dambreak")
    dd_json = json.dumps(dd_data, indent=8)
    dd_json = dd_json.strip()[1:-1]
    cfg = cfg.replace('placeholderDistributedDomainContent', dd_json)
@@ -179,6 +179,6 @@ if __name__ == "__main__":
    print("\nComplete example setup:")
    pprint(setup)
    write_simulation_params(setup, grids)
-   dec.write_distributed_domain_params(grids, setup, distributed=True)
+   dec.write_distributed_domain_params(grids, setup, distributed=True, particles_filename_pattern="dambreak")
 
    domainGrid.write_domain_grid(setup, "sources/dambreak_grid.vtk")

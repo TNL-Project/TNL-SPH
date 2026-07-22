@@ -347,7 +347,7 @@ def build_distributed_domain_data(
       for g in grids:
          key = f"subdomain-x-{g.ix}-y-{g.iy}"
          fluid_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
-         boundary_path = f"sources/{particles_filename_pattern}ubdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
+         boundary_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
          data[key] = build_subdomain_data(g, setup, fluid_path, boundary_path)
       return data
    else:
