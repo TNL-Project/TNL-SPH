@@ -553,6 +553,19 @@ SolverMultiSetBase< Model >::writeInfo() noexcept
                              + " s, simulation step: " + std::to_string( timeStepping.getStep() ),
                           "" );
    logger.writeCurrentTime( "Current time:" );
+
+   const GlobalIndexType currentStep = timeStepping.getStep();
+   if( ! firstWriteInfo ) {
+      const double elapsedWallTime = snapshotWallTimer.getRealTime();
+      const GlobalIndexType elapsedSteps = currentStep - lastWriteInfoStep;
+      if( elapsedWallTime > 0.0 && elapsedSteps > 0 )
+         logger.writeParameter( "Average steps per second:", elapsedSteps / elapsedWallTime );
+   }
+   firstWriteInfo = false;
+   lastWriteInfoStep = currentStep;
+   snapshotWallTimer.reset();
+   snapshotWallTimer.start();
+
    for( int i = 0; i < numberOfSubsets; i++ ){
       logger.writeParameter( "Number of fluid particles:", fluidSets[ i ]->getNumberOfParticles() );
       logger.writeParameter( "Number of allocated fluid particles:", fluidSets[ i ]->getNumberOfAllocatedParticles() );

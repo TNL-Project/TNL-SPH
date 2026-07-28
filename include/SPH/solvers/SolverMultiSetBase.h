@@ -12,6 +12,7 @@
 #include <TNL/Config/ConfigDescription.h>
 #include <TNL/Config/ParameterContainer.h>
 #include <TNL/Logger.h>
+#include <TNL/Timer.h>
 
 #include "../Fluid.h"
 #include "../Boundary.h"
@@ -204,6 +205,11 @@ public:
 
    TimeStepping timeStepping;
    ComputationTimeMeasurement timeMeasurement;
+
+   // Wall-clock timer for measuring steps-per-second between successive writeInfo() calls.
+   TNL::Timer snapshotWallTimer;
+   GlobalIndexType lastWriteInfoStep = 0;
+   bool firstWriteInfo = true;
 
    std::string caseName;
    std::string verbose = "none";
