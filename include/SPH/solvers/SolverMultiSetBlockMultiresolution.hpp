@@ -40,11 +40,14 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    auto& log = this->logger;
 
    this->numberOfSubsets = params.template getParameter< int >( "numberOfSubdomains" );
-    const std::string configSubdomainsPath = params.template getParameter< std::string >( "subdomains-config" );
-    const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
-    for( int subset = 0; subset < this->numberOfSubsets; subset++ )
-       TNL::SPH::configSubdomain( subset, this->configSubdomains );
-    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
+   const std::string configSubdomainsPath = params.template getParameter< std::string >( "subdomains-config" );
+   const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
+   for( int subset = 0; subset < this->numberOfSubsets; subset++ )
+      TNL::SPH::configSubdomain( subset, this->configSubdomains );
+   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
+   for( int bufferIdx = 1; bufferIdx <= this->numberOfSubsets; bufferIdx++ )
+      TNL::SPH::configMultiresolutionBuffer( bufferIdx, this->configSubdomains );
+   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log );
 
    topology.loadFromConfig( params, parametersSubdomains );
    topology.finalizeLinear();
@@ -216,9 +219,14 @@ SolverMultiSetBlockMultiresolution< Model >::initMultiResolutionBoundaryPatches(
 
       for( const auto& iface : topology.getInterfacesOfSubdomain( i ) ) {
 
+         const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx + 1 ) + "-";
+         const int mrbNumOfPtcs = parametersSubdomains.getParameter< int >( bufferKey + "n" );
+         // using some initial estimate
+         const int mrbNumOfAllocPtcs = std::max( int( 0.1 * this->getTotalFluidParticlesCount() ), 2 * mrbNumOfPtcs );
+
          multiresolutionBoundaryPatches[ mrbIdx ]->initializeAsDistributed(
-            0,
-            60000,
+            mrbNumOfPtcs,
+            mrbNumOfAllocPtcs,
             topology.getLocalGrid( i ),
             topology.getLocalOriginCoordinates( i ),
             topology.getGlobalGrid(),
@@ -265,6 +273,16 @@ SolverMultiSetBlockMultiresolution< Model >::readParticlesFiles()
          log.writeParameter( "Reading open boundary particles:", paramsOB.template getParameter< std::string >( prefix + "particles" ) );
          this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::Reader >(
             paramsOB.template getParameter< std::string >( prefix + "particles" ) );
+      }
+   }
+
+   const int numberOfMultiresolutionBuffers = multiresolutionBoundaryPatches.size();
+   for( int i = 0; i < numberOfMultiresolutionBuffers; i++ ) {
+      std::string bufferKey = "multiresolution-buffer-" + std::to_string( i ) + "-";
+      if( parametersSubdomains.getParameter< int >( bufferKey + "n" ) != 0 ) {
+         const std::string mrbFileName = parametersSubdomains.getParameter< std::string >( bufferKey + "particles" );
+         log.writeParameter( "Reading multiresolution buffer particles:", mrbFileName );
+         multiresolutionBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::Reader >( mrbFileName );
       }
    }
 }
