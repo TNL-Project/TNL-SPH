@@ -2,6 +2,7 @@ import json
 import math
 from dataclasses import dataclass
 from typing import List, Tuple
+import re
 
 import numpy as np
 
@@ -333,6 +334,40 @@ def build_subdomain_data(
 
    return sd
 
+def build_multiresolution_buffer_data(setup: dict) -> dict:
+    """
+    Scan `setup` for keys matching 'mrb_buffer_<N>_n' and build a dict
+    describing each multiresolution buffer's particle file and count.
+    Returns an empty dict if no buffers are present.
+
+    The child keys use the full schema prefix 'multiresolution-buffer-<N>' so
+    that the solver's flattenJSON parser maps the nested entry
+        "multiresolution-buffers": { "multiresolution-buffer-0": { "particles": ..., "n": ... } }
+    to the registered config keys
+        "multiresolution-buffer-0-particles", "multiresolution-buffer-0-n"
+    via the parentKey-childKey flattening rule.  The index <N> is 0-based to
+    match the solver's configMultiresolutionBuffer( bufferIdx, ... ) which
+    registers bufferIdx = 0..numberOfSubsets-1, consistent with subdomain
+    indexing (subdomain-0, subdomain-1, ...).
+    """
+    pattern = re.compile(r"^mrb_buffer_(\d+)_n$")
+    buffer_indices = sorted(
+        int(m.group(1))
+        for key in setup
+        if (m := pattern.match(key)) is not None
+    )
+
+    if not buffer_indices:
+        return {}
+
+    buffers = {}
+    for i in buffer_indices:
+        buffers[f"multiresolution-buffer-{i}"] = {
+            "particles": f"sources/multiresolution_buffer_{i}.vtk",
+            "n": setup[f"mrb_buffer_{i}_n"],
+        }
+    return buffers
+
 def build_distributed_domain_data(
    grids:       List[SubdomainGrid],
    setup:       dict,
@@ -349,14 +384,19 @@ def build_distributed_domain_data(
          fluid_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
          boundary_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
          data[key] = build_subdomain_data(g, setup, fluid_path, boundary_path)
-      return data
    else:
       subdomains = {}
       for i, g in enumerate(grids):
          fluid_path = f"sources/subdomain-{i}-{particles_filename_pattern}fluid.vtk"
          boundary_path = f"sources/subdomain-{i}-{particles_filename_pattern}boundary.vtk"
          subdomains[f"subdomain-{i}"] = build_subdomain_data(g, setup, fluid_path, boundary_path)
-      return {"subdomains": subdomains}
+      data = {"subdomains": subdomains}
+
+   mrb_data = build_multiresolution_buffer_data(setup)
+   if mrb_data:
+       data["multiresolution-buffers"] = mrb_data
+
+   return data
 
 def write_distributed_domain_params(
    grids:       List[SubdomainGrid],

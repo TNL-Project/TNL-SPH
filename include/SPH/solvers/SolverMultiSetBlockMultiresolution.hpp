@@ -44,10 +44,9 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
    for( int subset = 0; subset < this->numberOfSubsets; subset++ )
       TNL::SPH::configSubdomain( subset, this->configSubdomains );
-   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
-   for( int bufferIdx = 1; bufferIdx <= this->numberOfSubsets; bufferIdx++ )
+   for( int bufferIdx = 0; bufferIdx < this->numberOfSubsets; bufferIdx++ )
       TNL::SPH::configMultiresolutionBuffer( bufferIdx, this->configSubdomains );
-   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log );
+   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
 
    topology.loadFromConfig( params, parametersSubdomains );
    topology.finalizeLinear();
@@ -219,9 +218,9 @@ SolverMultiSetBlockMultiresolution< Model >::initMultiResolutionBoundaryPatches(
 
       for( const auto& iface : topology.getInterfacesOfSubdomain( i ) ) {
 
-         const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx + 1 ) + "-";
+         const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx ) + "-";
          const int mrbNumOfPtcs = parametersSubdomains.getParameter< int >( bufferKey + "n" );
-         // using some initial estimate
+         // TODO: use some reasonable estimate
          const int mrbNumOfAllocPtcs = std::max( int( 0.1 * this->getTotalFluidParticlesCount() ), 2 * mrbNumOfPtcs );
 
          multiresolutionBoundaryPatches[ mrbIdx ]->initializeAsDistributed(
@@ -504,7 +503,7 @@ SolverMultiSetBlockMultiresolution< Model >::writeProlog( bool writeSystemInform
 
    if( multiresolutionBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ ) {
-         log.writeHeader( "Multiresolution boundary buffer" + std::to_string( i + 1 ) + "." );
+         log.writeHeader( "Multiresolution boundary buffer" + std::to_string( i ) + "." );
          multiresolutionBoundaryPatches[ i ]->writeProlog( log, i );
       }
    }
@@ -541,7 +540,7 @@ SolverMultiSetBlockMultiresolution< Model >::writeInfo() noexcept
                                 this->openBoundaryPatches[ i ]->getNumberOfParticles() );
    }
    if( multiresolutionBoundaryPatches.size() > 0 ) {
-      for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
+       for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
          log.writeParameter( "Number of mr-buffer " + std::to_string( i ) + " particles:",
                multiresolutionBoundaryPatches[ i ]->getNumberOfParticles() );
    }

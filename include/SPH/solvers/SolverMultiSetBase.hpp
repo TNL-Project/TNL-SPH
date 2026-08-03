@@ -737,5 +737,32 @@ SolverMultiSetBase< Model >::balanceSubdomains()
 
 #endif
 
+template< typename Model >
+typename SolverMultiSetBase< Model >::GlobalIndexType
+SolverMultiSetBase< Model >::getTotalFluidParticlesCount() const
+{
+   GlobalIndexType count = 0;
+   for( const auto& fluid : fluidSets )
+      count += fluid->getNumberOfParticles();
+   return count;
+}
+
+template< typename Model >
+typename SolverMultiSetBase< Model >::GlobalIndexType
+SolverMultiSetBase< Model >::getTotalBoundaryParticlesCount() const
+{
+   GlobalIndexType count = 0;
+   for( const auto& boundary : boundarySets )
+      count += boundary->getNumberOfParticles();
+   return count;
+}
+
+template< typename Model >
+typename SolverMultiSetBase< Model >::GlobalIndexType
+SolverMultiSetBase< Model >::getTotalParticlesCount() const
+{
+   return getTotalFluidParticlesCount() + getTotalBoundaryParticlesCount();
+}
+
 } // namespace SPH
 } // namespace TNL
