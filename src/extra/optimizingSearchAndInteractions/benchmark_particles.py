@@ -402,7 +402,7 @@ def main() -> int:
     ap.add_argument("--example", default="damBreak2D",
                     help="example directory or predefined key "
                          f"({', '.join(EXAMPLES)}). Default: damBreak2D")
-    ap.add_argument("--variants", default="CLLWithList,Warp",
+    ap.add_argument("--variants", default="CLL,CLLWithList,Warp",
                     help="comma-separated variant names from: "
                          f"{', '.join(VARIANTS)}. Default: CLLWithList,Warp")
     ap.add_argument("--resolutions", default=None,
