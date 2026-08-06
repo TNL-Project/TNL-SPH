@@ -7,21 +7,21 @@ comparison tables (terminal / Markdown / LaTeX) or grouped bar charts
 
 Examples
 --------
-  # Render table in terminal
+  # Default: terminal table with search, interact, total columns
   ./plot_results.py benchmark_results/20250806_143022
 
   # Export as Markdown
   ./plot_results.py benchmark_results/20250806_143022 --format markdown -o table.md
 
-  # Plot grouped bar charts for search + interaction stages
+  # Plot grouped bar charts
   ./plot_results.py benchmark_results/20250806_143022 --plot
 
-  # Plot specific metrics and save as PNG
-  ./plot_results.py benchmark_results/20250806_143022 --plot \
-      --plot-metrics search,interact -o chart.png
+  # Plot and save as PNG
+  ./plot_results.py benchmark_results/20250806_143022 --plot -o chart.png
 
-  # Pivot table, compare search time
-  ./plot_results.py benchmark_results/20250806_143022 --view pivot --metric search
+  # Choose specific metrics for table or plot
+  ./plot_results.py benchmark_results/20250806_143022 --metric search,interact
+  ./plot_results.py benchmark_results/20250806_143022 --plot --metric search,interact,total_time
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ METRIC_LABELS = {
     "integrate": "Integrate [s]",
     "run_seconds": "Wall [s]",
 }
+DEFAULT_METRICS = "search,interact,total_time"
 
 
 def load_results(folder: Path) -> list[dict]:
@@ -49,6 +50,15 @@ def load_results(folder: Path) -> list[dict]:
     if not summary.is_file():
         sys.exit(f"error: {summary} not found. Pass the results timestamp folder.")
     return json.loads(summary.read_text())
+
+
+def parse_metrics(s: str) -> list[str]:
+    """Parse comma-separated metric names, validating against METRICS."""
+    parts = [m.strip() for m in s.split(",") if m.strip()]
+    for m in parts:
+        if m not in METRICS:
+            sys.exit(f"error: unknown metric '{m}'. Choices: {', '.join(METRICS)}")
+    return parts
 
 
 def _fmt(v) -> str:
@@ -107,6 +117,47 @@ def flat_rows(results: list[dict]) -> list[list[str]]:
             "ok" if r.get("ok") else f"FAIL",
         ])
     return rows
+
+
+# --------------------------------------------------------------------------- #
+# Grouped table (rows grouped by resolution, columns = selected metrics)
+# --------------------------------------------------------------------------- #
+
+def grouped_rows(results: list[dict], metrics: list[str]) -> tuple[list[str], list[list[str]]]:
+    """Build a table grouped by resolution with selected metric columns.
+
+    Each resolution block shows one row per variant, with columns for each
+    metric value plus a speedup column for total_time.  The dp column is
+    blanked on non-first rows to create a visual group.
+    """
+    baselines = compute_baselines(results)
+
+    headers = ["dp", "Variant", "Particles"]
+    for m in metrics:
+        headers.append(METRIC_LABELS.get(m, m))
+    headers.append("Speedup\n(Total)")
+
+    rows = []
+    prev_res = None
+    for r in results:
+        res = r["resolution"]
+        show_dp = f"{res:g}" if res != prev_res else ""
+        prev_res = res
+
+        tot = r.get("total_time")
+        base = baselines.get(res)
+
+        row = [
+            show_dp,
+            r["variant"],
+            f"{r.get('fluid_particles', 0):,}" if r.get("fluid_particles") else "—",
+        ]
+        for m in metrics:
+            row.append(_fmt(r.get(m)))
+        row.append(_speedup_str(base, tot))
+        rows.append(row)
+
+    return headers, rows
 
 
 # --------------------------------------------------------------------------- #
@@ -338,16 +389,16 @@ def main() -> int:
     ap.add_argument("folder", help="path to the results folder (contains summary.json)")
     ap.add_argument("--format", choices=["terminal", "markdown", "latex"],
                     default="terminal", help="output format (default: terminal)")
-    ap.add_argument("--view", choices=["flat", "pivot"], default="pivot",
-                    help="table layout: flat (one row per run) or pivot "
-                         "(resolutions×variants). Default: pivot")
-    ap.add_argument("--metric", choices=METRICS, default="search,interact,total_time",
-                    help="metric to compare in pivot view (default: total_time)")
+    ap.add_argument("--view", choices=["grouped", "flat", "pivot"], default="grouped",
+                    help="table layout: grouped (res blocks × selected metrics), "
+                         "flat (one row per run, all metrics), or pivot "
+                         "(single metric, res×variants). Default: grouped")
+    ap.add_argument("--metric", default=DEFAULT_METRICS,
+                    help="comma-separated metrics to show/plot "
+                         f"(default: {DEFAULT_METRICS}). "
+                         f"Choices: {', '.join(METRICS)}")
     ap.add_argument("--plot", action="store_true",
                     help="generate grouped bar charts instead of a table")
-    ap.add_argument("--plot-metrics", default="search,interact",
-                    help="comma-separated metrics to plot (default: search,interact). "
-                         f"Choices: {', '.join(METRICS)}")
     ap.add_argument("-o", "--output", default=None,
                     help="write to file instead of stdout/terminal "
                          "(tables: .md/.tex; charts: .png)")
@@ -361,23 +412,27 @@ def main() -> int:
     if not results:
         sys.exit("error: no results found in summary.json")
 
+    metrics = parse_metrics(args.metric)
+
     # Chart mode
     if args.plot:
-        plot_metrics = [m.strip() for m in args.plot_metrics.split(",") if m.strip()]
-        for m in plot_metrics:
-            if m not in METRICS:
-                sys.exit(f"error: unknown metric '{m}'. Choices: {', '.join(METRICS)}")
-        render_plot(results, plot_metrics, args.output)
+        render_plot(results, metrics, args.output)
         return 0
 
     # Table mode
     if args.view == "flat":
         headers, rows = FLAT_HEADERS, flat_rows(results)
         title = ""
-    else:
-        headers, rows = pivot_rows(results, args.metric)
-        metric_label = METRIC_LABELS.get(args.metric, args.metric)
+    elif args.view == "pivot":
+        if len(metrics) != 1:
+            sys.exit("error: --view pivot requires exactly one metric. "
+                     f"Got: {metrics}")
+        headers, rows = pivot_rows(results, metrics[0])
+        metric_label = METRIC_LABELS.get(metrics[0], metrics[0])
         title = f"TNL-SPH benchmark — {metric_label} (speedup vs {results[0]['variant']})"
+    else:
+        headers, rows = grouped_rows(results, metrics)
+        title = f"TNL-SPH benchmark (baseline: {results[0]['variant']})"
 
     # Render
     if args.format == "terminal":
