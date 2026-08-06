@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-"""Render TNL-SPH benchmark results from a results folder as nice tables.
+"""Render TNL-SPH benchmark results from a results folder as tables or charts.
 
-Reads ``summary.json`` produced by ``benchmark_particles.py`` and renders a
-comparison table.  Supports terminal output (rich or plain text), Markdown,
-and LaTeX export.
+Reads ``summary.json`` produced by ``benchmark_particles.py`` and renders
+comparison tables (terminal / Markdown / LaTeX) or grouped bar charts
+(matplotlib PNG).
 
 Examples
 --------
-  # Render in terminal (auto-detects rich)
+  # Render table in terminal
   ./plot_results.py benchmark_results/20250806_143022
 
-  # Export as Markdown to file
+  # Export as Markdown
   ./plot_results.py benchmark_results/20250806_143022 --format markdown -o table.md
 
-  # Export as LaTeX
-  ./plot_results.py benchmark_results/20250806_143022 --format latex -o table.tex
+  # Plot grouped bar charts for search + interaction stages
+  ./plot_results.py benchmark_results/20250806_143022 --plot
 
-  # Pivot view: resolutions as rows, variants as columns
-  ./plot_results.py benchmark_results/20250806_143022 --view pivot
+  # Plot specific metrics and save as PNG
+  ./plot_results.py benchmark_results/20250806_143022 --plot \
+      --plot-metrics search,interact -o chart.png
 
-  # Compare search time instead of total
-  ./plot_results.py benchmark_results/20250806_143022 --metric search
+  # Pivot table, compare search time
+  ./plot_results.py benchmark_results/20250806_143022 --view pivot --metric search
 """
 
 from __future__ import annotations
@@ -30,6 +31,8 @@ import json
 import sys
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
 
 METRICS = ["total_time", "search", "interact", "integrate", "run_seconds"]
 METRIC_LABELS = {
@@ -237,6 +240,92 @@ def render_latex(headers, rows, title="") -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Bar chart renderer (matplotlib)
+# --------------------------------------------------------------------------- #
+
+PLOT_METRIC_LABELS = {
+    "search": "Neighbor search",
+    "interact": "Interaction",
+    "integrate": "Integration",
+    "total_time": "Total",
+    "run_seconds": "Wall time",
+}
+
+
+def render_plot(results: list[dict], metrics: list[str], output: Optional[str],
+                title_prefix: str = "TNL-SPH benchmark") -> None:
+    """Generate grouped bar charts comparing stages across variants.
+
+    One subplot per metric.  Within each subplot, bars are grouped by
+    resolution with one bar per variant.  Speedup vs baseline is annotated
+    above each non-baseline bar.
+    """
+    import matplotlib
+    if output:
+        matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    resolutions, variants, _ = pivot_data(results, metrics[0])
+    n_metrics = len(metrics)
+    n_res = len(resolutions)
+    n_var = len(variants)
+
+    fig, axes = plt.subplots(1, n_metrics, figsize=(6 * n_metrics, 5),
+                             constrained_layout=True)
+    if n_metrics == 1:
+        axes = [axes]
+
+    colors = plt.cm.tab10(np.linspace(0, 0.9, max(n_var, 1)))
+    bar_width = 0.8 / max(n_var, 1)
+    x = np.arange(n_res)
+
+    for ax, metric in zip(axes, metrics):
+        _, _, data = pivot_data(results, metric)
+        baseline_variant = variants[0]
+
+        for vi, variant in enumerate(variants):
+            vals = []
+            base_vals = []
+            for res in resolutions:
+                v = data[res].get(variant)
+                vals.append(v if v is not None else 0)
+                bv = data[res].get(baseline_variant)
+                base_vals.append(bv if bv is not None else 0)
+
+            offset = (vi - (n_var - 1) / 2) * bar_width
+            bars = ax.bar(x + offset, vals, bar_width * 0.9,
+                          label=variant, color=colors[vi],
+                          edgecolor="white", linewidth=0.5)
+
+            for bi, (bar, val, base_val) in enumerate(zip(bars, vals, base_vals)):
+                if val == 0:
+                    continue
+                if variant != baseline_variant and base_val > 0:
+                    speedup = base_val / val
+                    ax.text(bar.get_x() + bar.get_width() / 2, val,
+                            f"{speedup:.2f}x", ha="center", va="bottom",
+                            fontsize=7, fontweight="bold",
+                            color=colors[vi])
+
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"dp={r:g}" for r in resolutions])
+        ax.set_ylabel("Time [s]")
+        ax.set_title(PLOT_METRIC_LABELS.get(metric, metric))
+        ax.legend(fontsize=8, loc="upper left")
+        ax.grid(axis="y", alpha=0.3)
+        ax.set_axisbelow(True)
+
+    fig.suptitle(f"{title_prefix} — {', '.join(variants)}",
+                 fontsize=12, fontweight="bold")
+
+    if output:
+        fig.savefig(output, dpi=150)
+        print(f"Chart saved to {output}")
+    else:
+        plt.show()
+
+
+# --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
 
@@ -254,8 +343,14 @@ def main() -> int:
                          "(resolutions×variants). Default: pivot")
     ap.add_argument("--metric", choices=METRICS, default="total_time",
                     help="metric to compare in pivot view (default: total_time)")
+    ap.add_argument("--plot", action="store_true",
+                    help="generate grouped bar charts instead of a table")
+    ap.add_argument("--plot-metrics", default="search,interact",
+                    help="comma-separated metrics to plot (default: search,interact). "
+                         f"Choices: {', '.join(METRICS)}")
     ap.add_argument("-o", "--output", default=None,
-                    help="write to file instead of stdout (for markdown/latex)")
+                    help="write to file instead of stdout/terminal "
+                         "(tables: .md/.tex; charts: .png)")
     args = ap.parse_args()
 
     folder = Path(args.folder)
@@ -266,7 +361,16 @@ def main() -> int:
     if not results:
         sys.exit("error: no results found in summary.json")
 
-    # Build table
+    # Chart mode
+    if args.plot:
+        plot_metrics = [m.strip() for m in args.plot_metrics.split(",") if m.strip()]
+        for m in plot_metrics:
+            if m not in METRICS:
+                sys.exit(f"error: unknown metric '{m}'. Choices: {', '.join(METRICS)}")
+        render_plot(results, plot_metrics, args.output)
+        return 0
+
+    # Table mode
     if args.view == "flat":
         headers, rows = FLAT_HEADERS, flat_rows(results)
         title = ""
