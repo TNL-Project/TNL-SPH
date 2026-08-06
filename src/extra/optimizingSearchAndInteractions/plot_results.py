@@ -341,7 +341,7 @@ def main() -> int:
     ap.add_argument("--view", choices=["flat", "pivot"], default="pivot",
                     help="table layout: flat (one row per run) or pivot "
                          "(resolutions×variants). Default: pivot")
-    ap.add_argument("--metric", choices=METRICS, default="total_time",
+    ap.add_argument("--metric", choices=METRICS, default="search,interact,total_time",
                     help="metric to compare in pivot view (default: total_time)")
     ap.add_argument("--plot", action="store_true",
                     help="generate grouped bar charts instead of a table")
