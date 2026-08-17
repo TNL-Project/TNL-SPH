@@ -37,11 +37,10 @@ import argparse
 import csv
 import json
 import re
-import shutil
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -52,10 +51,15 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class Variant:
-    """A particle-system class selectable via ``template/config.h``."""
+    """A particle-system class selectable via ``template/config.h``.
+
+    ``z_order`` swaps ``CellIndexerType`` to ``ZOrderCellIndex2D/3D``
+    (auto-detected from ``spaceDimension`` in config.h) when True.
+    """
     name: str
-    include: str        # angle-bracketed header path
-    using_expr: str     # RHS of ``using ParticlesSys = ...;``
+    include: str
+    using_expr: str
+    z_order: bool = False
 
 
 VARIANTS: dict[str, Variant] = {
@@ -94,6 +98,26 @@ VARIANTS: dict[str, Variant] = {
         "Atomic",
         "<TNL/Particles/experimental/ParticlesLinkedListWithListAtomic.h>",
         "TNL::Particles::ParticlesLinkedListWithListAtomic< ParticlesConfig, Device >",
+    ),
+    # --- Z-order (Morton curve) variants ---
+    "CLL_ZOrder": Variant(
+        "CLL_ZOrder",
+        "<TNL/Particles/experimental/ParticlesLinkedListZOrder.h>",
+        "TNL::Particles::ParticlesLinkedListZOrder< ParticlesConfig, Device >",
+        z_order=True,
+    ),
+    "Warp_ZOrder": Variant(
+        "Warp_ZOrder",
+        "<TNL/Particles/experimental/ParticlesLinkedListWithListWarpZOrder.h>",
+        "TNL::Particles::ParticlesLinkedListWithListWarpZOrder< ParticlesConfig, Device >",
+        z_order=True,
+    ),
+    "Ellpack_ZOrder": Variant(
+        "Ellpack_ZOrder",
+        "<TNL/Particles/experimental/ParticlesLinkedListWithListSegmentsZOrder.h>",
+        "TNL::Particles::ParticlesLinkedListWithListSegmentsZOrder< "
+        "ParticlesConfig, Device, TNL::Algorithms::Segments::Ellpack< Device, int > >",
+        z_order=True,
     ),
 }
 
@@ -148,15 +172,40 @@ _ACTIVE_PAIR = re.compile(
     re.MULTILINE,
 )
 
+# Matches the CellIndexerType using declaration (Z-order variants swap this).
+# Allows leading whitespace (the line is typically indented inside a class body).
+_CELL_INDEXER = re.compile(
+    r'^(?P<indent>\s*)using\s+CellIndexerType\s*=\s*[^;\n]+;',
+    re.MULTILINE,
+)
+
+
+def _detect_space_dimension(text: str) -> int:
+    """Extract ``spaceDimension`` from config.h content."""
+    m = re.search(r'spaceDimension\s*=\s*(\d+)', text)
+    return int(m.group(1)) if m else 2
+
 
 def patch_config_h(config_h: Path, variant: Variant) -> bool:
     """Swap the active particle-system class in ``config.h``.
 
-    Returns True if a pair was found and replaced.
+    When ``variant.z_order`` is True, also swaps ``CellIndexerType`` to
+    ``ZOrderCellIndex2D`` or ``ZOrderCellIndex3D`` (auto-detected from
+    ``spaceDimension`` in config.h).  Returns True if the particle-system
+    pair was found and replaced.
     """
     text = config_h.read_text()
     replacement = f"#include {variant.include}\nusing ParticlesSys = {variant.using_expr};"
     new_text, n = _ACTIVE_PAIR.subn(replacement, text, count=1)
+
+    if variant.z_order:
+        dim = _detect_space_dimension(new_text)
+        ci_class = f"TNL::Particles::ZOrderCellIndex{dim}D"
+        ci_repl = r"\g<indent>using CellIndexerType = " + ci_class + ";"
+        new_text, ci_n = _CELL_INDEXER.subn(ci_repl, new_text, count=1)
+        if ci_n == 0:
+            print(f"warning: could not find CellIndexerType line to patch in {config_h}")
+
     if n == 0:
         return False
     config_h.write_text(new_text)
@@ -179,13 +228,22 @@ def detect_active_variant(config_h: Path) -> Optional[str]:
 # Example auto-detection
 # --------------------------------------------------------------------------- #
 
-def resolve_example_dir(arg: str) -> Path:
+def find_project_root() -> Path:
+    """Walk up from this script to find the repo root (contains examples/ and build/)."""
+    p = Path(__file__).resolve().parent
+    for parent in [p, *p.parents]:
+        if (parent / "examples").is_dir() and (parent / "CMakeLists.txt").is_file():
+            return parent
+    sys.exit("error: could not locate project root (no examples/ + CMakeLists.txt found)")
+
+
+def resolve_example_dir(arg: str, project_dir: Path) -> Path:
     """Resolve a --example argument to an example directory."""
     if arg in EXAMPLES:
-        return Path(EXAMPLES[arg]["dir"])
+        return project_dir / EXAMPLES[arg]["dir"]
     p = Path(arg)
     if not p.is_absolute():
-        p = Path.cwd() / p
+        p = project_dir / p
     if not p.is_dir():
         sys.exit(f"error: example directory not found: {arg}")
     return p
@@ -404,7 +462,7 @@ def main() -> int:
                          f"({', '.join(EXAMPLES)}). Default: damBreak2D")
     ap.add_argument("--variants", default="CLL,CLLWithList,Warp",
                     help="comma-separated variant names from: "
-                         f"{', '.join(VARIANTS)}. Default: CLLWithList,Warp")
+                         f"{', '.join(VARIANTS)}. Default: CLL,CLLWithList,Warp")
     ap.add_argument("--resolutions", default=None,
                     help="comma-separated dp values (overrides example defaults)")
     ap.add_argument("--target", default=None,
@@ -437,8 +495,8 @@ def main() -> int:
     baseline = variant_names[0]
 
     # Resolve example
-    example_dir = resolve_example_dir(args.example)
-    project_dir = Path(__file__).resolve().parent
+    project_dir = find_project_root()
+    example_dir = resolve_example_dir(args.example, project_dir)
     build_dir = Path(args.build_dir) if args.build_dir else (project_dir / "build")
     target = args.target or detect_target(example_dir)
 
@@ -489,7 +547,9 @@ def main() -> int:
         for variant in variants:
             print(f"\n{'='*70}\nVariant: {variant.name}\n{'='*70}")
 
-            # 1. Patch config.h
+            # 1. Restore config.h from backup, then patch for this variant.
+            #    Ensures Z-order CellIndexerType changes don't leak across variants.
+            config_h.write_text(backup)
             if not patch_config_h(config_h, variant):
                 print(f"warning: could not patch active particle-system pair in {config_h}")
             active = detect_active_variant(config_h)
