@@ -74,7 +74,7 @@ class ParticleInitialSetup
    public:
    using ParticlesConfig = ParticleSystemConfig< Device >;
    using ParticlesTraitsType = ParticlesTraits< ParticlesConfig, Device >;
-   using IndexVectorType = typename ParticlesTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticlesTraitsType::CoordinatesType;
    using PointType = typename ParticlesTraitsType::PointType;
 
    const int numberOfParticles = placeholderFluidParticles;
@@ -88,7 +88,7 @@ class ParticleInitialSetup
    const int gridZsize = placeholderGridZSize;
    const PointType gridOrigin = { placeholderGridXBeginf, placeholderGridYBeginf, placeholderGridZBeginf };
 
-   const IndexVectorType gridSize = { gridXsize, gridYsize, gridZsize };
+   const CoordinatesType gridSize = { gridXsize, gridYsize, gridZsize };
    const int numberOfGridCells = gridXsize * gridYsize * gridZsize;
 };
 

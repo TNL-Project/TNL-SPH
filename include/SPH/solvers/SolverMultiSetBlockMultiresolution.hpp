@@ -41,11 +41,12 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
 
    this->numberOfSubsets = params.template getParameter< int >( "numberOfSubdomains" );
    const std::string configSubdomainsPath = params.template getParameter< std::string >( "subdomains-config" );
+   const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
    for( int subset = 0; subset < this->numberOfSubsets; subset++ )
       TNL::SPH::configSubdomain( subset, this->configSubdomains );
-   for( int bufferIdx = 1; bufferIdx <= this->numberOfSubsets; bufferIdx++ )
+   for( int bufferIdx = 0; bufferIdx < this->numberOfSubsets; bufferIdx++ )
       TNL::SPH::configMultiresolutionBuffer( bufferIdx, this->configSubdomains );
-   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log );
+   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
 
    topology.loadFromConfig( params, parametersSubdomains );
    topology.finalizeLinear();
@@ -53,24 +54,28 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    initMultiResolutionBoundaryPatches();
    this->timeMeasurement.addTimer( "multiresolution-update" );
 
-   if( params.template getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   if( params.template getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      this->initPeriodicBoundaryPatches( params, log );
+    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       this->initPeriodicBoundaryPatches( params, log );
 
-      this->timeMeasurement.addTimer( "enforce-periodic-bc" );
-      this->timeMeasurement.addTimer( "transfer-periodic-bc" );
-      this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
-      this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
-   }
+       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
+       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
+       this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
+       this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
+    }
 
-   this->modelParams.init( params );
-   for( int i = 0; i < this->numberOfSubsets; i++ ){
+    this->modelParams.init( params );
+    for( int i = 0; i < this->numberOfSubsets; i++ ){
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
       const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
       multiresolutionBoundaryPatches[ i ]->initMassNodes( this->modelParams, i, refinementFactor );
@@ -83,11 +88,14 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    readParticlesFiles();
 
    log.writeSeparator();
-   if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
-      log.writeParameter( "Simulation monitor initialization.", "" );
-      this->simulationMonitor.init( params, this->timeStepping, log );
-      log.writeParameter( "Simulation monitor initialization.", "Done." );
-   }
+   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
+    if( hasMeasuretoolFile || hasMeasuretoolInline ) {
+       log.writeParameter( "Simulation monitor initialization.", "" );
+       this->simulationMonitor.init( params, this->timeStepping, log );
+       this->simulationMonitor.setupVolumetricFlowRateZones( this->fluidSets[ 0 ] );
+       log.writeParameter( "Simulation monitor initialization.", "Done." );
+    }
 }
 
 #ifdef HAVE_MPI
@@ -108,36 +116,41 @@ SolverMultiSetBlockMultiresolution< Model >::initializeDistributedSimulation()
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
-   std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log );
+    std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
+    const std::string distributedDomainInline = params.template getParameter< std::string >( "distributed-domain" );
+    parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log, distributedDomainInline );
 
    initDistributedParticleSets( params, this->parametersDistributed, log );
 
    this->loadBalancingMeasure = params.template getParameter< std::string >( "load-balancing-measure" );
    this->loadBalancingStepInterval = params.template getParameter< int >( "load-balancing-step-inteval" );
-   this->fluid()->getDistributedParticles()->setParticlesCountResizeTrashold(
+   this->fluid()->getDistributedParticles()->setParticlesCountResizeThreshold(
          params.template getParameter< float >( "number-of-particles-balancing-coef" ) );
-   this->fluid()->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+   this->fluid()->getDistributedParticles()->setCompTimeResizePercentageThreshold(
          params.template getParameter< float >( "computational-time-balancing-coef" ) );
 
    this->timeMeasurement.addTimer( "synchronize", false );
    this->timeMeasurement.addTimer( "rebalance", false );
 
-   if( params.template getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   if( params.template getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      this->initPeriodicBoundaryPatches( params, log );
+    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       this->initPeriodicBoundaryPatches( params, log );
 
-      this->timeMeasurement.addTimer( "enforce-periodic-bc" );
-      this->timeMeasurement.addTimer( "transfer-periodic-bc" );
-      this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
-      this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
-   }
+       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
+       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
+       this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
+       this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
+    }
 
    this->modelParams.init( params );
 
@@ -148,11 +161,12 @@ SolverMultiSetBlockMultiresolution< Model >::initializeDistributedSimulation()
    readParticleFilesDistributed( params, this->parametersDistributed, log );
 
    log.writeSeparator();
-   if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
-      log.writeParameter( "Simulation monitor initialization.", "" );
-      this->simulationMonitor.init( params, this->timeStepping, log );
-      log.writeParameter( "Simulation monitor initialization.", "Done." );
-   }
+    if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
+       log.writeParameter( "Simulation monitor initialization.", "" );
+       this->simulationMonitor.init( params, this->timeStepping, log );
+       this->simulationMonitor.setupVolumetricFlowRateZones( this->fluidSets[ 0 ] );
+       log.writeParameter( "Simulation monitor initialization.", "Done." );
+    }
 }
 #endif
 
@@ -204,9 +218,9 @@ SolverMultiSetBlockMultiresolution< Model >::initMultiResolutionBoundaryPatches(
 
       for( const auto& iface : topology.getInterfacesOfSubdomain( i ) ) {
 
-         const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx + 1 ) + "-";
+         const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx ) + "-";
          const int mrbNumOfPtcs = parametersSubdomains.getParameter< int >( bufferKey + "n" );
-         // using some initial estimate
+         // TODO: use some reasonable estimate
          const int mrbNumOfAllocPtcs = std::max( int( 0.1 * this->getTotalFluidParticlesCount() ), 2 * mrbNumOfPtcs );
 
          multiresolutionBoundaryPatches[ mrbIdx ]->initializeAsDistributed(
@@ -263,7 +277,7 @@ SolverMultiSetBlockMultiresolution< Model >::readParticlesFiles()
 
    const int numberOfMultiresolutionBuffers = multiresolutionBoundaryPatches.size();
    for( int i = 0; i < numberOfMultiresolutionBuffers; i++ ) {
-      std::string bufferKey = "multiresolution-buffer-" + std::to_string( i + 1 ) + "-";
+      std::string bufferKey = "multiresolution-buffer-" + std::to_string( i ) + "-";
       if( parametersSubdomains.getParameter< int >( bufferKey + "n" ) != 0 ) {
          const std::string mrbFileName = parametersSubdomains.getParameter< std::string >( bufferKey + "particles" );
          log.writeParameter( "Reading multiresolution buffer particles:", mrbFileName );
@@ -292,12 +306,12 @@ SolverMultiSetBlockMultiresolution< Model >::initDistributedParticleSets( TNL::C
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
+   const CoordinatesType subdomainGridDimension = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+   const CoordinatesType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
 
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
    this->fluid()->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
@@ -433,7 +447,7 @@ SolverMultiSetBlockMultiresolution< Model >::save( bool writeParticleCellIndex )
 #else
       std::string outputFileNameGrid = this->outputDirectory + "/grid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-      TNL::Writers::writeBackgroundGrid( outputFileNameGrid, this->fluidSets[ i ]->getParticles()->getGridDimensions(), this->fluidSets[ i ]->getParticles()->getGridOrigin(), this->fluidSets[ i ]->getParticles()->getSearchRadius() );
+      TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, this->fluidSets[ i ]->getParticles()->getDimensions(), this->fluidSets[ i ]->getParticles()->getOrigin(), this->fluidSets[ i ]->getParticles()->getSearchRadius() );
       this->logger.writeParameter( "Saved:", outputFileNameGrid );
 
       this->simulationMonitor.save( this->logger );
@@ -489,7 +503,7 @@ SolverMultiSetBlockMultiresolution< Model >::writeProlog( bool writeSystemInform
 
    if( multiresolutionBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ ) {
-         log.writeHeader( "Multiresolution boundary buffer" + std::to_string( i + 1 ) + "." );
+         log.writeHeader( "Multiresolution boundary buffer" + std::to_string( i ) + "." );
          multiresolutionBoundaryPatches[ i ]->writeProlog( log, i );
       }
    }
@@ -526,7 +540,7 @@ SolverMultiSetBlockMultiresolution< Model >::writeInfo() noexcept
                                 this->openBoundaryPatches[ i ]->getNumberOfParticles() );
    }
    if( multiresolutionBoundaryPatches.size() > 0 ) {
-      for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
+       for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
          log.writeParameter( "Number of mr-buffer " + std::to_string( i ) + " particles:",
                multiresolutionBoundaryPatches[ i ]->getNumberOfParticles() );
    }

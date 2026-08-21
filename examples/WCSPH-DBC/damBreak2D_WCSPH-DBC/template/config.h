@@ -18,7 +18,7 @@ class ParticleSystemConfig
    static constexpr int spaceDimension = 2;
 
    using UseWithDomainDecomposition = std::false_type;
-   using CellIndexerType = TNL::ParticleSystem::SimpleCellIndex< spaceDimension, std::index_sequence< 0, 1 > >;
+   using CellIndexerType = TNL::Particles::SimpleCellIndex< spaceDimension, std::index_sequence< 0, 1 > >;
    using NeighborListType = TNL::Algorithms::Segments::Ellpack< Device, int >;
 };
 
@@ -59,7 +59,7 @@ public:
 
    using KernelFunction = TNL::SPH::KernelFunctions::WendlandKernel< SPHConfig >;
    using DiffusiveTerm = TNL::SPH::DiffusiveTerms::MolteniDiffusiveTerm< SPHConfig >;
-   using ViscousTerm = TNL::SPH::ViscousTerms::PhysicalViscosity< SPHConfig >;
+   using ViscousTerm = TNL::SPH::ViscousTerms::ArtificialViscosity< SPHConfig >;
    using EOS = TNL::SPH::EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >;
    using BCType = TNL::SPH::WCSPH_BCTypes::DBC;
    //using TimeStepping = TNL::SPH::ConstantTimeStep< SPHConfig >;
@@ -74,9 +74,9 @@ using ParticlesConfig = ParticleSystemConfig;
  * Include type of particle system.
  */
 #include <TNL/Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedList< ParticlesConfig, Device >;
+using ParticlesSys = TNL::Particles::ParticlesLinkedList< ParticlesConfig, Device >;
 //#include <TNL/Particles/ParticlesLinkedListWithList.h>
-//using ParticlesSys = TNL::ParticleSystem::ParticlesLinkedListWithList< ParticlesConfig, Device >;
+//using ParticlesSys = TNL::Particles::ParticlesLinkedListWithList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.

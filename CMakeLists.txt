@@ -29,7 +29,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS
 # Set build flags for CUDA
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wall")
 set(CMAKE_CUDA_FLAGS_DEBUG "-g")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -use_fast_math")
 set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "${CMAKE_CUDA_FLAGS_RELEASE} ${CMAKE_CUDA_FLAGS_DEBUG}")
 
 # Enforce (more or less) warning-free builds
@@ -87,12 +87,20 @@ include_directories(include)
 # Find or fetch dependencies
 include(FetchContent)
 FetchContent_Declare(TNL
-    GIT_REPOSITORY https://gitlab.com/tnl-project/tnl.git
+    GIT_REPOSITORY https://gitlab.com/tomashalada/tnl.git
     GIT_TAG TH/particles
     EXCLUDE_FROM_ALL
 )
 set(TNL_EXPORT_INTERFACE_TARGETS OFF)  # needed for adding to the interface target
 FetchContent_MakeAvailable(TNL)
+
+FetchContent_Declare(json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(json)
+# Make nlohmann_json available to every target defined in subdirectories added below
+link_libraries(nlohmann_json::nlohmann_json)
 
 # FIXME: We should also require python with vtk module
 

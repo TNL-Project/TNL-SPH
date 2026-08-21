@@ -162,6 +162,7 @@ if __name__ == "__main__":
         "speed_of_sound" : args.speed_of_sound,
         "cfl" : args.cfl,
         "particle_mass" : args.density * ( args.dp * args.dp ),
+        "smoothing_length" : args.h_coef * args.dp,
         "smoothing_lenght" : args.h_coef * args.dp,
         "search_radius" :  2 * args.h_coef * args.dp,
         "time_step" : args.cfl * ( args.h_coef * args.dp ) / args.speed_of_sound,
@@ -224,9 +225,77 @@ if __name__ == "__main__":
 
     print( "Complete example setup:" )
     pprint( openchannel_setup )
-    # write simulation params
-    cf.write_simulation_params( openchannel_setup )
+    # write simulation params — main config with inline open-boundary placeholders
+    with open( 'template/config_template.jsonc', 'r' ) as f:
+      config_file = f.read()
+
+    # Apply ini_replacements (same table as cf.write_simulation_params uses)
+    config_file = config_file.replace( 'placeholderSearchRadius', str( round( openchannel_setup[ "search_radius" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderDomainOrigin-x', str( round( openchannel_setup[ "domain_origin_x" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderDomainOrigin-y', str( round( openchannel_setup[ "domain_origin_y" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderDomainSize-x', str( round( openchannel_setup[ "domain_size_x" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderDomainSize-y', str( round( openchannel_setup[ "domain_size_y" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderInitParticleDistance', str( openchannel_setup[ "dp" ] ) )
+    config_file = config_file.replace( 'placeholderSmoothingLength', str( openchannel_setup[ "smoothing_length" ] ) )
+    config_file = config_file.replace( 'placeholderMass', str( openchannel_setup[ "particle_mass" ] ) )
+    config_file = config_file.replace( 'placeholderSpeedOfSound', str( openchannel_setup[ "speed_of_sound" ] ) )
+    config_file = config_file.replace( 'placeholderDensity', str( openchannel_setup[ "density" ] ) )
+    config_file = config_file.replace( 'placeholderTimeStep', str( openchannel_setup[ "time_step" ] ) )
+    config_file = config_file.replace( 'placeholderFluidParticles', str( openchannel_setup[ "fluid_n" ] ) )
+    config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( openchannel_setup[ "fluid_n" ] ) )
+    config_file = config_file.replace( 'placeholderBoundaryParticles', str( openchannel_setup[ "boundary_n" ] ) )
+    config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( openchannel_setup[ "boundary_n" ] ) )
+
+    # Apply open_boundary_replacements to the inline section in the main config
+    config_file = config_file.replace( 'placeholderInletParticles', str( openchannel_setup[ "inlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderAllocatedInletParticles', str( openchannel_setup[ "allocated_inlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderOutletParticles', str( openchannel_setup[ "outlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderAllocatedOutletParticles', str( openchannel_setup[ "allocated_outlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderInletVelocity_x', str( openchannel_setup[ "inlet_velocity_x" ] ) )
+    config_file = config_file.replace( 'placeholderInletVelocity_y', str( openchannel_setup[ "inlet_velocity_y" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition1_x', str( openchannel_setup[ "inlet_position1_x" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition1_y', str( openchannel_setup[ "inlet_position1_y" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition2_x', str( openchannel_setup[ "inlet_position2_x" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition2_y', str( openchannel_setup[ "inlet_position2_y" ] ) )
+    config_file = config_file.replace( 'placeholderInletDensity', str( openchannel_setup[ "density" ] ) )
+    config_file = config_file.replace( 'placeholderInletWidth_x', str( round( openchannel_setup[ "inlet_width" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderOutletVelocity_x', str( openchannel_setup[ "outlet_velocity_x" ] ) )
+    config_file = config_file.replace( 'placeholderOutletVelocity_y', str( openchannel_setup[ "outlet_velocity_y" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition1_x', str( openchannel_setup[ "outlet_position1_x" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition1_y', str( openchannel_setup[ "outlet_position1_y" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_x', str( openchannel_setup[ "outlet_position2_x" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_y', str( openchannel_setup[ "outlet_position2_y" ] ) )
+    config_file = config_file.replace( 'placeholderOutletDensity', str( openchannel_setup[ "density" ] ) )
+    config_file = config_file.replace( 'placeholderOutletWidth_x', str( round( openchannel_setup[ "outlet_width" ], 7 ) ) )
+
+    with open( 'sources/config.jsonc', 'w' ) as f:
+      f.write( config_file )
+
+    # write separate open-boundary config via the shared tool (for file-based option)
     cf.write_open_boundary_params( openchannel_setup )
+
+    # write file-based config variant (uses open-boundary-config path instead of inline subsection)
+    with open( 'template/config_filebased_template.jsonc', 'r' ) as f:
+      config_filebased = f.read()
+
+    config_filebased = config_filebased.replace( 'placeholderSearchRadius', str( round( openchannel_setup[ "search_radius" ], 7 ) ) )
+    config_filebased = config_filebased.replace( 'placeholderDomainOrigin-x', str( round( openchannel_setup[ "domain_origin_x" ], 7 ) ) )
+    config_filebased = config_filebased.replace( 'placeholderDomainOrigin-y', str( round( openchannel_setup[ "domain_origin_y" ], 7 ) ) )
+    config_filebased = config_filebased.replace( 'placeholderDomainSize-x', str( round( openchannel_setup[ "domain_size_x" ], 7 ) ) )
+    config_filebased = config_filebased.replace( 'placeholderDomainSize-y', str( round( openchannel_setup[ "domain_size_y" ], 7 ) ) )
+    config_filebased = config_filebased.replace( 'placeholderInitParticleDistance', str( openchannel_setup[ "dp" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderSmoothingLength', str( openchannel_setup[ "smoothing_length" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderMass', str( openchannel_setup[ "particle_mass" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderSpeedOfSound', str( openchannel_setup[ "speed_of_sound" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderDensity', str( openchannel_setup[ "density" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderTimeStep', str( openchannel_setup[ "time_step" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderFluidParticles', str( openchannel_setup[ "fluid_n" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderAllocatedFluidParticles', str( openchannel_setup[ "fluid_n" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderBoundaryParticles', str( openchannel_setup[ "boundary_n" ] ) )
+    config_filebased = config_filebased.replace( 'placeholderAllocatedBoundaryParticles', str( openchannel_setup[ "boundary_n" ] ) )
+
+    with open( 'sources/config_filebased.jsonc', 'w' ) as f:
+      f.write( config_filebased )
 
     #write linked list background grid
     write_domain_background_grid( openchannel_setup )

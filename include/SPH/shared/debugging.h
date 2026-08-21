@@ -82,7 +82,7 @@ void
 checkParticlesOutDomain( const ParticleSetType& particles, const std::string& name, bool isBuffer = false )
 {
    using DeviceType = typename ParticleSetType::DeviceType;
-   using IndexVectorType = typename ParticleSetType::IndexVectorType;
+   using CoordinatesType = typename ParticleSetType::CoordinatesType;
    using VectorType = typename ParticleSetType::VectorType;
    using RealType = typename ParticleSetType::RealType;
 
@@ -91,22 +91,22 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
    const int n_alloc = particles.getNumberOfAllocatedParticles();
    const int n_remove = particles.getParticles()->getNumberOfParticlesToRemove();
 
-   const VectorType gridRefOrigin = particles.getParticles()->getGridReferentialOrigin();
+   const VectorType referentialOrigin = particles.getParticles()->getReferentialOrigin();
    const RealType searchRadius = particles.getParticles()->getSearchRadius();
    const RealType invSearchRadius = 1.0f / searchRadius;
-   const IndexVectorType gridOriginGlob = particles.getParticles()->getGridOriginGlobalCoordsWithOverlap();
-   const IndexVectorType gridDims = particles.getParticles()->getGridDimensionsWithOverlap();
+   const CoordinatesType globalOriginCoordinates = particles.getParticles()->getGlobalOriginCoordinatesWithOverlap();
+   const CoordinatesType dimensions = particles.getParticles()->getDimensionsWithOverlap();
 
-   const int dim = IndexVectorType::getSize();
+   const int dim = CoordinatesType::getSize();
 
    // header
    std::cout << "\nDebugging start: checkParticlesOutDomain" << std::endl;
    std::cout << "  set: " << name << ( isBuffer ? " (buffer)" : "" ) << std::endl;
    std::cout << "  particles: " << n << " / " << n_alloc << " allocated" << " (toRemove: " << n_remove << ")" << std::endl;
    std::cout << "  searchRadius: " << searchRadius << std::endl;
-   std::cout << "  gridRefOrigin: " << gridRefOrigin << std::endl;
-   std::cout << "  gridOriginGlob: " << gridOriginGlob << std::endl;
-   std::cout << "  gridDims: " << gridDims << std::endl;
+   std::cout << "  gridRefOrigin: " << referentialOrigin << std::endl;
+   std::cout << "  gridOriginGlob: " << globalOriginCoordinates << std::endl;
+   std::cout << "  gridDims: " << dimensions << std::endl;
 
    // check each particle
    auto check = [ = ] __cuda_callable__( int i ) -> int
@@ -134,10 +134,10 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
       }
 
       // check domain bounds (extended domain including overlap)
-      const IndexVectorType cg = TNL::floor( ( r - gridRefOrigin ) * invSearchRadius );
-      const IndexVectorType cc = cg - gridOriginGlob;
+      const CoordinatesType cg = TNL::floor( ( r - referentialOrigin ) * invSearchRadius );
+      const CoordinatesType cc = cg - globalOriginCoordinates;
       for( int d = 0; d < dim; d++ ) {
-         if( cc[ d ] < 0 || cc[ d ] >= gridDims[ d ] ) {
+         if( cc[ d ] < 0 || cc[ d ] >= dimensions[ d ] ) {
             printf( "  [OUT] i=%d pos=(%.3f,%.3f,%.3f) cell=(%d,%d,%d) local=(%d,%d,%d) dims=(%d,%d,%d)\n",
                     i,
                     r[ 0 ],
@@ -149,9 +149,9 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
                     cc[ 0 ],
                     cc[ 1 ],
                     cc[ 2 ],
-                    gridDims[ 0 ],
-                    gridDims[ 1 ],
-                    gridDims[ 2 ] );
+                    dimensions[ 0 ],
+                    dimensions[ 1 ],
+                    dimensions[ 2 ] );
             return 1;
          }
       }

@@ -267,7 +267,7 @@ def compute_domain_size(setup):
 
 
 def write_simulation_params(setup):
-    with open('template/config_template.ini', 'r') as file:
+    with open('template/config_template.jsonc', 'r') as file:
         config_file = file.read()
 
     config_file = config_file.replace('placeholderSearchRadius', f'{setup["search_radius"]}')
@@ -291,7 +291,7 @@ def write_simulation_params(setup):
     config_file = config_file.replace('placeholderBoundaryParticles', f'{setup["boundary_n"]}')
     config_file = config_file.replace('placeholderAllocatedBoundaryParticles', f'{setup["boundary_n"]}')
 
-    with open('sources/config.ini', 'w') as file:
+    with open('sources/config.jsonc', 'w') as file:
         file.write(config_file)
 
     # Header file (if needed)

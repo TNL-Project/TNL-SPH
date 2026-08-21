@@ -87,52 +87,42 @@ def write_distributed_domain_params_rectangular(
 
     domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
 
-    with open(f"{output_dir}/config-distributed-domain.ini", "w") as f:
-        f.write("# Subdomain information\n\n")
-        for i, g in enumerate(grids):
-            prefix = f"subdomain-{i}-"
+    import json
 
-            params = {
-                "fluid-particles":      f"{output_dir}/subdomain-{i}-dambreak_fluid.vtk",
-                "boundary-particles":   f"{output_dir}/subdomain-{i}-dambreak_boundary.vtk",
-                "fluid_n":              g.fluid_n,
-                "boundary_n":           g.boundary_n,
-                "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else setup["fluid_n"],
-                "boundary_n_allocated": fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"],
-                "refinement-factor":    g.factor,
-            }
+    subdomains: dict = {}
+    for i, g in enumerate(grids):
+        sd: dict = {
+            "fluid-particles":      f"{output_dir}/subdomain-{i}-dambreak_fluid.vtk",
+            "boundary-particles":   f"{output_dir}/subdomain-{i}-dambreak_boundary.vtk",
+            "fluid_n":              g.fluid_n,
+            "boundary_n":           g.boundary_n,
+            "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else setup["fluid_n"],
+            "boundary_n_allocated": fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"],
+            "refinement-factor":    g.factor,
+        }
 
-            ax_groups = {
-                "origin-global-coords": {},
-                "grid-dimensions":      {},
-                "origin":               {},
-                "size":                 {},
-            }
-            for ax in axes:
-                origin_glob = getattr(g, f"origin_glob_{ax}")
-                dims        = getattr(g, f"dims_{ax}")
-                origin_phys = domain_origin[ax] + g.search_radius * origin_glob
-                size_phys   = g.search_radius * dims
+        for ax in axes:
+            origin_glob = getattr(g, f"origin_glob_{ax}")
+            dims        = getattr(g, f"dims_{ax}")
+            origin_phys = domain_origin[ax] + g.search_radius * origin_glob
+            size_phys   = g.search_radius * dims
 
-                ax_groups["origin-global-coords"][ax] = origin_glob
-                ax_groups["grid-dimensions"][ax]      = dims
-                ax_groups["origin"][ax]               = f"{origin_phys:.7f}"
-                ax_groups["size"][ax]                 = f"{size_phys:.7f}"
+            sd[f"origin-global-coords-{ax}"] = origin_glob
+            sd[f"grid-dimensions-{ax}"]      = dims
+            sd[f"origin-{ax}"]               = round(origin_phys, 7)
+            sd[f"size-{ax}"]                 = round(size_phys, 7)
 
-            for keyword, ax_values in ax_groups.items():
-                for ax, value in ax_values.items():
-                    params[f"{keyword}-{ax}"] = value
+        subdomains[f"subdomain-{i}"] = sd
 
-            for k, v in params.items():
-                f.write(f"{prefix}{k} = {v}\n")
-            f.write("\n")
+    with open(f"{output_dir}/config-distributed-domain.jsonc", "w") as f:
+        json.dump({"subdomains": subdomains}, f, indent=4)
 
 
 def write_simulation_params(setup: dict, output_dir: str, config_name: str):
-    with open(os.path.join(_script_dir, "dummyConfig3D_template.ini"), "r") as f:
+    with open(os.path.join(_script_dir, "dummyConfig3D_template.jsonc"), "r") as f:
         cfg = cf.safe_replace(f.read(), cf.ini_replacements, setup)
-    cfg = cfg.replace("placeholderSubdomainsConfigPath", f"{output_dir}/config-distributed-domain.ini")
-    with open(f"{output_dir}/dummyConfig3D.ini", "w") as f:
+    cfg = cfg.replace("placeholderSubdomainsConfigPath", f"{output_dir}/config-distributed-domain.jsonc")
+    with open(f"{output_dir}/dummyConfig3D.jsonc", "w") as f:
         f.write(cfg)
 
 

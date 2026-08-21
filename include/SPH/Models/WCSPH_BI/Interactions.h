@@ -32,7 +32,7 @@ public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using CoordinatesType = typename SPHTraitsType::CoordinatesType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;

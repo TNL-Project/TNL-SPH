@@ -40,16 +40,17 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
-   std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log );
+    std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
+    const std::string distributedDomainInline = params.template getParameter< std::string >( "distributed-domain" );
+    parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log, distributedDomainInline );
 
    initDistributedParticleSets( params, this->parametersDistributed, log );
 
    this->loadBalancingMeasure = params.template getParameter< std::string >( "load-balancing-measure" );
    this->loadBalancingStepInterval = params.template getParameter< int >( "load-balancing-step-inteval" );
-   this->fluid()->getDistributedParticles()->setParticlesCountResizeTrashold(
+   this->fluid()->getDistributedParticles()->setParticlesCountResizeThreshold(
          params.template getParameter< float >( "number-of-particles-balancing-coef" ) );
-   this->fluid()->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+   this->fluid()->getDistributedParticles()->setCompTimeResizePercentageThreshold(
          params.template getParameter< float >( "computational-time-balancing-coef" ) );
 
    this->timeMeasurement.addTimer( "synchronize", false );
@@ -58,15 +59,19 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    initParticleSets( params, log );
 #endif
 
-   if( params.template getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   if( params.template getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      this->initPeriodicBoundaryPatches( params, log );
+    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       this->initPeriodicBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
@@ -92,7 +97,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
 #endif
 
    log.writeSeparator();
-   if( params.template getParameter< std::string >( "measuretool-config" ) != "" ) {
+   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
+   if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       log.writeParameter( "Simulation monitor initialization.", "" );
       this->simulationMonitor.init( params, this->timeStepping, log );
       log.writeParameter( "Simulation monitor initialization.", "Done." );
@@ -112,12 +119,12 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    this->fluid()->initialize( parameters.getParameter< int >( "numberOfParticles" ),
                                parameters.getParameter< int >( "numberOfAllocatedParticles" ),
                                searchRadius,
-                               gridSize,
+                               dimensions,
                                domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluid()->getParticles()->setParticleSetLabel( 0 );
@@ -125,7 +132,7 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    this->boundary()->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
                                   parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
                                   searchRadius,
-                                  gridSize,
+                                  dimensions,
                                   domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundary()->getParticles()->setParticleSetLabel( 1 );
@@ -155,12 +162,12 @@ SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterCont
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
+   const CoordinatesType subdomainGridDimension = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+   const CoordinatesType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
 
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
    this->fluid()->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),

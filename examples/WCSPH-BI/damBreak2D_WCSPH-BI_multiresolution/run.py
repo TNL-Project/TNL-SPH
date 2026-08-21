@@ -37,7 +37,7 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Dam break equation example")
     argparser.add_argument("--init", default=False,
             help="generate initial configuration of the case, including particles")
-    argparser.add_argument("--config", default="sources/config.ini",
+    argparser.add_argument("--config", default="sources/config.jsonc",
             help="path to the config file (relative to the path of this script)")
 
     # parse the command line arguments

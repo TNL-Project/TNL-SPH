@@ -240,7 +240,7 @@ def compute_domain_size( setup ):
 def write_simulation_params( setup ):
 
     # write parameters to config file
-    with open( 'template/config_template.ini', 'r' ) as file :
+    with open( 'template/config_template.jsonc', 'r' ) as file :
       config_file = file.read()
 
     config_file = config_file.replace( 'placeholderSearchRadius', str( round( setup[ "search_radius" ], 7 ) ) )
@@ -262,12 +262,44 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', str( 2 * setup[ "fluid_n" ] ) )
     config_file = config_file.replace( 'placeholderBoundaryParticles', str( setup[ "boundary_n" ] ) )
     config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', str( setup[ "boundary_n" ] ) )
+    config_file = config_file.replace( 'placeholderInletParticles', str( setup[ "inlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderAllocatedInletParticles', str( setup[ "inlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderOutletParticles', str( setup[ "outlet_n" ] ) )
+    config_file = config_file.replace( 'placeholderAllocatedOutletParticles', str( 3 * setup[ "outlet_n" ] ) )
 
-    with open( 'sources/config.ini', 'w' ) as file:
+    config_file = config_file.replace( 'placeholderInletVelocity_x', str( setup[ "inlet_velocity_x" ] ) )
+    config_file = config_file.replace( 'placeholderInletVelocity_y', str( setup[ "inlet_velocity_y" ] ) )
+    config_file = config_file.replace( 'placeholderInletVelocity_z', str( setup[ "inlet_velocity_z" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition1_x', str( setup[ "inlet_position_x" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition1_y', str( setup[ "inlet_position_y" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition1_z', str( setup[ "inlet_position_z" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition2_x', str( setup[ "inlet_position_x" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition2_y', str( setup[ "inlet_position_y" ] + setup[ "inlet_size_y" ] ) )
+    config_file = config_file.replace( 'placeholderInletPosition2_z', str( setup[ "inlet_position_z" ] + setup[ "inlet_size_z" ] ) )
+    config_file = config_file.replace( 'placeholderInletDensity', str( setup[ "density" ] ) )
+    config_file = config_file.replace( 'placeholderInletWidth_x', str( round( setup[ "inlet_width" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderInletWidth_y', str( 0. ) )
+    config_file = config_file.replace( 'placeholderInletWidth_z', str( 0. ) )
+
+    config_file = config_file.replace( 'placeholderOutletVelocity_x', str( setup[ "outlet_velocity_x" ] ) )
+    config_file = config_file.replace( 'placeholderOutletVelocity_y', str( setup[ "outlet_velocity_y" ] ) )
+    config_file = config_file.replace( 'placeholderOutletVelocity_z', str( setup[ "outlet_velocity_z" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition1_x', str( setup[ "outlet_position_x" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition1_y', str( setup[ "outlet_position_y" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition1_z', str( setup[ "outlet_position_z" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_x', str( setup[ "outlet_position_x" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_y', str( setup[ "outlet_position_y" ] + setup[ "outlet_size_y" ] ) )
+    config_file = config_file.replace( 'placeholderOutletPosition2_z', str( setup[ "outlet_position_z" ] + setup[ "outlet_size_z" ] ) )
+    config_file = config_file.replace( 'placeholderOutletDensity', str( setup[ "density" ] ) )
+    config_file = config_file.replace( 'placeholderOutletWidth_x', str( round( setup[ "outlet_width" ], 7 ) ) )
+    config_file = config_file.replace( 'placeholderOutletWidth_y', str( 0. ) )
+    config_file = config_file.replace( 'placeholderOutletWidth_z', str( 0. ) )
+
+    with open( 'sources/config.jsonc', 'w' ) as file:
       file.write( config_file )
 
     # write parameters to config file
-    with open( 'template/config-open-boundary_template.ini', 'r' ) as file :
+    with open( 'template/config-open-boundary_template.jsonc', 'r' ) as file :
       config_file = file.read()
 
     config_file = config_file.replace( 'placeholderInletParticles', str( setup[ "inlet_n" ] ) )
@@ -309,7 +341,7 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderOutletWidth_y', str( 0. ) )
     config_file = config_file.replace( 'placeholderOutletWidth_z', str( 0. ) )
 
-    with open( 'sources/config-open-boundary.ini', 'w' ) as file:
+    with open( 'sources/config-open-boundary.jsonc', 'w' ) as file:
       file.write( config_file )
 
 def write_domain_background_grid( setup ):

@@ -69,7 +69,7 @@ class SPHParamsConfig
    /**
     * Define coefficient of diffusive term (DT), [-].
     */
-   using DiffusiveTerm = TNL::ParticleSystem::SPH::MolteniDiffusiveTerm< SPHConfig >;
+   using DiffusiveTerm = TNL::Particles::SPH::MolteniDiffusiveTerm< SPHConfig >;
    float delta = 0.1f;
 
    /**
@@ -77,10 +77,10 @@ class SPHParamsConfig
     * - Use "ArtificialViscosity" and its parameter alpha.
     * - Use "PhysicalViscosity" defined by dynamic viscosity coeffition.
     */
-   using ViscousTerm = TNL::ParticleSystem::SPH::ArtificialViscosity< SPHConfig >;
+   using ViscousTerm = TNL::Particles::SPH::ArtificialViscosity< SPHConfig >;
    float alpha = 0.02f;
 
-   //using ViscousTerm = TNL::ParticleSystem::SPH::PhysicalViscosity< SPHConfig >;
+   //using ViscousTerm = TNL::Particles::SPH::PhysicalViscosity< SPHConfig >;
    //float dynamicViscosity = 1e-3f;
 
    /**
@@ -89,7 +89,7 @@ class SPHParamsConfig
     * - coefB - coefficient of the Tait equation of state coefB = c^2 * rho0 / gamma
     * - rho0 - referential density of the fluid [kg/m^3]
     */
-   using EOS = TNL::ParticleSystem::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
+   using EOS = TNL::Particles::SPH::TaitWeaklyCompressibleEOS< SPHConfig >;
    float speedOfSound = placeholderSpeedOfSoundf;
    float coefB = placeholderCoefBf;
    float rho0 = placeholderDensityf;

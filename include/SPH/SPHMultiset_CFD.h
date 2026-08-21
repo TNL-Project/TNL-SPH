@@ -39,7 +39,7 @@ public:
    using SPHConfig = typename Model::SPHConfig;
    using GlobalIndexType = typename ParticlesType::GlobalIndexType;
    using RealType = typename ParticlesType::RealType;
-   using IndexVectorType = typename ParticlesType::IndexVectorType;
+   using CoordinatesType = typename ParticlesType::CoordinatesType;
    using VectorType = typename ParticlesType::PointType;
 
    using FluidVariables = typename Model::FluidVariables;
@@ -56,8 +56,8 @@ public:
    using OpenBoundaryModel = typename Model::OpenBoundaryModel;
 
    //Reader
-   using Reader = TNL::ParticleSystem::Readers::VTKReader;
-   using Writer = TNL::ParticleSystem::Writers::VTKWriter< ParticlesType >;
+   using Reader = TNL::Particles::Readers::VTKReader;
+   using Writer = TNL::Particles::Writers::VTKWriter< ParticlesType >;
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
@@ -200,6 +200,12 @@ public:
     */
    void
    measure();
+
+   void
+   measureFlowRate( FluidPointer& fluid );
+
+   void
+   measureFlowRate();
 
    /**
     * \brief General integrator wrapper

@@ -81,7 +81,7 @@ WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& 
       VectorType a_i = 0.f;
       RealType drho_i = 0.f;
 
-      TNL::ParticleSystem::NeighborsLoop::exec( p, r_i, searchInOpenBoundary, FluidOpenBoundary, v_i, rho_i, p_i, &drho_i, &a_i );
+      TNL::Particles::NeighborsLoop::exec( p, r_i, searchInOpenBoundary, FluidOpenBoundary, v_i, rho_i, p_i, &drho_i, &a_i );
 
       view_Drho[ p ] += drho_i;
       view_a[ p ] += a_i;

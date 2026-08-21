@@ -41,8 +41,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
    // load and parse config for distributed domain
-   std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
-   parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger );
+    std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
+    const std::string distributedDomainInline = parameters.getParameter< std::string >( "distributed-domain" );
+    parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger, distributedDomainInline );
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
@@ -50,9 +51,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    // set balancing tresholds
    loadBalancingMeasure = parameters.getParameter< std::string >( "load-balancing-measure" );
    loadBalancingStepInterval = parameters.getParameter< int >( "load-balancing-step-inteval" );
-   fluid->getDistributedParticles()->setParticlesCountResizeTrashold(
+   fluid->getDistributedParticles()->setParticlesCountResizeThreshold(
          parameters.getParameter< float >( "number-of-particles-balancing-coef" ) );
-   fluid->getDistributedParticles()->setCompTimeResizePercetnageTrashold(
+   fluid->getDistributedParticles()->setCompTimeResizePercentageThreshold(
          parameters.getParameter< float >( "computational-time-balancing-coef" ) );
 
    // add timers related to synchronization and load balancing
@@ -60,10 +61,11 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    timeMeasurement.addTimer( "rebalance", false );
 #else
    this->numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
-   const std::string configSubdomainsPath = parameters.getParameter< std::string >( "subdomains-config" );
-   for( int subset = 0; subset < numberOfSubsets; subset++ )
-      TNL::SPH::configSubdomain( subset, this->configSubdomains );
-   parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger ); //FIXME: Wrong function
+    const std::string configSubdomainsPath = parameters.getParameter< std::string >( "subdomains-config" );
+    const std::string subdomainsInline = parameters.getParameter< std::string >( "subdomains" );
+    for( int subset = 0; subset < numberOfSubsets; subset++ )
+       TNL::SPH::configSubdomain( subset, this->configSubdomains );
+    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, logger, subdomainsInline ); //FIXME: Wrong function
 
    // initialize topology
    topology.loadFromConfig( parameters, parametersSubdomains );
@@ -74,7 +76,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
 #endif
 
    // initialize open boundary conditions
-   if( parameters.getParameter< std::string >( "open-boundary-config" ) != "" ){
+   const bool hasOpenBcFile = parameters.getParameter< std::string >( "open-boundary-config" ) != "";
+   const bool hasOpenBcInline = parameters.getParameter< std::string >( "open-boundary" ) != "";
+   if( hasOpenBcFile || hasOpenBcInline ){
       initOpenBoundaryPatches( parameters, logger );
 
       // add custom timers related to open boundary conditions
@@ -82,9 +86,11 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
       timeMeasurement.addTimer( "apply-openbc" );
    }
 
-   // init periodic boundary conditions
-   if( parameters.getParameter< std::string >( "periodic-boundary-config" ) != "" ){
-      initPeriodicBoundaryPatches( parameters, logger );
+    // init periodic boundary conditions
+    const bool hasPeriodicBcFile = parameters.getParameter< std::string >( "periodic-boundary-config" ) != "";
+    const bool hasPeriodicBcInline = parameters.getParameter< std::string >( "periodic-boundary" ) != "";
+    if( hasPeriodicBcFile || hasPeriodicBcInline ){
+       initPeriodicBoundaryPatches( parameters, logger );
 
       // add custom timers related to perioric boundary conditions
       timeMeasurement.addTimer( "enforce-periodic-bc" );
@@ -121,7 +127,9 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
 
    // initialize the measuretool
    logger.writeSeparator();
-   if( parameters.getParameter< std::string >( "measuretool-config" ) != "" ) {
+   const bool hasMeasuretoolFile = parameters.getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolInline = parameters.getParameter< std::string >( "measuretool" ) != "";
+   if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       logger.writeParameter( "Simulation monitor initialization.", "" );
       simulationMonitor.init( parameters, timeStepping, logger );
       logger.writeParameter( "Simulation monitor initialization.", "Done." );
@@ -209,19 +217,20 @@ SolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContaine
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
 
    // setup and parse open boundary config
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
-   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
    // get global domain properetis
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    openBoundaryPatches.resize( numberOfBoundaryPatches );
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
@@ -230,7 +239,7 @@ SolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContaine
       openBoundaryPatches[ i ]->initialize( parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
                                             parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
                                             searchRadius,
-                                            gridSize,
+                                            dimensions,
                                             domainOrigin );
    }
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
@@ -276,13 +285,13 @@ SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterCont
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
-   const IndexVectorType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    // subdomain + ghost properties
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" ); //REMOVE
-   const IndexVectorType subdomainGridDimension = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "grid-dimensions" );
-   const IndexVectorType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< IndexVectorType >( subdomainKey + "origin-global-coords" );
+   const CoordinatesType subdomainGridDimension = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+   const CoordinatesType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
 
    // init fluid
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
@@ -429,7 +438,7 @@ SolverMultiSet< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
-      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
+      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain();
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
@@ -616,8 +625,8 @@ void
 SPHMultiset_CFD< Model >::resetOverlaps()
 {
    //TODO: This should be paritcles method
-   fluid->getParticles()->removeParitclesOutOfDomain();
-   boundary->getParticles()->removeParitclesOutOfDomain();
+   fluid->getParticles()->removeParticlesOutOfDomain();
+   boundary->getParticles()->removeParticlesOutOfDomain();
 }
 
 template< typename Model >
@@ -631,7 +640,7 @@ SPHMultiset_CFD< Model >::performLoadBalancing()
    fluid->synchronizeBalancingMeasures();
 
    //compare computational time / number of particles
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment;
+   std::pair< CoordinatesType, VectorType > subdomainAdjustment;
    if( loadBalancingMeasure == "computationalTime" )
       subdomainAdjustment = fluid->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
    else if( loadBalancingMeasure == "numberOfParticles" )
@@ -639,40 +648,40 @@ SPHMultiset_CFD< Model >::performLoadBalancing()
    else
       std::cerr << "Invalid load balancing metrics. Load balancing metrics is: " << loadBalancingMeasure << "." << std::endl;
 
-   const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
+   const CoordinatesType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluid->getParticles()->getSearchRadius();
 
-   const IndexVectorType updatedGridDimensions = fluid->getParticles()->getGridDimensions() + gridDimensionsAdjustment;
-   const VectorType updatedGridOrigin = fluid->getParticles()->getGridOrigin() + gridOriginAdjustment;
+   const CoordinatesType updatedGridDimensions = fluid->getParticles()->getDimensions() + gridDimensionsAdjustment;
+   const VectorType updatedGridOrigin = fluid->getParticles()->getOrigin() + gridOriginAdjustment;
 
    logger.writeParameter( "Load balancing - subdomain adjustment: ", "" );
    logger.writeParameter( "Grid dimensions adjustment: ", gridDimensionsAdjustment );
    logger.writeParameter( "Grid origin adjustment: ", gridOriginAdjustment );
-   logger.writeParameter( "Old grid dimensions: ", fluid->getParticles()->getGridDimensions() );
-   logger.writeParameter( "Old grid origin adjustment: ", fluid->getParticles()->getGridOrigin() );
+   logger.writeParameter( "Old grid dimensions: ", fluid->getParticles()->getDimensions() );
+   logger.writeParameter( "Old grid origin adjustment: ", fluid->getParticles()->getOrigin() );
    logger.writeParameter( "Old firstLastCellParticleList size: ", fluid->getParticles()->getCellFirstLastParticleList().getSize() );
 
    //update size of subdomain
-   fluid->getParticles()->setGridDimensions( updatedGridDimensions );
-   fluid->getParticles()->setGridOrigin( updatedGridOrigin );
-   boundary->getParticles()->setGridDimensions( updatedGridDimensions );
-   boundary->getParticles()->setGridOrigin( updatedGridOrigin );
+   fluid->getParticles()->setDimensions( updatedGridDimensions );
+   fluid->getParticles()->setOrigin( updatedGridOrigin );
+   boundary->getParticles()->setDimensions( updatedGridDimensions );
+   boundary->getParticles()->setOrigin( updatedGridOrigin );
 
-   const IndexVectorType updatedGridOriginGlobalCoords = fluid->getParticles()->getGridOriginGlobalCoords() + subdomainAdjustment.second;
-   fluid->getParticles()->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
-   boundary->getParticles()->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
+   const CoordinatesType updatedGridOriginGlobalCoords = fluid->getParticles()->getGlobalOriginCoordinates() + subdomainAdjustment.second;
+   fluid->getParticles()->setGlobalOriginCoordinates( updatedGridOriginGlobalCoords );
+   boundary->getParticles()->setGlobalOriginCoordinates( updatedGridOriginGlobalCoords );
 
-   logger.writeParameter( "New grid dimensions: ", fluid->getParticles()->getGridDimensions() );
-   logger.writeParameter( "New grid origin adjustment: ", fluid->getParticles()->getGridOrigin() );
+   logger.writeParameter( "New grid dimensions: ", fluid->getParticles()->getDimensions() );
+   logger.writeParameter( "New grid origin adjustment: ", fluid->getParticles()->getOrigin() );
    logger.writeParameter( "New firstLastCellParticleList size: ", fluid->getParticles()->getCellFirstLastParticleList().getSize() );
 
    //update distributed particles and overlaps
    //TODO: 1 stands for overlapWidth, pass as parameter
-   fluid->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+   fluid->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
                                                                      updatedGridOrigin,
                                                                      1,
                                                                      fluid->getParticles()->getSearchRadius() );
-   boundary->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
+   boundary->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
                                                                         updatedGridOrigin,
                                                                         1,
                                                                         boundary->getParticles()->getSearchRadius() );
@@ -783,7 +792,7 @@ SolverMultiSet< Model >::save( bool writeParticleCellIndex )
 #else
       std::string outputFileNameGrid = outputDirectory + "/grid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-      TNL::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ i ]->getParticles()->getGridDimensions(), fluidSets[ i ]->getParticles()->getGridOrigin(), fluidSets[ i ]->getParticles()->getSearchRadius() );
+      TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ i ]->getParticles()->getDimensions(), fluidSets[ i ]->getParticles()->getOrigin(), fluidSets[ i ]->getParticles()->getSearchRadius() );
       logger.writeParameter( "Saved:", outputFileNameGrid );
 
       // output simulation sensors to files

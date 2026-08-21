@@ -19,7 +19,7 @@ public:
 
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
-   using IndexVectorType = typename ParticleTraitsType::IndexVectorType;
+   using CoordinatesType = typename ParticleTraitsType::CoordinatesType;
    using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //FIXME
    using RealType = typename ParticleTraitsType::RealType;
    using PointType = typename ParticleTraitsType::PointType;
@@ -50,7 +50,7 @@ public:
     * Assign cells from point and direction for grid-base orthogonal zones
     */
    void
-   assignCells( IndexVectorType firstPointIdx, IndexVectorType zoneSizeInCells, IndexVectorType gridSize );
+   assignCells( CoordinatesType firstPointIdx, CoordinatesType zoneSizeInCells, CoordinatesType dimensions );
 
    /**
     * Assign cells from point and direction for grid-base orthogonal zones
@@ -58,18 +58,18 @@ public:
    void
    assignCells( const PointType firstPoint,
                 const PointType secondPoint,
-                IndexVectorType gridSize,
-                PointType gridOrigin,
+                CoordinatesType dimensions,
+                PointType origin,
                 RealType searchRadius );
 
    /**
     * Assing cells as a frame
     */
    void
-   assignCellsFrame( const IndexVectorType frameFrontOrigin, // lower-left corner of shell box, cell indices
-                     const IndexVectorType frameFrontDims, // extent of shell box, in cells
+   assignCellsFrame( const CoordinatesType frameFrontOrigin, // lower-left corner of shell box, cell indices
+                     const CoordinatesType frameFrontDims, // extent of shell box, in cells
                      const int frameWidth, // shell thickness in cells (always positive)
-                     const IndexVectorType gridSize );
+                     const CoordinatesType dimensions );
 
    /**
     * Assign cells from another array.
@@ -158,8 +158,8 @@ public:
    void
    saveZoneToVTK(
    const std::string&    filename,
-   const IndexVectorType gridSize,
-   const PointType      gridOrigin,
+    const CoordinatesType dimensions,
+    const PointType      origin,
    const RealType        searchRadius ) const;
 
 

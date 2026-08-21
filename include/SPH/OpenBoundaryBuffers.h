@@ -25,10 +25,10 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    using SPHTraitsType = typename BaseType::SPHTraitsType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   using ParticleZone = TNL::ParticleSystem::ParticleZone< typename ParticleSystem::Config, typename ParticleSystem::DeviceType >;
+   using ParticleZone = TNL::Particles::ParticleZone< typename ParticleSystem::Config, typename ParticleSystem::DeviceType >;
 
    //remove
-   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using CoordinatesType = typename SPHTraitsType::CoordinatesType;
 
    OpenBoundary() = default;
 
@@ -39,15 +39,15 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    initialize( int numberOfParticles,
                int numberOfAllocatedParticles,
                RealType searchRadius,
-               IndexVectorType gridSize,
-               VectorType gridOrigin,
+               CoordinatesType dimensions,
+               VectorType origin,
                GlobalIndexType numberOfParticlesPerCell = 75 )
    {
-      BaseType::initialize( numberOfParticles, numberOfAllocatedParticles, searchRadius, gridSize, gridOrigin );
+      BaseType::initialize( numberOfParticles, numberOfAllocatedParticles, searchRadius, dimensions, origin );
 
       //initialize the zone
       zone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
-      zone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, gridSize, gridOrigin, searchRadius );
+      zone.assignCells( config.zoneFirstPoint, config.zoneSecondPoint, dimensions, origin, searchRadius );
 
       //TODO: this is ungly and has to be adjusted somehow
       parameters.identifier = config.identifier;

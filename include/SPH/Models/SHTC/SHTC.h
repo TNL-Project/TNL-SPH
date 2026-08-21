@@ -31,7 +31,7 @@ public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexVectorType = typename SPHTraitsType::IndexVectorType;
+   using CoordinatesType = typename SPHTraitsType::CoordinatesType;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
    using MatrixType = typename SPHTraitsType::MatrixType;

@@ -81,7 +81,7 @@ def compute_domain_size( setup ):
 def write_simulation_params( setup ):
 
     # write parameters to config file
-    with open( 'template/config_template.ini', 'r' ) as file :
+    with open( 'template/config_template.jsonc', 'r' ) as file :
       config_file = file.read()
 
     config_file = config_file.replace( 'placeholderSearchRadius', f'{ setup[ "search_radius" ] }' )
@@ -108,8 +108,37 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
     config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
 
-    with open( 'sources/config.ini', 'w' ) as file:
+    with open( 'sources/config.jsonc', 'w' ) as file:
       file.write( config_file )
+
+    # write file-based config variant (uses measuretool-config path instead of inline subsection)
+    with open( 'template/config_filebased_template.jsonc', 'r' ) as file :
+      config_filebased = file.read()
+
+    config_filebased = config_filebased.replace( 'placeholderSearchRadius', f'{ setup[ "search_radius" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderDomainOrigin-x', f'{setup[ "domain_origin_x" ]:.5f}' )
+    config_filebased = config_filebased.replace( 'placeholderDomainOrigin-y', f'{setup[ "domain_origin_y" ]:.5f}' )
+    config_filebased = config_filebased.replace( 'placeholderDomainOrigin-z', f'{setup[ "domain_origin_z" ]:.5f}' )
+    config_filebased = config_filebased.replace( 'placeholderDomainSize-x', f'{setup[ "domain_size_x" ]:.5f}' )
+    config_filebased = config_filebased.replace( 'placeholderDomainSize-y', f'{setup[ "domain_size_y" ]:.5f}' )
+    config_filebased = config_filebased.replace( 'placeholderDomainSize-z', f'{setup[ "domain_size_z" ]:.5f}' )
+    config_filebased = config_filebased.replace( 'placeholderInitParticleDistance', f'{ setup[ "dp" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderSmoothingLength', f'{ setup[ "smoothing_length" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderMass', f'{ setup[ "particle_mass" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderSpeedOfSound', f'{ setup[ "speed_of_sound" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderDensity', f'{ setup[ "density" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderBoundaryElementSize', f'{ setup[ "boundary_element_size" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderTimeStep', f'{ setup[ "time_step" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderCFL', f'{ setup[ "cfl" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderAlpha', f'{ setup[ "alpha" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderDynamicVicosity', f'{ setup[ "dynamic_viscosity" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderFluidParticles', f'{ setup[ "fluid_n" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderAllocatedFluidParticles', f'{ setup[ "fluid_n" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderAllocatedBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
+
+    with open( 'sources/config_filebased.jsonc', 'w' ) as file:
+      file.write( config_filebased )
 
     # write parameters to config header file
     with open( 'template/config_template.h', 'r' ) as file :
@@ -126,9 +155,9 @@ def write_simulation_params( setup ):
 
 def configure_and_write_measuretool_parameters():
     # write parameters to config file
-    with open( 'template/config-measuretool_template.ini', 'r' ) as file :
+    with open( 'template/config-measuretool_template.jsonc', 'r' ) as file :
       config_file = file.read()
-    with open( 'sources/config-measuretool.ini', 'w' ) as file:
+    with open( 'sources/config-measuretool.jsonc', 'w' ) as file:
       file.write( config_file )
 
 if __name__ == "__main__":

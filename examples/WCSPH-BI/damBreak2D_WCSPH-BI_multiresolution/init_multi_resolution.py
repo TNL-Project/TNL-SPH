@@ -17,7 +17,6 @@ from pprint import pprint
 
 sys.path.append('../../../src/tools')
 import saveParticlesVTK
-import init_generate_standard as single_resolution
 
 #  -----------
 import decomposition as dec
@@ -240,7 +239,7 @@ def write_distributed_domain_params_rectangular(
     #is_3d = "domain_size_z" in setup
     #axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
 
-    #with open("sources/config-distributed-domain.ini", "a") as f:
+    #with open("sources/config-distributed-domain.jsonc", "a") as f:
     #    f.write("# Fine region specification (for rectangular MRB)\n")
 
     #    # Physical origin and size of the fine region
@@ -375,3 +374,31 @@ if __name__ == "__main__":
     cf.write_simulation_params(setup)
     write_distributed_domain_params_rectangular(coarse_grid, fine_grid, setup)
     cf.write_measuretool_params(setup)
+
+    # Step 7: Generate inline subdomains config variant
+    import json
+    with open("sources/config-distributed-domain.jsonc", "r") as f:
+        dd_data = json.load(f)
+    subdomains = dd_data["subdomains"]
+
+    items = list(subdomains.items())
+    lines = []
+    for idx, (k, v) in enumerate(items):
+        suffix = "," if idx < len(items) - 1 else ""
+        inner = json.dumps(v, indent=4)
+        inner_lines = inner.split('\n')
+        lines.append(f'        "{k}": {{')
+        for il in inner_lines[1:-1]:
+            lines.append('        ' + il)
+        lines.append(f'        }}{suffix}')
+    sub_body = '\n'.join(lines).lstrip()
+
+    with open("template/config_inline_template.jsonc", "r") as f:
+        inline_cfg = f.read()
+
+    # Apply the same placeholder replacements as the main config
+    inline_cfg = cf.safe_replace(inline_cfg, cf.ini_replacements, setup)
+    inline_cfg = inline_cfg.replace("placeholderSubdomainsContent", sub_body)
+
+    with open("sources/config_inline.jsonc", "w") as f:
+        f.write(inline_cfg)

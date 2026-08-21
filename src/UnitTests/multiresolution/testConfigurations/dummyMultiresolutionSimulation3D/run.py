@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     if args.all:
         for name in CONFIGURATIONS:
-            config_path = example_dir / f"sources/{name}/dummyConfig3D.ini"
+            config_path = example_dir / f"sources/{name}/dummyConfig3D.jsonc"
             print(f"\n{'='*60}")
             print(f"Running configuration: {name}")
             print(f"{'='*60}\n")
@@ -61,6 +61,6 @@ if __name__ == "__main__":
         if args.config_name is None:
             print("Error: --config-name is required when not using --all")
             sys.exit(1)
-        config_path = example_dir / f"sources/{args.config_name}/dummyConfig3D.ini"
+        config_path = example_dir / f"sources/{args.config_name}/dummyConfig3D.jsonc"
         solve(config_path)
         move_results(args.config_name)

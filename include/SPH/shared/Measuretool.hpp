@@ -74,7 +74,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
       this->interpolationGrid.template forAllEntities< 0 >(
          [=] __cuda_callable__ ( const GridVertex& gridEntity ) mutable
          {
-            const IndexVectorType coords = gridEntity.getCoordinates();
+            const CoordinatesType coords = gridEntity.getCoordinates();
             const VectorType r = coords * gridSpaceSteps + gridOrigin;
             const GlobalIndexType idx = gridEntity.getIndex();
             processPoint( r, idx );
@@ -83,7 +83,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingGrid( FluidPointe
       this->interpolationGrid.template forAllEntities< SPHConfig::spaceDimension >(
          [=] __cuda_callable__ ( const GridCell& gridEntity ) mutable
          {
-            const IndexVectorType coords = gridEntity.getCoordinates();
+            const CoordinatesType coords = gridEntity.getCoordinates();
             const VectorType r = coords * gridSpaceSteps + gridOrigin;
             const GlobalIndexType idx = gridEntity.getIndex();
             processPoint( r, idx );
@@ -114,55 +114,55 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( Flui
 
    // specify the offset to distinguish cell-based and vertex-based interpolation
    const VectorType gridOriginOffsetFactor = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 0.5f );
-   const IndexVectorType gridDimensionsOffset = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 1.0f );
+   const CoordinatesType gridDimensionsOffset = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 1.0f );
 
    // interpolation grid constatns
-   const IndexVectorType gridDimensions = this->interpolationGrid.getDimensions() + gridDimensionsOffset;
-   const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
-   const VectorType gridOrigin = this->interpolationGrid.getOrigin() + gridOriginOffsetFactor * gridSpaceSteps;
+    const CoordinatesType dimensions = this->interpolationGrid.getDimensions() + gridDimensionsOffset;
+    const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
+    const VectorType gridOrigin = this->interpolationGrid.getOrigin() + gridOriginOffsetFactor * gridSpaceSteps;
 
-   auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
-   {
-      const VectorType r_j = view_points[ j ];
-      const VectorType r_ij = r_i - r_j;
-      const RealType drs = l2Norm( r_ij );
-      if( drs <= searchRadius )
-      {
-         const VectorType v_j = view_v[ j ];
-         const RealType rho_j = view_rho[ j ];
-         const RealType W = SPHKernelFunction::W( drs, h );
+    auto interpolate = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
+          VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
+    {
+       const VectorType r_j = view_points[ j ];
+       const VectorType r_ij = r_i - r_j;
+       const RealType drs = l2Norm( r_ij );
+       if( drs <= searchRadius )
+       {
+          const VectorType v_j = view_v[ j ];
+          const RealType rho_j = view_rho[ j ];
+          const RealType W = SPHKernelFunction::W( drs, h );
 
-         const RealType V = m / rho_j;
+          const RealType V = m / rho_j;
 
-         *v += v_j * W * V;
-         *rho += W * m;
-         *gamma += W * V;
-      }
-   };
+          *v += v_j * W * V;
+          *rho += W * m;
+          *gamma += W * V;
+       }
+    };
 
-   auto loopOverGrid = [=] __cuda_callable__ ( const IndexVectorType& i  ) mutable
-   {
-      const VectorType r = i * gridSpaceSteps + gridOrigin;
-      const GlobalIndexType idx = CellIndexer::EvaluateCellIndex( i, gridDimensions );
+    auto loopOverGrid = [=] __cuda_callable__ ( const CoordinatesType& i  ) mutable
+    {
+       const VectorType r = i * gridSpaceSteps + gridOrigin;
+       const GlobalIndexType idx = CellIndexer::EvaluateCellIndex( i, dimensions );
 
-      VectorType v = 0.f;
-      RealType rho = 0.f;
-      RealType gamma = 0.f;
+       VectorType v = 0.f;
+       RealType rho = 0.f;
+       RealType gamma = 0.f;
 
-      ParticlesType::NeighborsLoop::exec( idx, r, searchInFluid, interpolate, &rho, &v, &gamma );
+       ParticlesType::NeighborsLoop::exec( idx, r, searchInFluid, interpolate, &rho, &v, &gamma );
 
-      if( gamma > 0.5f ){
-         view_v_interpolation[ idx ] = v / gamma;
-         view_rho_interpolation[ idx ] = rho /gamma;
-      }
-      else{
-         view_v_interpolation[ idx ] = 0.f;
-         view_rho_interpolation[ idx ] = 0.f;
-      }
-   };
-   const IndexVectorType beg = 0;
-   Algorithms::parallelFor< DeviceType >( beg, gridDimensions, interpolate );
+       if( gamma > 0.5f ){
+          view_v_interpolation[ idx ] = v / gamma;
+          view_rho_interpolation[ idx ] = rho /gamma;
+       }
+       else{
+          view_v_interpolation[ idx ] = 0.f;
+          view_rho_interpolation[ idx ] = 0.f;
+       }
+    };
+    const CoordinatesType beg = 0;
+    Algorithms::parallelFor< DeviceType >( beg, dimensions, interpolate );
 }
 
 template< typename SPHConfig, typename SPHSimulation >

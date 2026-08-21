@@ -104,7 +104,7 @@ def compute_domain_size( setup ):
 
 def write_simulation_params( setup ):
     # write parameters to config file
-    with open( 'template/config_template.ini', 'r' ) as file :
+    with open( 'template/config_template.jsonc', 'r' ) as file :
       config_file = file.read()
 
     config_file = config_file.replace( 'placeholderSearchRadius', f'{ setup[ "search_radius" ] }' )
@@ -128,14 +128,14 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
     config_file = config_file.replace( 'placeholderAllocatedBoundaryParticles', f'{ setup[ "boundary_n" ] }' )
 
-    with open( 'sources/config.ini', 'w' ) as file:
+    with open( 'sources/config.jsonc', 'w' ) as file:
       file.write( config_file )
 
 def configure_and_write_measuretool_parameters( setup ):
     # write parameters to config file
-    with open( 'template/config-measuretool_template.ini', 'r' ) as file :
+    with open( 'template/config-measuretool_template.jsonc', 'r' ) as file :
       config_file = file.read()
-    with open( 'sources/config-measuretool.ini', 'w' ) as file:
+    with open( 'sources/config-measuretool.jsonc', 'w' ) as file:
       file.write( config_file )
 
 if __name__ == "__main__":

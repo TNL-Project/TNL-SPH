@@ -16,17 +16,18 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
 
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
-   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger );
+   parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
    const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
    const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const IndexVectorType gridSize = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
+   const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    openBoundaryPatches.resize( numberOfBoundaryPatches );
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
@@ -35,7 +36,7 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
       openBoundaryPatches[ i ]->initialize( parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
                                             parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
                                             searchRadius,
-                                            gridSize,
+                                            dimensions,
                                             domainOrigin );
    }
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
@@ -48,6 +49,7 @@ SolverMultiSetBase< Model >::initPeriodicBoundaryPatches( TNL::Config::Parameter
    logger.writeParameter( "Initialization of periodic boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
    const std::string periodicBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
+   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodic-boundary" );
 
    TNL::Config::ConfigDescription configPeriodicBoundary;
    TNL::Config::ParameterContainer parametersPeriodicBoundary;
@@ -56,7 +58,7 @@ SolverMultiSetBase< Model >::initPeriodicBoundaryPatches( TNL::Config::Parameter
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configPeriodicBoundary, prefix );
    }
-   parseOpenBoundaryConfig( periodicBoundaryConfigPath, parametersPeriodicBoundary, configPeriodicBoundary, logger );
+   parseOpenBoundaryConfig( periodicBoundaryConfigPath, parametersPeriodicBoundary, configPeriodicBoundary, logger, periodicBoundaryInline );
 
    fluidSets[ 0 ]->initializePeriodicity( parameters, parametersPeriodicBoundary );
    boundarySets[ 0 ]->initializePeriodicity( parameters, parametersPeriodicBoundary );
@@ -136,7 +138,7 @@ SolverMultiSetBase< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
-      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain(); //TODO: This could directly return the count
+      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain(); //TODO: This could directly return the count
 
       if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
          const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
@@ -241,6 +243,22 @@ SolverMultiSetBase< Model >::measure()
    //FIXME: Needs generalization for multi-set simulations
    simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
          fluidSets[ 0 ], boundarySets[ 0 ], modelParams, timeStepping, logger, verbose );
+}
+
+template< typename Model >
+void
+SolverMultiSetBase< Model >::measureFlowRate( FluidPointer& fluid )
+{
+   simulationMonitor.measureVolumetricFlowRates( fluid, modelParams, timeStepping );
+}
+
+template< typename Model >
+void
+SolverMultiSetBase< Model >::measureFlowRate()
+{
+   for( int i = 0; i < numberOfSubsets; i++ )
+      simulationMonitor.measureVolumetricFlowRatesStep( fluidSets[ i ], modelParams, timeStepping );
+   simulationMonitor.updateAndOutputVolumetricFlowRates( timeStepping );
 }
 
 template< typename Model >
@@ -406,7 +424,7 @@ SolverMultiSetBase< Model >::save( bool writeParticleCellIndex )
    else
       outputFileNameGrid = outputDirectory + "/grid_subdomain" + std::to_string( 0 ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-   TNL::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ 0 ]->getParticles()->getGridDimensions(), fluidSets[ 0 ]->getParticles()->getGridOrigin(), fluidSets[ 0 ]->getParticles()->getSearchRadius() );
+   TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ 0 ]->getParticles()->getDimensions(), fluidSets[ 0 ]->getParticles()->getOrigin(), fluidSets[ 0 ]->getParticles()->getSearchRadius() );
    logger.writeParameter( "Saved:", outputFileNameGrid );
 
    simulationMonitor.save( logger );
@@ -435,11 +453,12 @@ void
 SolverMultiSetBase< Model >::initUserConfig( Func&& userConfigFunction )
 {
    const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
-   if( userConfigPath == "" )
+   const std::string userDefinedInline = parameters.getParameter< std::string >( "user-defined" );
+   if( userConfigPath == "" && userDefinedInline == "" )
       return;
 
    userConfigFunction( userConfig );
-   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger );
+   parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger, userDefinedInline );
 }
 
 template< typename Model >
@@ -475,10 +494,10 @@ SolverMultiSetBase< Model >::writeProlog( bool writeSystemInformation ) noexcept
       logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
       if( loadBalancingMeasure == "computationalTime" )
          logger.writeParameter( "Comp. time fraction difference to balance [-]:",
-             fluidSets[ 0 ]->getDistributedParticles()->getCompTimeResizePercentageTrashold() );
+             fluidSets[ 0 ]->getDistributedParticles()->getCompTimeResizePercentageThreshold() );
       else if( loadBalancingMeasure == "numberOfParticles" )
          logger.writeParameter( "Particles count fraction difference to balance [-]:",
-             fluidSets[ 0 ]->getDistributedParticles()->getParticlesCountResizeTrashold() );
+             fluidSets[ 0 ]->getDistributedParticles()->getParticlesCountResizeThreshold() );
    }
 #endif
    writePrologModel( logger, modelParams );
@@ -534,6 +553,19 @@ SolverMultiSetBase< Model >::writeInfo() noexcept
                              + " s, simulation step: " + std::to_string( timeStepping.getStep() ),
                           "" );
    logger.writeCurrentTime( "Current time:" );
+
+   const GlobalIndexType currentStep = timeStepping.getStep();
+   if( ! firstWriteInfo ) {
+      const double elapsedWallTime = snapshotWallTimer.getRealTime();
+      const GlobalIndexType elapsedSteps = currentStep - lastWriteInfoStep;
+      if( elapsedWallTime > 0.0 && elapsedSteps > 0 )
+         logger.writeParameter( "Average steps per second:", elapsedSteps / elapsedWallTime );
+   }
+   firstWriteInfo = false;
+   lastWriteInfoStep = currentStep;
+   snapshotWallTimer.reset();
+   snapshotWallTimer.start();
+
    for( int i = 0; i < numberOfSubsets; i++ ){
       logger.writeParameter( "Number of fluid particles:", fluidSets[ i ]->getNumberOfParticles() );
       logger.writeParameter( "Number of allocated fluid particles:", fluidSets[ i ]->getNumberOfAllocatedParticles() );
@@ -591,8 +623,8 @@ void
 SolverMultiSetBase< Model >::resetOverlaps()
 {
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getParticles()->removeParitclesOutOfDomain();
-      boundarySets[ i ]->getParticles()->removeParitclesOutOfDomain();
+      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain();
+      boundarySets[ i ]->getParticles()->removeParticlesOutOfDomain();
    }
 }
 
@@ -604,7 +636,7 @@ SolverMultiSetBase< Model >::performLoadBalancing()
    fluidSets[ 0 ]->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
    fluidSets[ 0 ]->synchronizeBalancingMeasures();
 
-   std::pair< IndexVectorType, VectorType > subdomainAdjustment;
+   std::pair< CoordinatesType, VectorType > subdomainAdjustment;
    if( loadBalancingMeasure == "computationalTime" )
       subdomainAdjustment = fluidSets[ 0 ]->getDistributedParticles()->loadBalancingDomainAdjustmentCompTime();
    else if( loadBalancingMeasure == "numberOfParticles" )
@@ -612,43 +644,43 @@ SolverMultiSetBase< Model >::performLoadBalancing()
    else
       std::cerr << "Invalid load balancing metrics. Load balancing metrics is: " << loadBalancingMeasure << "." << std::endl;
 
-   const IndexVectorType gridDimensionsAdjustment = subdomainAdjustment.first;
+   const CoordinatesType gridDimensionsAdjustment = subdomainAdjustment.first;
    const VectorType gridOriginAdjustment = subdomainAdjustment.second * fluidSets[ 0 ]->getParticles()->getSearchRadius();
 
-   const IndexVectorType updatedGridDimensions = fluidSets[ 0 ]->getParticles()->getGridDimensions() + gridDimensionsAdjustment;
-   const VectorType updatedGridOrigin = fluidSets[ 0 ]->getParticles()->getGridOrigin() + gridOriginAdjustment;
+   const CoordinatesType updatedGridDimensions = fluidSets[ 0 ]->getParticles()->getDimensions() + gridDimensionsAdjustment;
+   const VectorType updatedOrigin = fluidSets[ 0 ]->getParticles()->getOrigin() + gridOriginAdjustment;
 
    logger.writeParameter( "Load balancing - subdomain adjustment: ", "" );
    logger.writeParameter( "Grid dimensions adjustment: ", gridDimensionsAdjustment );
    logger.writeParameter( "Grid origin adjustment: ", gridOriginAdjustment );
-   logger.writeParameter( "Old grid dimensions: ", fluidSets[ 0 ]->getParticles()->getGridDimensions() );
-   logger.writeParameter( "Old grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getGridOrigin() );
+   logger.writeParameter( "Old grid dimensions: ", fluidSets[ 0 ]->getParticles()->getDimensions() );
+   logger.writeParameter( "Old grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getOrigin() );
    logger.writeParameter( "Old firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getParticles()->setGridDimensions( updatedGridDimensions );
-      fluidSets[ i ]->getParticles()->setGridOrigin( updatedGridOrigin );
-      boundarySets[ i ]->getParticles()->setGridDimensions( updatedGridDimensions );
-      boundarySets[ i ]->getParticles()->setGridOrigin( updatedGridOrigin );
+      fluidSets[ i ]->getParticles()->setDimensions( updatedGridDimensions );
+      fluidSets[ i ]->getParticles()->setOrigin( updatedOrigin );
+      boundarySets[ i ]->getParticles()->setDimensions( updatedGridDimensions );
+      boundarySets[ i ]->getParticles()->setOrigin( updatedOrigin );
    }
 
-   const IndexVectorType updatedGridOriginGlobalCoords = fluidSets[ 0 ]->getParticles()->getGridOriginGlobalCoords() + subdomainAdjustment.second;
+   const CoordinatesType updatedOriginGlobalCoords = fluidSets[ 0 ]->getParticles()->getGlobalOriginCoordinates() + subdomainAdjustment.second;
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getParticles()->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
-      boundarySets[ i ]->getParticles()->setGridOriginGlobalCoords( updatedGridOriginGlobalCoords );
+      fluidSets[ i ]->getParticles()->setGlobalOriginCoordinates( updatedOriginGlobalCoords );
+      boundarySets[ i ]->getParticles()->setGlobalOriginCoordinates( updatedOriginGlobalCoords );
    }
 
-   logger.writeParameter( "New grid dimensions: ", fluidSets[ 0 ]->getParticles()->getGridDimensions() );
-   logger.writeParameter( "New grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getGridOrigin() );
+   logger.writeParameter( "New grid dimensions: ", fluidSets[ 0 ]->getParticles()->getDimensions() );
+   logger.writeParameter( "New grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getOrigin() );
    logger.writeParameter( "New firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
    for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
-                                                                                  updatedGridOrigin,
+      fluidSets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
+                                                                                  updatedOrigin,
                                                                                   1,
                                                                                   fluidSets[ i ]->getParticles()->getSearchRadius() );
-      boundarySets[ i ]->getDistributedParticles()->updateDistriutedGridParameters( updatedGridDimensions,
-                                                                                     updatedGridOrigin,
+      boundarySets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
+                                                                                     updatedOrigin,
                                                                                      1,
                                                                                      boundarySets[ i ]->getParticles()->getSearchRadius() );
    }

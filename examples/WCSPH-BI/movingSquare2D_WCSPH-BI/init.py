@@ -202,7 +202,7 @@ def compute_domain_size(setup):
 
 
 def write_simulation_params(setup):
-    with open('template/config_template.ini', 'r') as file:
+    with open('template/config_template.jsonc', 'r') as file:
         config_file = file.read()
     config_file = config_file.replace('placeholderSearchRadius', f'{setup["search_radius"]}')
     config_file = config_file.replace('placeholderDomainOrigin-x', f'{setup["domain_origin_x"]:.5f}')
@@ -225,13 +225,14 @@ def write_simulation_params(setup):
     config_file = config_file.replace('placeholderAllocatedFluidParticles', f'{setup["fluid_n"]}')
     config_file = config_file.replace('placeholderBoundaryParticles', f'{setup["boundary_n"]}')
     config_file = config_file.replace('placeholderAllocatedBoundaryParticles', f'{setup["boundary_n"]}')
-    with open('sources/config.ini', 'w') as file:
+    config_file = config_file.replace('placeholderFilteringInterval', f'{setup["filtering_steps_interval"]}')
+    with open('sources/config.jsonc', 'w') as file:
         file.write(config_file)
 
-    with open('template/user_config_template.ini', 'r') as file:
+    with open('template/user_config_template.jsonc', 'r') as file:
         config_file = file.read()
     config_file = config_file.replace('placeholderFilteringInterval', f'{setup["filtering_steps_interval"]}')
-    with open('sources/user_config.ini', 'w') as file:
+    with open('sources/user_config.jsonc', 'w') as file:
         file.write(config_file)
 
     with open('template/config_template.h', 'r') as file:

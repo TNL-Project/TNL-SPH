@@ -8,9 +8,9 @@ namespace ParticleSystem {
 
 template< typename ParticleConfig, typename DeviceType >
 void
-ParticleZone< ParticleConfig, DeviceType >::assignCells( IndexVectorType firstPointIdx,
-                                                         IndexVectorType zoneSizeInCells,
-                                                         IndexVectorType gridSize )
+ParticleZone< ParticleConfig, DeviceType >::assignCells( CoordinatesType firstPointIdx,
+                                                         CoordinatesType zoneSizeInCells,
+                                                         CoordinatesType dimensions )
 {
    if constexpr( ParticleConfig::spaceDimension == 2 )
       this->numberOfCellsInZone = zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
@@ -24,25 +24,25 @@ ParticleZone< ParticleConfig, DeviceType >::assignCells( IndexVectorType firstPo
    auto cellsInZone_view = this->cellsInZone.getView();
 
    if constexpr( ParticleConfig::spaceDimension == 2 ) {
-      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      auto init = [=] __cuda_callable__ ( const CoordinatesType i ) mutable
       {
          const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ];
-         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, dimensions );
       };
-      const IndexVectorType begin = { 0, 0 };
+      const CoordinatesType begin = { 0, 0 };
       Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
 
    if constexpr( ParticleConfig::spaceDimension == 3 ) {
-      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      auto init = [=] __cuda_callable__ ( const CoordinatesType i ) mutable
       {
          const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ] + i[ 2 ] * zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
-         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, dimensions );
 
-         //cellsInZone_view[ idxLinearized ] = i[ 2 ] * gridSize[ 0 ] * gridSize[ 1 ] + i[ 1 ] * gridSize[ 0 ] + i[ 0 ];
-         //cellsInZone_view[ idxLinearized ] = i[ 2 ] * gridSize[ 0 ] * gridSize[ 1 ] + i[ 0 ] * gridSize[ 1 ] + i[ 1 ];
+         //cellsInZone_view[ idxLinearized ] = i[ 2 ] * dimensions[ 0 ] * dimensions[ 1 ] + i[ 1 ] * dimensions[ 0 ] + i[ 0 ];
+         //cellsInZone_view[ idxLinearized ] = i[ 2 ] * dimensions[ 0 ] * dimensions[ 1 ] + i[ 0 ] * dimensions[ 1 ] + i[ 1 ];
       };
-      const IndexVectorType begin = { 0, 0, 0 };
+      const CoordinatesType begin = { 0, 0, 0 };
       Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
 }
@@ -52,13 +52,13 @@ template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::assignCells( const PointType firstPoint,
                                                          const PointType secondPoint,
-                                                         IndexVectorType gridSize,
-                                                         PointType gridOrigin,
+                                                         CoordinatesType dimensions,
+                                                         PointType origin,
                                                          RealType searchRadius )
 {
    const PointType zoneSize = TNL::abs( secondPoint - firstPoint );
-   const IndexVectorType zoneSizeInCells = TNL::ceil( zoneSize / searchRadius );
-   const IndexVectorType firstPointIdx = (firstPoint - gridOrigin ) / searchRadius;
+   const CoordinatesType zoneSizeInCells = TNL::ceil( zoneSize / searchRadius );
+   const CoordinatesType firstPointIdx = (firstPoint - origin ) / searchRadius;
 
    if constexpr( ParticleConfig::spaceDimension == 2 )
       this->numberOfCellsInZone = zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
@@ -73,21 +73,21 @@ ParticleZone< ParticleConfig, DeviceType >::assignCells( const PointType firstPo
    auto cellsInZone_view = this->cellsInZone.getView();
 
    if constexpr( ParticleConfig::spaceDimension == 2 ) {
-      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      auto init = [=] __cuda_callable__ ( const CoordinatesType i ) mutable
       {
          const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ];
-         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, dimensions );
       };
-      const IndexVectorType begin = { 0, 0 };
+      const CoordinatesType begin = { 0, 0 };
       Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
    if constexpr( ParticleConfig::spaceDimension == 3 ) {
-      auto init = [=] __cuda_callable__ ( const IndexVectorType i ) mutable
+      auto init = [=] __cuda_callable__ ( const CoordinatesType i ) mutable
       {
          const GlobalIndexType idxLinearized = i[ 0 ] + i[ 1 ] * zoneSizeInCells[ 0 ] + i[ 2 ] * zoneSizeInCells[ 0 ] * zoneSizeInCells[ 1 ];
-         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, gridSize );
+         cellsInZone_view[ idxLinearized ] = CellIndexer::EvaluateCellIndex( firstPointIdx + i, dimensions );
       };
-      const IndexVectorType begin = { 0, 0, 0 };
+      const CoordinatesType begin = { 0, 0, 0 };
       Algorithms::parallelFor< DeviceType >( begin, zoneSizeInCells, init );
    }
 }
@@ -96,17 +96,17 @@ ParticleZone< ParticleConfig, DeviceType >::assignCells( const PointType firstPo
 template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
-   const IndexVectorType frameFrontOrigin,
-   const IndexVectorType frameFrontDims,
+   const CoordinatesType frameFrontOrigin,
+   const CoordinatesType frameFrontDims,
    const int             frameWidth,
-   const IndexVectorType gridSize )
+   const CoordinatesType dimensions )
 {
    constexpr int dim = ParticleConfig::spaceDimension;
    const int absWidth = TNL::abs( frameWidth );
 
-   const IndexVectorType outerBegin = frameFrontOrigin - frameWidth;
-   const IndexVectorType outerEnd   = frameFrontOrigin + frameFrontDims + frameWidth;
-   const IndexVectorType outerDims  = outerEnd - outerBegin;
+   const CoordinatesType outerBegin = frameFrontOrigin - frameWidth;
+   const CoordinatesType outerEnd   = frameFrontOrigin + frameFrontDims + frameWidth;
+   const CoordinatesType outerDims  = outerEnd - outerBegin;
 
    // -----------------------------------------------------------------------
    // Cell count: 2*dim face slabs, each absWidth thick in normal direction
@@ -137,8 +137,8 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
       for( int sign : { -1, +1 } ) {
 
          // Slab spans full outerDims in perp directions, absWidth in dim d
-         IndexVectorType slabBegin = outerBegin;
-         IndexVectorType slabEnd   = outerEnd;
+         CoordinatesType slabBegin = outerBegin;
+         CoordinatesType slabEnd   = outerEnd;
 
          if( sign == -1 ) {
             // lo face: outerBegin[d] .. outerBegin[d] + absWidth
@@ -148,26 +148,26 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
             slabBegin[ d ] = outerEnd[ d ] - absWidth;
          }
 
-         const IndexVectorType slabDims   = slabEnd - slabBegin;
+         const CoordinatesType slabDims   = slabEnd - slabBegin;
          const GlobalIndexType slabOffset = writeOffset;
 
          if constexpr( dim == 2 ) {
-            auto fill = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
+            auto fill = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
                const GlobalIndexType lin = i[ 0 ] + i[ 1 ] * slabDims[ 0 ];
                cellsInZone_view[ slabOffset + lin ] =
-                  CellIndexer::EvaluateCellIndex( slabBegin + i, gridSize );
+                  CellIndexer::EvaluateCellIndex( slabBegin + i, dimensions );
             };
-            Algorithms::parallelFor< DeviceType >( IndexVectorType{ 0, 0 }, slabDims, fill );
+            Algorithms::parallelFor< DeviceType >( CoordinatesType{ 0, 0 }, slabDims, fill );
          }
          if constexpr( dim == 3 ) {
-            auto fill = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
+            auto fill = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
                const GlobalIndexType lin = i[ 0 ]
                                          + i[ 1 ] * slabDims[ 0 ]
                                          + i[ 2 ] * slabDims[ 0 ] * slabDims[ 1 ];
                cellsInZone_view[ slabOffset + lin ] =
-                  CellIndexer::EvaluateCellIndex( slabBegin + i, gridSize );
+                  CellIndexer::EvaluateCellIndex( slabBegin + i, dimensions );
             };
-            Algorithms::parallelFor< DeviceType >( IndexVectorType{ 0, 0, 0 }, slabDims, fill );
+            Algorithms::parallelFor< DeviceType >( CoordinatesType{ 0, 0, 0 }, slabDims, fill );
          }
 
          GlobalIndexType slabVolume = 1;
@@ -186,23 +186,23 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
-   const IndexVectorType frameFrontOrigin,
-   const IndexVectorType frameFrontDims,
+   const CoordinatesType frameFrontOrigin,
+   const CoordinatesType frameFrontDims,
    const int             frameWidth,
-   const IndexVectorType gridSize )
+   const CoordinatesType dimensions )
 {
    constexpr int dim = ParticleConfig::spaceDimension;
    const int absWidth = TNL::abs( frameWidth );
 
-   const IndexVectorType outerBegin = frameFrontOrigin - frameWidth;
-   const IndexVectorType outerEnd   = frameFrontOrigin + frameFrontDims + frameWidth;
+   const CoordinatesType outerBegin = frameFrontOrigin - frameWidth;
+   const CoordinatesType outerEnd   = frameFrontOrigin + frameFrontDims + frameWidth;
 
    // -----------------------------------------------------------------------
    // Pre-compute clamped slab begin/end/dims and volumes on CPU,
    // accumulating the total cell count before any allocation.
    // -----------------------------------------------------------------------
    struct SlabInfo {
-      IndexVectorType begin, dims;
+      CoordinatesType begin, dims;
       GlobalIndexType volume;
    };
    TNL::Containers::Array< SlabInfo, TNL::Devices::Host > slabs( 2 * dim );
@@ -212,22 +212,22 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
       for( int si = 0; si < 2; si++ ) {
          const int sign = ( si == 0 ) ? -1 : +1;
 
-         IndexVectorType slabBegin = outerBegin;
-         IndexVectorType slabEnd   = outerEnd;
+         CoordinatesType slabBegin = outerBegin;
+         CoordinatesType slabEnd   = outerEnd;
 
          if( sign == -1 )
             slabEnd  [ d ] = outerBegin[ d ] + absWidth;
          else
             slabBegin[ d ] = outerEnd  [ d ] - absWidth;
 
-         // Clamp to domain [0, gridSize)
+         // Clamp to domain [0, dimensions)
          for( int pd = 0; pd < dim; pd++ ) {
             slabBegin[ pd ] = TNL::max( slabBegin[ pd ], 0 );
-            slabEnd  [ pd ] = TNL::min( slabEnd  [ pd ], gridSize[ pd ] );
+            slabEnd  [ pd ] = TNL::min( slabEnd  [ pd ], dimensions[ pd ] );
          }
 
          GlobalIndexType volume = 1;
-         IndexVectorType slabDims;
+         CoordinatesType slabDims;
          for( int pd = 0; pd < dim; pd++ ) {
             slabDims[ pd ] = TNL::max( 0, slabEnd[ pd ] - slabBegin[ pd ] );
             volume *= slabDims[ pd ];
@@ -258,22 +258,22 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
       const GlobalIndexType slabOffset = writeOffset;
 
       if constexpr( dim == 2 ) {
-         auto fill = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
+         auto fill = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
             const GlobalIndexType lin = i[ 0 ] + i[ 1 ] * slabDims[ 0 ];
             cellsInZone_view[ slabOffset + lin ] =
-               CellIndexer::EvaluateCellIndex( slabBegin + i, gridSize );
+               CellIndexer::EvaluateCellIndex( slabBegin + i, dimensions );
          };
-         Algorithms::parallelFor< DeviceType >( IndexVectorType{ 0, 0 }, slabDims, fill );
+         Algorithms::parallelFor< DeviceType >( CoordinatesType{ 0, 0 }, slabDims, fill );
       }
       if constexpr( dim == 3 ) {
-         auto fill = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
+         auto fill = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
             const GlobalIndexType lin = i[ 0 ]
                                       + i[ 1 ] * slabDims[ 0 ]
                                       + i[ 2 ] * slabDims[ 0 ] * slabDims[ 1 ];
             cellsInZone_view[ slabOffset + lin ] =
-               CellIndexer::EvaluateCellIndex( slabBegin + i, gridSize );
+               CellIndexer::EvaluateCellIndex( slabBegin + i, dimensions );
          };
-         Algorithms::parallelFor< DeviceType >( IndexVectorType{ 0, 0, 0 }, slabDims, fill );
+         Algorithms::parallelFor< DeviceType >( CoordinatesType{ 0, 0, 0 }, slabDims, fill );
       }
 
       writeOffset += slabVolume;
@@ -288,16 +288,16 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
-   const IndexVectorType frameFrontOrigin,
-   const IndexVectorType frameFrontDims,
+   const CoordinatesType frameFrontOrigin,
+   const CoordinatesType frameFrontDims,
    const int             frameWidth,
-   const IndexVectorType gridSize )
+   const CoordinatesType dimensions )
 {
    constexpr int dim = ParticleConfig::spaceDimension;
    const int w = TNL::abs( frameWidth );
 
-   IndexVectorType outerBegin, outerEnd;
-   IndexVectorType innerBegin, innerEnd;
+   CoordinatesType outerBegin, outerEnd;
+   CoordinatesType innerBegin, innerEnd;
 
    if( frameWidth >= 0 ) {
       for( int d = 0; d < dim; d++ ) {
@@ -315,16 +315,16 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
       }
    }
 
-   // Clamp outer and inner boxes to [0, gridSize)
+   // Clamp outer and inner boxes to [0, dimensions)
    for( int d = 0; d < dim; d++ ) {
       outerBegin[ d ] = TNL::max( outerBegin[ d ], 0 );
-      outerEnd  [ d ] = TNL::min( outerEnd  [ d ], gridSize[ d ] );
+      outerEnd  [ d ] = TNL::min( outerEnd  [ d ], dimensions[ d ] );
       innerBegin[ d ] = TNL::max( innerBegin[ d ], 0 );
-      innerEnd  [ d ] = TNL::min( innerEnd  [ d ], gridSize[ d ] );
+      innerEnd  [ d ] = TNL::min( innerEnd  [ d ], dimensions[ d ] );
    }
 
    // Outer box iteration dims and flat volume
-   IndexVectorType outerDims;
+   CoordinatesType outerDims;
    GlobalIndexType outerVolume = 1;
    for( int d = 0; d < dim; d++ ) {
       outerDims[ d ] = TNL::max( 0, outerEnd[ d ] - outerBegin[ d ] );
@@ -349,8 +349,8 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 
    // Pass 1: mark shell cells
    if constexpr( dim == 2 ) {
-      auto mark = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
-         const IndexVectorType c = ob + i;
+      auto mark = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
+         const CoordinatesType c = ob + i;
          bool inner = iv;
          if( iv )
             for( int d = 0; d < dim; d++ )
@@ -360,10 +360,10 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
          isShell_view[ lin ] = inner ? 0 : 1;
       };
       Algorithms::parallelFor< DeviceType >(
-            IndexVectorType{ 0, 0 }, outerDims, mark );
+            CoordinatesType{ 0, 0 }, outerDims, mark );
    } else {
-      auto mark = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
-         const IndexVectorType c = ob + i;
+      auto mark = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
+         const CoordinatesType c = ob + i;
          bool inner = iv;
          if( iv )
             for( int d = 0; d < dim; d++ )
@@ -375,7 +375,7 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
          isShell_view[ lin ] = inner ? 0 : 1;
       };
       Algorithms::parallelFor< DeviceType >(
-            IndexVectorType{ 0, 0, 0 }, outerDims, mark );
+            CoordinatesType{ 0, 0, 0 }, outerDims, mark );
    }
 
    // Pass 2: exclusive prefix sum → write indices
@@ -396,33 +396,33 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 
    auto cellsInZone_view = this->cellsInZone.getView();
    auto writeIdx_view    = writeIdx.getConstView();
-   const auto gs         = gridSize;
+   const auto gs         = dimensions;
 
    // Pass 3: scatter shell cell flat indices into cellsInZone
    if constexpr( dim == 2 ) {
-      auto scatter = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
+      auto scatter = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
          const GlobalIndexType lin = i[ 0 ] + i[ 1 ] * od[ 0 ];
          if( isShell_view[ lin ] ) {
-            const IndexVectorType c = ob + i;
+            const CoordinatesType c = ob + i;
             cellsInZone_view[ writeIdx_view[ lin ] ] =
                CellIndexer::EvaluateCellIndex( c, gs );
          }
       };
       Algorithms::parallelFor< DeviceType >(
-            IndexVectorType{ 0, 0 }, outerDims, scatter );
+            CoordinatesType{ 0, 0 }, outerDims, scatter );
    } else {
-      auto scatter = [=] __cuda_callable__ ( const IndexVectorType i ) mutable {
+      auto scatter = [=] __cuda_callable__ ( const CoordinatesType i ) mutable {
          const GlobalIndexType lin = i[ 0 ]
                                    + i[ 1 ] * od[ 0 ]
                                    + i[ 2 ] * od[ 0 ] * od[ 1 ];
          if( isShell_view[ lin ] ) {
-            const IndexVectorType c = ob + i;
+            const CoordinatesType c = ob + i;
             cellsInZone_view[ writeIdx_view[ lin ] ] =
                CellIndexer::EvaluateCellIndex( c, gs );
          }
       };
       Algorithms::parallelFor< DeviceType >(
-            IndexVectorType{ 0, 0, 0 }, outerDims, scatter );
+            CoordinatesType{ 0, 0, 0 }, outerDims, scatter );
    }
 }
 */
@@ -431,10 +431,10 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
-   const IndexVectorType frameFrontOrigin,
-   const IndexVectorType frameFrontDims,
+   const CoordinatesType frameFrontOrigin,
+   const CoordinatesType frameFrontDims,
    const int             frameWidth,
-   const IndexVectorType gridSize )
+   const CoordinatesType dimensions )
 {
    constexpr int dim = ParticleConfig::spaceDimension;
    const int w    = TNL::abs( frameWidth );
@@ -444,7 +444,7 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
              << "  frameFrontOrigin : " << frameFrontOrigin << "\n"
              << "  frameFrontDims   : " << frameFrontDims   << "\n"
              << "  frameWidth       : " << frameWidth << "  (w=" << w << ", sign=" << sign << ")\n"
-             << "  gridSize         : " << gridSize         << "\n"
+             << "  dimensions         : " << dimensions         << "\n"
              << "  spaceDimension   : " << dim              << "\n"
              << "============================================================\n";
 
@@ -458,7 +458,7 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
    // *** {
    // ***    // Physical slab extent on perpAxis for this face at this layer,
    // ***    // shrunk by lower-priority axes (corner ownership, same as initMassNodes).
-   // ***    // Then additionally clamped to [0, gridSize[perpAxis]).
+   // ***    // Then additionally clamped to [0, dimensions[perpAxis]).
    // ***    //
    // ***    // The face at layer k is offset by k cells from the frame boundary:
    // ***    //   outward (sign=+1): frame expands by k on each side
@@ -491,7 +491,7 @@ ParticleZone< ParticleConfig, DeviceType >::assignCellsFrame(
 
    // ***    // Clamp to domain
    // ***    faceOrigin = TNL::max( faceOrigin, 0 );
-   // ***    faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+   // ***    faceEnd    = TNL::min( faceEnd,    dimensions[ perpAxis ] );
 
    // ***    return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
    // *** };
@@ -569,7 +569,7 @@ if( sign > 0 ) {
       std::cout << ">>>>> clampedFaceCount: faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
 
       faceOrigin = TNL::max( faceOrigin, 0 );
-      faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+      faceEnd    = TNL::min( faceEnd,    dimensions[ perpAxis ] );
 
       std::cout << ">>>>>> clampedFaceCount: faceOrigin: " << faceOrigin << ", faceEnd: " << faceEnd << std::endl;
 
@@ -594,7 +594,7 @@ if( sign > 0 ) {
 //   // No extension, no shrink needed — the corner cells are in a lower-d face.
 //
 //   faceOrigin = TNL::max( faceOrigin, 0 );
-//   faceEnd    = TNL::min( faceEnd,    gridSize[ perpAxis ] );
+//   faceEnd    = TNL::min( faceEnd,    dimensions[ perpAxis ] );
 //   return static_cast< GlobalIndexType >( TNL::max( 0, faceEnd - faceOrigin ) );
 //};
 ////===========================================================
@@ -621,7 +621,7 @@ if( sign > 0 ) {
    //            : frameFrontOrigin[ d ] + frameFrontDims[ d ] + expand - ( sign > 0 ? 0 : 1 );
    //
    //         // Same condition as the continue in Pass 2
-   //         if( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] )
+   //         if( ifaceCoord < 0 || ifaceCoord >= dimensions[ d ] )
    //            continue;
    //
    //         GlobalIndexType faceNodes = 1;
@@ -661,14 +661,14 @@ if( sign > 0 ) {
                   : frameFrontOrigin[ d ] + frameFrontDims[ d ] + expand - ( sign > 0 ? 0 : 1 );
 
             // parallelFor range: 1 on interface axis, clamped count on perp axes
-            IndexVectorType begin = 0, end = 0;
+            CoordinatesType begin = 0, end = 0;
             end[ d ] = 1;
             for( int pd = 0; pd < dim; pd++ )
                if( pd != d )
                   end[ pd ] = clampedFaceCount( layer, d, sign, pd );
 
             // Strides for linearisation (same as initMassNodes)
-            IndexVectorType stride = 0;
+            CoordinatesType stride = 0;
             {
                GlobalIndexType running = 1;
                for( int pd = dim - 1; pd >= 0; pd-- ) {
@@ -679,7 +679,7 @@ if( sign > 0 ) {
             }
 
             // Origin on each perp axis (corner ownership + clamping)
-            IndexVectorType perpOrigin = 0;
+            CoordinatesType perpOrigin = 0;
             perpOrigin[ d ] = ifaceCoord;
             // *** for( int pd = 0; pd < dim; pd++ ) {
             // ***    if( pd == d ) continue;
@@ -735,8 +735,8 @@ if( sign > 0 ) {
 ////========================================================================================
 
             // Clamp ifaceCoord — skip face entirely if outside domain
-            if( ifaceCoord < 0 || ifaceCoord >= gridSize[ d ] ) { //FIXME:
-            //if( ifaceCoord < -1 || ifaceCoord >= ( gridSize[ d ] - 1 ) ) { //FIXME:
+            if( ifaceCoord < 0 || ifaceCoord >= dimensions[ d ] ) { //FIXME:
+            //if( ifaceCoord < -1 || ifaceCoord >= ( dimensions[ d ] - 1 ) ) { //FIXME:
                // Still advance offset by the face node count
                GlobalIndexType faceNodes = 1;
                for( int pd = 0; pd < dim; pd++ )
@@ -748,8 +748,8 @@ if( sign > 0 ) {
             const GlobalIndexType    faceOffset  = offset;
             const int          iAxis       = d;
             const GlobalIndexType    iCoord      = ifaceCoord;
-            const IndexVectorType pOrigin  = perpOrigin;
-            const IndexVectorType gs       = gridSize;
+            const CoordinatesType pOrigin  = perpOrigin;
+            const CoordinatesType gs       = dimensions;
 
             // DEBUG PLAYGROUND
             std::cout
@@ -764,7 +764,7 @@ if( sign > 0 ) {
                 << std::endl;
             //\DEBUG PLAYGROUND
 
-            auto fill = [=] __cuda_callable__ ( const IndexVectorType idx ) mutable
+            auto fill = [=] __cuda_callable__ ( const CoordinatesType idx ) mutable
             {
                // Linearise over perp axes
                GlobalIndexType i = faceOffset;
@@ -772,7 +772,7 @@ if( sign > 0 ) {
                   i += idx[ pd ] * stride[ pd ];
 
                // Absolute cell coords
-               IndexVectorType c = pOrigin;
+               CoordinatesType c = pOrigin;
                c[ iAxis ] = iCoord;
                for( int pd = 0; pd < dim; pd++ )
                   if( pd != iAxis )
@@ -789,9 +789,9 @@ if( sign > 0 ) {
             };
 
             if constexpr( dim == 2 )
-               Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0}, end, fill );
+               Algorithms::parallelFor< DeviceType >( CoordinatesType{0,0}, end, fill );
             else
-               Algorithms::parallelFor< DeviceType >( IndexVectorType{0,0,0}, end, fill );
+               Algorithms::parallelFor< DeviceType >( CoordinatesType{0,0,0}, end, fill );
             std::cout << std::endl;
 
             GlobalIndexType faceNodes = 1;
@@ -994,8 +994,8 @@ template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
    const std::string&    filename,
-   const IndexVectorType gridSize,
-   const PointType      gridOrigin,
+   const CoordinatesType dimensions,
+   const PointType      origin,
    const RealType        searchRadius ) const
 {
    constexpr int dim = ParticleConfig::spaceDimension;
@@ -1013,7 +1013,7 @@ ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
 
    // Each cell is written as a voxel (VTK_VOXEL = 11 in 3D) or
    // a pixel (VTK_PIXEL = 8 in 2D). A cell at grid coords (ix, iy)
-   // has its corner at gridOrigin + {ix, iy} * searchRadius.
+   // has its corner at origin + {ix, iy} * searchRadius.
 
    const int pointsPerCell = ( dim == 2 ) ? 4 : 8;
 
@@ -1027,20 +1027,20 @@ ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
    for( GlobalIndexType ci = 0; ci < n; ci++ ) {
       // Decode flat cell index back to grid coords
       GlobalIndexType idx = cellsHost[ ci ];
-      IndexVectorType gc;
+      CoordinatesType gc;
       if constexpr( dim == 2 ) {
-         gc[ 0 ] = idx % gridSize[ 0 ];
-         gc[ 1 ] = idx / gridSize[ 0 ];
+         gc[ 0 ] = idx % dimensions[ 0 ];
+         gc[ 1 ] = idx / dimensions[ 0 ];
       } else {
-         gc[ 0 ] = idx % gridSize[ 0 ];
-         gc[ 1 ] = ( idx / gridSize[ 0 ] ) % gridSize[ 1 ];
-         gc[ 2 ] = idx / ( gridSize[ 0 ] * gridSize[ 1 ] );
+         gc[ 0 ] = idx % dimensions[ 0 ];
+         gc[ 1 ] = ( idx / dimensions[ 0 ] ) % dimensions[ 1 ];
+         gc[ 2 ] = idx / ( dimensions[ 0 ] * dimensions[ 1 ] );
       }
 
       // Cell corner in physical coords
-      const float ox = gridOrigin[ 0 ] + gc[ 0 ] * searchRadius;
-      const float oy = gridOrigin[ 1 ] + gc[ 1 ] * searchRadius;
-      const float oz = ( dim == 3 ) ? gridOrigin[ 2 ] + gc[ 2 ] * searchRadius : 0.f;
+      const float ox = origin[ 0 ] + gc[ 0 ] * searchRadius;
+      const float oy = origin[ 1 ] + gc[ 1 ] * searchRadius;
+      const float oz = ( dim == 3 ) ? origin[ 2 ] + gc[ 2 ] * searchRadius : 0.f;
       const float sr = searchRadius;
 
       if constexpr( dim == 2 ) {
@@ -1094,8 +1094,8 @@ template< typename ParticleConfig, typename DeviceType >
 void
 ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
    const std::string&    filename,
-   const IndexVectorType gridSize,
-   const PointType       gridOrigin,
+   const CoordinatesType dimensions,
+   const PointType       origin,
    const RealType        searchRadius ) const
 {
    constexpr int dim = ParticleConfig::spaceDimension;
@@ -1129,21 +1129,21 @@ ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
 
       //// Decode flat index → integer grid coords
       //GlobalIndexType idx = cells[ ci ];
-      //IndexVectorType gc  = 0;
+      //CoordinatesType gc  = 0;
       //if constexpr( dim == 2 ) {
-      //   gc[ 0 ] = idx % gridSize[ 0 ];
-      //   gc[ 1 ] = idx / gridSize[ 0 ];
+      //   gc[ 0 ] = idx % dimensions[ 0 ];
+      //   gc[ 1 ] = idx / dimensions[ 0 ];
       //} else {
-      //   gc[ 0 ] = idx % gridSize[ 0 ];
-      //   gc[ 1 ] = ( idx / gridSize[ 0 ] ) % gridSize[ 1 ];
-      //   gc[ 2 ] = idx / ( gridSize[ 0 ] * gridSize[ 1 ] );
+      //   gc[ 0 ] = idx % dimensions[ 0 ];
+      //   gc[ 1 ] = ( idx / dimensions[ 0 ] ) % dimensions[ 1 ];
+      //   gc[ 2 ] = idx / ( dimensions[ 0 ] * dimensions[ 1 ] );
       //}
 
       // Physical origin of this cell
-      const IndexVectorType gc = CellIndexer::GetCellCoordinates( cells[ ci ], gridSize );
-      const float x0 = gridOrigin[ 0 ] + gc[ 0 ] * searchRadius;
-      const float y0 = gridOrigin[ 1 ] + gc[ 1 ] * searchRadius;
-      const float z0 = ( dim == 3 ) ? gridOrigin[ 2 ] + gc[ 2 ] * searchRadius : 0.f;
+      const CoordinatesType gc = CellIndexer::GetCellCoordinates( cells[ ci ], dimensions );
+      const float x0 = origin[ 0 ] + gc[ 0 ] * searchRadius;
+      const float y0 = origin[ 1 ] + gc[ 1 ] * searchRadius;
+      const float z0 = ( dim == 3 ) ? origin[ 2 ] + gc[ 2 ] * searchRadius : 0.f;
       const float sr = static_cast< float >( searchRadius );
 
       // Write corners in VTK_PIXEL / VTK_VOXEL order
@@ -1193,16 +1193,16 @@ ParticleZone< ParticleConfig, DeviceType >::saveZoneToVTK(
 
    f << "SCALARS gc_x int 1\nLOOKUP_TABLE default\n";
    for( GlobalIndexType ci = 0; ci < n; ci++ )
-      f << cells[ ci ] % gridSize[ 0 ] << "\n";
+      f << cells[ ci ] % dimensions[ 0 ] << "\n";
 
    f << "SCALARS gc_y int 1\nLOOKUP_TABLE default\n";
    for( GlobalIndexType ci = 0; ci < n; ci++ )
-      f << ( cells[ ci ] / gridSize[ 0 ] ) % gridSize[ 1 ] << "\n";
+      f << ( cells[ ci ] / dimensions[ 0 ] ) % dimensions[ 1 ] << "\n";
 
    if constexpr( dim == 3 ) {
       f << "SCALARS gc_z int 1\nLOOKUP_TABLE default\n";
       for( GlobalIndexType ci = 0; ci < n; ci++ )
-         f << cells[ ci ] / ( gridSize[ 0 ] * gridSize[ 1 ] ) << "\n";
+         f << cells[ ci ] / ( dimensions[ 0 ] * dimensions[ 1 ] ) << "\n";
    }
 
    std::cout << "saveZoneToVTK: " << n << " cells → " << filename << "\n";
