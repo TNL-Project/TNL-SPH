@@ -1,8 +1,6 @@
 #pragma once
 
 #include "../../SPHTraits.h"
-#include <TNL/Particles/details/thrustExecPolicySelector.h>
-#include <thrust/gather.h>
 
 #ifdef HAVE_MPI
    #include "../../shared/utils.h"
@@ -114,3 +112,4 @@ public:
 
 }  //namespace SPH
 }  //namespace TNL
+

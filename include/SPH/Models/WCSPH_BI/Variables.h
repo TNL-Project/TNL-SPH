@@ -1,8 +1,6 @@
 #pragma once
 
 #include "../../SPHTraits.h"
-#include <TNL/Particles/details/thrustExecPolicySelector.h>
-#include <thrust/gather.h>
 #include "BoundaryConditionsTypes.h"
 
 namespace TNL {
@@ -172,3 +170,4 @@ public:
 
 }  //namespace SPH
 }  //namespace TNL
+
