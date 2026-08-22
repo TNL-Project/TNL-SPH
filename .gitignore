@@ -46,3 +46,6 @@ src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*
 # content in src
 src/extra/accelerateImp/spectrum-results
 src/Benchmarks/multiResolutionBenchmarks/damBreak2D_WCSPH-BI_MR-results
+
+# sph-bare
+bare
