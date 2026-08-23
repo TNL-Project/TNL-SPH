@@ -1,9 +1,9 @@
 #set( CPP_TESTS
-#         ParticleSystemTest
+#         ParticlesCellListTest
 #)
 
 set( CUDA_TESTS
-         ParticleSystemTest
+         ParticlesCellListTest
          GhostZoneTest
 )
 

@@ -18,8 +18,8 @@ using SPHParams = TNL::Particles::SPH::SPHConfig::SPHParamsConfig< SimulationCon
 /**
  * Include type of particle system.
  */
-#include <Particles/ParticlesLinkedListFloating.h>
-using ParticlesSys = TNL::Particles::ParticlesLinkedList< ParticlesParams::ParticlesConfig, SimulationControl::DeviceType >;
+#include <Particles/ParticlesCellListFloating.h>
+using ParticlesSys = TNL::Particles::ParticlesCellList< ParticlesParams::ParticlesConfig, SimulationControl::DeviceType >;
 
 /**
  * Include particular formulation of SPH method.

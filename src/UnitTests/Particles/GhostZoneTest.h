@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <Particles/ParticlesLinkedList.h>
+#include <Particles/ParticlesCellList.h>
 #include <Particles/GhostZone.h>
 #include "gtest/gtest.h"
 #include "gmock/gmock.h" //test vectors
@@ -97,7 +97,7 @@ TEST( GhostZonesConstruction2DTest, CollectParticlesInZoneCuda )
 {
    using Device = TNL::Devices::Cuda;
    using ParticlesSetup = Particles2DSetup< Device >;
-   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesCellList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
 
    using GhostZone = ParticleZone< ParticlesSetup::ParticlesConfig >;

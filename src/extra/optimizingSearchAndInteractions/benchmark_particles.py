@@ -65,57 +65,57 @@ class Variant:
 VARIANTS: dict[str, Variant] = {
     "CLL": Variant(
         "CLL",
-        "<TNL/Particles/ParticlesLinkedList.h>",
-        "TNL::Particles::ParticlesLinkedList< ParticlesConfig, Device >",
+        "<TNL/Particles/ParticlesCellList.h>",
+        "TNL::Particles::ParticlesCellList< ParticlesConfig, Device >",
     ),
     "CLLWithList": Variant(
         "CLLWithList",
-        "<TNL/Particles/ParticlesLinkedListWithList.h>",
-        "TNL::Particles::ParticlesLinkedListWithList< ParticlesConfig, Device >",
+        "<TNL/Particles/ParticlesVerletList.h>",
+        "TNL::Particles::ParticlesVerletList< ParticlesConfig, Device >",
     ),
     # --- Experimental variants (build/_deps/tnl-src/.../experimental/) ---
     "Ellpack": Variant(
         "Ellpack",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListEllpack.h>",
-        "TNL::Particles::ParticlesLinkedListWithListEllpack< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesVerletListEllpack.h>",
+        "TNL::Particles::ParticlesVerletListEllpack< ParticlesConfig, Device >",
     ),
     "Warp": Variant(
         "Warp",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListWarp.h>",
-        "TNL::Particles::ParticlesLinkedListWithListWarp< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesVerletListWarp.h>",
+        "TNL::Particles::ParticlesVerletListWarp< ParticlesConfig, Device >",
     ),
     "SharedMem": Variant(
         "SharedMem",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListSharedMem.h>",
-        "TNL::Particles::ParticlesLinkedListWithListSharedMem< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesVerletListSharedMem.h>",
+        "TNL::Particles::ParticlesVerletListSharedMem< ParticlesConfig, Device >",
     ),
     "Optimized": Variant(
         "Optimized",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListOptimized.h>",
-        "TNL::Particles::ParticlesLinkedListWithListOptimized< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesVerletListOptimized.h>",
+        "TNL::Particles::ParticlesVerletListOptimized< ParticlesConfig, Device >",
     ),
     "Atomic": Variant(
         "Atomic",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListAtomic.h>",
-        "TNL::Particles::ParticlesLinkedListWithListAtomic< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesVerletListAtomic.h>",
+        "TNL::Particles::ParticlesVerletListAtomic< ParticlesConfig, Device >",
     ),
     # --- Z-order (Morton curve) variants ---
     "CLL_ZOrder": Variant(
         "CLL_ZOrder",
-        "<TNL/Particles/experimental/ParticlesLinkedListZOrder.h>",
-        "TNL::Particles::ParticlesLinkedListZOrder< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesCellListZOrder.h>",
+        "TNL::Particles::ParticlesCellListZOrder< ParticlesConfig, Device >",
         z_order=True,
     ),
     "Warp_ZOrder": Variant(
         "Warp_ZOrder",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListWarpZOrder.h>",
-        "TNL::Particles::ParticlesLinkedListWithListWarpZOrder< ParticlesConfig, Device >",
+        "<TNL/Particles/experimental/ParticlesVerletListWarpZOrder.h>",
+        "TNL::Particles::ParticlesVerletListWarpZOrder< ParticlesConfig, Device >",
         z_order=True,
     ),
     "Ellpack_ZOrder": Variant(
         "Ellpack_ZOrder",
-        "<TNL/Particles/experimental/ParticlesLinkedListWithListSegmentsZOrder.h>",
-        "TNL::Particles::ParticlesLinkedListWithListSegmentsZOrder< "
+        "<TNL/Particles/experimental/ParticlesVerletListSegmentsZOrder.h>",
+        "TNL::Particles::ParticlesVerletListSegmentsZOrder< "
         "ParticlesConfig, Device, TNL::Algorithms::Segments::Ellpack< Device, int > >",
         z_order=True,
     ),

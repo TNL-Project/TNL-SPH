@@ -80,8 +80,8 @@ using ParticlesConfig = ParticleSystemConfig< Device >;
 /**
  * Include type of particle system.
  */
-#include <TNL/Particles/ParticlesLinkedList.h>
-using ParticlesSys = TNL::Particles::ParticlesLinkedList< ParticlesConfig, Device >;
+#include <TNL/Particles/ParticlesCellList.h>
+using ParticlesSys = TNL::Particles::ParticlesCellList< ParticlesConfig, Device >;
 
 /**
  * Include particular formulation of SPH method.

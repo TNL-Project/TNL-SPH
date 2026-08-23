@@ -9,7 +9,7 @@
 /**
  * Particle system.
  */
-#include "../../../../Particles/ParticlesLinkedListFloating.h"
+#include "../../../../Particles/ParticlesCellListFloating.h"
 
 /**
  * Particle system reader.
@@ -74,7 +74,7 @@ int main( int argc, char* argv[] )
    /**
     * Particle and neighbor search model.
     */
-   using ParticleSystem = ParticlesLinkedList< ParticlesConfig, SimulationControl::DeviceType >;
+   using ParticleSystem = ParticlesCellList< ParticlesConfig, SimulationControl::DeviceType >;
 
    /**
     * Define simulation SPH model and SPH formulation.

@@ -63,8 +63,8 @@ using SPHDefs = SPHParams< Device >;
 using ParticlesConfig = ParticleSystemConfig;
 
 // particle system
-#include <TNL/Particles/ParticlesLinkedList.h>
-using ParticleSystemType = TNL::Particles::ParticlesLinkedList< ParticlesConfig, Device >;
+#include <TNL/Particles/ParticlesCellList.h>
+using ParticleSystemType = TNL::Particles::ParticlesCellList< ParticlesConfig, Device >;
 
 // SPH model
 #include <SPH/Models/RSPH/Interactions.h>

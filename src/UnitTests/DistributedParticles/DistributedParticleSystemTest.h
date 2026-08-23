@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h" //test vectors
 
-#include <Particles/ParticlesLinkedList.h>
+#include <Particles/ParticlesCellList.h>
 #include <Particles/DistributedParticles.h>
 #include <Particles/DistributedParticlesSynchronizer.h>
 #include <type_traits>
@@ -138,7 +138,7 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
    using ParticlesSetup = Particles2DSetup< Device >;
    using SubdomainsSetup = SubdomainsParametersX3Y1< Device >;
 
-   using Particles = TNL::Particles::ParticlesLinkedList< ParticlesSetup::ParticlesConfig, Device >;
+   using Particles = TNL::Particles::ParticlesCellList< ParticlesSetup::ParticlesConfig, Device >;
    using ParticlesPointer = typename Pointers::SharedPointer< Particles, Device >;
    using DistributedParticles = TNL::Particles::DistributedParticleSystem< Particles >;
    using DistributedParticlesPointer = typename Pointers ::SharedPointer< DistributedParticles, Device >;
