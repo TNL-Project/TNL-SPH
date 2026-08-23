@@ -142,17 +142,23 @@ SPHMultiset_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
                       searchRadius,
                       dimensions,
                       domainOrigin );
-   if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
-      fluid->getParticles()->setParticleSetLabel( 0 );
+    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ) {
+       fluid->getParticles()->setParticleSetLabel( 0 );
+       fluid->getParticles()->setNumberOfParticleSets( 2 );
+       fluid->getParticles()->setNeighborsCountLimit( 256 );
+    }
 
-   // init boundary
-   boundary->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
-                         parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
-                         searchRadius,
-                         dimensions,
-                         domainOrigin );
-   if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
-      boundary->getParticles()->setParticleSetLabel( 1 );
+    // init boundary
+    boundary->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
+                          parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
+                          searchRadius,
+                          dimensions,
+                          domainOrigin );
+    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ) {
+       boundary->getParticles()->setParticleSetLabel( 1 );
+       boundary->getParticles()->setNumberOfParticleSets( 2 );
+       boundary->getParticles()->setNeighborsCountLimit( 256 );
+    }
 
    //// init open boundary patches
    //const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
