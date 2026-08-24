@@ -1,9 +1,7 @@
 #! /usr/bin/env python3
 
 import re
-from typing_extensions import Required
 from rich.console import Console
-from rich.repr import T
 from rich.table import Table
 from markdown import markdown
 from bs4 import BeautifulSoup
@@ -37,7 +35,7 @@ def process_and_print_results(file_path):
     data = [[clean_html(cell.strip()) for cell in row] for row in data]
 
     # Create a Rich table
-    table = Table(title="Test Results", show_lines=True)
+    table = Table(title="Test Results", show_lines=False, header_style="bold cyan")
 
     # Define table columns
     for col in header:
@@ -90,7 +88,7 @@ if __name__ == "__main__":
     import argparse
 
     argparser = argparse.ArgumentParser(description="Arguments for script printing results of test")
-    argparser.add_argument("--file", type=str, help="file with results", required=True)
+    argparser.add_argument("file", type=str, help="markdown file with test results")
 
     args = argparser.parse_args()
     process_and_print_results( args.file )
