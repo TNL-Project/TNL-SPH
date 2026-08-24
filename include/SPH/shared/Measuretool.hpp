@@ -144,7 +144,7 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolateUsingParallelFor( Flui
     auto loopOverGrid = [=] __cuda_callable__ ( const CoordinatesType& i  ) mutable
     {
        const VectorType r = i * gridSpaceSteps + gridOrigin;
-       const GlobalIndexType idx = CellIndexer::EvaluateCellIndex( i, dimensions );
+       const GlobalIndexType idx = CellIndexer::evaluateCellIndex( i, dimensions );
 
        VectorType v = 0.f;
        RealType rho = 0.f;
