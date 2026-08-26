@@ -145,7 +145,7 @@ def build_case():
 
 def run_case():
     solver_path = bin_dir / target_name
-    config_path = example_dir / "sources" / "config.json"
+    config_path = example_dir / "sources" / "config.jsonc"
     p = subprocess.run(
         [str(solver_path), "--config", str(config_path)],
         cwd=example_dir,
