@@ -56,6 +56,7 @@ for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySe
         "dp": 0.002,
         "h-coef": 2,
         "time-integration": f"{timeScheme}",
+        "bc-correction" : "ElasticBounce",
         "evaluation-function": emptyTest,
     })
 
@@ -84,6 +85,7 @@ for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySe
         "dp": 0.002,
         "h-coef": 2,
         "time-integration": f"{timeScheme}",
+        "bc-correction" : "ElasticBounce",
         "evaluation-function": emptyTest,
     })
 
@@ -143,7 +145,7 @@ def build_case():
 
 def run_case():
     solver_path = bin_dir / target_name
-    config_path = example_dir / "sources" / "config.ini"
+    config_path = example_dir / "sources" / "config.json"
     p = subprocess.run(
         [str(solver_path), "--config", str(config_path)],
         cwd=example_dir,
