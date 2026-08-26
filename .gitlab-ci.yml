@@ -16,6 +16,9 @@ default:
 # https://docs.gitlab.com/ee/ci/git_submodules.html
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  # TNL-SPH has high memory-per-core requirements, so cap parallel build jobs
+  # to avoid OOM errors (cicc / cc1plus killed by signal 9)
+  CMAKE_BUILD_PARALLEL_LEVEL: "4"
 stages:
   - build
 build_Release:
@@ -24,11 +27,11 @@ build_Release:
     - cmake -B build -S . -G Ninja
             -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}
-    - ninja -C build
+    - cmake --build build
 build_Debug:
   stage: build
   script:
     - cmake -B build -S . -G Ninja
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}
-    - ninja -C build
+    - cmake --build build
