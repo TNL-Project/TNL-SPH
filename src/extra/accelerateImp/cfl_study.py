@@ -40,49 +40,81 @@ results_dir = example_dir / "results"
 build_dir = project_dir / "build"
 target_name = "damBreak2D_WCSPH-BI_cuda"
 
-
 def emptyTest(case_dir):
     return 0, 0
 
+CFLTest = []
 
-CFLTest = [
-    {
-        "case-tag": "damBreak2D_WCSPH-BI_Verlet",
+# LR dissipative
+for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySecant"]:
+    CFLTest.append({
+        "case-tag": f"damBreak2D_WCSPH-BI_dp0.002_dissipative_{timeScheme}",
         "case": "WCSPH-BI/damBreak2D_WCSPH-BI",
         "bc-type": "BIConservative_numeric",
-        "viscous-term": "None",
-        "diffusive-term": "None",
-        "dp": 0.00075,
-        "h-coef": 4,
-        "time-integration": "Verlet",
+        "viscous-term" : "PhysicalViscosity_MGVT",
+        "diffusive-term" : "MolteniDiffusiveTerm",
+        "dp": 0.002,
+        "h-coef": 2,
+        "time-integration": f"{timeScheme}",
         "evaluation-function": emptyTest,
-    },
-    {
-        "case-tag": "damBreak2D_WCSPH-BI_Midpoint",
+    })
+
+# LR inviscid
+for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySecant"]:
+    CFLTest.append({
+        "case-tag": f"damBreak2D_WCSPH-BI_dp0.002_h2_inviscid_{timeScheme}",
         "case": "WCSPH-BI/damBreak2D_WCSPH-BI",
         "bc-type": "BIConservative_numeric",
-        "viscous-term": "None",
-        "diffusive-term": "None",
-        "dp": 0.00075,
-        "h-coef": 4,
-        "time-integration": "MidpointScheme",
+        "viscous-term" : "None",
+        "diffusive-term" : "None",
+        "dp": 0.002,
+        "h-coef": 2,
+        "time-integration": f"{timeScheme}",
         "evaluation-function": emptyTest,
-    },
-    {
-        "case-tag": "damBreak2D_WCSPH-BI_MidpointAnderson",
+    })
+
+# LR dissipative
+for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySecant"]:
+    CFLTest.append({
+        "case-tag": f"damBreak2D_WCSPH-BI_dp0.002_dissipative-consistent-bc_{timeScheme}",
+        "case": "WCSPH-BI/damBreak2D_WCSPH-BI",
+        "bc-type": "BIConsistent_numeric",
+        "viscous-term" : "PhysicalViscosity_MGVT",
+        "diffusive-term" : "MolteniDiffusiveTerm",
+        "dp": 0.002,
+        "h-coef": 2,
+        "time-integration": f"{timeScheme}",
+        "evaluation-function": emptyTest,
+    })
+
+for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySecant"]:
+    CFLTest.append({
+        "case-tag": f"damBreak2D_WCSPH-BI_dp0.002_h4_inviscid_{timeScheme}",
         "case": "WCSPH-BI/damBreak2D_WCSPH-BI",
         "bc-type": "BIConservative_numeric",
-        "viscous-term": "None",
-        "diffusive-term": "None",
-        "dp": 0.00075,
+        "viscous-term" : "None",
+        "diffusive-term" : "None",
+        "dp": 0.002,
         "h-coef": 4,
-        "time-integration": "MidpointSchemeWithAnderson",
+        "time-integration": f"{timeScheme}",
         "evaluation-function": emptyTest,
-    },
-]
+    })
 
-DEFAULT_CFLS = [0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
+# # HR inviscid
+# for timeScheme in ["VerletScheme", "MidpointScheme", "MidpointSchemeWithEnergySecant"]:
+#     CFLTest.append({
+#         "case-tag": "damBreak2D_WCSPH-BI_Verlet",
+#         "case": "WCSPH-BI/damBreak2D_WCSPH-BI",
+#         "bc-type": "BIConservative_numeric",
+#         "viscous-term": "None",
+#         "diffusive-term": "None",
+#         "dp": 0.00075,
+#         "h-coef": 4,
+#         "time-integration": "Verlet",
+#         "evaluation-function": emptyTest,
+#     })
 
+DEFAULT_CFLS = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75]
 
 def init_case(cfl, conf):
     args = [str(example_dir / "init.py")]
@@ -99,7 +131,6 @@ def init_case(cfl, conf):
         stderr=subprocess.STDOUT,
     )
 
-
 def build_case():
     p = subprocess.run(
         ["cmake", "--build", str(build_dir), "--target", target_name],
@@ -109,7 +140,6 @@ def build_case():
     )
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, p.args)
-
 
 def run_case():
     solver_path = bin_dir / target_name
@@ -123,7 +153,6 @@ def run_case():
     )
     return p.returncode == 0
 
-
 def parse_computational_time():
     filename = results_dir / "time_measurements.json"
     try:
@@ -133,15 +162,13 @@ def parse_computational_time():
     except Exception:
         return None
 
-
 def backup_results(case_tag, cfl):
     cfl_str = f"{cfl}".replace(".", "p")
-    dest = example_dir / f"results_{case_tag}_CFL{cfl_str}"
+    dest = script_dir / f"results_{case_tag}_CFL{cfl_str}"
     if dest.exists():
         shutil.rmtree(dest)
     if results_dir.exists():
         shutil.move(str(results_dir), str(dest))
-
 
 def run_cfl_study(cfls, skip_build=False, csv_path=None, backup=False):
     """
@@ -357,7 +384,7 @@ if __name__ == "__main__":
     if not args.backup_results:
         results_dir.mkdir(exist_ok=True)
 
-    csv_path = example_dir / "cfl_study_results.csv"
+    csv_path = script_dir / "cfl_study_results.csv"
 
     results = run_cfl_study(
         cfls,
@@ -367,5 +394,5 @@ if __name__ == "__main__":
     )
     print(f"\nRaw results saved to: {csv_path}")
 
-    plot_path = example_dir / "cfl_study.png"
+    plot_path = script_dir / "cfl_study.png"
     plot_results(results, plot_path)
