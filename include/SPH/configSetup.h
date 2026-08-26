@@ -35,6 +35,7 @@ configSetup( TNL::Config::ConfigDescription& config,
     config.addEntry< std::string >( "initial-condition", "File name with the initial condition." );
     config.addRequiredEntry< double >( "final-time", "Stop time of the time dependent problem." );
     config.addEntry< double >( "initial-time-step", "Initial time of the time dependent problem.", 0 );
+    config.addEntry< double >( "start-time", "Initial simulation time for restart (0 = classical mode).", 0. );
     config.addRequiredEntry< double >( "snapshot-period", "Time period for writing the problem status.");
     config.addEntry< double >( "time-step", "The time step for the time discretisation.", 1.0 );
 

@@ -69,6 +69,12 @@ public:
    }
 
    void
+   setTime( const RealType& time )
+   {
+      this->time = time;
+   }
+
+   void
    setTimeStep( const RealType& timeStep )
    {
       this->timeStep = timeStep;

@@ -92,6 +92,7 @@ SPHMultiset_CFD< Model >::init( int argc, char* argv[] )
 
    // init time stepping
    timeStepping.setTimeStep( parameters.getParameter< RealType >( "initial-time-step" ) );
+   timeStepping.setTime( parameters.getParameter< RealType >( "start-time" ) );
    timeStepping.setEndTime( parameters.getParameter< RealType >( "final-time" ) );
    timeStepping.addOutputTimer( "save_results", parameters.getParameter< RealType >( "snapshot-period" ) );
 
