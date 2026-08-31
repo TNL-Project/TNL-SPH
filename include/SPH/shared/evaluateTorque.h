@@ -8,7 +8,7 @@ namespace TNL {
 namespace SPH {
 
 /**
- * \brief Evaluates torque (moment of forces) acting on a boundary with respect
+ * Evaluates torque (moment of forces) acting on a boundary with respect
  * to a given center and rotation axis.
  *
  * The evaluation reuses the per-particle forces stored by a forces monitor
@@ -118,3 +118,4 @@ public:
 
 } // SPH
 } // TNL
+
