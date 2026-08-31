@@ -1,5 +1,5 @@
 {
-    // === Control section ===
+    // Control section
     // Simulation name, path to store results and path to read initial conditions
     "control": {
         "case-name": "damBreak2D_WCSPH-BI",
@@ -13,7 +13,7 @@
         "verbose-intensity": "with-snapshot"
     },
 
-    // === Particle system configuration ===
+    // Particle system configuration
     "particles": {
         "numberOfParticles": placeholderFluidParticles,
         "numberOfAllocatedParticles": placeholderAllocatedFluidParticles,
@@ -21,7 +21,7 @@
         "numberOfAllocatedBoundaryParticles": placeholderAllocatedBoundaryParticles
     },
 
-    // === Domain size and domain origin ===
+    // Domain size and domain origin
     "domain": {
         "searchRadius": placeholderSearchRadius,
         "domainOrigin-x": placeholderDomainOrigin-x,
@@ -30,7 +30,7 @@
         "domainSize-y": placeholderDomainSize-y
     },
 
-    // === SPH solver section - resolution parameters ===
+    // SPH solver section - resolution parameters
     "model": {
         // initial particle distance - dp [m]
         "dp": placeholderInitParticleDistance,
@@ -41,7 +41,7 @@
         // size of boundary element - boundaryElementSize [m]
         "boundaryElementSize": placeholderInitParticleDistance,
 
-        // === Medium properties and model constants ===
+        // Medium properties and model constants
         // referential density of medium - rho0 [kg/m^3]
         "rho0": placeholderDensity,
         // delta-WCSPH diffusive term coefficient - delta [-]
@@ -70,13 +70,13 @@
         "external-force-y": -9.81
     },
 
-    // === SPH solver section - integration parameters ===
+    // SPH solver section - integration parameters
     "integration": {
         // initial time step [s]
         "initial-time-step": placeholderTimeStep,
         "CFL": placeholderCFL,
 
-        // === Midpoint integration scheme parameters ===
+        // Midpoint integration scheme parameters
         // number of allowed iterations - midpointMaxInterations [-]
         "midpointMaxInterations": 10,
         // lower residuals threshold - midpointResidualTolerance [-]
@@ -91,55 +91,13 @@
         "midpointRelaxCoefIncrement": 0.25
     },
 
-    // === Domain decomposition ===
+    // Domain decomposition
     "numberOfSubdomains": 2,
     "subdomains-config": "sources/config-distributed-domain.jsonc",
 
-    // === Measure tool initialization section ===
+    //  Measure tool initialization section
     "interpolation-planes-count": 0,
     "pressure-sensors-count": 4,
     "water-level-sensors-count": 4,
-    "measuretool-config": "sources/config-measuretool.jsonc",
-
-    // Inline measuretool config (alternative to "measuretool-config" file path).
-    // When "measuretool-config" is empty, the solver reads this subsection instead.
-    "measuretool": {
-        // === Interpolation grid ===
-        // "plane-1-identifier": "interpolation",
-        // "plane-1-outputTime": 0.05,
-        // "plane-1-gridOrigin-x": 0,
-        // "plane-1-gridOrigin-y": 0,
-        // "plane-1-gridSize-x": 150,
-        // "plane-1-gridSize-y": 70,
-        // "plane-1-gridStep-x": 0.002,
-        // "plane-1-gridStep-y": 0.002,
-
-        // === Measure pressure - points ===
-        "sensor-p-outputTime": 2e-3,
-        "sensor-p-includeBoundary": false,
-        "sensor-p-point-1-x": 1.6043,
-        "sensor-p-point-1-y": 0.003,
-        "sensor-p-point-2-x": 1.6043,
-        "sensor-p-point-2-y": 0.015,
-        "sensor-p-point-3-x": 1.6043,
-        "sensor-p-point-3-y": 0.03,
-        "sensor-p-point-4-x": 1.6043,
-        "sensor-p-point-4-y": 0.08,
-
-        // === Measure water level - points ===
-        "sensor-wl-outputTime": 2e-3,
-        "sensor-wl-start-level": 0,
-        "sensor-wl-end-level": 0.4,
-        "sensor-wl-level-increment": 0.002,
-        "sensor-wl-direction-x": 0,
-        "sensor-wl-direction-y": 1,
-        "sensor-wl-point-1-x": 0.3,
-        "sensor-wl-point-1-y": 0.0028284,
-        "sensor-wl-point-2-x": 0.865,
-        "sensor-wl-point-2-y": 0.0028284,
-        "sensor-wl-point-3-x": 1.114,
-        "sensor-wl-point-3-y": 0.0028284,
-        "sensor-wl-point-4-x": 1.3625,
-        "sensor-wl-point-4-y": 0.0028284
-    }
+    "measuretool-config": "sources/config-measuretool.jsonc"
 }

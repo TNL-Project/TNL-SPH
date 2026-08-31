@@ -214,57 +214,9 @@ def save_grid(grids: List[SubdomainGrid], setup: dict) -> None:
         }
         domainGrid.write_domain_grid(
             subdomain_setup,
-            f"sources/subdomain-{i}dambreak_grid.vtk"
+            f"sources/subdomain-{i}-dambreak_grid.vtk"
         )
 
-
-
-def write_distributed_domain_params_rectangular(
-        coarse_grid: SubdomainGrid,
-        fine_grid:   SubdomainGrid,
-        setup:       dict
-) -> None:
-    """
-    Extended config writer for the rectangular nested refinement case.
-    Writes the standard per-subdomain entries plus a [fine-region] block
-    that MultiresolutionBoundary::initZonesRectangular reads to build
-    the BufferSide array and frame zone.
-    """
-    grids = [coarse_grid, fine_grid]
-
-    # Reuse the standard writer for per-subdomain grid entries
-    dec.write_distributed_domain_params(grids, setup)
-
-    ## Append the fine-region block — read by initZonesRectangular
-    #is_3d = "domain_size_z" in setup
-    #axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
-
-    #with open("sources/config-distributed-domain.jsonc", "a") as f:
-    #    f.write("# Fine region specification (for rectangular MRB)\n")
-
-    #    # Physical origin and size of the fine region
-    #    for ax in axes:
-    #        phys_min = getattr(fine_grid, f"phys_{ax}_min")
-    #        phys_max = getattr(fine_grid, f"phys_{ax}_max")
-    #        f.write(f"fine-region-origin-{ax} = {phys_min:.7f}\n")
-    #        f.write(f"fine-region-size-{ax}   = {phys_max - phys_min:.7f}\n")
-
-    #    # Which faces are active interfaces (not touching domain boundary)
-    #    # A face is a domain boundary if phys_min/max coincides with domain origin/end
-    #    sr = setup["search_radius"]
-    #    for ax in axes:
-    #        domain_min = setup[f"domain_origin_{ax}"]
-    #        domain_max = setup[f"domain_origin_{ax}"] + setup[f"domain_size_{ax}"]
-    #        phys_min   = getattr(fine_grid, f"phys_{ax}_min")
-    #        phys_max   = getattr(fine_grid, f"phys_{ax}_max")
-
-    #        # Face at min end: active if fine region does not touch domain boundary
-    #        face_min_active = abs(phys_min - domain_min) > sr * 1e-3
-    #        face_max_active = abs(phys_max - domain_max) > sr * 1e-3
-    #        f.write(f"fine-region-face-min-{ax}-active = {int(face_min_active)}\n")
-    #        f.write(f"fine-region-face-max-{ax}-active = {int(face_max_active)}\n")
-
-    #    f.write("\n")
 
 # ---------------------------------------------------------------------------
 # CLI entry point
@@ -372,33 +324,5 @@ if __name__ == "__main__":
     # Step 6: Write outputs
     save_grid([coarse_grid, fine_grid], setup)
     cf.write_simulation_params(setup)
-    write_distributed_domain_params_rectangular(coarse_grid, fine_grid, setup)
+    dec.write_distributed_domain_params([coarse_grid, fine_grid], setup, particles_filename_pattern="dambreak")
     cf.write_measuretool_params(setup)
-
-    # Step 7: Generate inline subdomains config variant
-    import json
-    with open("sources/config-distributed-domain.jsonc", "r") as f:
-        dd_data = json.load(f)
-    subdomains = dd_data["subdomains"]
-
-    items = list(subdomains.items())
-    lines = []
-    for idx, (k, v) in enumerate(items):
-        suffix = "," if idx < len(items) - 1 else ""
-        inner = json.dumps(v, indent=4)
-        inner_lines = inner.split('\n')
-        lines.append(f'        "{k}": {{')
-        for il in inner_lines[1:-1]:
-            lines.append('        ' + il)
-        lines.append(f'        }}{suffix}')
-    sub_body = '\n'.join(lines).lstrip()
-
-    with open("template/config_inline_template.jsonc", "r") as f:
-        inline_cfg = f.read()
-
-    # Apply the same placeholder replacements as the main config
-    inline_cfg = cf.safe_replace(inline_cfg, cf.ini_replacements, setup)
-    inline_cfg = inline_cfg.replace("placeholderSubdomainsContent", sub_body)
-
-    with open("sources/config_inline.jsonc", "w") as f:
-        f.write(inline_cfg)
