@@ -44,7 +44,7 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
    for( int subset = 0; subset < this->numberOfSubsets; subset++ )
       TNL::SPH::configSubdomain( subset, this->configSubdomains );
-   for( int bufferIdx = 0; bufferIdx < this->numberOfSubsets; bufferIdx++ )
+   for( int bufferIdx = 0; bufferIdx < 2 * this->numberOfSubsets; bufferIdx++ )
       TNL::SPH::configMultiresolutionBuffer( bufferIdx, this->configSubdomains );
    parseDistributedConfig( configSubdomainsPath, parametersSubdomains, configSubdomains, log, subdomainsInline );
 
@@ -75,10 +75,11 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
     }
 
     this->modelParams.init( params );
-    for( int i = 0; i < this->numberOfSubsets; i++ ){
-      std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
+    for( long unsigned int p = 0; p < multiresolutionBoundaryPatches.size(); p++ ){
+      const auto& iface = multiresolutionBoundaryPatchInterfaces[ p ];
+      std::string subdomainKey = "subdomain-" + std::to_string( iface.ownIdx ) + "-";
       const float refinementFactor = parametersSubdomains.getParameter< float >( subdomainKey + "refinement-factor" );
-      multiresolutionBoundaryPatches[ i ]->initMassNodes( this->modelParams, i, refinementFactor );
+      multiresolutionBoundaryPatches[ p ]->initMassNodes( this->modelParams, iface.ownIdx, iface.neighborIdx, refinementFactor );
    }
 
    this->timeStepping.setTimeStep( params.template getParameter< RealType >( "initial-time-step" ) );
@@ -238,6 +239,7 @@ SolverMultiSetBlockMultiresolution< Model >::initMultiResolutionBoundaryPatches(
             this->fluidSets[ iface.neighborIdx ]->getParticles(),
             rf );
 
+         multiresolutionBoundaryPatchInterfaces.push_back( iface );
          mrbIdx++;
       }
    }
@@ -382,10 +384,15 @@ SolverMultiSetBlockMultiresolution< Model >::multiresolutionUpdate()
 {
    this->timeMeasurement.start( "multiresolution-update" );
 
-   multiresolutionBoundaryPatches[ 0 ]->updateInterfaceBuffer(
-         this->fluidSets[ 0 ], this->fluidSets[ 1 ], this->modelParams, this->timeStepping.getTimeStep(), 0 );
-   multiresolutionBoundaryPatches[ 1 ]->updateInterfaceBuffer(
-         this->fluidSets[ 1 ], this->fluidSets[ 0 ], this->modelParams, this->timeStepping.getTimeStep(), 1 );
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatches.size(); p++ ) {
+      const auto& iface = multiresolutionBoundaryPatchInterfaces[ p ];
+      multiresolutionBoundaryPatches[ p ]->updateInterfaceBuffer(
+            this->fluidSets[ iface.ownIdx ],
+            this->fluidSets[ iface.neighborIdx ],
+            this->modelParams,
+            this->timeStepping.getTimeStep(),
+            iface.ownIdx );
+   }
 
    this->timeMeasurement.stop( "multiresolution-update" );
    this->writeLog( "Update multiresolution BC...", "Done.");
@@ -402,7 +409,10 @@ SolverMultiSetBlockMultiresolution< Model >::interact()
       this->model.finalizeBoundaryInteraction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
 
       this->model.interaction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
-      this->model.interactionWithOpenBoundary( this->fluidSets[ i ], multiresolutionBoundaryPatches[ i ], this->modelParams );
+      for( long unsigned int p = 0; p < multiresolutionBoundaryPatchInterfaces.size(); p++ )
+         if( multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == i )
+            this->model.interactionWithOpenBoundary(
+                  this->fluidSets[ i ], multiresolutionBoundaryPatches[ p ], this->modelParams );
       this->model.finalizeInteraction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
    }
 
@@ -436,14 +446,6 @@ SolverMultiSetBlockMultiresolution< Model >::save( bool writeParticleCellIndex )
       this->boundarySets[ i ]->template writeParticlesAndVariables< typename BaseType::Writer >( outputFileNameBound, writeParticleCellIndex );
       this->logger.writeParameter( "Saved:", outputFileNameBound );
 
-      if( multiresolutionBoundaryPatches.size() ) {
-         std::string outputFileNameMultiresolutionBound =
-            this->outputDirectory + "/multiresolutionBoundaryPatch_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
-         multiresolutionBoundaryPatches[ i ]->template writeParticlesAndVariables< typename BaseType::Writer >(
-               outputFileNameMultiresolutionBound, writeParticleCellIndex );
-         this->logger.writeParameter( "Saved:", outputFileNameMultiresolutionBound );
-      }
-
 #ifdef HAVE_MPI
       std::string outputFileNameGrid = this->outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( time ) + ".vtk";
 #else
@@ -453,6 +455,16 @@ SolverMultiSetBlockMultiresolution< Model >::save( bool writeParticleCellIndex )
       this->logger.writeParameter( "Saved:", outputFileNameGrid );
 
       this->simulationMonitor.save( this->logger );
+   }
+
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchInterfaces.size(); p++ ) {
+      const auto& iface = multiresolutionBoundaryPatchInterfaces[ p ];
+      std::string outputFileNameMultiresolutionBound =
+         this->outputDirectory + "/multiresolutionBoundaryPatch_subdomain" + std::to_string( iface.ownIdx ) + "_to_"
+            + std::to_string( iface.neighborIdx ) + "_" + std::to_string( time ) + "_particles.vtk";
+      multiresolutionBoundaryPatches[ p ]->template writeParticlesAndVariables< typename BaseType::Writer >(
+            outputFileNameMultiresolutionBound, writeParticleCellIndex );
+      this->logger.writeParameter( "Saved:", outputFileNameMultiresolutionBound );
    }
 }
 

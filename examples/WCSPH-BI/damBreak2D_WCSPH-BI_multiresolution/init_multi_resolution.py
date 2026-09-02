@@ -295,34 +295,54 @@ if __name__ == "__main__":
     # Step 1: Domain bounding box
     define_problem_bounding_box(setup)
 
-    # Step 2: Define rectangular refinement region
-    #   fine region: x = [1.2, box_length], y = [0, 0.3]
-    rdef = dec.RectangularRefinementDef(
-        fine_factor = 0.5,
-        fine_x_min  = 1.2,
-        #fine_x_max  = args.box_length,   # touches right domain boundary → no MRB face there
-        fine_x_max  = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"],   # touches right domain boundary → no MRB face there
-        fine_y_min  = setup["domain_origin_y"],  # touches bottom boundary → no MRB face there
-        fine_y_max  = 0.3,
-    )
-    print(rdef)
+    # Step 2: Define subdomains
+    #   L0: whole tank (base resolution)
+    #   L1: right-bottom zone, factor 0.5, touches right and bottom tank walls
+    #   L2: right-bottom corner inside L1, factor 0.25, touches right and bottom tank walls
+    domain_far_x = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"]
+    subdomain_defs = [
+        dec.SubdomainDef(factor=1.0),
+        dec.SubdomainDef(
+            factor = 0.5,
+            x_min  = 1.2,
+            x_max  = domain_far_x,
+            y_min  = setup["domain_origin_y"],
+            y_max  = 0.3,
+        ),
+        dec.SubdomainDef(
+            factor = 0.25,
+            x_min  = 1.4,
+            x_max  = domain_far_x,
+            y_min  = setup["domain_origin_y"],
+            y_max  = 0.15,
+        ),
+    ]
 
     # Step 3: Build grids
-    coarse_grid, fine_grid = dec.build_rectangular_subdomain_grids(rdef, setup)
+    coarse_grid, l1_grid, l2_grid = dec.build_subdomain_grids(subdomain_defs, setup)
+    l2_grid.alloc_fact = 4  # the corner is fully submerged during the impacting slosh
 
     print("\nCoarse grid:"); pprint(coarse_grid)
-    print("\nFine grid:");   pprint(fine_grid)
+    print("\nL1 grid:");      pprint(l1_grid)
+    print("\nL2 grid:");      pprint(l2_grid)
 
     # Step 4: Generate particles
-    generate_fluid_particles_rectangular(coarse_grid, fine_grid, setup)
-    generate_boundary_particles_rectangular(coarse_grid, fine_grid, setup)
+    generate_fluid_particles(1, l1_grid, setup)
+    generate_fluid_particles(2, l2_grid, setup)
+    generate_fluid_particles(0, coarse_grid, setup, exclude_box=_fine_box(l1_grid))
 
-    # Step 5: Global counts
-    setup["fluid_n"]    = coarse_grid.fluid_n + fine_grid.fluid_n
+    generate_boundary_particles(0, coarse_grid, setup, exclude_box=_fine_box(l1_grid))
+    generate_boundary_particles(1, l1_grid, setup, exclude_box=_fine_box(l2_grid))
+    generate_boundary_particles(2, l2_grid, setup)
+
+    # Step 5: Global counts and timestep driven by the finest resolution
+    setup["fluid_n"] = coarse_grid.fluid_n + l1_grid.fluid_n + l2_grid.fluid_n
     setup["boundary_n"] = coarse_grid.boundary_n
+    setup["number_of_subdomains"] = len(subdomain_defs)
+    setup["time_step"] = setup["cfl"] * setup["smoothing_length"] * l2_grid.factor / setup["speed_of_sound"]
 
     # Step 6: Write outputs
-    save_grid([coarse_grid, fine_grid], setup)
+    save_grid([coarse_grid, l1_grid, l2_grid], setup)
     cf.write_simulation_params(setup)
-    dec.write_distributed_domain_params([coarse_grid, fine_grid], setup, particles_filename_pattern="dambreak")
+    dec.write_distributed_domain_params([coarse_grid, l1_grid, l2_grid], setup, particles_filename_pattern="dambreak")
     cf.write_measuretool_params(setup)

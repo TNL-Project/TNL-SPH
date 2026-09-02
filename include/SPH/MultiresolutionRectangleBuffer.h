@@ -145,10 +145,7 @@ public:
       const IndexType overlapWidth = ownParticles->getOverlapWidth();
       //const VectorType unitVect = 1;
 
-      //const RealType resolutionFactor = own_sr / nb_sr;
-      //int resolutionLevel = 1 / resolutionFactor; //FIXME, This is not correct, should be only 1 or 2, right?
-      const RealType resolutionFactor =
-         ( own_sr > nb_sr ) ? 0.5 : 2;  //FIXME, This is not correct, should be only 1 or 2, right?
+      const RealType resolutionFactor = nb_sr / own_sr;
       inner_overlap = isInsideBox( nbOrig, ownOrig, own_sr * ownDims );
       outer_overlap = isInsideBox( ownOrig, nbOrig, nb_sr * nbDims );  //TODO: Just use negation, right?
 
@@ -178,7 +175,8 @@ public:
       //TODO: I dont like the "over-offset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
-         zoneOrigin = getFrameFrontOriginGlobalCoordinates() + 2;
+         zoneOrigin =
+            getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates() + 2;
          zoneDimensions = getFrameFrontDimensions() - 2;
       }
       if( outer_overlap ) {
@@ -322,6 +320,13 @@ public:
    void
    initMassNodes( ModelParams& modelParams, const int subdomainIdx, const RealType refinemnetFactor )
    {
+      initMassNodes( modelParams, subdomainIdx, -1, refinemnetFactor );
+   }
+
+   template< typename ModelParams >
+   void
+   initMassNodes( ModelParams& modelParams, const int subdomainIdx, const int neighborIdx, const RealType refinemnetFactor )
+   {
       //TODO: Make it general
       if constexpr( ParticlesType::getParticlesDimension() == 2 ) {
          TNL::Containers::Array< VectorType, TNL::Devices::Host > excluded( 2 );
@@ -333,7 +338,7 @@ public:
             excluded[ 0 ] = { 1.f, 0.f };   // exclude +x face
             excluded[ 1 ] = { 0.f, -1.f };  // exclude -y face
          }
-         initMassNodesWithExcludedNormals( modelParams, refinemnetFactor, excluded );
+         initMassNodesWithExcludedNormals( modelParams, subdomainIdx, neighborIdx, refinemnetFactor, excluded );
       }
 
       if constexpr( ParticlesType::getParticlesDimension() == 3 ) {
@@ -344,13 +349,15 @@ public:
          if( inner_overlap ) {
             excluded[ 0 ] = { 0.f, 0.f, -1.f };  // exclude +x face
          }
-         initMassNodesWithExcludedNormals( modelParams, refinemnetFactor, excluded );
+         initMassNodesWithExcludedNormals( modelParams, subdomainIdx, neighborIdx, refinemnetFactor, excluded );
       }
    }
 
    template< typename ModelParams >
    void
    initMassNodesWithExcludedNormals( ModelParams& modelParams,
+                                     const int subdomainIdx,
+                                     const int neighborIdx,
                                      const RealType refinementFactor,
                                      const TNL::Containers::Array< VectorType, TNL::Devices::Host >& excludedNormals = {} )
    {
@@ -513,7 +520,8 @@ public:
          }
       }
 
-      const std::string outputFileName = "results/massNodes_" + std::to_string( local_dp ) + ".vtk";
+      const std::string outputFileName = "results/massNodes_subdomain" + std::to_string( subdomainIdx ) + "_to_"
+                                       + std::to_string( neighborIdx ) + "_" + std::to_string( local_dp ) + ".vtk";
       writeMassNodesToVTK( outputFileName );
    }
 

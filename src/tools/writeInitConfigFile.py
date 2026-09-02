@@ -22,6 +22,7 @@ ini_replacements = [
    ("placeholderSpeedOfSound",              "speed_of_sound",        ""),
    ("placeholderDensity",                   "density",               ""),
    ("placeholderTimeStep",                  "time_step",             ""),
+   ("placeholderNumberOfSubdomains",        "number_of_subdomains",  ""),
    ("placeholderCFL",                       "cfl",                   ""),
    ("placeholderAlpha",                     "alpha",                 ""),
    ("placeholderDynamicVicosity",           "dynamic_viscosity",     ""),

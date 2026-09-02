@@ -116,8 +116,7 @@ public:
    refined( const RealType searchRadius ) const
    {
        WCSPH_BIConfig refined = *this;
-       const int level = std::round( refined.searchRadius / searchRadius ) - 1; //FIXME: Generalize for arbitrary factor
-       const RealType refinementFactor = std::pow( refined.refinementFactor, level );
+       const RealType refinementFactor = searchRadius / refined.searchRadius;
        const unsigned int dim = SPHConfig::spaceDimension;
 
        refined.refinementFactor = refinementFactor;

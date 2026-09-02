@@ -90,6 +90,7 @@ public:
 
    Topology topology;
    std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;
+   std::vector< typename Topology::Interface > multiresolutionBoundaryPatchInterfaces;
 
    TNL::Config::ConfigDescription configSubdomains;
    TNL::Config::ParameterContainer parametersSubdomains;

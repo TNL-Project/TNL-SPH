@@ -92,7 +92,7 @@
     },
 
     // Domain decomposition
-    "numberOfSubdomains": 2,
+    "numberOfSubdomains": placeholderNumberOfSubdomains,
     "subdomains-config": "sources/config-distributed-domain.jsonc",
 
     //  Measure tool initialization section

@@ -15,17 +15,16 @@ void exec( Simulation& sph )
    while( sph.timeStepping.runTheSimulation() )
    {
       // search for neighbros
-      //sph.removeParticlesOutOfDensityLimits();
-      TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 0 ], sph.modelParams );
-      TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ 1 ], sph.modelParams );
+      for( int i = 0; i < sph.numberOfSubsets; i++ )
+         TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ i ], sph.modelParams );
       sph.removeParticlesOutOfDomain();
       sph.performNeighborSearch();
 
       // perform interaction with given model
       sph.interact();
       // custom: no-penetration bc
-      BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 0 ], sph.boundarySets[ 0 ], sph.modelParams, sph.timeStepping.getTimeStep() );
-      BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 1 ], sph.boundarySets[ 1 ], sph.modelParams, sph.timeStepping.getTimeStep() );
+      for( int i = 0; i < sph.numberOfSubsets; i++ )
+         BoundaryCorrection::boundaryCorrection( sph.fluidSets[ i ], sph.boundarySets[ i ], sph.modelParams, sph.timeStepping.getTimeStep() );
 
       // integrate
       sph.integrate();

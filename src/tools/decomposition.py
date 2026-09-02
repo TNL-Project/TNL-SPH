@@ -32,6 +32,7 @@ class SubdomainGrid:
    dims_z:        int   = None
    fluid_n:       int   = 0
    boundary_n:    int   = 0
+   alloc_fact:    float = None
    index:         int   = 0
    ix:            int   = 0
    iy:            int   = 0
@@ -305,7 +306,7 @@ def build_subdomain_data(
    axes  = ["x", "y", "z"] if is_3d else ["x", "y"]
    domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
 
-   fluid_alloc    = setup.get("fluid_alloc_factor", setup.get("fine_alloc_fact", 2))
+   fluid_alloc    = g.alloc_fact or setup.get("fluid_alloc_factor", setup.get("fine_alloc_fact", 2))
    boundary_alloc = setup.get("boundary_alloc_factor", setup.get("fine_alloc_fact", 2))
 
    fn_alloc = fluid_alloc * g.fluid_n if g.fluid_n > 0 else fluid_alloc * setup.get("fluid_n", 0)
