@@ -22,10 +22,13 @@ public:
    using typename BaseType::ModelParams;
    using typename BaseType::ParticlesType;
    using typename BaseType::SPHConfig;
-   using typename BaseType::GlobalIndexType;
-   using typename BaseType::RealType;
-   using typename BaseType::CoordinatesType;
-   using typename BaseType::VectorType;
+    using typename BaseType::GlobalIndexType;
+    using typename BaseType::RealType;
+    using typename BaseType::CoordinatesType;
+    using typename BaseType::VectorType;
+
+    using SolverTraitsType = SPHFluidTraits< SPHConfig >;
+    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
 
    using typename BaseType::FluidVariables;
    using typename BaseType::FluidPointer;
@@ -74,23 +77,51 @@ public:
    writeInfo() noexcept;
 
 #ifdef HAVE_MPI
-   void
-   initializeDistributedSimulation();
+    void
+    initializeDistributedSimulation();
 
-   void
-   initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
-                                TNL::Config::ParameterContainer& parametersDistributed,
-                                TNL::Logger& logger );
-
-   void
-   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
+    void
+    initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
                                  TNL::Config::ParameterContainer& parametersDistributed,
                                  TNL::Logger& logger );
+
+    void
+    readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
+                                  TNL::Config::ParameterContainer& parametersDistributed,
+                                  Logger& logger );
 #endif
 
-   Topology topology;
-   std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;
-   std::vector< typename Topology::Interface > multiresolutionBoundaryPatchInterfaces;
+    /* Boundary ghosts - see Documentation/multiresolution-ghost-boundaries-design.md */
+    void
+    initBoundaryGhosts();
+
+    void
+    refreshBoundaryGhostValues();
+
+    /*
+       Ghost band of one directed interface: copies of the neighbor subdomain's boundary
+       particles from the patch band (frameBack \setminus-equiv frameFront) appended at
+       the tail of the own boundary set. Geometry is static (copied at init); rho and
+       gamma are refreshed from the source boundary every step in interact(). Indices are
+       stored as referential indices (identity at init) so the mapping survives the
+       boundary sorting performed by the neighbor search at step 0.
+    */
+    struct BoundaryGhostParticles
+    {
+       int ownIdx = -1;
+       int neighborIdx = -1;
+       GlobalIndexType ghostBegin = 0;
+       GlobalIndexType numberOfGhostParticles = 0;
+       IndexArrayType srcIndexList;
+    };
+
+    Topology topology;
+    std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;
+    std::vector< typename Topology::Interface > multiresolutionBoundaryPatchInterfaces;
+
+    std::vector< BoundaryGhostParticles > boundaryGhostInterfaces;
+    IndexArrayType ghostIndexInverseOwn;
+    IndexArrayType ghostIndexInverseSrc;
 
    TNL::Config::ConfigDescription configSubdomains;
    TNL::Config::ParameterContainer parametersSubdomains;

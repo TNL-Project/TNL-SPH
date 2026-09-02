@@ -86,11 +86,12 @@ SolverMultiSetBlockMultiresolution< Model >::initializeBlockBasedMultiResolution
    this->timeStepping.setEndTime( params.template getParameter< RealType >( "final-time" ) );
    this->timeStepping.addOutputTimer( "save_results", params.template getParameter< RealType >( "snapshot-period" ) );
 
-   readParticlesFiles();
+    readParticlesFiles();
+    initBoundaryGhosts();
 
-   log.writeSeparator();
-   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
-   const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
+    log.writeSeparator();
+    const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
+    const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
     if( hasMeasuretoolFile || hasMeasuretoolInline ) {
        log.writeParameter( "Simulation monitor initialization.", "" );
        this->simulationMonitor.init( params, this->timeStepping, log );
@@ -290,6 +291,164 @@ SolverMultiSetBlockMultiresolution< Model >::readParticlesFiles()
    }
 }
 
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolution< Model >::initBoundaryGhosts()
+{
+   auto& log = this->logger;
+
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchInterfaces.size(); p++ ) {
+      const auto& iface = multiresolutionBoundaryPatchInterfaces[ p ];
+      const auto& patch = multiresolutionBoundaryPatches[ p ];
+      BoundaryPointer& ownBoundary = this->boundarySets[ iface.ownIdx ];
+      BoundaryPointer& srcBoundary = this->boundarySets[ iface.neighborIdx ];
+
+
+      const CoordinatesType frameBackOrigin = patch->getFrameBackOriginGlobalCoordinates();
+      const CoordinatesType frameBackDims = patch->getFrameBackDimensions();
+      const CoordinatesType frameFrontOrigin = patch->getFrameFrontOriginGlobalCoordinates();
+      const CoordinatesType frameFrontDims = patch->getFrameFrontDimensions();
+      const VectorType refOrig = ownBoundary->getParticles()->getReferentialOrigin();
+      const RealType inv_sr = 1.f / ownBoundary->getParticles()->getSearchRadius();
+
+      // host-side band selection (init-time only, keeps it deterministic)
+      const GlobalIndexType srcCount = srcBoundary->getNumberOfParticles();
+      Containers::Array< VectorType, Devices::Host > srcPointsHost;
+      srcPointsHost = srcBoundary->getPoints();
+      std::vector< GlobalIndexType > srcListHost;
+      for( GlobalIndexType j = 0; j < srcCount; j++ ) {
+         const CoordinatesType gc = TNL::floor( ( srcPointsHost[ j ] - refOrig ) * inv_sr );
+         // band = symmetric difference frameBack ⊖ frameFront, works for both inner and outer frames
+         const bool inBack = MultiresolutionBoundary::isInsideBox( gc - frameBackOrigin, frameBackDims );
+         const bool inFront = MultiresolutionBoundary::isInsideBox( gc - frameFrontOrigin, frameFrontDims );
+         if( inBack != inFront )
+            srcListHost.push_back( j );
+      }
+
+      const GlobalIndexType numberOfGhosts = srcListHost.size();
+      if( numberOfGhosts == 0 )
+         continue;
+
+      BoundaryGhostParticles rec;
+      rec.ownIdx = iface.ownIdx;
+      rec.neighborIdx = iface.neighborIdx;
+      rec.ghostBegin = ownBoundary->getNumberOfParticles();
+      rec.numberOfGhostParticles = numberOfGhosts;
+
+      const GlobalIndexType allocated = ownBoundary->getNumberOfAllocatedParticles();
+      if( rec.ghostBegin + numberOfGhosts > allocated )
+         throw std::runtime_error( "SolverMultiSetBlockMultiresolution: boundary set " + std::to_string( iface.ownIdx )
+                                   + " has no room for " + std::to_string( numberOfGhosts )
+                                   + " ghost particles (allocated " + std::to_string( allocated )
+                                   + ", needed " + std::to_string( rec.ghostBegin + numberOfGhosts )
+                                   + ") - increase the boundary allocation factor in the init script." );
+
+      Containers::Array< GlobalIndexType, Devices::Host > srcListHostArray( numberOfGhosts );
+      for( GlobalIndexType k = 0; k < numberOfGhosts; k++ )
+         srcListHostArray[ k ] = srcListHost[ k ];
+      rec.srcIndexList = srcListHostArray;
+
+      const GlobalIndexType ghostBegin = rec.ghostBegin;
+      const auto srcIdx = rec.srcIndexList.getConstView();
+
+      auto dst_r = ownBoundary->getPoints().getView();
+      const auto src_r = srcBoundary->getPoints().getConstView();
+      auto dst_rho = ownBoundary->getVariables()->rho.getView();
+      const auto src_rho = srcBoundary->getVariables()->rho.getConstView();
+      auto dst_drho = ownBoundary->getVariables()->drho.getView();
+      const auto src_drho = srcBoundary->getVariables()->drho.getConstView();
+      auto dst_p = ownBoundary->getVariables()->p.getView();
+      const auto src_p = srcBoundary->getVariables()->p.getConstView();
+      auto dst_v = ownBoundary->getVariables()->v.getView();
+      const auto src_v = srcBoundary->getVariables()->v.getConstView();
+      auto dst_a = ownBoundary->getVariables()->a.getView();
+      const auto src_a = srcBoundary->getVariables()->a.getConstView();
+      auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
+      const auto src_gamma = srcBoundary->getVariables()->gamma.getConstView();
+      auto dst_marker = ownBoundary->getVariables()->marker.getView();
+      const auto src_marker = srcBoundary->getVariables()->marker.getConstView();
+      auto dst_n = ownBoundary->getVariables()->n.getView();
+      const auto src_n = srcBoundary->getVariables()->n.getConstView();
+      auto dst_elementSize = ownBoundary->getVariables()->elementSize.getView();
+      const auto src_elementSize = srcBoundary->getVariables()->elementSize.getConstView();
+
+      auto copyGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
+      {
+         const GlobalIndexType s = srcIdx[ k ];
+         const GlobalIndexType d = ghostBegin + k;
+         dst_r[ d ] = src_r[ s ];
+         dst_rho[ d ] = src_rho[ s ];
+         dst_drho[ d ] = src_drho[ s ];
+         dst_p[ d ] = src_p[ s ];
+         dst_v[ d ] = src_v[ s ];
+         dst_a[ d ] = src_a[ s ];
+         dst_gamma[ d ] = src_gamma[ s ];
+         dst_marker[ d ] = src_marker[ s ];
+         dst_n[ d ] = src_n[ s ];
+         dst_elementSize[ d ] = src_elementSize[ s ];
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfGhosts, copyGhost );
+
+      ownBoundary->getParticles()->setNumberOfParticles( ghostBegin + numberOfGhosts );
+
+      boundaryGhostInterfaces.push_back( rec );
+      log.writeParameter( "Boundary ghosts for set " + std::to_string( iface.ownIdx )
+                             + " from set " + std::to_string( iface.neighborIdx ) + ":",
+                          numberOfGhosts );
+   }
+
+   // scratch for the referential-index inverse used by the per-step refresh
+   GlobalIndexType scratchSize = 0;
+   for( const auto& rec : boundaryGhostInterfaces ) {
+      scratchSize = std::max( scratchSize, this->boundarySets[ rec.ownIdx ]->getNumberOfParticles() );
+      scratchSize = std::max( scratchSize, this->boundarySets[ rec.neighborIdx ]->getNumberOfParticles() );
+   }
+   ghostIndexInverseOwn.setSize( scratchSize );
+   ghostIndexInverseSrc.setSize( scratchSize );
+}
+
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolution< Model >::refreshBoundaryGhostValues()
+{
+   for( const auto& rec : boundaryGhostInterfaces ) {
+      BoundaryPointer& ownBoundary = this->boundarySets[ rec.ownIdx ];
+      BoundaryPointer& srcBoundary = this->boundarySets[ rec.neighborIdx ];
+
+      const GlobalIndexType ownCount = ownBoundary->getNumberOfParticles();
+      const GlobalIndexType srcCount = srcBoundary->getNumberOfParticles();
+
+      const auto ownRefIdx = ownBoundary->getVariables()->referentialIdx.getConstView();
+      const auto srcRefIdx = srcBoundary->getVariables()->referentialIdx.getConstView();
+      auto invOwn = ghostIndexInverseOwn.getView();
+      auto invSrc = ghostIndexInverseSrc.getView();
+
+      Algorithms::parallelFor< DeviceType >( 0, ownCount, [ = ] __cuda_callable__( GlobalIndexType j ) mutable
+      {
+         invOwn[ ownRefIdx[ j ] ] = j;
+      } );
+      Algorithms::parallelFor< DeviceType >( 0, srcCount, [ = ] __cuda_callable__( GlobalIndexType j ) mutable
+      {
+         invSrc[ srcRefIdx[ j ] ] = j;
+      } );
+
+      const GlobalIndexType ghostBegin = rec.ghostBegin;
+      const auto srcIdx = rec.srcIndexList.getConstView();
+      auto dst_rho = ownBoundary->getVariables()->rho.getView();
+      auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
+      const auto src_rho = srcBoundary->getVariables()->rho.getConstView();
+      const auto src_gamma = srcBoundary->getVariables()->gamma.getConstView();
+
+      Algorithms::parallelFor< DeviceType >( 0, rec.numberOfGhostParticles, [ = ] __cuda_callable__( GlobalIndexType k ) mutable
+      {
+         const GlobalIndexType ghostSlot = invOwn[ ghostBegin + k ];
+         const GlobalIndexType srcSlot = invSrc[ srcIdx[ k ] ];
+         dst_rho[ ghostSlot ] = src_rho[ srcSlot ];
+         dst_gamma[ ghostSlot ] = src_gamma[ srcSlot ];
+      } );
+   }
+}
+
 #ifdef HAVE_MPI
 template< typename Model >
 void
@@ -402,19 +561,23 @@ template< typename Model >
 void
 SolverMultiSetBlockMultiresolution< Model >::interact()
 {
-   this->timeMeasurement.start( "interact" );
+    this->timeMeasurement.start( "interact" );
 
-   for( int i = 0; i < this->numberOfSubsets; i++ ){
-      this->model.updateSolidBoundary( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
-      this->model.finalizeBoundaryInteraction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
+    for( int i = 0; i < this->numberOfSubsets; i++ ){
+       this->model.updateSolidBoundary( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
+       this->model.finalizeBoundaryInteraction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
+    }
 
-      this->model.interaction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
-      for( long unsigned int p = 0; p < multiresolutionBoundaryPatchInterfaces.size(); p++ )
-         if( multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == i )
-            this->model.interactionWithOpenBoundary(
-                  this->fluidSets[ i ], multiresolutionBoundaryPatches[ p ], this->modelParams );
-      this->model.finalizeInteraction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
-   }
+    refreshBoundaryGhostValues();
+
+    for( int i = 0; i < this->numberOfSubsets; i++ ){
+       this->model.interaction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
+       for( long unsigned int p = 0; p < multiresolutionBoundaryPatchInterfaces.size(); p++ )
+          if( multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == i )
+             this->model.interactionWithOpenBoundary(
+                   this->fluidSets[ i ], multiresolutionBoundaryPatches[ p ], this->modelParams );
+       this->model.finalizeInteraction( this->fluidSets[ i ], this->boundarySets[ i ], this->modelParams );
+    }
 
    this->timeMeasurement.stop( "interact" );
    this->writeLog( "Interact...", "Done." );
