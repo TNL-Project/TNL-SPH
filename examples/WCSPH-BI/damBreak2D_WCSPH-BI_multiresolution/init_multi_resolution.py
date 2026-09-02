@@ -79,14 +79,10 @@ def generate_fluid_particles(
     g.fluid_n = n
 
 
-def generate_boundary_particles(
-        idx:         int,
-        g:           SubdomainGrid,
-        setup:       dict,
-        exclude_box: dict = None
-) -> None:
+def _wall_lattice(g: dec.SubdomainGrid, setup: dict, keep_fn) -> tuple:
+    """Tank wall lattice (4 walls + corners) at the subdomain's own
+    resolution; keep_fn(bx, by) selects which box particles are kept."""
     dp   = g.dp
-    rho0 = setup["density"]
     nl   = setup["n_boundary_layers"]
 
     box_length_n = round(setup["box_length"] / dp)
@@ -96,18 +92,8 @@ def generate_boundary_particles(
     ghost_rx, ghost_ry = [], []
     normal_x, normal_y = [], []
 
-    def in_subdomain(rx, ry):
-        return (g.phys_x_min < rx <= g.phys_x_max and
-                g.phys_y_min < ry <= g.phys_y_max)
-
-    def in_excluded(rx, ry):
-        if exclude_box is None:
-            return False
-        return (exclude_box["x_min"] < rx <= exclude_box["x_max"] and
-                exclude_box["y_min"] < ry <= exclude_box["y_max"])
-
     def add(bx, by, gx, gy, nx, ny):
-        if in_subdomain(bx, by) and not in_excluded(bx, by):
+        if keep_fn(bx, by):
             box_rx.append(bx);   box_ry.append(by)
             ghost_rx.append(gx); ghost_ry.append(gy)
             normal_x.append(nx); normal_y.append(ny)
@@ -150,21 +136,39 @@ def generate_boundary_particles(
                 gy = cy - (layer + 1) * dp * sy
                 dr = np.array([gx - bx, gy - by])
                 n  = dr / np.linalg.norm(dr)
-                if in_subdomain(bx, by) and not in_excluded(bx, by):
-                    box_rx.append(bx);   box_ry.append(by)
-                    ghost_rx.append(gx); ghost_ry.append(gy)
-                    normal_x.append(n[0]); normal_y.append(n[1])
+                add(bx, by, gx, gy, n[0], n[1])
 
     corner(0.0,    0.0, -1, -1)
     corner(x_last, 0.0, +1, -1)
     corner(0.0,    y_top, -1, +1)
     corner(x_last, y_top, +1, +1)
 
+    return box_rx, box_ry, ghost_rx, ghost_ry, normal_x, normal_y
+
+
+def generate_boundary_particles(
+        idx:         int,
+        g:           dec.SubdomainGrid,
+        setup:       dict,
+        exclude_box: dict = None
+) -> None:
+    rho0 = setup["density"]
+
+    def keep(bx, by):
+        in_subdomain = (g.phys_x_min < bx <= g.phys_x_max and
+                        g.phys_y_min < by <= g.phys_y_max)
+        in_excluded = (exclude_box is not None and
+                       exclude_box["x_min"] < bx <= exclude_box["x_max"] and
+                       exclude_box["y_min"] < by <= exclude_box["y_max"])
+        return in_subdomain and not in_excluded
+
+    box_rx, box_ry, ghost_rx, ghost_ry, normal_x, normal_y = _wall_lattice(g, setup, keep)
+
     n = len(box_rx)
     r       = np.column_stack([box_rx,   box_ry,   np.zeros(n)])
     ghosts  = np.column_stack([ghost_rx, ghost_ry, np.zeros(n)])
     normals = np.column_stack([normal_x, normal_y, np.zeros(n)])
-    elem_sz = dp * np.ones(n)
+    elem_sz = g.dp * np.ones(n)
     v       = np.zeros((n, 3))
     rho     = rho0 * np.ones(n)
     p, pt   = np.zeros(n), np.ones(n)
@@ -176,6 +180,87 @@ def generate_boundary_particles(
 
     print(f"[subdomain-{idx}] boundary particles: {n}")
     g.boundary_n = n
+
+
+def _frame_and_band(own_g: dec.SubdomainGrid, nb_g: dec.SubdomainGrid, setup: dict) -> tuple:
+    """Interface frame boxes in own cell units, mirroring
+    MultiresolutionBoundary::initZones: the front frame is the own grid box
+    for an outer interface, or the neighbor box mapped by the resolution
+    ratio for an inner interface; the back frame expands/shrinks the front
+    by one overlap cell accordingly."""
+    sr_o = own_g.search_radius
+    sr_n = nb_g.search_radius
+    own_origin = (setup["domain_origin_x"] + own_g.origin_glob_x * sr_o,
+                  setup["domain_origin_y"] + own_g.origin_glob_y * sr_o)
+    nb_origin  = (setup["domain_origin_x"] + nb_g.origin_glob_x * sr_n,
+                  setup["domain_origin_y"] + nb_g.origin_glob_y * sr_n)
+    own_max = (own_origin[0] + own_g.dims_x * sr_o, own_origin[1] + own_g.dims_y * sr_o)
+    nb_max  = (nb_origin[0]  + nb_g.dims_x * sr_n,  nb_origin[1]  + nb_g.dims_y * sr_n)
+
+    inner = all(own_origin[d] <= nb_origin[d] <= own_max[d] for d in (0, 1))
+    outer = all(nb_origin[d] <= own_origin[d] <= nb_max[d] for d in (0, 1))
+    assert inner != outer
+
+    resfac = sr_n / sr_o
+    if inner:
+        front_origin = (round(nb_g.origin_glob_x * resfac), round(nb_g.origin_glob_y * resfac))
+        front_dims   = (round(nb_g.dims_x * resfac), round(nb_g.dims_y * resfac))
+        orient = -1
+    else:
+        front_origin = (own_g.origin_glob_x, own_g.origin_glob_y)
+        front_dims   = (own_g.dims_x, own_g.dims_y)
+        orient = 1
+    overlap = 1
+    back_origin = tuple(front_origin[d] - overlap * orient for d in (0, 1))
+    back_dims   = tuple(front_dims[d] + 2 * overlap * orient for d in (0, 1))
+    return back_origin, back_dims, front_origin, front_dims
+
+
+def generate_ghost_band_boundaries(grids: List[dec.SubdomainGrid], setup: dict) -> None:
+    """Own-resolution wall lattice clipped to the interface band (frameBack
+    XOR frameFront cell ring) for every directed interface, written as one
+    VTK set per interface and consumed by the solver through the
+    boundary-ghost-buffer-<p> entries.  The enumeration order must match
+    the solver's own-major order over the chain links."""
+    links = [(i, i + 1) for i in range(len(grids) - 1)]
+    directed = [d for (a, b) in links for d in ((a, b), (b, a))]
+    interfaces = [iface for own in range(len(grids)) for iface in directed if iface[0] == own]
+
+    ox = setup["domain_origin_x"]
+    oy = setup["domain_origin_y"]
+
+    for p, (own, nb) in enumerate(interfaces):
+        own_g, nb_g = grids[own], grids[nb]
+        back_origin, back_dims, front_origin, front_dims = _frame_and_band(own_g, nb_g, setup)
+
+        def in_band(bx, by, _bo=back_origin, _bd=back_dims,
+                    _fo=front_origin, _fd=front_dims, _sr=own_g.search_radius):
+            gc = (math.floor((bx - ox) / _sr), math.floor((by - oy) / _sr))
+            in_back  = all(_bo[d] <= gc[d] < _bo[d] + _bd[d] for d in (0, 1))
+            in_front = all(_fo[d] <= gc[d] < _fo[d] + _fd[d] for d in (0, 1))
+            return in_back != in_front
+
+        box_rx, box_ry, ghost_rx, ghost_ry, normal_x, normal_y = _wall_lattice(own_g, setup, in_band)
+
+        n = len(box_rx)
+        if n == 0:
+            print(f"[interface {own}->{nb}] no boundary ghost particles in the band - solver will copy them")
+            continue
+
+        r       = np.column_stack([box_rx,   box_ry,   np.zeros(n)])
+        ghosts  = np.column_stack([ghost_rx, ghost_ry, np.zeros(n)])
+        normals = np.column_stack([normal_x, normal_y, np.zeros(n)])
+        elem_sz = own_g.dp * np.ones(n)
+        v       = np.zeros((n, 3))
+        rho     = setup["density"] * np.ones(n)
+        p_arr, pt = np.zeros(n), np.ones(n)
+
+        cloud = saveParticlesVTK.create_pointcloud_polydata(
+            r, v, rho, p_arr, pt,
+            ghostNodes=ghosts, elementSize=elem_sz, normals=normals)
+        saveParticlesVTK.save_polydata(cloud, f"sources/boundary_ghost_buffer_{p}.vtk")
+        setup[f"ghost_buffer_{p}_n"] = n
+        print(f"[interface {own}->{nb}] boundary ghost particles: {n}")
 
 def _fine_box(fine_grid: SubdomainGrid) -> dict:
     return {
@@ -334,6 +419,8 @@ if __name__ == "__main__":
     generate_boundary_particles(0, coarse_grid, setup, exclude_box=_fine_box(l1_grid))
     generate_boundary_particles(1, l1_grid, setup, exclude_box=_fine_box(l2_grid))
     generate_boundary_particles(2, l2_grid, setup)
+
+    generate_ghost_band_boundaries([coarse_grid, l1_grid, l2_grid], setup)
 
     # Step 5: Global counts and timestep driven by the finest resolution
     setup["fluid_n"] = coarse_grid.fluid_n + l1_grid.fluid_n + l2_grid.fluid_n

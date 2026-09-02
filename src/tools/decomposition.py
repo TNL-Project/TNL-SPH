@@ -369,6 +369,36 @@ def build_multiresolution_buffer_data(setup: dict) -> dict:
         }
     return buffers
 
+def build_boundary_ghost_buffer_data(setup: dict) -> dict:
+    """
+    Scan `setup` for keys matching 'ghost_buffer_<N>_n' and build a dict
+    describing each interface's pre-generated boundary ghost lattice file
+    and count.  Returns an empty dict if no ghost lattices were generated.
+
+    Mirrors build_multiresolution_buffer_data: the nested entry
+        "boundary-ghost-buffers": { "boundary-ghost-buffer-<N>": { "particles": ..., "n": ... } }
+    is flattened by the solver's config parser to the registered keys
+        "boundary-ghost-buffer-<N>-particles", "boundary-ghost-buffer-<N>-n"
+    where <N> follows the solver's own-major interface enumeration.
+    """
+    pattern = re.compile(r"^ghost_buffer_(\d+)_n$")
+    buffer_indices = sorted(
+        int(m.group(1))
+        for key in setup
+        if (m := pattern.match(key)) is not None
+    )
+
+    if not buffer_indices:
+        return {}
+
+    buffers = {}
+    for i in buffer_indices:
+        buffers[f"boundary-ghost-buffer-{i}"] = {
+            "particles": f"sources/boundary_ghost_buffer_{i}.vtk",
+            "n": setup[f"ghost_buffer_{i}_n"],
+        }
+    return buffers
+
 def build_distributed_domain_data(
    grids:       List[SubdomainGrid],
    setup:       dict,
@@ -396,6 +426,10 @@ def build_distributed_domain_data(
    mrb_data = build_multiresolution_buffer_data(setup)
    if mrb_data:
        data["multiresolution-buffers"] = mrb_data
+
+   ghost_data = build_boundary_ghost_buffer_data(setup)
+   if ghost_data:
+       data["boundary-ghost-buffers"] = ghost_data
 
    return data
 
