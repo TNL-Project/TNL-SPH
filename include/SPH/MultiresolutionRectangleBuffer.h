@@ -197,7 +197,7 @@ public:
       const IndexType n_alloc = this->getNumberOfAllocatedParticles();
       particlesToFluid.setSize( n_alloc );
       particlesToRemove.setSize( n_alloc );
-      particlesToBuffer.setSize( n_alloc );
+      particlesToBuffer.setSize( zone.getNumberOfCells() * zone.getNumberOfParticlesPerCell() );
       retypeMarker.setSize( n_alloc );
    }
 
@@ -400,7 +400,11 @@ public:
             if( ! isExcluded( faceNormal( d, -1 ) ) || ! isExcluded( faceNormal( d, +1 ) ) )
                extent -= 2.f * local_dp;
          }
-         return static_cast< IndexType >( TNL::max( 0.f, extent ) / local_dp );
+         // One node row must be dropped so that no node lies exactly on the frameBack
+         // boundary plane (frameBack is cell-aligned with the patch grid + overlap, so
+         // particles created from that row would fall outside the searchable grid).
+         const IndexType n = static_cast< IndexType >( TNL::max( 0.f, extent ) / local_dp );
+         return ( n > 0 ) ? n - 1 : 0;
       };
 
       auto perpOriginOffset = [ & ]( int faceAxis, int perpAxis ) -> RealType
@@ -544,7 +548,7 @@ public:
       //----
       const VectorType v_subdomain = 0.f;  // velocity of moving subdomain
       //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
-      const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 2.75f;
+      const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 0.f;
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;  //TODO: rename, remove mdbc
 
       auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
@@ -1046,6 +1050,38 @@ public:
                                                            + numberOfPtcsToBuffer );
    }
 
+   // Marks particles whose cell lies outside the own grid including overlap, so the
+   // cell-list build (which has no range check) cannot touch out-of-bounds memory.
+   template< typename ParticlesPointer >
+   IndexType
+   removeParticlesOutOfGrid( ParticlesPointer& particles )
+   {
+      const VectorType refOrig = particles->getReferentialOrigin();
+      const RealType sr = particles->getSearchRadius();
+      const CoordinatesType go = particles->getGlobalOriginCoordinatesWithOverlap();
+      const CoordinatesType dimsOv = particles->getDimensionsWithOverlap();
+      auto r_view = particles->getPoints().getView();
+
+      auto markOutOfGrid = [ = ] __cuda_callable__( IndexType i ) mutable
+      {
+         const VectorType r = r_view[ i ];
+         if( r[ 0 ] == FLT_MAX )
+            return 0;
+         const CoordinatesType gc = TNL::floor( ( r - refOrig ) / sr ) - go;
+         for( int d = 0; d < CoordinatesType::getSize(); d++ )
+            if( gc[ d ] < 0 || gc[ d ] >= dimsOv[ d ] ) {
+               r_view[ i ] = FLT_MAX;
+               return 1;
+            }
+         return 0;
+      };
+      const IndexType nOutOfGrid =
+         Algorithms::reduce< DeviceType >( 0, particles->getNumberOfParticles(), markOutOfGrid );
+      if( nOutOfGrid )
+         particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove() + nOutOfGrid );
+      return nOutOfGrid;
+   }
+
    template< typename FluidPointer, typename ModelParams >
    void
    updateInterfaceBuffer( FluidPointer& fluid_own,
@@ -1061,7 +1097,8 @@ public:
       sortBufferParticles();
       removeBufferParticles();
       convertBufferToFluid( fluid_own );
-      fluid_own->searchForNeighbors();  //TODO: Helped to resolve some problems in 3D by removing invalid particles
+      removeParticlesOutOfGrid( fluid_own->getParticles() );
+      fluid_own->searchForNeighbors();
       zone.updateParticlesInZone( fluid_own->getParticles() );
       getFluidParticlesEneringTheBuffer( fluid_own );
       convertFluidToBuffer( fluid_own );
@@ -1069,6 +1106,7 @@ public:
       massNodes.sort();
       createBufferParticles( modelParams );
       interpolateVariables( fluid_neihgbor, modelParams );
+      removeParticlesOutOfGrid( this->getParticles() );
       this->searchForNeighbors();
 
       numberOfPtcsToRemove = 0;

@@ -221,7 +221,9 @@ SolverMultiSetBlockMultiresolution< Model >::initMultiResolutionBoundaryPatches(
          const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx ) + "-";
          const int mrbNumOfPtcs = parametersSubdomains.getParameter< int >( bufferKey + "n" );
          // TODO: use some reasonable estimate
-         const int mrbNumOfAllocPtcs = std::max( int( 0.1 * this->getTotalFluidParticlesCount() ), 2 * mrbNumOfPtcs );
+         const RealType resolutionScale = std::pow( rf, -int( SPHConfig::spaceDimension ) );
+         const int mrbNumOfAllocPtcs =
+            std::max( int( 0.1 * this->getTotalFluidParticlesCount() * resolutionScale ), 2 * mrbNumOfPtcs );
 
          multiresolutionBoundaryPatches[ mrbIdx ]->initializeAsDistributed(
             mrbNumOfPtcs,
