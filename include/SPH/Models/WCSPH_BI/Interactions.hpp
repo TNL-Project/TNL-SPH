@@ -1,5 +1,7 @@
 #include "BoundaryConditionsTypes.h"
 #include "Interactions.h"
+#include "../../shared/Interpolation.h"
+#include "../../shared/WendlandC2ABFs.h"
 #include <cmath>
 #include <type_traits>
 
@@ -689,6 +691,145 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
                                                                  BoundaryPointer& boundary,
                                                                  ModelParams& modelParams )
 {}
+
+template< typename Particles, typename ModelConfig >
+template< typename BoudaryPointer, typename IndexArrayView >
+void
+WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPointer& ownBoundary,
+                                                                     BoudaryPointer& srcBoundary,
+                                                                     GlobalIndexType ghostBegin,
+                                                                     GlobalIndexType numberOfGhostParticles,
+                                                                     const IndexArrayView& invOwn,
+                                                                     ModelParams& modelParams )
+{
+   using KernelFunction = typename ModelParams::KernelFunction;
+   using MFD = Interpolation::
+      MFD< Particles::getParticlesDimension(), 1, RealType, Interpolation::WendlandC2ABFs, KernelFunction, SPHConfig >;
+   using MfdMatrixType = typename MFD::BaseMatrixType;
+   using MfdVectorType = typename MFD::BaseVectorType;
+
+   const RealType searchRadius = srcBoundary->getParticles()->getSearchRadius();
+   const auto srcParams = modelParams.refined( searchRadius );
+   const RealType h = srcParams.h;
+   const RealType m = srcParams.mass;
+   typename Particles::NeighborsLoopParams searchInSrcBoundary( srcBoundary->getParticles() );
+
+   const auto src_points = srcBoundary->getPoints().getConstView();
+   const auto own_points = ownBoundary->getPoints().getConstView();
+   const auto src_rho = srcBoundary->getVariables()->rho.getConstView();
+   const auto src_gamma = srcBoundary->getVariables()->gamma.getConstView();
+   auto dst_rho = ownBoundary->getVariables()->rho.getView();
+   auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
+
+   auto interpolateFromSrc = [ = ] __cuda_callable__( GlobalIndexType i,
+                                                      GlobalIndexType j,
+                                                      VectorType& r_x,
+                                                      MfdMatrixType* M_x,
+                                                      MfdVectorType* brho_x,
+                                                      MfdVectorType* bgamma_x ) mutable
+   {
+      const RealType rho_j = src_rho[ j ];
+      const VectorType r_j = src_points[ j ];
+      const VectorType r_xj = r_x - r_j;
+      const RealType drs = l2Norm( r_xj );
+      // source particles without fluid support carry rho = 0 and would make V_j infinite
+      if( drs <= searchRadius && rho_j > 0.f ) {
+         const RealType gamma_j = src_gamma[ j ];
+         const RealType V_j = m / rho_j;
+
+         *M_x += MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
+         const MfdVectorType b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
+         *brho_x += rho_j * b_x;
+         *bgamma_x += gamma_j * b_x;
+      }
+   };
+
+   auto interpolateGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
+   {
+      const GlobalIndexType slot = invOwn[ ghostBegin + k ];
+      const VectorType r_x = own_points[ slot ];
+      MfdMatrixType M_x = 0.f;
+      MfdVectorType brho_x = 0.f;
+      MfdVectorType bgamma_x = 0.f;
+
+      Particles::NeighborsLoopAnotherSet::exec(
+         slot, r_x, searchInSrcBoundary, interpolateFromSrc, &M_x, &brho_x, &bgamma_x );
+
+      // keep the last values where the interpolation has no reliable support
+      const RealType detM = Matrices::determinant( M_x );
+      if( M_x( 0, 0 ) > 0.05 && detM > 0.001f ) {
+         dst_rho[ slot ] = Matrices::solve( M_x, brho_x )[ 0 ];
+         dst_gamma[ slot ] = Matrices::solve( M_x, bgamma_x )[ 0 ];
+      }
+      else if( M_x( 0, 0 ) > 0.05f ) {
+         dst_rho[ slot ] = brho_x[ 0 ] / M_x( 0, 0 );
+         dst_gamma[ slot ] = bgamma_x[ 0 ] / M_x( 0, 0 );
+      }
+   };
+   Algorithms::parallelFor< DeviceType >( 0, numberOfGhostParticles, interpolateGhost );
+}
+
+template< typename Particles, typename ModelConfig >
+template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
+void
+WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
+                                                                         FluidPointer& srcFluid,
+                                                                         GlobalIndexType ghostBegin,
+                                                                         GlobalIndexType numberOfGhostParticles,
+                                                                         const IndexArrayView& invOwn,
+                                                                         ModelParams& modelParams )
+{
+   using BCType = typename ModelConfig::BCType;
+   using KernelFunction = typename ModelParams::KernelFunction;
+
+   const RealType searchRadius = srcFluid->getParticles()->getSearchRadius();
+   const auto srcParams = modelParams.refined( searchRadius );
+   const RealType h = srcParams.h;
+   const RealType m = srcParams.mass;
+   const RealType rho0 = srcParams.rho0;
+   typename Particles::NeighborsLoopParams searchInSrcFluid( srcFluid->getParticles() );
+
+   const auto own_points = ownBoundary->getPoints().getConstView();
+   const auto src_points = srcFluid->getPoints().getConstView();
+   const auto src_rho = srcFluid->getVariables()->rho.getConstView();
+   auto dst_rho = ownBoundary->getVariables()->rho.getView();
+   auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
+
+   auto boundFluid = [ = ] __cuda_callable__( GlobalIndexType i,
+                                              GlobalIndexType j,
+                                              VectorType& r_x,
+                                              RealType* rho_i,
+                                              RealType* gamma_i ) mutable
+   {
+      const VectorType r_ij = r_x - src_points[ j ];
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius ) {
+         const RealType W = KernelFunction::W( drs, h );
+         // conservative BCs double the surface contribution
+         const RealType surfaceFactor = BCType::renormalize ? 1.f : 2.f;
+         *rho_i += surfaceFactor * W * m;
+         *gamma_i += W * m / src_rho[ j ];
+      }
+   };
+
+   auto updateGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
+   {
+      const GlobalIndexType slot = invOwn[ ghostBegin + k ];
+      const VectorType r_x = own_points[ slot ];
+      RealType rho_i = 0.f;
+      RealType gamma_i = 0.f;
+
+      Particles::NeighborsLoopAnotherSet::exec( slot, r_x, searchInSrcFluid, boundFluid, &rho_i, &gamma_i );
+
+      // finalization mirrors finalizeBoundaryInteraction, restricted to ghost slots
+      if( BCType::renormalize )
+         rho_i = ( gamma_i > 0.01f ) ? ( ( rho_i / gamma_i > rho0 ) ? ( rho_i / gamma_i ) : rho0 )
+                                     : ( ( rho_i > rho0 ) ? rho_i : rho0 );
+      dst_rho[ slot ] = rho_i;
+      dst_gamma[ slot ] = gamma_i;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, numberOfGhostParticles, updateGhost );
+}
 
 }  //namespace SPH
 }  //namespace TNL

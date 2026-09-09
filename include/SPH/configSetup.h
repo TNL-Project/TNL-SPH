@@ -64,7 +64,7 @@ configSetup( TNL::Config::ConfigDescription& config,
    config.addEntry< std::string >( "subdomains", "Inline subdomains config as a JSON object. Used when subdomains-config is empty.", "" );
    config.addEntry< std::string >( "boundary-ghost-method", "Update method for boundary ghost particles at multiresolution interfaces.", "interpolation" );
        config.addEntryEnum( "interpolation" );
-       config.addEntryEnum( "boundary-model" );
+       config.addEntryEnum( "direct-from-source" );
 
    // distributed simulation parameters
    config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );

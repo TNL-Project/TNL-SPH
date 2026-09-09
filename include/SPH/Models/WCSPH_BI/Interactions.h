@@ -103,6 +103,34 @@ public:
                                     OpenBoundaryPointer& openBoundaryPointer,
                                     ModelParams& modelParams );
 
+   /**
+    * Update of ghost boundary particles appended at the tail of a boundary set at
+    * multiresolution interfaces. Both variants write rho and gamma of ghost slots
+    * [ghostBegin, ghostBegin + numberOfGhostParticles); ghost slots are referential
+    * indices and invOwn maps referential -> current slot in the (sorted) own set.
+    * updateGhostBoundaryInterpolated interpolates the values from the source
+    * boundary's fresh state, updateGhostBoundaryDirectFromSource evaluates the
+    * standard boundary update directly with the source fluid as the neighbor set.
+    * See Documentation/multiresolution-ghost-boundaries-design.md.
+    */
+   template< typename BoudaryPointer, typename IndexArrayView >
+   void
+   updateGhostBoundaryInterpolated( BoudaryPointer& ownBoundary,
+                                    BoudaryPointer& srcBoundary,
+                                    GlobalIndexType ghostBegin,
+                                    GlobalIndexType numberOfGhostParticles,
+                                    const IndexArrayView& invOwn,
+                                    ModelParams& modelParams );
+
+   template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
+   void
+   updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
+                                        FluidPointer& srcFluid,
+                                        GlobalIndexType ghostBegin,
+                                        GlobalIndexType numberOfGhostParticles,
+                                        const IndexArrayView& invOwn,
+                                        ModelParams& modelParams );
+
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
    interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );

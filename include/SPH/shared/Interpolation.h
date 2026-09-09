@@ -1,3 +1,5 @@
+#pragma once
+
 #include <TNL/Containers/StaticVector.h>
 
 #include "mfdConstants.h"
