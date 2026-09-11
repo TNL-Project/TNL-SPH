@@ -314,7 +314,7 @@ SolverMultiSetBlockMultiresolution< Model >::initBoundaryGhosts()
       const std::string ghostKey = "boundary-ghost-buffer-" + std::to_string( p ) + "-";
       const int ghostsInFile = parametersSubdomains.getParameter< int >( ghostKey + "n" );
       if( ghostsInFile > 0 ) {
-         BoundaryGhostParticles rec;
+         BoundaryGhostParticles< SPHConfig > rec;
          rec.ownIdx = iface.ownIdx;
          rec.neighborIdx = iface.neighborIdx;
           rec.ghostBegin = ownBoundary->getNumberOfParticles();

@@ -769,6 +769,8 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPoin
 
 template< typename Particles, typename ModelConfig >
 template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
+requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
+         std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
                                                                          FluidPointer& srcFluid,

@@ -122,6 +122,8 @@ public:
                                     ModelParams& modelParams );
 
    template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
+            std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
    void
    updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
                                         FluidPointer& srcFluid,
