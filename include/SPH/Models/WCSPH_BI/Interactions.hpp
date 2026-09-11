@@ -693,11 +693,11 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& f
 {}
 
 template< typename Particles, typename ModelConfig >
-template< typename BoudaryPointer, typename IndexArrayView >
+template< typename BoudaryPointer, typename IndexArray >
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPointer& ownBoundary,
                                                                      BoudaryPointer& srcBoundary,
-                                                                     const IndexArrayView& ghostIndices,
+                                                                     const IndexArray& ghostIndices,
                                                                      ModelParams& modelParams )
 {
    using KernelFunction = typename ModelParams::KernelFunction;
@@ -718,6 +718,8 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPoin
    const auto src_gamma = srcBoundary->getVariables()->gamma.getConstView();
    auto dst_rho = ownBoundary->getVariables()->rho.getView();
    auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
+
+   const auto ghostIndicesView = ghostIndices.getConstView();
 
    auto interpolateFromSrc = [ = ] __cuda_callable__( GlobalIndexType i,
                                                       GlobalIndexType j,
@@ -744,7 +746,7 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPoin
 
    auto interpolateGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
    {
-      const GlobalIndexType slot = ghostIndices[ k ];
+      const GlobalIndexType slot = ghostIndicesView[ k ];
       const VectorType r_x = own_points[ slot ];
       MfdMatrixType M_x = 0.f;
       MfdVectorType brho_x = 0.f;
@@ -768,13 +770,13 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPoin
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
+template< typename BoudaryPointer, typename FluidPointer, typename IndexArray >
 requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
          std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
                                                                          FluidPointer& srcFluid,
-                                                                         const IndexArrayView& ghostIndices,
+                                                                         const IndexArray& ghostIndices,
                                                                          ModelParams& modelParams )
 {
    using BCType = typename ModelConfig::BCType;
@@ -792,6 +794,8 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( Boudary
    const auto src_rho = srcFluid->getVariables()->rho.getConstView();
    auto dst_rho = ownBoundary->getVariables()->rho.getView();
    auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
+
+   const auto ghostIndicesView = ghostIndices.getConstView();
 
    auto boundFluid = [ = ] __cuda_callable__( GlobalIndexType i,
                                               GlobalIndexType j,
@@ -812,7 +816,7 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( Boudary
 
    auto updateGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
    {
-      const GlobalIndexType slot = ghostIndices[ k ];
+      const GlobalIndexType slot = ghostIndicesView[ k ];
       const VectorType r_x = own_points[ slot ];
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;

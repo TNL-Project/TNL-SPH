@@ -114,20 +114,20 @@ public:
     * directly with the source fluid as the neighbor set.
     * See Documentation/multiresolution-ghost-boundaries-design.md.
     */
-   template< typename BoudaryPointer, typename IndexArrayView >
+   template< typename BoudaryPointer, typename IndexArray >
    void
    updateGhostBoundaryInterpolated( BoudaryPointer& ownBoundary,
                                     BoudaryPointer& srcBoundary,
-                                    const IndexArrayView& ghostIndices,
+                                    const IndexArray& ghostIndices,
                                     ModelParams& modelParams );
 
-   template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
+   template< typename BoudaryPointer, typename FluidPointer, typename IndexArray >
    requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > ||
             std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
    void
    updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
                                         FluidPointer& srcFluid,
-                                        const IndexArrayView& ghostIndices,
+                                        const IndexArray& ghostIndices,
                                         ModelParams& modelParams );
 
    template< typename FluidPointer, typename OpenBoudaryPointer >

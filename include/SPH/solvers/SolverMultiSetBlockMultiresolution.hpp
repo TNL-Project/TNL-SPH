@@ -417,12 +417,12 @@ SolverMultiSetBlockMultiresolution< Model >::refreshBoundaryGhostValues()
       if( boundaryGhostUpdate == BoundaryGhostUpdate::Interpolation )
          this->model.updateGhostBoundaryInterpolated( ownBoundary,
                                                       srcBoundary,
-                                                      interface.ghostIndices.getConstView(),
+                                                      interface.ghostIndices,
                                                       this->modelParams );
       else
          this->model.updateGhostBoundaryDirectFromSource( ownBoundary,
                                                           this->fluidSets[ interface.neighborIdx ],
-                                                          interface.ghostIndices.getConstView(),
+                                                          interface.ghostIndices,
                                                           this->modelParams );
    }
 }
