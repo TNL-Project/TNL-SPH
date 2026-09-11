@@ -335,6 +335,7 @@ SolverMultiSetBlockMultiresolution< Model >::initBoundaryGhosts()
 
          const GlobalIndexType numberOfGhosts = ghostGeometry->getNumberOfParticles();
          rec.numberOfGhostParticles = numberOfGhosts;
+         rec.ghostIndices.setSize( numberOfGhosts );
 
          const GlobalIndexType allocated = ownBoundary->getNumberOfAllocatedParticles();
          if( rec.ghostBegin + numberOfGhosts > allocated )
@@ -389,45 +390,39 @@ SolverMultiSetBlockMultiresolution< Model >::initBoundaryGhosts()
          continue;
       }
    }
-
-   // scratch for the referential-index inverse used by the per-step refresh
-   GlobalIndexType scratchSize = 0;
-   for( const auto& rec : boundaryGhostInterfaces )
-      scratchSize = std::max( scratchSize, this->boundarySets[ rec.ownIdx ]->getNumberOfParticles() );
-   ghostIndexInverseOwn.setSize( scratchSize );
 }
 
 template< typename Model >
 void
 SolverMultiSetBlockMultiresolution< Model >::refreshBoundaryGhostValues()
 {
-   for( const auto& rec : boundaryGhostInterfaces ) {
-      BoundaryPointer& ownBoundary = this->boundarySets[ rec.ownIdx ];
-      BoundaryPointer& srcBoundary = this->boundarySets[ rec.neighborIdx ];
+   for( auto& interface : boundaryGhostInterfaces ) {
+      BoundaryPointer& ownBoundary = this->boundarySets[ interface.ownIdx ];
+      BoundaryPointer& srcBoundary = this->boundarySets[ interface.neighborIdx ];
 
       const GlobalIndexType ownCount = ownBoundary->getNumberOfParticles();
+      const GlobalIndexType ghostBegin = interface.ghostBegin;
+      const GlobalIndexType ghostCount = interface.numberOfGhostParticles;
 
       const auto ownRefIdx = ownBoundary->getVariables()->referentialIdx.getConstView();
-      auto invOwn = ghostIndexInverseOwn.getView();
+      auto ghostSlot = interface.ghostIndices.getView();
 
       Algorithms::parallelFor< DeviceType >( 0, ownCount, [ = ] __cuda_callable__( GlobalIndexType j ) mutable
       {
-         invOwn[ ownRefIdx[ j ] ] = j;
+         const GlobalIndexType ref = ownRefIdx[ j ];
+         if( ref >= ghostBegin && ref < ghostBegin + ghostCount )
+            ghostSlot[ ref - ghostBegin ] = j;
       } );
 
       if( boundaryGhostUpdate == BoundaryGhostUpdate::Interpolation )
          this->model.updateGhostBoundaryInterpolated( ownBoundary,
                                                       srcBoundary,
-                                                      rec.ghostBegin,
-                                                      rec.numberOfGhostParticles,
-                                                      invOwn,
+                                                      interface.ghostIndices.getConstView(),
                                                       this->modelParams );
       else
          this->model.updateGhostBoundaryDirectFromSource( ownBoundary,
-                                                          this->fluidSets[ rec.neighborIdx ],
-                                                          rec.ghostBegin,
-                                                          rec.numberOfGhostParticles,
-                                                          invOwn,
+                                                          this->fluidSets[ interface.neighborIdx ],
+                                                          interface.ghostIndices.getConstView(),
                                                           this->modelParams );
    }
 }

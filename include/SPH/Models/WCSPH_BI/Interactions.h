@@ -105,30 +105,27 @@ public:
 
    /**
     * Update of ghost boundary particles appended at the tail of a boundary set at
-    * multiresolution interfaces. Both variants write rho and gamma of ghost slots
-    * [ghostBegin, ghostBegin + numberOfGhostParticles); ghost slots are referential
-    * indices and invOwn maps referential -> current slot in the (sorted) own set.
-    * updateGhostBoundaryInterpolated interpolates the values from the source
-    * boundary's fresh state, updateGhostBoundaryDirectFromSource evaluates the
-    * standard boundary update directly with the source fluid as the neighbor set.
+    * multiresolution interfaces. Both variants write rho and gamma of the ghost
+    * slots; ghostIndices[ k ] holds the current slot of the ghost whose
+    * referential index is ghostBegin + k and is re-derived by the caller whenever
+    * the owning set is re-sorted. updateGhostBoundaryInterpolated interpolates the
+    * values from the source boundary's fresh state,
+    * updateGhostBoundaryDirectFromSource evaluates the standard boundary update
+    * directly with the source fluid as the neighbor set.
     * See Documentation/multiresolution-ghost-boundaries-design.md.
     */
    template< typename BoudaryPointer, typename IndexArrayView >
    void
    updateGhostBoundaryInterpolated( BoudaryPointer& ownBoundary,
                                     BoudaryPointer& srcBoundary,
-                                    GlobalIndexType ghostBegin,
-                                    GlobalIndexType numberOfGhostParticles,
-                                    const IndexArrayView& invOwn,
+                                    const IndexArrayView& ghostIndices,
                                     ModelParams& modelParams );
 
    template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayView >
    void
    updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
                                         FluidPointer& srcFluid,
-                                        GlobalIndexType ghostBegin,
-                                        GlobalIndexType numberOfGhostParticles,
-                                        const IndexArrayView& invOwn,
+                                        const IndexArrayView& ghostIndices,
                                         ModelParams& modelParams );
 
    template< typename FluidPointer, typename OpenBoudaryPointer >

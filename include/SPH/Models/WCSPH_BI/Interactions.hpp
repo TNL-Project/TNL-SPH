@@ -697,9 +697,7 @@ template< typename BoudaryPointer, typename IndexArrayView >
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPointer& ownBoundary,
                                                                      BoudaryPointer& srcBoundary,
-                                                                     GlobalIndexType ghostBegin,
-                                                                     GlobalIndexType numberOfGhostParticles,
-                                                                     const IndexArrayView& invOwn,
+                                                                     const IndexArrayView& ghostIndices,
                                                                      ModelParams& modelParams )
 {
    using KernelFunction = typename ModelParams::KernelFunction;
@@ -746,7 +744,7 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPoin
 
    auto interpolateGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
    {
-      const GlobalIndexType slot = invOwn[ ghostBegin + k ];
+      const GlobalIndexType slot = ghostIndices[ k ];
       const VectorType r_x = own_points[ slot ];
       MfdMatrixType M_x = 0.f;
       MfdVectorType brho_x = 0.f;
@@ -766,7 +764,7 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated( BoudaryPoin
          dst_gamma[ slot ] = bgamma_x[ 0 ] / M_x( 0, 0 );
       }
    };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfGhostParticles, interpolateGhost );
+   Algorithms::parallelFor< DeviceType >( 0, ghostIndices.getSize(), interpolateGhost );
 }
 
 template< typename Particles, typename ModelConfig >
@@ -774,9 +772,7 @@ template< typename BoudaryPointer, typename FluidPointer, typename IndexArrayVie
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( BoudaryPointer& ownBoundary,
                                                                          FluidPointer& srcFluid,
-                                                                         GlobalIndexType ghostBegin,
-                                                                         GlobalIndexType numberOfGhostParticles,
-                                                                         const IndexArrayView& invOwn,
+                                                                         const IndexArrayView& ghostIndices,
                                                                          ModelParams& modelParams )
 {
    using BCType = typename ModelConfig::BCType;
@@ -814,7 +810,7 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( Boudary
 
    auto updateGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
    {
-      const GlobalIndexType slot = invOwn[ ghostBegin + k ];
+      const GlobalIndexType slot = ghostIndices[ k ];
       const VectorType r_x = own_points[ slot ];
       RealType rho_i = 0.f;
       RealType gamma_i = 0.f;
@@ -828,7 +824,7 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( Boudary
       dst_rho[ slot ] = rho_i;
       dst_gamma[ slot ] = gamma_i;
    };
-   Algorithms::parallelFor< DeviceType >( 0, numberOfGhostParticles, updateGhost );
+   Algorithms::parallelFor< DeviceType >( 0, ghostIndices.getSize(), updateGhost );
 }
 
 }  //namespace SPH
