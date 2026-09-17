@@ -6,6 +6,7 @@
 #include "../BoundaryGhostParticles.h"
 #include "../DecompositionTopology.h"
 #include "../MultiresolutionRectangleBuffer.h"
+#include "../VariablesGhostInit.h"
 
 namespace TNL {
 namespace SPH {

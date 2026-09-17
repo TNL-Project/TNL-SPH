@@ -1,17 +1,40 @@
 #pragma once
 
+#include "../../ParticleField.h"
+#include "../../VariablesBase.h"
 #include "../../SPHTraits.h"
+
+#include <tuple>
+
 #include "BoundaryConditionsTypes.h"
 
 namespace TNL {
 namespace SPH {
 
+/**
+ * \brief Shared field holder for fluid-like particle sets.
+ *
+ *  field  array type      swap   read   write  notes
+ *  ------ --------------- -----  -----  -----  -----------------------------
+ *  rho    ScalarArrayType Yes    true   true   state, reordered + I/O + sync
+ *  drho   ScalarArrayType No     false  false  transient, recomputed
+ *  p      ScalarArrayType No     false  true   output only
+ *  v      VectorArrayType Yes    true   true   state, reordered + I/O + sync
+ *  a      VectorArrayType No     false  false  transient, recomputed
+ *  gamma  ScalarArrayType No     false  true   output only
+ *  marker MarkerArrayType Yes    true   false  state, reordered, input only
+ *
+ * referentialIdx and its swap buffer are index bookkeeping, not physical
+ * state: referentialIdx is identity-initialized in setSize and participates
+ * only in sorting and output, so it stays outside allFields() and is handled
+ * explicitly by the leaf classes (this also keeps initGhostRangeFrom() from
+ * ever overwriting it).
+ */
 template< typename SPHState >
-class FluidVariables
+class FluidVariablesBase
 {
 public:
-   using SPHConfig = typename SPHState::SPHConfig;
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
+   using SPHTraitsType = SPHFluidTraits< typename SPHState::SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
    using MarkerArrayType = typename SPHTraitsType::MarkerArrayType;
@@ -19,42 +42,32 @@ public:
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
-   //Variables - Fields
-   ScalarArrayType rho;
-   ScalarArrayType drho;
-   ScalarArrayType p;
-   VectorArrayType v;
-   VectorArrayType a;
-   ScalarArrayType gamma;
-   MarkerArrayType marker;
+   ParticleField< ScalarArrayType, Swap::Yes, true, true > rho{ "Density" };
+   ParticleField< ScalarArrayType, Swap::No, false, false > drho{ "Drho" };
+   ParticleField< ScalarArrayType, Swap::No, false, true > p{ "Pressure" };
+   ParticleField< VectorArrayType, Swap::Yes, true, true > v{ "Velocity" };
+   ParticleField< VectorArrayType, Swap::No, false, false > a{ "Accel" };
+   ParticleField< ScalarArrayType, Swap::No, false, true > gamma{ "Gamma" };
+   ParticleField< MarkerArrayType, Swap::Yes, true, false > marker{ "Ptype" };
 
-   GlobalIndexType highestReferentialIdx;
+   GlobalIndexType highestReferentialIdx = 0;
    IndexArrayType referentialIdx;
-
-   //Additional variable fields to avoid in-place sort
-   ScalarArrayType rho_swap;
-   VectorArrayType v_swap;
-   MarkerArrayType marker_swap;
    IndexArrayType referentialIdx_swap;
 
-   void
-   setSize( const GlobalIndexType& size )
+   auto
+   allFields()
    {
-      rho.setSize( size );
-      drho.setSize( size );
-      p.setSize( size );
-      v.setSize( size );
-      a.setSize( size );
-      gamma.setSize( size );
-      marker.setSize( size );
-      rho_swap.setSize( size );
-      v_swap.setSize( size );
-      marker_swap.setSize( size );
+      return std::tie( rho, drho, p, v, a, gamma, marker );
+   }
+
+   // public: nvcc rejects extended __cuda_callable__ lambdas in protected methods
+   void
+   setReferentialSize( const GlobalIndexType& size )
+   {
       referentialIdx.setSize( size );
       referentialIdx_swap.setSize( size );
-
       referentialIdx.forAllElements(
-         [] __cuda_callable__( GlobalIndexType i, GlobalIndexType & value )
+         [] __cuda_callable__( GlobalIndexType i, GlobalIndexType& value )
          {
             value = i;
          } );
@@ -63,111 +76,157 @@ public:
 
    template< typename ParticlesPointer >
    void
-   sortVariables( ParticlesPointer& particles )
+   sortReferential( ParticlesPointer& particles )
    {
-      particles->reorderArray( rho, rho_swap );
-      particles->reorderArray( v, v_swap );
-      particles->reorderArray( marker, marker_swap );
       particles->reorderArray( referentialIdx, referentialIdx_swap );
-   }
-
-   template< typename ReaderType >
-   void
-   readVariables( ReaderType& reader )
-   {
-      reader.template readParticleVariable< ScalarArrayType >( rho, "Density" );
-      reader.template readParticleVariable< MarkerArrayType >( marker, "Ptype" );
-      reader.template readParticleVariable< VectorArrayType >( v, "Velocity" );
    }
 
    template< typename WriterType >
    void
-   writeVariables( WriterType& writer )
+   writeReferential( WriterType& writer )
    {
-      writer.template writePointData< ScalarArrayType >( p, "Pressure" );
-      writer.template writePointData< ScalarArrayType >( rho, "Density" );
-      writer.template writePointData< VectorArrayType >( v, "Velocity" );
       writer.template writePointData< IndexArrayType >( referentialIdx, "ReferentialIndex" );
-      writer.template writePointData< ScalarArrayType >( gamma, "Gamma" );
    }
 };
 
+/**
+ * \brief Fluid variables - leaf class.
+ *
+ * Inherits the fields from \ref FluidVariablesBase and the lifecycle methods
+ * from \ref VariablesBase (CRTP); referential indices are sized, sorted and
+ * written explicitly.
+ */
 template< typename SPHState >
-class BoundaryVariables : public FluidVariables< SPHState >
+class FluidVariables : public FluidVariablesBase< SPHState >, public VariablesBase< FluidVariables< SPHState > >
 {
 public:
-   using Base = FluidVariables< SPHState >;
-   using SPHConfig = typename SPHState::SPHConfig;
-   using SPHTraitsType = SPHFluidTraits< SPHConfig >;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
-   using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using GlobalIndexType = typename FluidVariablesBase< SPHState >::GlobalIndexType;
 
    void
    setSize( const GlobalIndexType& size )
    {
-      Base::setSize( size );
-      n.setSize( size );
-      n_swap.setSize( size );
-      elementSize.setSize( size );
-      elementSize_swap.setSize( size );
+      VariablesBase< FluidVariables >::setSize( size );
+      this->setReferentialSize( size );
    }
-
-   VectorArrayType n;
-   VectorArrayType n_swap;
-   ScalarArrayType elementSize;
-   ScalarArrayType elementSize_swap;
 
    template< typename ParticlesPointer >
    void
    sortVariables( ParticlesPointer& particles )
    {
-      Base::sortVariables( particles );
-      particles->reorderArray( n, n_swap );
-      particles->reorderArray( elementSize, elementSize_swap );
-   }
-
-   template< typename ReaderType >
-   void
-   readVariables( ReaderType& reader )
-   {
-      Base::readVariables( reader );
-      reader.template readParticleVariable< ScalarArrayType >( elementSize, "ElementSize" );
-      reader.template readParticleVariable< VectorArrayType >( n, "Normals" );
+      VariablesBase< FluidVariables >::sortVariables( particles );
+      this->sortReferential( particles );
    }
 
    template< typename WriterType >
    void
    writeVariables( WriterType& writer )
    {
-      Base::writeVariables( writer );
-      writer.template writePointData< VectorArrayType >( n, "Normals" );
+      VariablesBase< FluidVariables >::writeVariables( writer );
+      this->writeReferential( writer );
    }
 };
 
+/**
+ * \brief Shared field holder for boundary-like particle sets - fluid fields
+ * plus wall normal and element size, both reordered and file-carried.
+ */
 template< typename SPHState >
-class OpenBoundaryVariables : public BoundaryVariables< SPHState >
+class BoundaryVariablesBase : public FluidVariablesBase< SPHState >
 {
 public:
-   using BaseType = BoundaryVariables< SPHState >;
-   using SPHTraitsType = typename BaseType::SPHTraitsType;
-   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using FieldBase = FluidVariablesBase< SPHState >;
+   using ScalarArrayType = typename FieldBase::ScalarArrayType;
+   using VectorArrayType = typename FieldBase::VectorArrayType;
 
-   //SPHOpenBoundaryVariables( GlobalIndexType size )
-   //: SPHFluidVariables< SPHState >( size ), particleMark( size ), receivingParticleMark( size ) {};
+   ParticleField< VectorArrayType, Swap::Yes, true, true > n{ "Normals" };
+   ParticleField< ScalarArrayType, Swap::Yes, true, false > elementSize{ "ElementSize" };
+
+   auto
+   allFields()
+   {
+      return std::tuple_cat( FieldBase::allFields(), std::tie( n, elementSize ) );
+   }
+};
+
+/**
+ * \brief Boundary variables - leaf class.
+ */
+template< typename SPHState >
+class BoundaryVariables : public BoundaryVariablesBase< SPHState >, public VariablesBase< BoundaryVariables< SPHState > >
+{
+public:
+   using GlobalIndexType = typename BoundaryVariablesBase< SPHState >::GlobalIndexType;
+
    void
    setSize( const GlobalIndexType& size )
    {
-      BaseType::setSize( size );
-      particleMark.setSize( size );
-      receivingParticleMark.setSize( size );
+      VariablesBase< BoundaryVariables >::setSize( size );
+      this->setReferentialSize( size );
    }
 
-   IndexArrayType particleMark;
-   IndexArrayType receivingParticleMark;
+   template< typename ParticlesPointer >
+   void
+   sortVariables( ParticlesPointer& particles )
+   {
+      VariablesBase< BoundaryVariables >::sortVariables( particles );
+      this->sortReferential( particles );
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer )
+   {
+      VariablesBase< BoundaryVariables >::writeVariables( writer );
+      this->writeReferential( writer );
+   }
+};
+
+/**
+ * \brief Open boundary variables - boundary fields plus two index marks,
+ * both sized but neither read, written nor reordered.
+ */
+template< typename SPHState >
+class OpenBoundaryVariables
+: public BoundaryVariablesBase< SPHState >, public VariablesBase< OpenBoundaryVariables< SPHState > >
+{
+public:
+   using FieldBase = BoundaryVariablesBase< SPHState >;
+   using SPHTraitsType = typename FieldBase::SPHTraitsType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+
+   ParticleField< IndexArrayType, Swap::No, false, false > particleMark{ "ParticleMark" };
+   ParticleField< IndexArrayType, Swap::No, false, false > receivingParticleMark{ "ReceivingParticleMark" };
+
+   auto
+   allFields()
+   {
+      return std::tuple_cat( FieldBase::allFields(), std::tie( particleMark, receivingParticleMark ) );
+   }
+
+   void
+   setSize( const GlobalIndexType& size )
+   {
+      VariablesBase< OpenBoundaryVariables >::setSize( size );
+      this->setReferentialSize( size );
+   }
+
+   template< typename ParticlesPointer >
+   void
+   sortVariables( ParticlesPointer& particles )
+   {
+      VariablesBase< OpenBoundaryVariables >::sortVariables( particles );
+      this->sortReferential( particles );
+   }
+
+   template< typename WriterType >
+   void
+   writeVariables( WriterType& writer )
+   {
+      VariablesBase< OpenBoundaryVariables >::writeVariables( writer );
+      this->writeReferential( writer );
+   }
 };
 
 }  //namespace SPH
 }  //namespace TNL
-

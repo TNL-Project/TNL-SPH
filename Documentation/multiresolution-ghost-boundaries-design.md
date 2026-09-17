@@ -62,7 +62,11 @@ particles (currently the 3D example, whose init script does not emit ghost files
      read the pre-generated lattice into a temporary boundary set and append
      (`r`, `rho`, `v`, `marker`, `n`, `elementSize`) at the **tail of the own boundary
      set** (`boundary[own]`). The VTK input carries no values for `drho`, `p`, `a` and
-     `gamma`; those start at zero instead of copying uninitialized memory.
+     `gamma`; those start at zero instead of copying uninitialized memory. The solver
+     copies only the positions; the variable append is done by the generic
+     `initGhostRangeFrom` (`include/SPH/VariablesGhostInit.h`), which copies every
+     `ParticleField` flagged `readable` (exactly the fields `readVariables` reads) and
+     zero-fills the rest, so the policy is defined on the variables, not in the solver.
      `numberOfGhostParticles` and `ghostBegin` are recorded per interface.
    - Allocation: boundary allocations (`boundary_n_allocated`) must absorb the ghosts; a
      hard runtime error points at the allocation factor otherwise.
@@ -102,7 +106,10 @@ particles (currently the 3D example, whose init script does not emit ghost files
 | file | change |
 |---|---|
 | `include/SPH/solvers/SolverMultiSetBlockMultiresolution.h` | `BoundaryGhostParticles` record, `BoundaryGhostUpdate` selector, per-interface list + referential-inverse scratch |
-| `include/SPH/solvers/SolverMultiSetBlockMultiresolution.hpp` | init: ghost file loading + tail merge (+ allocation guard); `interact()`: phase separation (update all → refresh ghosts → interactions); refresh: both update methods |
+| `include/SPH/solvers/SolverMultiSetBlockMultiresolution.hpp` | init: ghost file loading + tail merge (positions + `initGhostRangeFrom`, + allocation guard); `interact()`: phase separation (update all → refresh ghosts → interactions); refresh: both update methods |
+| `include/SPH/VariablesGhostInit.h` | `initGhostRangeFrom` — generic ghost variable init: copies `readable` (file-carried) fields, zero-fills the rest; never touches non-field members (`referentialIdx`) |
+| `include/SPH/Models/WCSPH_BI/Variables.h` | variables migrated to the `ParticleField` + `VariablesBase` field lists (`allFields()`); the flags encode read/write/sort and thereby the ghost-init policy |
+| `include/SPH/ParticleField.h` | `readable`/`writable` constexpr flags exposed for the generic ghost init |
 | `include/SPH/configSetup.h` | `boundary-ghost-method` entry; `configBoundaryGhostBuffer` (`boundary-ghost-buffer-<p>-{particles,n}`) |
 | `src/tools/decomposition.py` | `boundary-ghost-buffers` section plumbing into the distributed-domain config |
 | `examples/WCSPH-BI/damBreak2D_WCSPH-BI_multiresolution/init_multi_resolution.py` | `_wall_lattice` / `_frame_and_band` / `generate_ghost_band_boundaries` |

@@ -190,8 +190,8 @@ public:
       else
          relaxMidpoint = midpointRelaxCoef;
 
-      fluid->getVariables()->a = relaxMidpoint * fluid->getIntegratorVariables()->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->a;
-      fluid->getVariables()->drho = relaxMidpoint * fluid->getIntegratorVariables()->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->drho;
+      fluid->getVariables()->a.getArray() = relaxMidpoint * fluid->getIntegratorVariables()->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->a.getArray();
+      fluid->getVariables()->drho.getArray() = relaxMidpoint * fluid->getIntegratorVariables()->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->drho.getArray();
    }
 
    template< typename FluidPointer, typename ModelParams >

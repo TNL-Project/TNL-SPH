@@ -42,6 +42,10 @@ public:
    using ValueType = typename ArrayType::ValueType;
    using GlobalIndexType = typename ArrayType::IndexType;
 
+   // lifecycle flags exposed for generic facilities (e.g. VariablesGhostInit.h)
+   static constexpr bool readable = Readable;
+   static constexpr bool writable = Writable;
+
    ParticleField() = default;
 
    explicit ParticleField( std::string name )

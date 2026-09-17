@@ -317,7 +317,7 @@ SolverMultiSetBlockMultiresolution< Model >::initBoundaryGhosts()
          BoundaryGhostParticles< SPHConfig > rec;
          rec.ownIdx = iface.ownIdx;
          rec.neighborIdx = iface.neighborIdx;
-          rec.ghostBegin = ownBoundary->getNumberOfParticles();
+         rec.ghostBegin = ownBoundary->getNumberOfParticles();
 
          BoundaryPointer ghostGeometry;
          ghostGeometry->initializeAsDistributed( ghostsInFile,
@@ -347,39 +347,19 @@ SolverMultiSetBlockMultiresolution< Model >::initBoundaryGhosts()
 
          const GlobalIndexType ghostBegin = rec.ghostBegin;
 
+         // positions are not variables - copy them explicitly
          auto dst_r = ownBoundary->getPoints().getView();
          const auto src_r = ghostGeometry->getPoints().getConstView();
-         auto dst_rho = ownBoundary->getVariables()->rho.getView();
-         const auto src_rho = ghostGeometry->getVariables()->rho.getConstView();
-         auto dst_drho = ownBoundary->getVariables()->drho.getView();
-         auto dst_p = ownBoundary->getVariables()->p.getView();
-         auto dst_v = ownBoundary->getVariables()->v.getView();
-         const auto src_v = ghostGeometry->getVariables()->v.getConstView();
-         auto dst_a = ownBoundary->getVariables()->a.getView();
-         auto dst_gamma = ownBoundary->getVariables()->gamma.getView();
-         auto dst_marker = ownBoundary->getVariables()->marker.getView();
-         const auto src_marker = ghostGeometry->getVariables()->marker.getConstView();
-         auto dst_n = ownBoundary->getVariables()->n.getView();
-         const auto src_n = ghostGeometry->getVariables()->n.getConstView();
-         auto dst_elementSize = ownBoundary->getVariables()->elementSize.getView();
-         const auto src_elementSize = ghostGeometry->getVariables()->elementSize.getConstView();
+         Algorithms::parallelFor< DeviceType >(
+            0,
+            numberOfGhosts,
+            [ = ] __cuda_callable__( GlobalIndexType k ) mutable
+            {
+               dst_r[ ghostBegin + k ] = src_r[ k ];
+            } );
 
-         // the VTK input carries no values for drho, p, a and gamma - start them at zero
-         auto copyGhost = [ = ] __cuda_callable__( GlobalIndexType k ) mutable
-         {
-            const GlobalIndexType d = ghostBegin + k;
-            dst_r[ d ] = src_r[ k ];
-            dst_rho[ d ] = src_rho[ k ];
-            dst_drho[ d ] = 0.f;
-            dst_p[ d ] = 0.f;
-            dst_v[ d ] = src_v[ k ];
-            dst_a[ d ] = 0.f;
-            dst_gamma[ d ] = 0.f;
-            dst_marker[ d ] = src_marker[ k ];
-            dst_n[ d ] = src_n[ k ];
-            dst_elementSize[ d ] = src_elementSize[ k ];
-         };
-         Algorithms::parallelFor< DeviceType >( 0, numberOfGhosts, copyGhost );
+         // variables (the VTK input carries no drho, p, a and gamma values - see VariablesGhostInit.h)
+         initGhostRangeFrom( *ownBoundary->getVariables(), *ghostGeometry->getVariables(), ghostBegin, numberOfGhosts );
 
          ownBoundary->getParticles()->setNumberOfParticles( ghostBegin + numberOfGhosts );
 
