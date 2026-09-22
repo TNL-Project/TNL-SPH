@@ -1,5 +1,6 @@
 add_subdirectory(damBreak2D_WCSPH-BI)
 add_subdirectory(damBreak2D_WCSPH-BI_multiresolution)
+add_subdirectory(damBreak2D_WCSPH-BI_multiresolution_local-timestepping)
 add_subdirectory(damBreak3D_WCSPH-BI)
 add_subdirectory(damBreak3D_WCSPH-BI_multiresolution)
 add_subdirectory(movingSquare2D_WCSPH-BI)

@@ -42,6 +42,8 @@ Documentation/latex
 # test files
 src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/results
 src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/sources
+src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionLTSSimulation*D/results
+src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionLTSSimulation*D/sources
 
 # content in src
 src/extra/accelerateImp/spectrum-results

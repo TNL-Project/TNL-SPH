@@ -2,7 +2,7 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "dummyMultiresolutionSimulation3D",
+        "case-name": "dummyMultiresolutionLTSSimulation2D",
         "output-directory": "results",
         "final-time": 0,
         "snapshot-period": 0,
@@ -22,10 +22,8 @@
         "searchRadius": placeholderSearchRadius,
         "domainOrigin-x": placeholderDomainOrigin-x,
         "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainOrigin-z": placeholderDomainOrigin-z,
         "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y,
-        "domainSize-z": placeholderDomainSize-z
+        "domainSize-y": placeholderDomainSize-y
     },
 
     // === SPH solver section - resolution parameters ===
@@ -51,16 +49,12 @@
     //         "refinement-factor": 1,
     //         "origin-global-coords-x": 0,
     //         "origin-global-coords-y": 0,
-    //         "origin-global-coords-z": 0,
     //         "grid-dimensions-x": 0,
     //         "grid-dimensions-y": 0,
-    //         "grid-dimensions-z": 0,
     //         "origin-x": 0,
     //         "origin-y": 0,
-    //         "origin-z": 0,
     //         "size-x": 0,
-    //         "size-y": 0,
-    //         "size-z": 0
+    //         "size-y": 0
     //     },
     //     "subdomain-1": {
     //         "fluid-particles": "",
@@ -72,16 +66,12 @@
     //         "refinement-factor": 2,
     //         "origin-global-coords-x": 0,
     //         "origin-global-coords-y": 0,
-    //         "origin-global-coords-z": 0,
     //         "grid-dimensions-x": 0,
     //         "grid-dimensions-y": 0,
-    //         "grid-dimensions-z": 0,
     //         "origin-x": 0,
     //         "origin-y": 0,
-    //         "origin-z": 0,
     //         "size-x": 0,
-    //         "size-y": 0,
-    //         "size-z": 0
+    //         "size-y": 0
     //     }
     // }
 }

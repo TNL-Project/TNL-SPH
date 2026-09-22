@@ -16,6 +16,21 @@ CONFIGURATIONS = {
         "fine_y_max": 0.75,
     },
 
+    "dummy2D-lts-center": {
+        "dimension": 2,
+        "description": "Centered refinement in unit square (local timestepping)",
+        "dp": 0.002,
+        "h_coef": 1.75,
+        "box_x": 1.0,
+        "box_y": 1.0,
+        "fine_factor": 0.5,
+        "fine_x_min": 0.25,
+        "fine_x_max": 0.75,
+        "fine_y_min": 0.25,
+        "fine_y_max": 0.75,
+        "timestepping": "local",
+    },
+
     "dambreak2D-corner": {
         "dimension": 2,
         "description": "Dam break with refinement in bottom-right corner",

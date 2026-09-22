@@ -92,7 +92,7 @@ def _to_snake(s: str) -> str:
 SECTION_PATTERNS = [
     (re.compile(r'Fluid\s+(\d+)\s+object\s+information', re.I),      'fluid'),
     (re.compile(r'Boundary\s+(\d+)\s+object\s+information', re.I),   'boundary'),
-    (re.compile(r'Multiresolu[t]?in\s+boundary\s+buffer(\d+)', re.I),'buffer'),
+    (re.compile(r'Multiresolu[t]?io?n\s+boundary\s+buffer(?:\s*\(LTS\))?\s*(\d+)', re.I),'buffer'),
 ]
 
 
@@ -109,6 +109,9 @@ def _detect_section(line: str):
 # ─────────────────────────────────────────────────────────────────────────────
 # Main parser
 # ─────────────────────────────────────────────────────────────────────────────
+
+_VOLATILE_ROW_KEYS = {"started_at"}
+
 
 def parse_log(log_text: str) -> dict:
     """
@@ -179,6 +182,8 @@ def parse_log(log_text: str) -> dict:
         if parsed is None:
             continue
         k, v = parsed
+        if k in _VOLATILE_ROW_KEYS:
+            continue
 
         if current_subsection and current_subsection in current_data and isinstance(current_data[current_subsection], dict):
             current_data[current_subsection][k] = v

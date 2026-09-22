@@ -38,6 +38,11 @@ tests:
     log: testConfigurations/dummyMultiresolutionSimulation2D/results/dummy2D-mp-corner-h2/dummyMultiresolutionSimulation2D.log
     ref: testConfigurations/dummy2D-mp-corner-h2_ref.json
 
+  # ── 2D local-time-stepping tests ───────────────────────────────────────────
+  - name: dummy2D-lts-center
+    log: testConfigurations/dummyMultiresolutionLTSSimulation2D/results/dummy2D-lts-center/dummyMultiresolutionLTSSimulation2D.log
+    ref: testConfigurations/dummy2D-lts-center_ref.json
+
   # ── 3D tests ───────────────────────────────────────────────────────────────
   - name: dummy3D-center
     log: testConfigurations/dummyMultiresolutionSimulation3D/results/dummy3D-center/dummyMultiresolutionSimulation3D.log

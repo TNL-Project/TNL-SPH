@@ -32,7 +32,10 @@ import initialCondifionFunctions as ic
 import writeInitConfigFile as cf
 
 from configurations import CONFIGURATIONS as _ALL_CONFIGURATIONS
-CONFIGURATIONS = {k: v for k, v in _ALL_CONFIGURATIONS.items() if v.get("dimension") == 2}
+CONFIGURATIONS = {
+    k: v for k, v in _ALL_CONFIGURATIONS.items()
+    if v.get("dimension") == 2 and v.get("timestepping") != "local"
+}
 
 
 def resolve_refinement_bounds(config: dict, setup: dict) -> dict:
@@ -57,16 +60,13 @@ def save_grid(grids: List[dec.SubdomainGrid], setup: dict, output_dir: str) -> N
     import domainGrid
     h0 = setup["search_radius"]
     for i, g in enumerate(grids):
-        ox = setup["domain_origin_x"] + h0 * g.factor * g.origin_glob_x
-        oy = setup["domain_origin_y"] + h0 * g.factor * g.origin_glob_y
-        n_cells = g.dims_x * g.dims_y
-        domainGrid.domainGrid(
-            g.dims_x, g.dims_y, 1,
-            ox, oy, 0,
-            np.zeros(n_cells),
-            g.search_radius,
-            f"{output_dir}/subdomain-{i}dambreak_grid.vtk"
-        )
+        sub_setup = dict(setup)
+        sub_setup["search_radius"]   = g.search_radius
+        sub_setup["domain_origin_x"] = setup["domain_origin_x"] + h0 * g.factor * g.origin_glob_x
+        sub_setup["domain_origin_y"] = setup["domain_origin_y"] + h0 * g.factor * g.origin_glob_y
+        sub_setup["domain_size_x"]   = g.dims_x * g.search_radius
+        sub_setup["domain_size_y"]   = g.dims_y * g.search_radius
+        domainGrid.write_domain_grid(sub_setup, f"{output_dir}/subdomain-{i}dambreak_grid.vtk")
 
 
 def write_distributed_domain_params_rectangular(
@@ -210,6 +210,8 @@ def init_configuration(config_name: str, overrides: dict):
 
     setup["fluid_n"]    = coarse_grid.fluid_n + fine_grid.fluid_n
     setup["boundary_n"] = coarse_grid.boundary_n
+    setup["allocated_fluid_n"]    = 2 * setup["fluid_n"]    if setup["fluid_n"] > 0 else 0
+    setup["allocated_boundary_n"] = 2 * setup["boundary_n"] if setup["boundary_n"] > 0 else 0
 
     save_grid([coarse_grid, fine_grid], setup, output_dir)
     write_simulation_params(setup, output_dir, config_name)

@@ -4,11 +4,6 @@ Multiresolution SPH dam-break initializer.
 
 Subdomains are defined as axis-aligned parts in physical coordinates.
 Each subdomain carries its own refinement factor (dp_subdomain = factor * dx_L0).
-
-The setup supports an arbitrary number of refinement levels organized as a
-nested chain: level 0 is the whole tank and every entry of the refinement
-zone list in define_refinement_zones() adds one finer level inside the
-previous one.  Edit that list to switch between 2, 3 or more levels.
 """
 
 import math
@@ -17,7 +12,7 @@ import sys
 import argparse
 import numpy as np
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 from pprint import pprint
 
 sys.path.append('../../../src/tools')
@@ -35,9 +30,9 @@ import writeInitConfigFile as cf
 
 def generate_fluid_particles(
         idx:         int,
-        g:           dec.SubdomainGrid,
+        g:           SubdomainGrid,
         setup:       dict,
-        exclude_box: Optional[dict] = None   # optional {"x_min", "x_max", "y_min", "y_max"}
+        exclude_box: dict = None   # optional {"x_min", "x_max", "y_min", "y_max"}
 ) -> None:
     dp           = g.dp
     fluid_length = setup["fluid_length"]
@@ -155,7 +150,7 @@ def generate_boundary_particles(
         idx:         int,
         g:           dec.SubdomainGrid,
         setup:       dict,
-        exclude_box: Optional[dict] = None
+        exclude_box: dict = None
 ) -> None:
     rho0 = setup["density"]
 
@@ -267,34 +262,29 @@ def generate_ghost_band_boundaries(grids: List[dec.SubdomainGrid], setup: dict) 
         setup[f"ghost_buffer_{p}_n"] = n
         print(f"[interface {own}->{nb}] boundary ghost particles: {n}")
 
-def _fine_box(fine_grid: dec.SubdomainGrid) -> dict:
+def _fine_box(fine_grid: SubdomainGrid) -> dict:
     return {
         "x_min": fine_grid.phys_x_min, "x_max": fine_grid.phys_x_max,
         "y_min": fine_grid.phys_y_min, "y_max": fine_grid.phys_y_max,
     }
 
-def generate_fluid_particles_nested(
-        grids: List[dec.SubdomainGrid],
-        setup: dict
+def generate_fluid_particles_rectangular(
+        coarse_grid: SubdomainGrid,
+        fine_grid:   SubdomainGrid,
+        setup:       dict
 ) -> None:
-    """Fluid for every level of a nested refinement chain: each level covers
-    its own zone minus the box of the next finer level, so the levels tile
-    the refined region without overlap."""
-    for lvl, grid in enumerate(grids):
-        exclude = _fine_box(grids[lvl + 1]) if lvl + 1 < len(grids) else None
-        generate_fluid_particles(lvl, grid, setup, exclude_box=exclude)
+    generate_fluid_particles(1, fine_grid,   setup)
+    generate_fluid_particles(0, coarse_grid, setup, exclude_box=_fine_box(fine_grid))
 
-def generate_boundary_particles_nested(
-        grids: List[dec.SubdomainGrid],
-        setup: dict
+def generate_boundary_particles_rectangular(
+        coarse_grid: SubdomainGrid,
+        fine_grid:   SubdomainGrid,
+        setup:       dict
 ) -> None:
-    """Wall particles for every level of a nested refinement chain, tiled the
-    same way as the fluid (own zone minus the next finer zone)."""
-    for lvl, grid in enumerate(grids):
-        exclude = _fine_box(grids[lvl + 1]) if lvl + 1 < len(grids) else None
-        generate_boundary_particles(lvl, grid, setup, exclude_box=exclude)
+    generate_boundary_particles(0, coarse_grid, setup, exclude_box=_fine_box(fine_grid))
+    generate_boundary_particles(1, fine_grid, setup)
 
-def save_grid(grids: List[dec.SubdomainGrid], setup: dict) -> None:
+def save_grid(grids: List[SubdomainGrid], setup: dict) -> None:
     import domainGrid
     h0 = setup["search_radius"]
     for i, g in enumerate(grids):
@@ -342,6 +332,10 @@ def parse_args():
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm")
     g.add_argument("--viscous-term", type=str, default="ArtificialViscosity")
 
+    g = ap.add_argument_group("refinement")
+    g.add_argument("--levels", type=int, choices=(2, 3), default=2,
+                   help="number of multiresolution levels: 2 zones (factor 0.5 corner) or 3 zones (0.5 zone with 0.25 corner inside)")
+
     return ap.parse_args()
 
 def build_setup(args) -> dict:
@@ -380,36 +374,6 @@ def define_problem_bounding_box(setup):
     }
     setup.update( domain )
 
-def define_refinement_zones(setup) -> tuple:
-    """Refinement zones imposed directly in the script, ordered from coarsest
-    to finest.  Level 0 is always the whole tank at base resolution; every
-    entry here adds one refinement level on top.  The number of levels is
-    therefore 1 + number of entries:
-
-      - 2 levels: keep a single entry (e.g. the 0.5 zone)
-      - 3 levels: keep both entries below (default)
-      - 4+ levels: append more entries, each strictly inside the previous one
-
-    Each zone must be strictly nested inside the previous one and its factor
-    must be 1/k with integer k (e.g. 0.5, 0.25, 0.125).  Zones default to
-    touching the right and bottom tank walls (x extends to the far domain
-    boundary, y starts at the domain bottom); x_max and y_min can be imposed
-    per zone to override this.  alloc_fact optionally enlarges the fluid
-    allocation of a zone that gets fully submerged by the impacting slosh.
-    """
-    domain_far_x = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"]
-    return [
-        {
-            "factor": 0.5,
-            "x_min": 1.2,
-            "y_max": 0.3,
-        },
-        # 3th level, nested inside the 0.5 corner:
-        # { "factor": 0.25, "x_min": 1.4, "y_max": 0.15, "alloc_fact": 4 },
-        # 4th level, nested inside the 0.25 corner:
-        # { "factor": 0.125, "x_min": 1.5, "y_max": 0.075, "alloc_fact": 4 },
-    ], domain_far_x
-
 if __name__ == "__main__":
     args  = parse_args()
     setup = build_setup(args)
@@ -420,47 +384,50 @@ if __name__ == "__main__":
     # Step 1: Domain bounding box
     define_problem_bounding_box(setup)
 
-    # Step 2: Define subdomains as a nested refinement chain
-    #   L0: whole tank (base resolution)
-    #   L1..LN: refinement zones imposed in define_refinement_zones, each
-    #           strictly nested inside the previous level; every zone halves
-    #           the resolution factor of its parent
-    refinement_zones, domain_far_x = define_refinement_zones(setup)
-    subdomain_defs = [dec.SubdomainDef(factor=1.0)]
-    for zone in refinement_zones:
-        fl = 1.0 / zone["factor"]
-        if abs(fl - round(fl)) > 1e-9:
-            raise ValueError(f"refinement factor {zone['factor']} is not of the form 1/k")
-        subdomain_defs.append(dec.SubdomainDef(
-            factor = zone["factor"],
-            x_min  = zone["x_min"],
-            x_max  = zone.get("x_max", domain_far_x),
-            y_min  = zone.get("y_min", setup["domain_origin_y"]),
-            y_max  = zone["y_max"],
-        ))
+    # Step 2: Define subdomains (nested refinement chain)
+    #   L0: whole tank (base resolution, dt)
+    #   L1: right-bottom zone, factor 0.5, touches right and bottom tank walls (dt/2)
+    #   L2 (--levels 3): right-bottom corner inside L1, factor 0.25 (dt/4)
+    domain_far_x = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"]
+    subdomain_defs = [
+        dec.SubdomainDef(factor=1.0),
+        dec.SubdomainDef(
+            factor = 0.5,
+            x_min  = 1.2,
+            x_max  = domain_far_x,
+            y_min  = setup["domain_origin_y"],
+            y_max  = 0.3,
+        ),
+    ]
+    if args.levels == 3:
+        subdomain_defs.append(
+            dec.SubdomainDef(
+                factor = 0.25,
+                x_min  = 1.4,
+                x_max  = domain_far_x,
+                y_min  = setup["domain_origin_y"],
+                y_max  = 0.15,
+            ),
+        )
 
-    # Step 3: Build grids and check that the zones form a nested chain
+    # Step 3: Build grids
     grids = list(dec.build_subdomain_grids(subdomain_defs, setup))
-    for zone, grid in zip(refinement_zones, grids[1:]):
-        if "alloc_fact" in zone:
-            grid.alloc_fact = zone["alloc_fact"]
-    # nesting check with a tolerance: coincident zone boundaries recomputed
-    # per level in a different resolution can differ by a rounding ULP
-    tol = 1e-9 * setup["search_radius"]
-    for coarse, fine in zip(grids, grids[1:]):
-        nested = (coarse.phys_x_min <= fine.phys_x_min + tol and fine.phys_x_max <= coarse.phys_x_max + tol and
-                  coarse.phys_y_min <= fine.phys_y_min + tol and fine.phys_y_max <= coarse.phys_y_max + tol)
-        if not nested:
-            raise ValueError("refinement zones must be strictly nested: "
-                             "each zone must lie fully inside the previous level")
+    grids[-1].alloc_fact = 4  # the corner is fully submerged during the impacting slosh
 
     for lvl, grid in enumerate(grids):
         print(f"\nL{lvl} grid:"); pprint(grid)
 
-    # Step 4: Generate particles (each level tiles its zone minus the next
-    # finer zone, so the chain covers the domain without overlap)
-    generate_fluid_particles_nested(grids, setup)
-    generate_boundary_particles_nested(grids, setup)
+    # Step 4: Generate particles
+    for lvl in range(1, len(grids)):
+        generate_fluid_particles(lvl, grids[lvl], setup)
+    generate_fluid_particles(0, grids[0], setup, exclude_box=_fine_box(grids[1]))
+
+    for lvl, grid in enumerate(grids):
+        if lvl + 1 < len(grids):
+            generate_boundary_particles(lvl, grid, setup, exclude_box=_fine_box(grids[lvl + 1]))
+        else:
+            generate_boundary_particles(lvl, grid, setup)
+
     generate_ghost_band_boundaries(grids, setup)
 
     # Step 5: Global counts and timestep driven by the finest resolution

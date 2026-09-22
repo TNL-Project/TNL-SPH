@@ -134,9 +134,23 @@ public:
    void
    interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
-   template< typename FluidPointer, typename OpenBoudaryPointer >
-   void
-   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
+    template< typename FluidPointer, typename OpenBoudaryPointer >
+    void
+    interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
+
+    /**
+     * Active layer-1 pass for local timestepping: computes drho/a/gamma for the inner
+     * band layer of a MultiresolutionBoundaryLTS patch from its fine-fluid and buffer
+     * neighbors with the standard fluid pair terms. See
+     * Documentation/multiresolution-local-timestepping.md.
+     */
+    template< typename FluidPointer, typename OpenBoudaryPointer >
+    void
+    interactionActiveBufferLayer( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
+
+    template< typename OpenBoudaryPointer >
+    void
+    finalizeInteractionActiveBufferLayer( OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
 
    /**
     * Functions to extrapolate data on open boundary buffers in 2D.

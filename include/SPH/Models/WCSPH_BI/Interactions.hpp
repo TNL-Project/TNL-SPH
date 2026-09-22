@@ -521,7 +521,180 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    Algorithms::parallelFor< DeviceType >( 0, fluid->getNumberOfParticles(), particleLoop );
 }
 
-//FIXME: WTF is this function
+template< typename Particles, typename ModelConfig >
+template< typename FluidPointer, typename OpenBoudaryPointer >
+void
+WCSPH_BI< Particles, ModelConfig >::interactionActiveBufferLayer( FluidPointer& fluid,
+                                                                  OpenBoudaryPointer& openBoundary,
+                                                                  ModelParams& modelParams )
+{
+   /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
+   const RealType searchRadius = fluid->getParticles()->getSearchRadius();
+   typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
+   typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
+
+   // Get refinement factor (the patch shares the fine search radius, so both directions
+   // pair with the same mass as the fluid-open-boundary terms)
+   const auto refinedModelParams = modelParams.refined( searchRadius );
+
+   /* CONSTANT VARIABLES */
+   const RealType h = refinedModelParams.h;
+   const RealType m = refinedModelParams.mass;
+
+   typename DiffusiveTerm::ParamsType diffusiveTermsParams( refinedModelParams );
+   typename ViscousTerm::ParamsType viscousTermsParams( refinedModelParams );
+   typename EOS::ParamsType eosParams( refinedModelParams );
+
+   /* FLUID (SOURCE) FIELD ARRAYS */
+   const auto view_points_fluid = fluid->getParticles()->getPoints().getConstView();
+   const auto view_rho_fluid = fluid->getVariables()->rho.getConstView();
+   const auto view_v_fluid = fluid->getVariables()->v.getConstView();
+
+   /* BUFFER FIELD ARRAYS */
+   const auto view_points_buffer = openBoundary->getParticles()->getPoints().getConstView();
+   const auto view_rho_buffer = openBoundary->getVariables()->rho.getConstView();
+   const auto view_v_buffer = openBoundary->getVariables()->v.getConstView();
+   auto view_Drho_buffer = openBoundary->getVariables()->drho.getView();
+   auto view_a_buffer = openBoundary->getVariables()->a.getView();
+   auto view_gamma_buffer = openBoundary->getVariables()->gamma.getView();
+
+   const auto layerPredicate = openBoundary->getLayerPredicate();
+
+   auto BufferFluid = [ = ] __cuda_callable__( LocalIndexType i,
+                                               LocalIndexType j,
+                                               VectorType & r_i,
+                                               VectorType & v_i,
+                                               RealType & rho_i,
+                                               RealType & p_i,
+                                               RealType * drho_i,
+                                               VectorType * a_i,
+                                               RealType * gamma_i ) mutable
+   {
+      const VectorType r_j = view_points_fluid[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius ) {
+         const VectorType v_j = view_v_fluid[ j ];
+         const RealType rho_j = view_rho_fluid[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
+         const VectorType v_ij = v_i - v_j;
+
+         // there is reason why is the gradient and volume merged and written this way
+         const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
+
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
+         const RealType diffTerm = psi * ( r_ij, gradWV_j );
+         *drho_i += rho_i * ( v_ij, gradWV_j ) - diffTerm;
+
+         const VectorType grad_p = PressureGradient::grad_p( p_i, p_j, gradWV_j );
+         const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradWV_j, viscousTermsParams );
+         *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
+
+         *gamma_i += KernelFunction::W( drs, h ) * m / rho_j;
+      }
+   };
+
+   auto BufferBuffer = [ = ] __cuda_callable__( LocalIndexType i,
+                                                LocalIndexType j,
+                                                VectorType & r_i,
+                                                VectorType & v_i,
+                                                RealType & rho_i,
+                                                RealType & p_i,
+                                                RealType * drho_i,
+                                                VectorType * a_i,
+                                                RealType * gamma_i ) mutable
+   {
+      const VectorType r_j = view_points_buffer[ j ];
+      const VectorType r_ij = r_i - r_j;
+      const RealType drs = l2Norm( r_ij );
+      if( drs <= searchRadius ) {
+         const VectorType v_j = view_v_buffer[ j ];
+         const RealType rho_j = view_rho_buffer[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
+         const VectorType v_ij = v_i - v_j;
+
+         const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
+
+         const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
+         const RealType diffTerm = psi * ( r_ij, gradWV_j );
+         *drho_i += rho_i * ( v_ij, gradWV_j ) - diffTerm;
+
+         const VectorType grad_p = PressureGradient::grad_p( p_i, p_j, gradWV_j );
+         const VectorType visco_term = ViscousTerm::Pi( drs, r_ij, v_ij, rho_i, rho_j, gradWV_j, viscousTermsParams );
+         *a_i += ( -1.0f / rho_i ) * grad_p + visco_term;
+
+         *gamma_i += KernelFunction::W( drs, h ) * m / rho_j;
+      }
+   };
+
+   auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   {
+      const VectorType r_i = view_points_buffer[ i ];
+      if( ! layerPredicate.isInLayer1( r_i ) )
+         return;
+
+      const VectorType v_i = view_v_buffer[ i ];
+      const RealType rho_i = view_rho_buffer[ i ];
+      const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
+
+      VectorType a_i = 0.f;
+      RealType drho_i = 0.f;
+      RealType gamma_i = 0.f;
+
+      Particles::NeighborsLoopAnotherSet::exec(
+         i, r_i, searchInFluid, BufferFluid, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+      Particles::NeighborsLoop::exec(
+         i, r_i, searchInOpenBoundary, BufferBuffer, v_i, rho_i, p_i, &drho_i, &a_i, &gamma_i );
+
+      view_Drho_buffer[ i ] = drho_i;
+      view_a_buffer[ i ] = a_i;
+      view_gamma_buffer[ i ] = gamma_i;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), particleLoop );
+}
+
+template< typename Particles, typename ModelConfig >
+template< typename OpenBoudaryPointer >
+void
+WCSPH_BI< Particles, ModelConfig >::finalizeInteractionActiveBufferLayer( OpenBoudaryPointer& openBoundary,
+                                                                         ModelParams& modelParams )
+{
+   const VectorType gravity = modelParams.gravity;
+
+   auto view_Drho = openBoundary->getVariables()->drho.getView();
+   auto view_a = openBoundary->getVariables()->a.getView();
+   auto view_gamma = openBoundary->getVariables()->gamma.getView();
+   const auto view_points = openBoundary->getParticles()->getPoints().getConstView();
+
+   const auto layerPredicate = openBoundary->getLayerPredicate();
+
+   auto finalizeInteractionConsistent = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   {
+      if( ! layerPredicate.isInLayer1( view_points[ i ] ) )
+         return;
+      const RealType gamma_i = view_gamma[ i ];
+      if( gamma_i > 0.01f ) {
+         view_Drho[ i ] = view_Drho[ i ] / gamma_i;
+         view_a[ i ] = view_a[ i ] / gamma_i + gravity;
+      }
+      else {
+         view_Drho[ i ] = 0.f;
+         view_a[ i ] = 0.f + gravity;
+      }
+   };
+
+   auto finalizeInteractionConservative = [ = ] __cuda_callable__( LocalIndexType i ) mutable
+   {
+      if( ! layerPredicate.isInLayer1( view_points[ i ] ) )
+         return;
+      view_a[ i ] += gravity;
+   };
+
+   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > )
+      Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), finalizeInteractionConsistent );
+   else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric > )
+      Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), finalizeInteractionConservative );
+}
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoudaryPointer >
 void

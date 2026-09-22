@@ -65,6 +65,7 @@ _this_dir     = Path(__file__).parent
 _configs_dir  = _this_dir / "testConfigurations"
 _test_dir_2d  = _configs_dir / "dummyMultiresolutionSimulation2D"
 _test_dir_3d  = _configs_dir / "dummyMultiresolutionSimulation3D"
+_test_dir_lts = _configs_dir / "dummyMultiresolutionLTSSimulation2D"
 _default_tests_yaml = _this_dir / "tests.yaml"
 
 sys.path.insert(0, str(_configs_dir))
@@ -80,8 +81,26 @@ def _dim_for_config(config_name: str) -> int:
     return CONFIGURATIONS[config_name]["dimension"]
 
 
+def _is_lts_config(config_name: str) -> bool:
+    return CONFIGURATIONS[config_name].get("timestepping") == "local"
+
+
 def _dir_for_config(config_name: str) -> Path:
+    if _is_lts_config(config_name):
+        return _test_dir_lts
     return _DIM_DIRS[_dim_for_config(config_name)]
+
+
+def _init_script_for_config(config_name: str) -> str:
+    if _is_lts_config(config_name):
+        return "init_ltsdmr_configuration.py"
+    return _DIM_INIT_SCRIPTS[_dim_for_config(config_name)]
+
+
+def _run_script_for_config(config_name: str) -> str:
+    if _is_lts_config(config_name):
+        return "run.py"
+    return _DIM_RUN_SCRIPTS[_dim_for_config(config_name)]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -271,9 +290,8 @@ def _subprocess_run(cmd: list, cwd: Path, label: str):
 
 def do_init(config_name: Optional[str] = None):
     if config_name:
-        dim = _dim_for_config(config_name)
-        test_dir = _DIM_DIRS[dim]
-        script = test_dir / _DIM_INIT_SCRIPTS[dim]
+        test_dir = _dir_for_config(config_name)
+        script = test_dir / _init_script_for_config(config_name)
         cmd = [sys.executable, str(script), "--config-name", config_name]
         _subprocess_run(cmd, test_dir, f"Initializing {config_name}")
     else:
@@ -281,13 +299,15 @@ def do_init(config_name: Optional[str] = None):
             script = test_dir / _DIM_INIT_SCRIPTS[dim]
             cmd = [sys.executable, str(script), "--all"]
             _subprocess_run(cmd, test_dir, f"Initializing all {dim}D configurations")
+        lts_script = _test_dir_lts / "init_ltsdmr_configuration.py"
+        cmd = [sys.executable, str(lts_script), "--all"]
+        _subprocess_run(cmd, _test_dir_lts, "Initializing all LTS configurations")
 
 
 def do_run(config_name: Optional[str] = None):
     if config_name:
-        dim = _dim_for_config(config_name)
-        test_dir = _DIM_DIRS[dim]
-        script = test_dir / _DIM_RUN_SCRIPTS[dim]
+        test_dir = _dir_for_config(config_name)
+        script = test_dir / _run_script_for_config(config_name)
         cmd = [sys.executable, str(script), "--config-name", config_name]
         _subprocess_run(cmd, test_dir, f"Running {config_name}")
     else:
@@ -295,6 +315,9 @@ def do_run(config_name: Optional[str] = None):
             script = test_dir / _DIM_RUN_SCRIPTS[dim]
             cmd = [sys.executable, str(script), "--all"]
             _subprocess_run(cmd, test_dir, f"Running all {dim}D configurations")
+        lts_script = _test_dir_lts / "run.py"
+        cmd = [sys.executable, str(lts_script), "--all"]
+        _subprocess_run(cmd, _test_dir_lts, "Running all LTS configurations")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
