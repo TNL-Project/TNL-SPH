@@ -64,26 +64,33 @@ public:
    int
    getLevelOverlapWidth( int idx ) const;
 
-    /* Per-level step primitives driven from the case exec loop. coarse/fine indices
-      follow the subdomain order; levelSubsteps[i] gives the number of steps level i
-      takes per global (coarsest) step, levelTimeStepping[i] its time-stepping state. */
-    void
-    interactCoarseLevel( int coarseIdx );
+   /* Per-level step primitives driven from the case exec loop. coarse/fine indices
+     follow the subdomain order; levelSubsteps[i] gives the number of steps level i
+     takes per global (coarsest) step, levelTimeStepping[i] its time-stepping state. */
+   void
+   interactCoarseLevel( int coarseIdx );
 
-    void
-    interactFineSubstep( int fineIdx, bool computeActiveLayer );
+   void
+   interactFineSubstep( int fineIdx, bool computeActiveLayer );
 
-    void
-    integrateLevel( int idx );
+   void
+   integrateLevel( int idx );
 
-    /* Buffer operations restricted to the interface whose finer side is fineLevelIdx
-      (a chain of N zones creates N-1 interfaces; the band of iface(i,i+1) follows the
-      clock of level i+1). */
-    void
-    advectSubstepBuffers( RealType dt, bool skipLayer1, int fineLevelIdx );
+   /* Buffer operations restricted to the interface whose finer side is fineLevelIdx
+     (a chain of N zones creates N-1 interfaces; the band of iface(i,i+1) follows the
+     clock of level i+1). */
+   void
+   advectSubstepBuffers( RealType dt, bool skipLayer1, int fineLevelIdx );
 
-    void
-    integrateBuffersLayer1( RealType dt, bool useEulerRestart, int fineLevelIdx );
+   void
+   integrateBuffersLayer1( RealType dt, bool useEulerRestart, int fineLevelIdx );
+
+   /* v1.5 midpoint scheme: blend the fine-side band state of the interface clocked by
+     fineLevelIdx with a fresh interpolation from its coarser neighbor (which has
+     advanced to the end of the coarse window already). Rebuilds the neighbor's search
+     structure first - its particles moved since the last sync. */
+   void
+   midpointUpdateBuffers( RealType theta, int fineLevelIdx );
 
    void
    accumulateInterfaceMassesFromNeighbor( int neighborIdx, RealType dt );
@@ -114,3 +121,4 @@ public:
 } // namespace TNL
 
 #include "SolverMultiSetBlockMultiresolutionLocalTimestepping.hpp"
+

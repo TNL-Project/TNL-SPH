@@ -63,8 +63,14 @@ configSetup( TNL::Config::ConfigDescription& config,
    config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
    config.addEntry< std::string >( "subdomains", "Inline subdomains config as a JSON object. Used when subdomains-config is empty.", "" );
    config.addEntry< std::string >( "boundary-ghost-method", "Update method for boundary ghost particles at multiresolution interfaces.", "interpolation" );
-       config.addEntryEnum( "interpolation" );
-       config.addEntryEnum( "direct-from-source" );
+        config.addEntryEnum( "interpolation" );
+        config.addEntryEnum( "direct-from-source" );
+
+   config.addEntry< std::string >( "lts-mode", "Local timestepping boundary schedule: v1 (active layer-1 band pass) or v1.5 (midpoint boundary refresh).", "v1" );
+        config.addEntryEnum( "v1" );
+        config.addEntryEnum( "v1.5" );
+        config.addEntryEnum( "midpoint" );
+   config.addEntry< double >( "lts-theta", "v1.5 boundary blend factor: 0 = frozen sync-time boundary, 1 = fully current neighbor state.", 0.5 );
 
    // distributed simulation parameters
    config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );

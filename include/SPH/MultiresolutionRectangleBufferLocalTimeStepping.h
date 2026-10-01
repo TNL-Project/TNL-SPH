@@ -701,6 +701,102 @@ public:
                                                           + numberOfInvalidBufferParticles );
    }
 
+   /* Midpoint refresh of the band variables for the v1.5 scheme. Interpolates rho and v
+      from the neighbor fluid - which has already advanced to the end of the current
+      coarse time window - and blends them with the sync-time anchors stored in
+      rho_old/v_old (set by initializeIntegratorVariables at the last sync point):
+         q <- theta * q_interp( now ) + ( 1 - theta ) * q_anchor( sync ).
+      Positions are not changed - the band particles have advected to their midpoint
+      positions with the fine level during the first substep. No particle is created,
+      converted or removed here (membership changes happen only at sync points):
+      particles without interpolation support simply keep their current values. */
+   template< typename FluidPointer, typename ModelParams >
+   void
+   updateVariablesMidpoint( FluidPointer& fluid_neihgbor, ModelParams& modelParams, const RealType theta )
+   {
+      auto searchInFluid = this->getParticles()->getSearchToken( fluid_neihgbor->getParticles() );
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+
+      auto view_points_overlap = this->getParticles()->getPoints().getView();
+      auto view_rho_overlap = this->getVariables()->rho.getView();
+      auto view_v_overlap = this->getVariables()->v.getView();
+      const auto view_rho_anchor = this->getIntegratorVariables()->rho_old.getConstView();
+      const auto view_v_anchor = this->getIntegratorVariables()->v_old.getConstView();
+      const auto view_points_fluid = fluid_neihgbor->getParticles()->getPoints().getConstView();
+      const auto view_rho_fluid = fluid_neihgbor->getVariables()->rho.getConstView();
+      const auto view_v_fluid = fluid_neihgbor->getVariables()->v.getConstView();
+
+      const unsigned int dim = SPHCaseConfig::spaceDimension;
+      const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius();
+      const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+      const RealType h = refinementFactor * modelParams.h;
+      const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+      const RealType blend = theta;
+      const RealType keep = 1.f - theta;
+
+      auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
+                                                       IndexType j,
+                                                       VectorType & r_x,
+                                                       MfdMatrixType * M_x,
+                                                       MfdVectorType * brho_x,
+                                                       MfdVectorPackType * bv_x ) mutable
+      {
+         const VectorType r_j = view_points_fluid[ j ];
+         const VectorType r_xj = r_x - r_j;
+         const RealType drs = l2Norm( r_xj );
+         if( drs <= searchRadius ) {
+            const RealType rho_j = view_rho_fluid[ j ];
+            const VectorType v_j = view_v_fluid[ j ];
+            const RealType V_j = m / rho_j;
+
+            *M_x += MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
+            const MfdVectorType b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
+            *brho_x += rho_j * b_x;
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               ( *bv_x )[ d ] += v_j[ d ] * b_x;
+         }
+      };
+
+      auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
+      {
+         const VectorType r_x = view_points_overlap[ i ];
+         MfdMatrixType M_x = 0.f;
+         MfdVectorType brho_x = 0.f;
+         MfdVectorPackType bv_x;
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            bv_x[ d ] = 0.f;
+
+         ParticlesType::NeighborsLoop::exec( i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x );
+
+         RealType rho_x;
+         VectorType v_x;
+
+         //TODO: Use LU Decomposition so we can just reuse it different RHS
+         //TODO: Proper condition should be if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold )
+         const RealType detM = Matrices::determinant( M_x );
+         if( M_x( 0, 0 ) > 0.05 && detM > 0.001f ) {
+            rho_x = Matrices::solve( M_x, brho_x )[ 0 ];
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               v_x[ d ] = Matrices::solve( M_x, bv_x[ d ] )[ 0 ];
+
+            view_rho_overlap[ i ] = blend * rho_x + keep * view_rho_anchor[ i ];
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               view_v_overlap[ i ][ d ] = blend * v_x[ d ] + keep * view_v_anchor[ i ][ d ];
+         }
+         else if( M_x( 0, 0 ) > 0.05f ) {
+            rho_x = brho_x[ 0 ] / M_x( 0, 0 );
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               v_x[ d ] = bv_x[ d ][ 0 ] / M_x( 0, 0 );
+
+            view_rho_overlap[ i ] = blend * rho_x + keep * view_rho_anchor[ i ];
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               view_v_overlap[ i ][ d ] = blend * v_x[ d ] + keep * view_v_anchor[ i ][ d ];
+         }
+         // else: no interpolation support - keep the current state until the next sync
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, particleLoop );
+   }
+
    /*
       template< typename FluidPointer, typename ModelParams >
       void

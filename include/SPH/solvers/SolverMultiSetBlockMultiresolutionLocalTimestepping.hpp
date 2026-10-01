@@ -326,8 +326,24 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateBuffersLa
 
 template< typename Model >
 void
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::midpointUpdateBuffers( RealType theta, int fineLevelIdx )
+{
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
+      const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
+      const int finerIdx = getLevelRefinementFactor( iface.ownIdx ) < getLevelRefinementFactor( iface.neighborIdx )
+                              ? iface.ownIdx : iface.neighborIdx;
+      if( finerIdx != fineLevelIdx || iface.ownIdx != finerIdx )
+         continue;
+      this->fluidSets[ iface.neighborIdx ]->searchForNeighbors();
+      multiresolutionBoundaryPatchesLTS[ p ]->updateVariablesMidpoint(
+            this->fluidSets[ iface.neighborIdx ], this->modelParams, theta );
+   }
+}
+
+template< typename Model >
+void
 SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::accumulateInterfaceMassesFromNeighbor( int neighborIdx,
-                                                                                                     RealType dt )
+                                                                                                      RealType dt )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
       if( this->multiresolutionBoundaryPatchInterfaces[ p ].neighborIdx == neighborIdx )
