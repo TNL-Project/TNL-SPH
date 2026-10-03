@@ -576,19 +576,22 @@ public:
          VectorType v_x = 0.f;
 
          //TODO: Use LU Decomposition so we can just reuse it different RHS
-         //TODO: Proper condition should be if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold )
-         if( M_x( 0, 0 ) > 0.05 ) {
+         // Same conditioning as in interpolateVariables: a sparse one-sided
+         // support makes M singular and solve() then poisons the mass node
+         // with Inf/NaN - the NaN mass would never spawn again
+         const RealType detM = Matrices::determinant( M_x );
+         if( M_x( 0, 0 ) > 0.05 && detM > 0.001f ) {
             rho_x = Matrices::solve( M_x, brho_x )[ 0 ];
             for( int d = 0; d < VectorType::getSize(); d++ )
                v_x[ d ] = Matrices::solve( M_x, bv_x[ d ] )[ 0 ];
          }
-         else if( M_x( 0, 0 ) > 0.f ) {
+         else if( M_x( 0, 0 ) > 0.05f ) {
             rho_x = brho_x[ 0 ] / M_x( 0, 0 );
             for( int d = 0; d < VectorType::getSize(); d++ )
                v_x[ d ] = bv_x[ d ][ 0 ] / M_x( 0, 0 );
          }
          else {
-            // TODO: not sure what to do here
+            // no reliable support - keep rho_x = 0, v_x = 0 (zero flux)
          }
 
          // Ricci et al. uses (-1) * rho, but I think I have different normal orientation
@@ -693,15 +696,16 @@ public:
             return 0;
          }
          else {
-            // FIXME: not sure what to do here, right now, I remove the particle
-            view_points_overlap[ i ] = FLT_MAX;
+            // dry support: keep the last (captured / creation-initialized) values.
+            // Deleting the buffer particle here absorbs the mass that crosses the
+            // interface and the dry side of the face never seeds; the particle keeps
+            // its values until the neighbor fluid shows up and refreshes them.
             return 1;
          }
       };
-      const IndexType numberOfInvalidBufferParticles =
+      const IndexType numberOfDryBufferParticles =
          Algorithms::reduce< DeviceType >( 0, numberOfBufferParticles, particleLoop );
-      this->getParticles()->setNumberOfParticlesToRemove( this->getParticles()->getNumberOfParticlesToRemove()
-                                                          + numberOfInvalidBufferParticles );
+      (void) numberOfDryBufferParticles;
    }
 
    /* Midpoint refresh of the band variables for the v1.5 scheme. Interpolates rho and v
@@ -1022,17 +1026,24 @@ public:
    createBufferParticles( ModelParams& modelParams )
    {
       auto r_buffer_view = this->getParticles()->getPoints().getView();
+      auto v_buffer_view = this->getVariables()->v.getView();
+      auto rho_buffer_view = this->getVariables()->rho.getView();
       const auto r_massNodes_view = this->massNodes.points.getConstView();
       const auto normal_massNodes_view = this->massNodes.normal.getConstView();
 
       const IndexType numberOfBufferPtcs = this->getParticles()->getNumberOfParticles();
       const RealType refinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
       const RealType dp = refinementFactor * modelParams.dp;
+      const RealType rho0 = modelParams.rho0;
 
       auto createNewBufferParticles = [ = ] __cuda_callable__( int i ) mutable
       {
          const VectorType r_new = r_massNodes_view[ i ] + ( 0.5f * dp ) * normal_massNodes_view[ i ];
          r_buffer_view[ numberOfBufferPtcs + i ] = r_new;
+         // initialize values so a failed first interpolation keeps sane
+         // last values instead of uninitialized memory
+         rho_buffer_view[ numberOfBufferPtcs + i ] = rho0;
+         v_buffer_view[ numberOfBufferPtcs + i ] = 0.f;
       };
       Algorithms::parallelFor< DeviceType >( 0, this->numberOfPtcsToCreate, createNewBufferParticles );
       this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + this->numberOfPtcsToCreate );
