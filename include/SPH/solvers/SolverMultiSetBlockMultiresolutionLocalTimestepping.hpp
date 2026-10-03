@@ -244,8 +244,6 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interactCoarseLeve
    this->model.updateSolidBoundary( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
    this->model.finalizeBoundaryInteraction( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
 
-   this->refreshBoundaryGhostValues();
-
    this->model.interaction( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
       if( this->multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == coarseIdx )

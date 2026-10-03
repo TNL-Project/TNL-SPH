@@ -39,6 +39,9 @@ void execV1( Simulation& sph )
       sph.removeParticlesOutOfDomain();
       sph.performNeighborSearch();
 
+      // boundary ghosts are part of the sync-time boundary state, frozen for the whole window
+      sph.refreshBoundaryGhostValues();
+
       // coarsest level: single step spanning the whole window
       sph.interactCoarseLevel( 0 );
       BoundaryCorrection::boundaryCorrection( sph.fluidSets[ 0 ], sph.boundarySets[ 0 ], sph.modelParams,
@@ -73,9 +76,12 @@ void execV1( Simulation& sph )
       };
       advanceLevel( 1, sph.levelSubsteps[ 1 ] );
 
+
+
+      sph.makeSnapshot();
       // sync-point buffer lifecycle, then output and bookkeeping at the coarse clock
       sph.syncMultiresolutionUpdate();
-      sph.makeSnapshot();
+      //sph.makeSnapshot();
 
       massMonitor.sumTotalMass( sph.fluidSets );
       massMonitor.output( sph.outputDirectory + "/massConservation.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );
@@ -111,6 +117,9 @@ void execMidpoint( Simulation& sph, const typename Simulation::RealType theta )
          TNL::SPH::customFunctions::removeParticlesOutOfDensityLimits( sph.fluidSets[ i ], sph.modelParams );
       sph.removeParticlesOutOfDomain();
       sph.performNeighborSearch();
+
+      // boundary ghosts are part of the sync-time boundary state, frozen for the whole window
+      sph.refreshBoundaryGhostValues();
 
       // coarsest level: single step spanning the whole window
       sph.interactCoarseLevel( 0 );
@@ -148,8 +157,9 @@ void execMidpoint( Simulation& sph, const typename Simulation::RealType theta )
       advanceLevel( 1, sph.levelSubsteps[ 1 ] );
 
       // sync-point buffer lifecycle, then output and bookkeeping at the coarse clock
-      sph.syncMultiresolutionUpdate();
       sph.makeSnapshot();
+      sph.syncMultiresolutionUpdate();
+      //sph.makeSnapshot();
 
       massMonitor.sumTotalMass( sph.fluidSets );
       massMonitor.output( sph.outputDirectory + "/massConservation.dat", sph.timeStepping.getStep(), sph.timeStepping.getTime() );

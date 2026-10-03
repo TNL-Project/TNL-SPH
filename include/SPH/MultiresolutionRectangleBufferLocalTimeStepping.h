@@ -137,8 +137,11 @@ public:
       //TODO: I dont like the "over-offset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
-         zoneOrigin =
-            getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates() + 2;
+         // with-overlap shift (own fluid overlap width) + one-cell inset into the frame,
+         // so the capture ring covers one cell inside the frame on every face for any
+         // overlap width (base's literal +2 is the special case for overlap width 1)
+         zoneOrigin = getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates()
+                    + ownParticles->getOverlapWidth() + 1;
          zoneDimensions = getFrameFrontDimensions() - 2;
       }
       if( outer_overlap ) {
@@ -146,7 +149,7 @@ public:
          zoneOrigin = 2 + ownParticles->getOverlapWidth();
          zoneDimensions = getFrameFrontDimensions() - 4;
       }
-      zone.assignCellsFrame( zoneOrigin, zoneDimensions, frameWidth + ownParticles->getOverlapWidth(), ownDimsWithOverlap );
+      zone.assignCellsFrame( zoneOrigin, zoneDimensions, frameWidth + 1, ownDimsWithOverlap );
       //---------------
       const std::string outputFilename = "results/zone_L" + std::to_string( int( 1 / refinementFraction ) ) + ".vtk";
       zone.saveZoneToVTK( outputFilename,
