@@ -147,6 +147,13 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBas
         }
      }
 
+     /* Seed the midpoint anchors for any pre-seeded buffer particles: the first
+        midpointUpdateBuffers runs before the first sync, and would otherwise blend
+        with uninitialized rho_old/v_old (TNL arrays do not construct fundamental
+        types on resize). No-op for patches with zero particles. */
+     for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
+        multiresolutionBoundaryPatchesLTS[ p ]->initializeIntegratorVariables();
+
      this->initBoundaryGhosts();
 
     log.writeSeparator();
