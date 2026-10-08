@@ -20,14 +20,17 @@ namespace TNL {
 namespace SPH {
 
 /**
- * \brief Multiresolution buffer patch for local timestepping (LTS), see
- * Documentation/multiresolution-local-timestepping.md. The band width follows the patch's
- * own ParticleSet overlap width: an intermediate frame frameMid splits the band into
- * layer 1 (frameMid XOR frameFront - dynamically advanced with the fine fluid) and
- * layer 2 (frameBack XOR frameMid - passive BC). With overlap width 1, layer 1 is empty
- * and the patch reduces to the single-timestep behavior. The update is staged:
- * accumulateMasses() per substep, integrateLayer1()/advectBufferParticles() per substep,
- * syncUpdateInterfaceBuffer() at sync points (no advection, no accumulation there).
+ * \brief Multiresolution buffer patch for local timestepping (LTS, schedule v2).
+ *
+ * The band width follows the patch's own ParticleSet overlap width: an intermediate
+ * frame frameMid splits the band into layer 1 (frameMid XOR frameFront) and layer 2
+ * (frameBack XOR frameMid - passive BC). With overlap width 1, layer 1 is empty and the
+ * patch reduces to the single-timestep behavior. The update is staged:
+ * accumulateMasses() per substep, advectBufferParticles() per substep (both layers
+ * drift ballistically), refreshVariablesFromNeighbor() to re-ground the band state
+ * from the coarser neighbor at level-clock coincidences/midpoints, and
+ * syncUpdateInterfaceBuffer() at sync points only (no advection, no accumulation,
+ * no membership change elsewhere in the window).
  */
 template< typename ParticlesType,
           typename SPHCaseConfig,
@@ -708,18 +711,18 @@ public:
       (void) numberOfDryBufferParticles;
    }
 
-   /* Midpoint refresh of the band variables for the v1.5 scheme. Interpolates rho and v
-      from the neighbor fluid - which has already advanced to the end of the current
-      coarse time window - and blends them with the sync-time anchors stored in
-      rho_old/v_old (set by initializeIntegratorVariables at the last sync point):
-         q <- theta * q_interp( now ) + ( 1 - theta ) * q_anchor( sync ).
-      Positions are not changed - the band particles have advected to their midpoint
-      positions with the fine level during the first substep. No particle is created,
-      converted or removed here (membership changes happen only at sync points):
-      particles without interpolation support simply keep their current values. */
-   template< typename FluidPointer, typename ModelParams >
-   void
-   updateVariablesMidpoint( FluidPointer& fluid_neihgbor, ModelParams& modelParams, const RealType theta )
+   /* Band state refresh from the coarser neighbor (LTS schedule v2). Interpolates rho
+      and v from the neighbor fluid - which has already advanced - and blends them with
+      the past-endpoint anchors stored in rho_old/v_old (sync-time state, or the state
+      re-stamped at the last clock coincidence):
+         q <- theta * q_interp( now ) + ( 1 - theta ) * q_anchor.
+      theta = 1 is the exact coincidence refresh. Positions are not changed - the band
+      particles have advected to their current positions with the fine level. No
+      particle is created, converted or removed here (membership changes happen only at
+      sync points): particles without interpolation support keep their current values. */
+    template< typename FluidPointer, typename ModelParams >
+    void
+    refreshVariablesFromNeighbor( FluidPointer& fluid_neihgbor, ModelParams& modelParams, const RealType theta )
    {
       auto searchInFluid = this->getParticles()->getSearchToken( fluid_neihgbor->getParticles() );
       const IndexType numberOfBufferParticles = this->getNumberOfParticles();
@@ -839,24 +842,20 @@ public:
    void
    moveBufferParticles( const RealType dt )
    {
-      advectBufferParticles( dt, false );
+      advectBufferParticles( dt );
       classifyParticlesByFrames();
    }
 
-   /* Ballistic advection; skipLayer1 leaves layer 1 in place - it is advanced by
-      integrateLayer1 instead. */
+   /* Ballistic advection of the whole band (both layers drift with their current velocity). */
    void
-   advectBufferParticles( const RealType dt, const bool skipLayer1 )
+   advectBufferParticles( const RealType dt )
    {
       auto view_r_buffer = this->getParticles()->getPoints().getView();
       const auto view_v_buffer = this->getVariables()->v.getConstView();
       const IndexType n_buffer = this->getParticles()->getNumberOfParticles();
-      const LayerPredicate layerPredicate = getLayerPredicate();
 
       auto advectBufferParticles = [ = ] __cuda_callable__( int i ) mutable
       {
-         if( skipLayer1 && layerPredicate.isInLayer1( view_r_buffer[ i ] ) )
-            return;
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
       };
       Algorithms::parallelFor< DeviceType >( 0, n_buffer, advectBufferParticles );
@@ -1170,57 +1169,7 @@ public:
       return nOutOfGrid;
    }
 
-   /* Verlet integration of layer 1 with the same scheme math as the fluid
-      (WCSPH_BI IntegrationSchemes::VerletScheme), but with per-element old/new exchange
-      instead of the whole-array swap. useEulerRestart mirrors the scheme's every-20-steps
-      restart (driven by the fine level's own time step counter). Requires drho/a computed
-      by the active interaction pass and consistent rho_old/v_old for new particles
-      (initializeIntegratorVariables at the sync point). */
-   void
-   integrateLayer1( const RealType dt, const bool useEulerRestart )
-   {
-      auto view_r = this->getParticles()->getPoints().getView();
-      auto view_v = this->getVariables()->v.getView();
-      auto view_rho = this->getVariables()->rho.getView();
-      auto view_v_old = this->getIntegratorVariables()->v_old.getView();
-      auto view_rho_old = this->getIntegratorVariables()->rho_old.getView();
-      const auto view_a = this->getVariables()->a.getConstView();
-      const auto view_drho = this->getVariables()->drho.getConstView();
 
-      const IndexType n_buffer = this->getParticles()->getNumberOfParticles();
-      const LayerPredicate layerPredicate = getLayerPredicate();
-      const RealType dtdt05 = 0.5f * dt * dt;
-      const RealType dt2 = 2.f * dt;
-
-      auto integrateLayer1Verlet = [ = ] __cuda_callable__( IndexType i ) mutable
-      {
-         if( ! layerPredicate.isInLayer1( view_r[ i ] ) )
-            return;
-         const VectorType v_cur = view_v[ i ];
-         const RealType rho_cur = view_rho[ i ];
-         view_r[ i ] += v_cur * dt + view_a[ i ] * dtdt05;
-         view_v[ i ] = view_v_old[ i ] + view_a[ i ] * dt2;
-         view_v_old[ i ] = v_cur;
-         view_rho[ i ] = view_rho_old[ i ] + view_drho[ i ] * dt2;
-         view_rho_old[ i ] = rho_cur;
-      };
-      auto integrateLayer1Euler = [ = ] __cuda_callable__( IndexType i ) mutable
-      {
-         if( ! layerPredicate.isInLayer1( view_r[ i ] ) )
-            return;
-         const VectorType v_cur = view_v[ i ];
-         const RealType rho_cur = view_rho[ i ];
-         view_r[ i ] += v_cur * dt + view_a[ i ] * dtdt05;
-         view_v_old[ i ] = v_cur;
-         view_v[ i ] = v_cur + view_a[ i ] * dt;
-         view_rho_old[ i ] = rho_cur;
-         view_rho[ i ] = rho_cur + view_drho[ i ] * dt;
-      };
-      if( useEulerRestart )
-         Algorithms::parallelFor< DeviceType >( 0, n_buffer, integrateLayer1Euler );
-      else
-         Algorithms::parallelFor< DeviceType >( 0, n_buffer, integrateLayer1Verlet );
-   }
 
    /* New buffer particles (spawned or captured) inherit consistent old-state for the
       Verlet kick of the next cycle, same convention as convertBufferToFluid. */
@@ -1315,48 +1264,7 @@ public:
       return frameDimensions + 2 * ( this->getParticles()->getOverlapWidth() - 1 ) * frameOrientation;
    }
 
-   /* POD band-layer classifier, copiable into device lambdas and usable from other
-      classes (the active interaction pass in the model). */
-   struct LayerPredicate
-   {
-      CoordinatesType frontOrigin, frontDims, midOrigin, midDims, backOrigin, backDims;
-      VectorType refOrig;
-      RealType inv_sr;
 
-      __cuda_callable__
-      bool
-      isInLayer1( const VectorType& r ) const
-      {
-         const CoordinatesType iGlob = TNL::floor( ( r - refOrig ) * inv_sr );
-         const bool inFront = MultiresolutionBoundaryLTS::isInsideBox( iGlob - frontOrigin, frontDims );
-         const bool inMid = MultiresolutionBoundaryLTS::isInsideBox( iGlob - midOrigin, midDims );
-         return inFront != inMid;
-      }
-
-      __cuda_callable__
-      bool
-      isInLayer2( const VectorType& r ) const
-      {
-         const CoordinatesType iGlob = TNL::floor( ( r - refOrig ) * inv_sr );
-         const bool inMid = MultiresolutionBoundaryLTS::isInsideBox( iGlob - midOrigin, midDims );
-         const bool inBack = MultiresolutionBoundaryLTS::isInsideBox( iGlob - backOrigin, backDims );
-         return inMid != inBack;
-      }
-   };
-
-   [[nodiscard]] LayerPredicate
-   getLayerPredicate() const
-   {
-      const RealType sr = this->getParticles()->getSearchRadius();
-      return { getFrameFrontOriginGlobalCoordinates(),
-               getFrameFrontDimensions(),
-               getFrameMidOriginGlobalCoordinates(),
-               getFrameMidDimensions(),
-               getFrameBackOriginGlobalCoordinates(),
-               getFrameBackDimensions(),
-               this->getParticles()->getReferentialOrigin(),
-               1.f / sr };
-   }
 
    void
    writeProlog( TNL::Logger& logger, const int subdomainIdx )

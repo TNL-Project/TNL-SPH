@@ -61,8 +61,10 @@ public:
       config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
       config.addEntry< double >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
       config.addEntry< double >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
-      config.addEntry< double >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
-      // parameters of midpoint integration scheme
+       config.addEntry< double >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
+       // parameters of local-timestepping multiresolution band refresh
+       config.addEntry< double >( "lts-theta", "LTS band blend factor for the midpoint state refresh: 0 = keep the sync-time anchor state, 1 = fully current neighbor state.", 0.5 );
+       // parameters of midpoint integration scheme
       config.addEntry< int >( "midpointMaxInterations", "Number of alowed midpoint iterations.", 30 );
       config.addEntry< double >( "midpointResidualTolerance", "Midpoint iteration residual threshold.", 1e-5 );
       config.addEntry< double >( "midpointRelaxCoef", "Midpoint relaxation coefficient.", 0.f );
@@ -98,8 +100,9 @@ public:
       enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
       elasticFactor = parameters.getParameter< double >( "elasticFactor" );
       r_boxFactor = parameters.getParameter< double >( "r_boxFactor" );
-      minimalDistanceFactor = parameters.getParameter< double >( "minimalDistanceFactor" );
-      // parameters of midpoint integration scheme
+       minimalDistanceFactor = parameters.getParameter< double >( "minimalDistanceFactor" );
+       ltsTheta = parameters.getParameter< double >( "lts-theta" );
+       // parameters of midpoint integration scheme
       midpointMaxInterations = parameters.getParameter< int >( "midpointMaxInterations" );
       midpointResidualTolerance = parameters.getParameter< double >( "midpointResidualTolerance" );
       midpointRelaxCoef = parameters.getParameter< double >( "midpointRelaxCoef" );
@@ -187,8 +190,11 @@ public:
    RealType elasticFactor = 1.f;
    //r_box  r_box = r_boxFactor * dp;
    RealType r_boxFactor = 1.5f;
-   //minimalDistanceFactor -
-   RealType minimalDistanceFactor = 0.5f;
+    //minimalDistanceFactor -
+    RealType minimalDistanceFactor = 0.5f;
+
+    //ltsTheta - blend factor of the LTS band state refresh (0 = keep the sync-time anchors, 1 = fully current neighbor state) [-]
+    RealType ltsTheta = 0.5f;
 
    //Type of integration scheme
    using IntegrationScheme = typename SPHDefs::IntegrationScheme;
@@ -307,9 +313,10 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Elastic bounce boundary correction:", "Enabled" );
       logger.writeParameter( "Elastic bounce fact. (elasticFactor):", modelParams.elasticFactor, 1 );
       logger.writeParameter( "Bounce efect area fact. (r_boxFactor):", modelParams.r_boxFactor, 1 );
-      logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
-   }
-   logger.writeParameter( "Time integration", "" );
+    logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
+    }
+    logger.writeParameter( "LTS band blend factor (lts-theta):", modelParams.ltsTheta, 1 );
+    logger.writeParameter( "Time integration", "" );
    if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
                                  IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::VerletScheme", 1 );

@@ -11,10 +11,15 @@ namespace SPH {
  *
  * Levels advance with per-level time steps derived from the refinement-factor ratios
  * (finest level uses the configured time step). The fine side of an interface gets a
- * two-layer buffer band (SolverMultiSetBlockMultiresolutionLocalTimestepping uses
- * MultiresolutionBoundaryLTS patches), the coarse side keeps one layer; the global
- * clock advances with the coarse step and fine substeps are driven from the case
- * (see Documentation/multiresolution-local-timestepping.md for the schedule).
+ * two-layer buffer band (MultiresolutionBoundaryLTS patches), the coarse side keeps
+ * one layer. The global clock advances with the coarse step and fine substeps are
+ * driven from the case exec loop as a Berger-Colella recursion over the levels with
+ * the coarsest level included (see the damBreak2D multiresolution local-timestepping
+ * example for the schedule). Buffer bands drift ballistically during the substeps of
+ * the level that owns them and their state is re-grounded from the coarser neighbor
+ * inside the window (refreshBuffersFromNeighbor): exactly at level-clock coincidences
+ * and as a theta-blend at level-clock midpoints. The full buffer lifecycle runs only
+ * at sync points, when all level clocks coincide again.
  */
 template< typename Model >
 class SolverMultiSetBlockMultiresolutionLocalTimestepping : public SolverMultiSetBlockMultiresolution< Model >
@@ -64,36 +69,43 @@ public:
    int
    getLevelOverlapWidth( int idx ) const;
 
-   /* Per-level step primitives driven from the case exec loop. coarse/fine indices
-     follow the subdomain order; levelSubsteps[i] gives the number of steps level i
-     takes per global (coarsest) step, levelTimeStepping[i] its time-stepping state. */
-   void
-   interactCoarseLevel( int coarseIdx );
+    /* Per-level step primitives driven from the case exec loop. Level indices follow
+      the subdomain order; getNumberOfSubsteps(i) gives the number of substeps level i
+      takes per global (coarsest) step, levelTimeStepping[i] its time-stepping state. */
+    void
+    interact( int subdomainIdx );
 
-   void
-   interactFineSubstep( int fineIdx, bool computeActiveLayer );
+    void
+    integrateLevel( int idx );
 
-   void
-   integrateLevel( int idx );
+    int
+    getNumberOfSubsteps( int level ) const;
 
-   /* Buffer operations restricted to the interface whose finer side is fineLevelIdx
-     (a chain of N zones creates N-1 interfaces; the band of iface(i,i+1) follows the
-     clock of level i+1). */
-   void
-   advectSubstepBuffers( RealType dt, bool skipLayer1, int fineLevelIdx );
+    /* Ballistic advection of the buffer bands restricted to the interface whose finer
+      side is fineLevelIdx (a chain of N zones creates N-1 interfaces; the band of
+      iface(i,i+1) follows the clock of level i+1). Both layers drift. */
+    void
+    advectSubstepBuffers( RealType dt, int fineLevelIdx );
 
-   void
-   integrateBuffersLayer1( RealType dt, bool useEulerRestart, int fineLevelIdx );
+    /* Band state refresh of the interface clocked by fineLevelIdx: interpolates rho
+      and v from the (already advanced) coarser neighbor and blends them with the
+      sync-time anchors kept in rho_old/v_old,
+         q <- theta * q_interp( now ) + ( 1 - theta ) * q_anchor( sync ).
+      theta = 1 is the exact coincidence refresh used when the two level clocks meet
+      inside the window. Rebuilds the neighbor's search structure first - its particles
+      moved since the last sync. */
+    void
+    refreshBuffersFromNeighbor( RealType theta, int fineLevelIdx );
 
-   /* v1.5 midpoint scheme: blend the fine-side band state of the interface clocked by
-     fineLevelIdx with a fresh interpolation from its coarser neighbor (which has
-     advanced to the end of the coarse window already). Rebuilds the neighbor's search
-     structure first - its particles moved since the last sync. */
-   void
-   midpointUpdateBuffers( RealType theta, int fineLevelIdx );
+    /* Re-stamp the band anchors (rho_old/v_old) to the current band state. Called
+      after an exact coincidence refresh so the following midpoint blends stay
+      time-bracketed (the anchor becomes the band state at the coincidence time).
+      Restricted to the fine-side band of the interface clocked by fineLevelIdx. */
+    void
+    stampBuffersAnchor( int fineLevelIdx );
 
-   void
-   accumulateInterfaceMassesFromNeighbor( int neighborIdx, RealType dt );
+    void
+    accumulateInterfaceMassesFromNeighbor( int neighborIdx, RealType dt );
 
    void
    refreshSubstepSearches( int fineIdx );

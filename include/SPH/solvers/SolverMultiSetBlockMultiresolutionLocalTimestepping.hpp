@@ -244,47 +244,19 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initMultiResolutio
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interactCoarseLevel( int coarseIdx )
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interact( int subdomainIdx )
 {
    this->timeMeasurement.start( "interact" );
 
-   this->model.updateSolidBoundary( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
-   this->model.finalizeBoundaryInteraction( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
+   this->model.updateSolidBoundary( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
+   this->model.finalizeBoundaryInteraction( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
 
-   this->model.interaction( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
+   this->model.interaction( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
-      if( this->multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == coarseIdx )
+      if( this->multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == subdomainIdx )
          this->model.interactionWithOpenBoundary(
-               this->fluidSets[ coarseIdx ], multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
-   this->model.finalizeInteraction( this->fluidSets[ coarseIdx ], this->boundarySets[ coarseIdx ], this->modelParams );
-
-   this->timeMeasurement.stop( "interact" );
-}
-
-template< typename Model >
-void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interactFineSubstep( int fineIdx, bool computeActiveLayer )
-{
-   this->timeMeasurement.start( "interact" );
-
-   this->model.updateSolidBoundary( this->fluidSets[ fineIdx ], this->boundarySets[ fineIdx ], this->modelParams );
-   this->model.finalizeBoundaryInteraction( this->fluidSets[ fineIdx ], this->boundarySets[ fineIdx ], this->modelParams );
-
-   this->model.interaction( this->fluidSets[ fineIdx ], this->boundarySets[ fineIdx ], this->modelParams );
-   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
-      if( this->multiresolutionBoundaryPatchInterfaces[ p ].ownIdx != fineIdx )
-         continue;
-      this->model.interactionWithOpenBoundary(
-            this->fluidSets[ fineIdx ], multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
-      if( computeActiveLayer )
-         this->model.interactionActiveBufferLayer(
-               this->fluidSets[ fineIdx ], multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
-   }
-   this->model.finalizeInteraction( this->fluidSets[ fineIdx ], this->boundarySets[ fineIdx ], this->modelParams );
-   if( computeActiveLayer )
-      for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
-         if( this->multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == fineIdx )
-            this->model.finalizeInteractionActiveBufferLayer( multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
+               this->fluidSets[ subdomainIdx ], multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
+   this->model.finalizeInteraction( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
 
    this->timeMeasurement.stop( "interact" );
 }
@@ -300,9 +272,15 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateLevel( in
 }
 
 template< typename Model >
+int
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getNumberOfSubsteps( int level ) const
+{
+   return levelSubsteps[ level ];
+}
+
+template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffers( RealType dt, bool skipLayer1,
-                                                                                    int fineLevelIdx )
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffers( RealType dt, int fineLevelIdx )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
@@ -310,28 +288,13 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffe
                              ? iface.ownIdx : iface.neighborIdx;
       if( finerIdx != fineLevelIdx )
          continue;
-      multiresolutionBoundaryPatchesLTS[ p ]->advectBufferParticles( dt, skipLayer1 );
+      multiresolutionBoundaryPatchesLTS[ p ]->advectBufferParticles( dt );
    }
 }
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateBuffersLayer1( RealType dt, bool useEulerRestart,
-                                                                                      int fineLevelIdx )
-{
-   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
-      const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
-      const int finerIdx = getLevelRefinementFactor( iface.ownIdx ) < getLevelRefinementFactor( iface.neighborIdx )
-                             ? iface.ownIdx : iface.neighborIdx;
-      if( finerIdx != fineLevelIdx )
-         continue;
-      multiresolutionBoundaryPatchesLTS[ p ]->integrateLayer1( dt, useEulerRestart );
-   }
-}
-
-template< typename Model >
-void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::midpointUpdateBuffers( RealType theta, int fineLevelIdx )
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshBuffersFromNeighbor( RealType theta, int fineLevelIdx )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
@@ -340,8 +303,22 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::midpointUpdateBuff
       if( finerIdx != fineLevelIdx || iface.ownIdx != finerIdx )
          continue;
       this->fluidSets[ iface.neighborIdx ]->searchForNeighbors();
-      multiresolutionBoundaryPatchesLTS[ p ]->updateVariablesMidpoint(
+      multiresolutionBoundaryPatchesLTS[ p ]->refreshVariablesFromNeighbor(
             this->fluidSets[ iface.neighborIdx ], this->modelParams, theta );
+   }
+}
+
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::stampBuffersAnchor( int fineLevelIdx )
+{
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
+      const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
+      const int finerIdx = getLevelRefinementFactor( iface.ownIdx ) < getLevelRefinementFactor( iface.neighborIdx )
+                               ? iface.ownIdx : iface.neighborIdx;
+      if( finerIdx != fineLevelIdx || iface.ownIdx != finerIdx )
+         continue;
+      multiresolutionBoundaryPatchesLTS[ p ]->initializeIntegratorVariables();
    }
 }
 

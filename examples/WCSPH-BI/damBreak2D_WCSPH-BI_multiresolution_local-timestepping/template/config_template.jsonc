@@ -95,6 +95,10 @@
     "numberOfSubdomains": placeholderNumberOfSubdomains,
     "subdomains-config": "sources/config-distributed-domain.jsonc",
 
+    // Local timestepping: midpoint blend factor for the multiresolution band state
+    // refresh (0 = keep sync-time anchor state, 1 = fully current neighbor state)
+    "lts-theta": 0.5,
+
     //  Measure tool initialization section
     "interpolation-planes-count": 0,
     "pressure-sensors-count": 4,
