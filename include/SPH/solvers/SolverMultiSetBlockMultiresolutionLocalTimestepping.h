@@ -2,6 +2,7 @@
 
 #include "SolverMultiSetBlockMultiresolution.h"
 #include "../MultiresolutionRectangleBufferLocalTimeStepping.h"
+#include "../TimeStep.h"
 
 namespace TNL {
 namespace SPH {
@@ -80,6 +81,19 @@ public:
 
     int
     getNumberOfSubsteps( int level ) const;
+
+    /* Re-derive the window time step and the per-level steps from the current CFL
+      conditions, one governing step per global window. Every level proposes its own
+      CFL-limited step (with that level's smoothing length), each is converted to the
+      implied finest-level step, the minimum becomes the window's finest step, and all
+      level steps are re-snapped from it with the refinement-factor ratios so that
+      levelSubsteps(i) * dt_i == dt_window holds exactly - the level-clock coincidence
+      the R1/R2 band refreshes and the sync-point buffer lifecycle rely on. The
+      substep counts themselves stay fixed. No-op for ConstantTimeStep (the configured
+      initial steps are kept). Call once per synchronized global step, before the
+      Berger-Colella recursion. */
+    void
+    updateLevelTimeSteps();
 
     /* Ballistic advection of the buffer bands restricted to the interface whose finer
       side is fineLevelIdx (a chain of N zones creates N-1 interfaces; the band of

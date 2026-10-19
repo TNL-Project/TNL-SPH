@@ -280,6 +280,41 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getNumberOfSubstep
 
 template< typename Model >
 void
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::updateLevelTimeSteps()
+{
+   if constexpr( std::is_same_v< TimeStepping, ConstantTimeStep< SPHConfig > > ) {
+      return;
+   }
+   else {
+      this->timeMeasurement.start( "interact" );
+
+      RealType rfMin = 1.f, rfMax = 1.f;
+      for( int i = 0; i < this->numberOfSubsets; i++ ) {
+         rfMin = std::min( rfMin, getLevelRefinementFactor( i ) );
+         rfMax = std::max( rfMax, getLevelRefinementFactor( i ) );
+      }
+
+      RealType dtFinest = std::numeric_limits< RealType >::max();
+      for( int i = 0; i < this->numberOfSubsets; i++ ) {
+         auto levelParams = this->modelParams;
+         levelParams.h = this->modelParams.h * getLevelRefinementFactor( i );
+         const RealType dtLevel = levelTimeStepping[ i ].getTimeStepCFL( this->fluidSets[ i ], levelParams );
+
+         /* implied finest-level step: the most restrictive level governs the window */
+         dtFinest = std::min( dtFinest, dtLevel * rfMin / getLevelRefinementFactor( i ) );
+      }
+      dtFinest = std::max( std::min( dtFinest, this->modelParams.dtInit ), this->modelParams.dtMin );
+
+      this->timeStepping.setTimeStep( dtFinest * rfMax / rfMin );
+      for( int i = 0; i < this->numberOfSubsets; i++ )
+         levelTimeStepping[ i ].setTimeStep( dtFinest * getLevelRefinementFactor( i ) / rfMin );
+
+      this->timeMeasurement.stop( "interact" );
+   }
+}
+
+template< typename Model >
+void
 SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffers( RealType dt, int fineLevelIdx )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {

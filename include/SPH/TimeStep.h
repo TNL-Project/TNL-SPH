@@ -153,8 +153,11 @@ public:
       outfile << this->step << " " << this->time << " " << this->timeStep << std::endl;
    }
 
+   /* raw CFL-based proposal without the dtInit/dtMin clamp - multiresolution
+      drivers collect one per level and rescale them before clamping */
    template< typename FluidPointer, typename SPHState >
-   void computeTimeStep( FluidPointer& fluid, SPHState& params )
+   const RealType
+   getTimeStepCFL( FluidPointer& fluid, SPHState& params ) const
    {
       const RealType delta_r_max = 0.1f * params.h;
       const RealType cfl = params.cfl;
@@ -169,10 +172,16 @@ public:
 
          return cfl * min( dt_vel, dt_acc );
       };
-      RealType newTimeStep = Algorithms::reduce< DeviceType >( 0,
-                                                               fluid->getNumberOfParticles(),
-                                                               fetch,
-                                                               TNL::Min() );
+      return Algorithms::reduce< DeviceType >( 0,
+                                               fluid->getNumberOfParticles(),
+                                               fetch,
+                                               TNL::Min() );
+   }
+
+   template< typename FluidPointer, typename SPHState >
+   void computeTimeStep( FluidPointer& fluid, SPHState& params )
+   {
+      const RealType newTimeStep = getTimeStepCFL( fluid, params );
 
       this->timeStep = std::max( std::min( newTimeStep, params.dtInit ), params.dtMin );
    }
