@@ -6,9 +6,9 @@
 
 /* Dummy driver for the local-timestepping multiresolution solver: builds the dummy
  * multiresolution setup, writes the prolog, and runs host-side geometry assertions over
- * the LTS buffer patches (frames at overlap 1/2, layer predicates, mass-node placement).
- * Assertion results are piped into the same log for the log-compare harness; the exit
- * code is nonzero on any failure. */
+ * the LTS buffer patches (frame boxes at overlap 1/2, band-ring classification via the
+ * frames, mass-node placement). Assertion results are piped into the same log for the
+ * log-compare harness; the exit code is nonzero on any failure. */
 
 using VectorType = typename Simulation::MultiresolutionBoundaryLTS::VectorType;
 using CoordinatesType = typename Simulation::MultiresolutionBoundaryLTS::CoordinatesType;
@@ -65,10 +65,26 @@ int main( int argc, char* argv[] )
          expect( tag + ": frameBack = frameFront - 1 cell", coordsEq( backO, frontO + 1 ) && coordsEq( backD, frontD - 2 ) );
       }
 
-      const RealType sr = patch.getParticles()->getSearchRadius();
-      const RealType inv_sr = 1.f / sr;
-      const VectorType refOrig = patch.getParticles()->getReferentialOrigin();
-      const typename Patch::LayerPredicate layerPredicate = patch.getLayerPredicate();
+       const RealType sr = patch.getParticles()->getSearchRadius();
+       const RealType inv_sr = 1.f / sr;
+       const VectorType refOrig = patch.getParticles()->getReferentialOrigin();
+
+       /* Band-ring classification expressed directly through the front/mid/back frame
+          boxes (the v2 patch keeps the two rings as band geometry: layer 1 = front XOR
+          mid, layer 2 = mid XOR back). */
+       const auto inFrame = [ & ]( const VectorType& point, const CoordinatesType& origin, const CoordinatesType& dims )
+       {
+          const CoordinatesType iGlob = TNL::floor( ( point - refOrig ) * inv_sr );
+          return Patch::isInsideBox( iGlob - origin, dims );
+       };
+       const auto isInLayer1 = [ & ]( const VectorType& point )
+       {
+          return inFrame( point, frontO, frontD ) != inFrame( point, midO, midD );
+       };
+       const auto isInLayer2 = [ & ]( const VectorType& point )
+       {
+          return inFrame( point, midO, midD ) != inFrame( point, backO, backD );
+       };
 
       const auto cellPoint = [ & ]( int cx, int cy ) -> VectorType
       {
@@ -77,34 +93,34 @@ int main( int argc, char* argv[] )
 
       if( fineSide ) {
          expect( tag + ": first outer ring is layer 1",
-                layerPredicate.isInLayer1( cellPoint( frontD[ 0 ], 5 ) )
-                   && layerPredicate.isInLayer1( cellPoint( -1, 8 ) )
-                   && ! layerPredicate.isInLayer2( cellPoint( frontD[ 0 ], 5 ) ) );
+                isInLayer1( cellPoint( frontD[ 0 ], 5 ) )
+                   && isInLayer1( cellPoint( -1, 8 ) )
+                   && ! isInLayer2( cellPoint( frontD[ 0 ], 5 ) ) );
          expect( tag + ": second outer ring is layer 2",
-                layerPredicate.isInLayer2( cellPoint( frontD[ 0 ] + 1, 5 ) )
-                   && layerPredicate.isInLayer2( cellPoint( -2, 8 ) )
-                   && ! layerPredicate.isInLayer1( cellPoint( frontD[ 0 ] + 1, 5 ) ) );
+                isInLayer2( cellPoint( frontD[ 0 ] + 1, 5 ) )
+                   && isInLayer2( cellPoint( -2, 8 ) )
+                   && ! isInLayer1( cellPoint( frontD[ 0 ] + 1, 5 ) ) );
          expect( tag + ": third outer ring outside the band",
-                ! layerPredicate.isInLayer1( cellPoint( frontD[ 0 ] + 2, 5 ) )
-                   && ! layerPredicate.isInLayer2( cellPoint( frontD[ 0 ] + 2, 5 ) ) );
+                ! isInLayer1( cellPoint( frontD[ 0 ] + 2, 5 ) )
+                   && ! isInLayer2( cellPoint( frontD[ 0 ] + 2, 5 ) ) );
          expect( tag + ": interior cells in no layer",
-                ! layerPredicate.isInLayer1( cellPoint( 5, 5 ) ) && ! layerPredicate.isInLayer2( cellPoint( 5, 5 ) ) );
+                ! isInLayer1( cellPoint( 5, 5 ) ) && ! isInLayer2( cellPoint( 5, 5 ) ) );
          expect( tag + ": corner rings classified",
-                layerPredicate.isInLayer1( cellPoint( frontD[ 0 ], frontD[ 1 ] ) )
-                   && layerPredicate.isInLayer2( cellPoint( frontD[ 0 ] + 1, frontD[ 1 ] + 1 ) ) );
+                isInLayer1( cellPoint( frontD[ 0 ], frontD[ 1 ] ) )
+                   && isInLayer2( cellPoint( frontD[ 0 ] + 1, frontD[ 1 ] + 1 ) ) );
       }
       else {
          expect( tag + ": no layer-1 particles on single-layer side",
-                ! layerPredicate.isInLayer1( cellPoint( frontD[ 0 ], 3 ) )
-                   && ! layerPredicate.isInLayer1( cellPoint( -1, 3 ) )
-                   && ! layerPredicate.isInLayer1( cellPoint( 3, 3 ) ) );
+                ! isInLayer1( cellPoint( frontD[ 0 ], 3 ) )
+                   && ! isInLayer1( cellPoint( -1, 3 ) )
+                   && ! isInLayer1( cellPoint( 3, 3 ) ) );
          expect( tag + ": inner band ring is layer 2",
-                layerPredicate.isInLayer2( cellPoint( frontD[ 0 ] - 1, 3 ) )
-                   && layerPredicate.isInLayer2( cellPoint( 0, 3 ) ) );
+                isInLayer2( cellPoint( frontD[ 0 ] - 1, 3 ) )
+                   && isInLayer2( cellPoint( 0, 3 ) ) );
          expect( tag + ": cells outside frameFront in no layer",
-                ! layerPredicate.isInLayer1( cellPoint( frontD[ 0 ], 3 ) )
-                   && ! layerPredicate.isInLayer2( cellPoint( frontD[ 0 ], 3 ) )
-                   && ! layerPredicate.isInLayer2( cellPoint( -1, 3 ) ) );
+                ! isInLayer1( cellPoint( frontD[ 0 ], 3 ) )
+                   && ! isInLayer2( cellPoint( frontD[ 0 ], 3 ) )
+                   && ! isInLayer2( cellPoint( -1, 3 ) ) );
       }
 
       const auto& massNodes = patch.getMassNodes();
