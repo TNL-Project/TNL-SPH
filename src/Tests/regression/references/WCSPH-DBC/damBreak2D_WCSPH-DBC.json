@@ -1,0 +1,48 @@
+{
+  "case-tag": "WCSPH-DBC/damBreak2D_WCSPH-DBC",
+  "source": "ported from evaluateExamplesMetrics@cf824b38519a78d72f56c20df1dc0bb8f24957de",
+  "date": "2026-10-19",
+  "verified": true,
+  "metrics": {
+    "sensorsWaterLevel_avg": {
+      "value": [
+        0.23116514,
+        0.06056554,
+        0.03638269,
+        0.02139411
+      ],
+      "atol": 0.1,
+      "rtol": 0.0
+    },
+    "sensorsWaterLevel_std": {
+      "value": [
+        0.04803559,
+        0.03703002,
+        0.02929507,
+        0.02061927
+      ],
+      "atol": 0.01,
+      "rtol": 0.0
+    },
+    "sensorsPressure_avg": {
+      "value": [
+        1237.25545429,
+        914.68332571,
+        682.51443457,
+        187.89957863
+      ],
+      "atol": 100,
+      "rtol": 0.0
+    },
+    "sensorsPressure_std": {
+      "value": [
+        1920.12293911,
+        1379.96908324,
+        984.69733283,
+        521.99612149
+      ],
+      "atol": 100,
+      "rtol": 0.0
+    }
+  }
+}
