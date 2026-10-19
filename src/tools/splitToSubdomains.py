@@ -14,7 +14,7 @@ subdomainStringTemplate = """
       particlesParams[ #placeholderSubdomainNumber ].gridZsize = #placeholderGridZSize;
       particlesParams[ #placeholderSubdomainNumber ].gridOrigin = { #placeholderGridXBeginf, #placeholderGridYBeginf, #placeholderGridZBeginf };
 
-      particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ #placeholderSubdomainNumber ].gridXsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize };
+      particlesParams[ #placeholderSubdomainNumber ].gridSize = { particlesParams[ #placeholderSubdomainNumber ].gridXsize, particlesParams[ #placeholderSubdomainNumber ].gridYsize, particlesParams[ #placeholderSubdomainNumber ].gridZsize };
       particlesParams[ #placeholderSubdomainNumber ].numberOfGridCells = particlesParams[ #placeholderSubdomainNumber ].gridXsize * particlesParams[ #placeholderSubdomainNumber ].gridYsize * particlesParams[ #placeholderSubdomainNumber ].gridZsize;
 
       //Subdomain #placeholderSubdomainNumber - Subdomain info
