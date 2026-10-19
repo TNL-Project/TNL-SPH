@@ -149,6 +149,14 @@ public:
       inner_overlap = isInsideBox( nbOrig, ownOrig, own_sr * ownDims );
       outer_overlap = isInsideBox( ownOrig, nbOrig, nb_sr * nbDims );  //TODO: Just use negation, right?
 
+      // store the interface geometry for the init report (writeInitReport reads back the loaded values)
+      refinementLevel = int( 1 / refinementFraction );
+      this->resolutionFactor = resolutionFactor;
+      ownParticleOrigin = ownOrig;
+      nbParticleOrigin = nbOrig;
+      ownGlobalOriginCoordinates = ownParticles->getGlobalOriginCoordinates();
+      nbGlobalOriginCoordinates = nbParticles->getGlobalOriginCoordinates();
+
       assert( ! ( inner_overlap && outer_overlap ) && "inner_overlap and outer_overlap cannot both be true!" );
 
       bufferWidth = bufferWidthFactorConst * own_sr;
@@ -171,7 +179,6 @@ public:
       zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
 
       CoordinatesType zoneOrigin = 0;
-      CoordinatesType zoneDimensions = 0;
       //TODO: I dont like the "over-offset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
@@ -1202,6 +1209,47 @@ public:
       zone.writeProlog( logger );
    }
 
+   /**
+    * \brief Collects the multiresolution buffer patch geometry into the
+    *        initialization report.
+    *
+    * Extends the base ParticleSet report (the buffer band's own counts and
+    * grid geometry) with the interface geometry as loaded by initZones() -
+    * the values as actually computed and stored there, read back through
+    * the class' own members and the same frame getters writeProlog prints.
+    * Vector entries are three-component JSON arrays (z = 0 in 2D).
+    *
+    * \returns A JSON object with the ParticleSet base keys plus \e level,
+    *          \e resolution_factor, \e own_particle_origin,
+    *          \e nb_particle_origin, \e own_global_origin_coordinates,
+    *          \e nb_global_origin_coordinates,
+    *          \e frame_front_origin_global_coordinates,
+    *          \e frame_back_origin_global_coordinates,
+    *          \e frame_front_dimensions, \e frame_back_dimensions,
+    *          \e frame_width, \e zone_dimensions, \e zone_cell_count
+    *          and \e number_of_mass_nodes.
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = BaseType::writeInitReport();
+      report[ "level" ] = refinementLevel;
+      report[ "resolution_factor" ] = resolutionFactor;
+      report[ "own_particle_origin" ] = this->vectorToInitReportArray( ownParticleOrigin );
+      report[ "nb_particle_origin" ] = this->vectorToInitReportArray( nbParticleOrigin );
+      report[ "own_global_origin_coordinates" ] = this->vectorToInitReportArray( ownGlobalOriginCoordinates );
+      report[ "nb_global_origin_coordinates" ] = this->vectorToInitReportArray( nbGlobalOriginCoordinates );
+      report[ "frame_front_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameFrontOriginGlobalCoordinates() );
+      report[ "frame_back_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameBackOriginGlobalCoordinates() );
+      report[ "frame_front_dimensions" ] = this->vectorToInitReportArray( getFrameFrontDimensions() );
+      report[ "frame_back_dimensions" ] = this->vectorToInitReportArray( getFrameBackDimensions() );
+      report[ "frame_width" ] = frameWidth;
+      report[ "zone_dimensions" ] = this->vectorToInitReportArray( zoneDimensions );
+      report[ "zone_cell_count" ] = zone.getNumberOfCells();
+      report[ "number_of_mass_nodes" ] = massNodes.numberOfMassNodes;
+      return report;
+   }
+
    void
    writeMassNodesToVTK( const std::string& outputFileName )
    {
@@ -1237,12 +1285,20 @@ protected:
    bool inner_overlap;
    bool outer_overlap;
 
-   int refinementLevel;
+   int refinementLevel = 0;
    int frameOrientation;
 
    CoordinatesType frameOriginGlobalCoordinates;
    CoordinatesType frameDimensions;  // = inner subdomain dimensions
    RealType bufferWidth;             // useful for dual time stepping
+
+   // interface geometry stored by initZones for the init report
+   RealType resolutionFactor = 0.f;
+   VectorType ownParticleOrigin = 0.f;
+   VectorType nbParticleOrigin = 0.f;
+   CoordinatesType ownGlobalOriginCoordinates = 0;
+   CoordinatesType nbGlobalOriginCoordinates = 0;
+   CoordinatesType zoneDimensions = 0;
 
    ParticleZone zone;
 };
