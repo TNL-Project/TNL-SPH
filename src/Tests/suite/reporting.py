@@ -14,6 +14,12 @@ inside :func:`_console` so that importing the module (and all of
 :mod:`suite.results`) stays possible without it; a missing install is
 announced with an install hint instead of a bare ImportError.
 
+Console tables optionally show info-only computational-time comparison
+columns via the ``perf_fn`` hook (see :mod:`regression.perf`, plan todo
+11/28): it maps a :class:`~suite.results.ResultEntry` to
+``(time, ref_time, diff_markup)`` cells and NEVER affects the pass/fail
+verdict of the summary.
+
 Selftest (prints a PASS + FAIL + SKIP table, writes no files)::
 
     PYTHONPATH=src/Tests python3 -m suite.reporting --selftest
@@ -21,7 +27,7 @@ Selftest (prints a PASS + FAIL + SKIP table, writes no files)::
 
 from __future__ import annotations
 
-from typing import Iterable, Mapping
+from typing import Callable, Iterable, Mapping
 
 from . import results
 from .results import ResultEntry
@@ -80,8 +86,19 @@ def _tests_cells(entry: ResultEntry) -> tuple[str, str]:
     return f"[red]{passed}/{total}[/red]", "[red]Failed[/red]"
 
 
-def summary_table(entries: Iterable[ResultEntry], title: str = "Test results") -> None:
-    """Print the rich summary table (ported from multirunner.print_summary_table)."""
+def summary_table(
+    entries: Iterable[ResultEntry],
+    title: str = "Test results",
+    perf_fn: Callable[[ResultEntry], tuple[str, str, str]] | None = None,
+) -> None:
+    """Print the rich summary table (ported from multirunner.print_summary_table).
+
+    When ``perf_fn`` is given it maps each entry to ``(time, ref_time,
+    diff_markup)`` info-only perf cells (see :mod:`regression.perf`): the
+    returned time replaces the plain comp.-time cell and the reference /
+    colored diff columns are appended next to it (same column order as
+    :data:`suite.results.MD_COLUMNS`).
+    """
     console = _console()
     from rich.table import Table
 
@@ -89,6 +106,9 @@ def summary_table(entries: Iterable[ResultEntry], title: str = "Test results") -
     table.add_column("Case tag")
     table.add_column("Result")
     table.add_column("Comp. time")
+    if perf_fn is not None:
+        table.add_column("Ref. time")
+        table.add_column("Time diff %")
     table.add_column("Tests")
     table.add_column("Tests result")
     table.add_column("Error")
@@ -100,29 +120,39 @@ def summary_table(entries: Iterable[ResultEntry], title: str = "Test results") -
         else:
             err = entry.skip_reason
         err_str = _escape(err[:60]) if err else ""
-        table.add_row(
-            entry.tag,
-            _result_cell(entry),
-            f"{entry.comp_time:.2f}",
-            tests_str,
-            tests_result_str,
-            err_str,
-        )
+        row = [entry.tag, _result_cell(entry)]
+        if perf_fn is not None:
+            time_str, ref_str, diff_str = perf_fn(entry)
+            row += [time_str, ref_str, diff_str]
+        else:
+            row.append(f"{entry.comp_time:.2f}")
+        row += [tests_str, tests_result_str, err_str]
+        table.add_row(*row)
 
     console.print(table)
 
 
-def print_final_summary(entries_by_tier: Mapping[str, Iterable[ResultEntry]]) -> int:
+def print_final_summary(
+    entries_by_tier: Mapping[str, Iterable[ResultEntry]],
+    *,
+    perf_fn: Callable[[ResultEntry], tuple[str, str, str]] | None = None,
+) -> int:
     """Print aggregate pass/fail/skip counts per tier and overall.
 
+    When ``perf_fn`` is given, each tier is preceded by its perf table
+    (:func:`summary_table` with the info-only reference / diff columns).
     Returns the suggested process exit code: ``1`` when at least one entry
     failed, else ``0``. Skipped entries are counted separately and never
-    conflated with failures.
+    conflated with failures; perf columns NEVER influence the verdict.
     """
     console = _console()
     total_pass = total_fail = total_skip = 0
     for tier, tier_entries in entries_by_tier.items():
         tier_entries = list(tier_entries)
+        if perf_fn is not None and tier_entries:
+            summary_table(
+                tier_entries, title=f"{tier} (info-only perf report)", perf_fn=perf_fn
+            )
         n_skip = sum(1 for e in tier_entries if results.result_skipped(e))
         n_fail = sum(
             1
