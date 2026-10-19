@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# TODO(suite): superseded by suite reporting --report (todo 28/29)
 
 import re
 from rich.console import Console

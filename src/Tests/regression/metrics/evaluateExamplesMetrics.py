@@ -2,8 +2,7 @@ import numpy as np
 from pathlib import Path
 
 # initialize directories
-tools_dir = Path(__file__).parent
-project_dir = ( tools_dir / ".." / ".." / ".." ).resolve()
+project_dir = Path(__file__).resolve().parents[4]
 examples_dir = project_dir / "examples"
 
 def damBreak2D_WCSPH_DBC( case_dir ):
