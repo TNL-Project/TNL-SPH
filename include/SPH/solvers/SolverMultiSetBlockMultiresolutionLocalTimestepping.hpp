@@ -2,6 +2,7 @@
 #include "../tempFunctionsToConfigMultiresolution.h"
 
 #include <cmath>
+#include <functional>
 
 namespace TNL {
 namespace SPH {
@@ -380,6 +381,49 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshSubstepSear
       multiresolutionBoundaryPatchesLTS[ p ]->removeParticlesOutOfGrid( multiresolutionBoundaryPatchesLTS[ p ]->getParticles() );
       multiresolutionBoundaryPatchesLTS[ p ]->searchForNeighbors();
    }
+}
+
+template< typename Model >
+template< typename SubstepUpdate >
+void
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep )
+{
+   const int nLevels = this->numberOfSubsets;
+   const RealType theta = this->modelParams.ltsTheta;
+
+   std::function< void( int, int, int ) > advanceLevel = [ & ]( int level, int count, int base )
+   {
+      for( int substep = 0; substep < count; substep++ )
+      {
+         const int g = base + substep;  // window-global substep index of this level
+         const RealType dtLevel = levelTimeStepping[ level ].getTimeStep();
+
+         if( g != 0 )
+            refreshSubstepSearches( level );
+
+         subdomainSubstep( level, substep, g, dtLevel );
+
+         if( level + 1 < nLevels ) {
+            const int ratio = getNumberOfSubsteps( level + 1 ) / getNumberOfSubsteps( level );
+            advanceLevel( level + 1, ratio, g * ratio );
+
+            /* R1 - exact coincidence refresh: the child invocation just brought the
+               band's clock to the same physical time as this level; re-stamp the
+               anchors so the following blends stay bracketed. Skipped after the last
+               substep - the sync-point lifecycle re-grounds all bands anyway. */
+            if( substep + 1 < count ) {
+               refreshBuffersFromNeighbor( 1.0, level + 1 );
+               stampBuffersAnchor( level + 1 );
+            }
+         }
+
+         /* R2 - midpoint blend of the band owned by this level (the interface toward
+            its coarser neighbor), firing once per invocation at the midpoint substep. */
+         if( theta > 0 && level > 0 && substep == count / 2 - 1 )
+            refreshBuffersFromNeighbor( theta, level );
+      }
+   };
+   advanceLevel( 0, 1, 0 );
 }
 
 template< typename Model >

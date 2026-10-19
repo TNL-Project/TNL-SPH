@@ -121,11 +121,28 @@ public:
     void
     accumulateInterfaceMassesFromNeighbor( int neighborIdx, RealType dt );
 
-   void
-   refreshSubstepSearches( int fineIdx );
+    void
+    refreshSubstepSearches( int fineIdx );
 
-   void
-   syncMultiresolutionUpdate();
+    /* Berger-Colella recursion over the refinement levels with the coarsest level
+      included: drives the whole local-timestepping schedule of one global window and
+      invokes subdomainSubstep( level, substep, globalSubstep, dt ) for every level
+      substep (the case supplies the per-substep physics). Level L takes
+      getNumberOfSubsteps(L) substeps of dt_L per window and recurses into L+1 after
+      each of them, so the finer level always advances within the just-integrated
+      window of its parent. Substeps are indexed from zero; the window-global index
+      g = base + substep is threaded through the recursion. Searches are refreshed
+      before every substep except the genuine first of the window (g == 0, covered by
+      the sync-time performNeighborSearch). The state of the band of iface(level,
+      level+1) is re-grounded inside the window: exactly (theta = 1, anchors re-stamped)
+      after every non-final parent substep where the two clocks coincide, and blended
+      with theta = modelParams.ltsTheta at each level's own midpoint substep. */
+    template< typename SubstepUpdate >
+    void
+    recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep );
+
+    void
+    syncMultiresolutionUpdate();
 
    void
    save( bool writeParticleCellIndex = false );
