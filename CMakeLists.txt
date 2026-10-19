@@ -126,6 +126,9 @@ else()
     message(STATUS "GenCase download is disabled (ENABLE_GENCASE_DOWNLOAD is FALSE)")
 endif()
 
+# Enable CTest for the unified test suite (src/Tests registers tests in subdirectories)
+enable_testing()
+
 # Add project subdirectories
 add_subdirectory(include)
 add_subdirectory(examples)
