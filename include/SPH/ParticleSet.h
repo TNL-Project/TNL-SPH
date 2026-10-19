@@ -407,8 +407,12 @@ public:
     * set-specific keys via their own \e writeInitReport.
     *
     * \returns A JSON object with the keys \e count, \e allocated_count,
-    *          \e grid_origin, \e grid_origin_with_overlap, \e grid_dimensions
-    *          and \e grid_origin_global_coordinates.
+    *          \e grid_origin, \e grid_origin_with_overlap, \e grid_dimensions,
+    *          \e grid_dimensions_with_overlap, \e overlap_width and
+    *          \e grid_origin_global_coordinates. The \e grid_dimensions_with_overlap
+    *          and \e overlap_width pair completes the per-rank coverage needed
+    *          by tiling validators of the distributed path - the halo region of
+    *          each rank is fully described by the overlap-padded grid box.
     */
    [[nodiscard]] nlohmann::json
    writeInitReport() const
@@ -419,6 +423,8 @@ public:
       report[ "grid_origin" ] = vectorToInitReportArray( particles->getOrigin() );
       report[ "grid_origin_with_overlap" ] = vectorToInitReportArray( particles->getOriginWithOverlap() );
       report[ "grid_dimensions" ] = vectorToInitReportArray( particles->getDimensions() );
+      report[ "grid_dimensions_with_overlap" ] = vectorToInitReportArray( particles->getDimensionsWithOverlap() );
+      report[ "overlap_width" ] = particles->getOverlapWidth();
       report[ "grid_origin_global_coordinates" ] = vectorToInitReportArray( particles->getGlobalOriginCoordinates() );
       return report;
    }

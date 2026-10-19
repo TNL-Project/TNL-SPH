@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <nlohmann/json.hpp>
+
 /*
    All grid-level parameters for one subdomain, extracted from config once
    and reused by both initParticleSets and initZones.
@@ -189,6 +191,75 @@ public:
       return getSubdomain( subdomain_idx ).originCoordinates;
    }
 
+   /**
+    * \brief Collects the decomposition geometry into the initialization report.
+    *
+    * Emits the global (coarse) grid built by loadFromConfig and one entry per
+    * subdomain of the flat topology - a plain read-back of the values as loaded
+    * (this header has no writeProlog sibling - the report is a new standalone
+    * method, not a mirror of an existing log section).
+    *
+    * The method exists only on the flat topology class: the %DecompositionTopology
+    * base interface exposes neither the global grid nor the per-subdomain
+    * descriptors, so there is no meaningful base-class override to give.
+    *
+    * \b region_dimensions is the footprint of each subdomain expressed in GLOBAL
+    * coarse-grid coordinates (cells): `grid-dimensions * refinement-factor` per
+    * axis. For a 1D x-split chain this reproduces the consecutive-origin
+    * differences (the last region extends to the end of the global grid); for
+    * nested refinement chains it is the patch footprint in coarse cells. A
+    * consecutive-origin shortcut is intentionally NOT used - it misreports
+    * nested patches, which are the actual consumers of this topology.
+    * Vector entries are three-component JSON arrays (z = 0 in 2D), mirroring
+    * the config-section serialization of InitReport.hpp.
+    *
+    * \returns A JSON object with the keys \e global (\e origin, \e dimensions)
+    *          and \e subdomains (entries with \e index, \e origin_global_coordinates,
+    *          \e region_dimensions).
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = nlohmann::json::object();
+      nlohmann::json global = nlohmann::json::object();
+      global[ "origin" ] = vectorToInitReportArray( getDomainOrigin() );
+      global[ "dimensions" ] = vectorToInitReportArray( getDomainGridDimension() );
+      report[ "global" ] = std::move( global );
+
+      report[ "subdomains" ] = nlohmann::json::array();
+      for( const Subdomain& sd : subdomains ) {
+         // footprint in global coarse-grid cells, materialized via the scalar-left promotion used by MrRectangleBuffer's frameDimensions
+         const PointType regionDimensions = sd.refinementFactor * sd.grid.getDimensions();
+         nlohmann::json subdomain = nlohmann::json::object();
+         subdomain[ "index" ] = sd.index;
+         subdomain[ "origin_global_coordinates" ] = vectorToInitReportArray( sd.originCoordinates );
+         subdomain[ "region_dimensions" ] = vectorToInitReportArray( regionDimensions );
+         report[ "subdomains" ].push_back( std::move( subdomain ) );
+      }
+      return report;
+   }
+
+protected:
+
+   /**
+    * \brief Serializes a space-dimension-sized static vector as a
+    *        three-component JSON array.
+    *
+    * The z component is emitted as 0 in 2D, so the reported arrays always
+    * have three components - the same convention as the \e domainOrigin /
+    * \e domainSize serialization in InitReport.hpp. When the input vector
+    * has been scaled to doubles (e.g. the \e region_dimensions footprint),
+    * the z component is double 0 as well.
+    */
+   template< typename Vector >
+   static nlohmann::json
+   vectorToInitReportArray( const Vector& v )
+   {
+      if constexpr( Vector::getSize() > 2 )
+         return nlohmann::json{ v[ 0 ], v[ 1 ], v[ 2 ] };
+      else
+         return nlohmann::json{ v[ 0 ], v[ 1 ], typename Vector::RealType( 0 ) };
+   }
 
 private:
 
