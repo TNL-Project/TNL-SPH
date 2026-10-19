@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 namespace TNL {
 namespace SPH {
 
@@ -63,6 +65,14 @@ class OpenBoundaryConfig
     */
    VectorType orientation = 0.f;
    VectorType position = 0.f;
+
+   /**
+    * Second referential point of the buffer area, kept exactly as loaded from
+    * the jsonc `position-2-*` entries (needed verbatim by the initialization
+    * report - the zone points below are derived from it, so it cannot be
+    * recovered from them afterwards).
+    */
+   VectorType position2 = 0.f;
    VectorType bufferWidth = 0.f;
    VectorType bufferHeight = 0.f; //TODO: Merge with bufferWidth
 
@@ -91,6 +101,7 @@ class OpenBoundaryConfig
       identifier = parametersOpenBoundary.getParameter< std::string >( prefix + "identifier" );
       orientation = parametersOpenBoundary.getXyz< VectorType >( prefix + "orientation" );
       position = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-1" );
+      position2 = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-2" );
       bufferWidth = parametersOpenBoundary.getXyz< VectorType >( prefix + "bufferWidth" );
       //bufferHeight =
       pairedPeriodicBuffer = parametersOpenBoundary.getParameter< int >( prefix + "paired-periodic-buffer" );
@@ -112,6 +123,57 @@ class OpenBoundaryConfig
       //temp: Logs to periodic bounday buffers
       logger.writeParameter( "Paired periodic boundary patch index: ", pairedPeriodicBuffer );
       logger.writeParameter( "Periodic boundary shift vector: ", shift );
+   }
+
+   /**
+    * \brief Collects the boundary-patch geometry into the initialization report.
+    *
+    * Emits the values exactly as loaded from the open-boundary JSONC
+    * configuration, with the entry names snake-cased: \e identifier,
+    * \e orientation_x/y/z, \e position_1_x/y/z, \e position_2_x/y/z,
+    * \e bufferWidth_x/y/z plus the periodic-patch entries
+    * \e paired_periodic_buffer and \e shiftVector_x/y/z (both present in the
+    * config description for every patch; their defaults report as loaded).
+    * Every vector entry carries the three axis components (z = 0 for 2D
+    * configurations), the same convention as the \e config section of
+    * InitReport.hpp. Model-specific entries (\e type, \e velocity_*, ...)
+    * are appended by the derived model configurations.
+    *
+    * \returns A JSON object with the patch entries as loaded.
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = nlohmann::json::object();
+      report[ "identifier" ] = identifier;
+      vectorToInitReportEntries( report, "orientation", orientation );
+      vectorToInitReportEntries( report, "position_1", position );
+      vectorToInitReportEntries( report, "position_2", position2 );
+      vectorToInitReportEntries( report, "bufferWidth", bufferWidth );
+      report[ "paired_periodic_buffer" ] = pairedPeriodicBuffer;
+      vectorToInitReportEntries( report, "shiftVector", shift );
+      return report;
+   }
+
+   protected:
+   /**
+    * \brief Serializes a space-dimension-sized static vector as per-axis
+    *        entries \<prefix\>_x/_y/_z of a report object.
+    *
+    * The z entry is emitted as 0 in 2D, so the reported entries always carry
+    * the three axis components - mirroring the z-padded vector arrays of the
+    * config section and particle-set reports.
+    */
+   template< typename Vector >
+   static void
+   vectorToInitReportEntries( nlohmann::json& report, const std::string& prefix, const Vector& v )
+   {
+      report[ prefix + "_x" ] = v[ 0 ];
+      report[ prefix + "_y" ] = v[ 1 ];
+      if constexpr( Vector::getSize() > 2 )
+         report[ prefix + "_z" ] = v[ 2 ];
+      else
+         report[ prefix + "_z" ] = RealType( 0 );
    }
 
    private:

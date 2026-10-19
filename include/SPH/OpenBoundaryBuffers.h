@@ -75,6 +75,21 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
       zone.writeProlog( logger );
    }
 
+   /**
+    * \brief Collects this open-boundary patch into the initialization report.
+    *
+    * The particle-set state of the base report (counts and grid geometry)
+    * extended with the patch configuration exactly as loaded, under \e config
+    * - mirroring the pair of \e writeProlog calls of the solver patch loops.
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = BaseType::writeInitReport();
+      report[ "config" ] = config.writeInitReport();
+      return report;
+   }
+
    struct OpenBoundaryParameters
    {
       std::string identifier;

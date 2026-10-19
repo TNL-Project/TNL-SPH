@@ -141,6 +141,34 @@ public:
       logger.writeParameter( "Velocity boundary conditon:", v_bc );
       logger.writeParameter( "Prescribed boundary velocity:", velocity );
    }
+
+   /**
+    * \brief Extends the base patch report with the model-specific entries.
+    *
+    * Appends \e type (spelled as in the jsonc: periodic/inlet/outlet),
+    * \e rho_bc, \e density, \e v_bc, \e velocity_x/y/z and
+    * \e extrapolationDetTreshold to the base report - all values exactly as
+    * loaded from the open-boundary JSONC configuration.
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = Base::writeInitReport();
+      std::string openBoundaryPatchType;
+      if( type == WCSPH_BCTypes::OpenBoundaryConditionsType::PeriodicBoundary )
+         openBoundaryPatchType = "periodic";
+      if( type == WCSPH_BCTypes::OpenBoundaryConditionsType::Inlet )
+         openBoundaryPatchType = "inlet";
+      if( type == WCSPH_BCTypes::OpenBoundaryConditionsType::Outlet )
+         openBoundaryPatchType = "outlet";
+      report[ "type" ] = openBoundaryPatchType;
+      report[ "rho_bc" ] = rho_bc;
+      report[ "density" ] = density;
+      report[ "v_bc" ] = v_bc;
+      this->vectorToInitReportEntries( report, "velocity", velocity );
+      report[ "extrapolationDetTreshold" ] = extrapolationDetTreshold;
+      return report;
+   }
 };
 
 }  //namespace SPH
