@@ -33,6 +33,20 @@ class Fluid : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, Inte
    {
       return this->variables;
    }
+
+   /**
+    * \brief Collects this fluid set's geometry into the initialization report.
+    *
+    * There is no fluid-specific metadata stored on this class beyond the
+    * base particle-set state, so this is intentionally identical to the base
+    * report (kept as a separate method to have the same call interface as
+    * the other particle-set types).
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      return BaseType::writeInitReport();
+   }
 };
 
 }

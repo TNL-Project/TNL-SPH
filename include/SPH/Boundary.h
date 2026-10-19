@@ -33,6 +33,21 @@ class Boundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, I
    {
       return this->variables;
    }
+
+   /**
+    * \brief Collects this boundary set's geometry into the initialization report.
+    *
+    * The boundary set stores no set-specific metadata besides the base
+    * particle-set state (in particular, the number of boundary layers is a
+    * case-setup input, not a stored member), so this intentionally matches
+    * the base report - the same call interface as the other particle-set
+    * types.
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      return BaseType::writeInitReport();
+   }
 };
 
 }

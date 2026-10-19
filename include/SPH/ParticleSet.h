@@ -6,6 +6,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
+#include <nlohmann/json.hpp>
 
 #include "OpenBoundaryConfig.h"
 #include "PeriodicBoundaryBuffers.h"
@@ -393,10 +394,57 @@ public:
       particles->writeProlog( logger );
    }
 
+   /**
+    * \brief Collects the particle-set geometry into the initialization report.
+    *
+    * Emits the active and allocated particle counts and the implicit grid
+    * geometry of the underlying particle system - the values as actually
+    * initialized in the solver, read through the public const getters of
+    * `particles`. Vector entries are three-component JSON arrays (with z = 0
+    * in 2D), mirroring the \e config-section serialization of InitReport.hpp.
+    *
+    * Derived sets (fluid, boundary, ...) extend this object with their own
+    * set-specific keys via their own \e writeInitReport.
+    *
+    * \returns A JSON object with the keys \e count, \e allocated_count,
+    *          \e grid_origin, \e grid_origin_with_overlap, \e grid_dimensions
+    *          and \e grid_origin_global_coordinates.
+    */
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = nlohmann::json::object();
+      report[ "count" ] = particles->getNumberOfParticles();
+      report[ "allocated_count" ] = particles->getNumberOfAllocatedParticles();
+      report[ "grid_origin" ] = vectorToInitReportArray( particles->getOrigin() );
+      report[ "grid_origin_with_overlap" ] = vectorToInitReportArray( particles->getOriginWithOverlap() );
+      report[ "grid_dimensions" ] = vectorToInitReportArray( particles->getDimensions() );
+      report[ "grid_origin_global_coordinates" ] = vectorToInitReportArray( particles->getGlobalOriginCoordinates() );
+      return report;
+   }
+
    //TODO: Move this to particles
    std::vector< PeriodicBoundaryPointer > periodicPatches;
 
 protected:
+   /**
+    * \brief Serializes a space-dimension-sized static vector as a
+    *        three-component JSON array.
+    *
+    * The z component is emitted as 0 in 2D, so the reported arrays always
+    * have three components - the same convention as the \e domainOrigin /
+    * \e domainSize serialization in InitReport.hpp.
+    */
+   template< typename Vector >
+   static nlohmann::json
+   vectorToInitReportArray( const Vector& v )
+   {
+      if constexpr( Vector::getSize() > 2 )
+         return nlohmann::json{ v[ 0 ], v[ 1 ], v[ 2 ] };
+      else
+         return nlohmann::json{ v[ 0 ], v[ 1 ], typename Vector::RealType( 0 ) };
+   }
+
    // particles object
    DistributedParticlesPointerType distributedParticles;
    // particles synchronizer
