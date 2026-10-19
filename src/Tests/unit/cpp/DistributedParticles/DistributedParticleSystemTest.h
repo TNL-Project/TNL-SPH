@@ -29,9 +29,11 @@ class Particles2DConfig
 
    static constexpr int spaceDimension = 2;
 
-   using UseWithDomainDecomposition = std::true_type;
-   using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
-   using CellIndexerType = SimpleCellIndex< spaceDimension, Particles2DConfig, std::index_sequence< 1, 0 > >;
+    using UseWithDomainDecomposition = std::true_type;
+    using CoordinatesType = Containers::StaticVector< spaceDimension, int >;
+    // ported to current API: SimpleCellIndex takes ( spaceDimension, Permutation ) - the
+    // ParticlesConfig template argument was removed from the upstream API
+    using CellIndexerType = SimpleCellIndex< spaceDimension, std::index_sequence< 1, 0 > >;
 };
 
 template< typename Device >
@@ -78,10 +80,23 @@ struct SubdomainsParametersX3Y1
    const CoordinatesType subdomain1Dimension = { 3, 3 };
    const CoordinatesType subdomain2Dimension = { 5, 5 };
    const CoordinatesType subdomain3Dimension = { 4, 4 };
-   Containers::StaticVector< 3, CoordinatesType > dimensions = { subdomain1Dimension,
-                                                                    subdomain2Dimension,
-                                                                    subdomain3Dimension };
-   const CoordinatesType overlapSize = 1;
+    Containers::StaticVector< 3, CoordinatesType > dimensions = { subdomain1Dimension,
+                                                                     subdomain2Dimension,
+                                                                     subdomain3Dimension };
+    // ported to current API: setDistributedGridParameters takes the GLOBAL grid now -
+    // the three subdomains tile the global domain [ -0.5, 5.5 )^2 (12x12 cells) contiguously,
+    // and each rank's local grid origin is expressed by the particle system's global origin
+    // coordinates (globalOriginCoordinates[ rank ] = ( origin[ rank ] - globalOrigin ) / searchRadius ),
+    // mirroring ParticleSet::initializeAsDistributed in include/SPH/ParticleSet.h
+    const PointType globalOrigin = subdomain1Origin;
+    const CoordinatesType globalDimensions = { 12, 12 };
+    const CoordinatesType subdomain1OriginCoordinates = { 0, 0 };
+    const CoordinatesType subdomain2OriginCoordinates = { 3, 3 };
+    const CoordinatesType subdomain3OriginCoordinates = { 8, 8 };
+    Containers::StaticVector< 3, CoordinatesType > globalOriginCoordinates = { subdomain1OriginCoordinates,
+                                                                               subdomain2OriginCoordinates,
+                                                                               subdomain3OriginCoordinates };
+    const CoordinatesType overlapSize = 1;
    const PointType overlapWidth = searchRadius;
 
 };
@@ -154,24 +169,35 @@ TEST( DistributedParticles1DSplittingTest, DistributedParticlesInitialization )
 
    const int rank = TNL::MPI::GetRank();
 
-   // setup particles
-   particles->setSize( subdomainsSetup.numberOfAllocatedParticles[ rank ] );
-   particles->setSearchRadius( subdomainsSetup.searchRadius );
-   particles->setDimensions( subdomainsSetup.dimensions[ rank ] + subdomainsSetup.overlapSize );
-   particles->setOrigin( subdomainsSetup.origin[ rank ] - subdomainsSetup.overlapWidth );
-   particles->setNumberOfParticles( subdomainsSetup.numberOfParticles[ rank ] );
+    // setup particles
+    particles->setSize( subdomainsSetup.numberOfAllocatedParticles[ rank ] );
+    particles->setSearchRadius( subdomainsSetup.searchRadius );
+    // ported to current API: setDimensions takes the INTERIOR local grid (without overlap);
+    // the overlap is attached via setOverlapWidth inside setDistributedGridParameters
+    particles->setDimensions( subdomainsSetup.dimensions[ rank ] );
+    // ported to current API: setOrigin takes the interior grid origin; the overlap-shifted
+    // origin is derived internally (origin - overlapWidth * searchRadius)
+    particles->setOrigin( subdomainsSetup.origin[ rank ] );
+    // ported to current API: the local grid origin is computed as
+    // globalOrigin + searchRadius * globalOriginCoordinates (was: passed per rank explicitly)
+    particles->setGlobalOriginCoordinates( subdomainsSetup.globalOriginCoordinates[ rank ] );
+    particles->setNumberOfParticles( subdomainsSetup.numberOfParticles[ rank ] );
 
-   // setup distributed particles
-   std::ofstream logFile( "testLog" );
-   TNL::Logger logger( 0, logFile );
-   distributedParticles->setDistributedGridParameters( subdomainsSetup.dimensions[ rank ] + subdomainsSetup.overlapSize,
-                                                       subdomainsSetup.origin[ rank ] - subdomainsSetup.overlapWidth,
-                                                       subdomainsSetup.dimensions[ rank ],
-                                                       subdomainsSetup.origin[ rank ],
-                                                       1,
-                                                       subdomainsSetup.searchRadius,
-                                                       subdomainsSetup.subdomains,
-                                                       communicator );
+    // setup distributed particles
+    std::ofstream logFile( "testLog" );
+    TNL::Logger logger( 0, logFile );
+    // ported to current API: setDistributedGridParameters reads the local grid from the
+    // particle system owned by the distributed particles (was: passed as per-rank arguments)
+    distributedParticles->getLocalParticles() = particles;
+    // ported to current API: the communicator is passed via setCommunicator
+    distributedParticles->setCommunicator( communicator );
+    // ported to current API: 5-argument overload taking the GLOBAL grid, cell size, overlap
+    // width and domain decomposition (was: 8 per-rank arguments including the communicator)
+    distributedParticles->setDistributedGridParameters( subdomainsSetup.searchRadius,
+                                                        subdomainsSetup.globalDimensions,
+                                                        subdomainsSetup.globalOrigin,
+                                                        1,
+                                                        subdomainsSetup.subdomains );
 
    //assgn particles
    ASSERT_TRUE( assignPoints2D( particles ) );
