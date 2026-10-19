@@ -1,2 +1,3 @@
-# Unit tier: no targets yet. Later tasks move cpp/DistributedParticles here (todo 2)
-# and register the Python unit collector with CTest (todo 30).
+# Unit tier: C++ tests live under cpp/ (todo 2); the Python unit collector is
+# registered with CTest in todo 30.
+add_subdirectory( cpp )

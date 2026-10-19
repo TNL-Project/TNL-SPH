@@ -1,2 +1,3 @@
-# Infrastructure tier: no targets yet. Later tasks move the multiresolution fixture
-# simulations here under fixtures/ (todo 2).
+# Infrastructure tier: multiresolution fixture simulations (moved from
+# src/UnitTests/multiresolution/testConfigurations in todo 2).
+add_subdirectory( fixtures )

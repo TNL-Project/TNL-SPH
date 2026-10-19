@@ -62,7 +62,7 @@ from parse_sph_log import parse_log
 
 # ── Test configuration directories ───────────────────────────────────────────
 _this_dir     = Path(__file__).parent
-_configs_dir  = _this_dir / "testConfigurations"
+_configs_dir  = _this_dir / "fixtures"
 _test_dir_2d  = _configs_dir / "dummyMultiresolutionSimulation2D"
 _test_dir_3d  = _configs_dir / "dummyMultiresolutionSimulation3D"
 _test_dir_lts = _configs_dir / "dummyMultiresolutionLTSSimulation2D"

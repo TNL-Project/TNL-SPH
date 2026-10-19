@@ -40,10 +40,10 @@ Documentation/html
 Documentation/latex
 
 # test files
-src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/results
-src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionSimulation*D/sources
-src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionLTSSimulation*D/results
-src/UnitTests/multiresolution/testConfigurations/dummyMultiresolutionLTSSimulation*D/sources
+src/Tests/infrastructure/fixtures/dummyMultiresolutionSimulation*D/results
+src/Tests/infrastructure/fixtures/dummyMultiresolutionSimulation*D/sources
+src/Tests/infrastructure/fixtures/dummyMultiresolutionLTSSimulation*D/results
+src/Tests/infrastructure/fixtures/dummyMultiresolutionLTSSimulation*D/sources
 
 # content in src
 src/extra/accelerateImp/spectrum-results
