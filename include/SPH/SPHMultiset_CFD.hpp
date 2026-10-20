@@ -14,6 +14,7 @@
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
 #include <SPH/configInit.h>
+#include <SPH/InitReport.h>
 
 namespace TNL {
 namespace SPH {
@@ -961,6 +962,17 @@ SPHMultiset_CFD< Model >::writeProlog( bool writeSystemInformation ) noexcept
          //boundary->periodicPatches[ i ]->writeProlog( logger );
       }
    }
+
+   // Structured initialization report (JSON) - mirrors the sections logged above.
+   auto initReport = makeInitReportDocument();
+   addConfigSection( initReport, parameters );
+   initReport[ "fluids" ].push_back( fluid->writeInitReport() );
+   initReport[ "boundaries" ].push_back( boundary->writeInitReport() );
+   for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ )
+      initReport[ "open_boundary_patches" ].push_back( openBoundaryPatches[ i ]->writeInitReport() );
+   for( long unsigned int i = 0; i < fluid->periodicPatches.size(); i++ )
+      initReport[ "periodic_patches" ].push_back( fluid->periodicPatches[ i ]->writeInitReport() );
+   writeInitReportFile( initReport, outputDirectory );
 
    logger.writeHeader( "System information." );
    if( writeSystemInformation ) {

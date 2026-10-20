@@ -1,6 +1,8 @@
 #include "SolverMultiSetBlockMultiresolution.h"
 #include "../tempFunctionsToConfigMultiresolution.h"
 
+#include <SPH/InitReport.h>
+
 namespace TNL {
 namespace SPH {
 
@@ -642,6 +644,14 @@ SolverMultiSetBlockMultiresolution< Model >::writeProlog( bool writeSystemInform
          multiresolutionBoundaryPatches[ i ]->writeProlog( log, i );
       }
    }
+
+   // Structured initialization report (JSON) - core solver-family sections plus
+   // the multiresolution buffer bands and the decomposition topology.
+   nlohmann::json initReport = buildInitReportDocument( *this );
+   for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
+      initReport[ "multiresolution_buffers" ].push_back( multiresolutionBoundaryPatches[ i ]->writeInitReport() );
+   initReport[ "decomposition" ] = topology.writeInitReport();
+   writeInitReportFile( initReport, this->outputDirectory );
 
    log.writeHeader( "System information." );
    if( writeSystemInformation ) {

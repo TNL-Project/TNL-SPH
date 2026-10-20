@@ -1,6 +1,8 @@
 #include "SolverMultiSetBlockMultiresolutionLocalTimestepping.h"
 #include "../tempFunctionsToConfigMultiresolution.h"
 
+#include <SPH/InitReport.h>
+
 #include <cmath>
 #include <functional>
 
@@ -513,6 +515,15 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::writeProlog( bool 
       log.writeHeader( "Multiresolution boundary buffer (LTS) " + std::to_string( i ) + "." );
       multiresolutionBoundaryPatchesLTS[ i ]->writeProlog( log, i );
    }
+
+   // Structured initialization report (JSON) - the base-class prolog above already
+   // wrote the block-multiresolution document; rewrite it with the LTS buffer bands
+   // so the final file carries this solver's own buffers.
+   nlohmann::json initReport = buildInitReportDocument( *this );
+   for( long unsigned int i = 0; i < multiresolutionBoundaryPatchesLTS.size(); i++ )
+      initReport[ "multiresolution_buffers" ].push_back( multiresolutionBoundaryPatchesLTS[ i ]->writeInitReport() );
+   initReport[ "decomposition" ] = this->topology.writeInitReport();
+   writeInitReportFile( initReport, this->outputDirectory );
 }
 
 template< typename Model >

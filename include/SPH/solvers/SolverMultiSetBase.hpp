@@ -2,6 +2,7 @@
 
 #include <SPH/configInit.h>
 #include <SPH/configSetup.h>
+#include <SPH/InitReport.h>
 #include "../distributedUtils.h"
 #include "../shared/removeParticlesOutOfDensityLimits.h"
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
@@ -461,6 +462,39 @@ SolverMultiSetBase< Model >::initUserConfig( Func&& userConfigFunction )
    parseUserDefinedConfig( userConfigPath, userParams, userConfig, logger, userDefinedInline );
 }
 
+/**
+ * \brief Assemble the core initialization-report document of the solver family.
+ *
+ * Gathers the sections shared by all SolverMultiSetBase-derived solvers: the
+ * runtime configuration, one entry per fluid and boundary particle set, the
+ * open boundary patches and the periodic boundary patches of the first fluid
+ * set (periodicity is shared across the sets). The multiresolution solvers
+ * extend the returned document with their buffer and decomposition sections
+ * before it is written by \ref writeInitReportFile.
+ *
+ * \returns The core report document (not yet written to a file).
+ */
+template< typename Model >
+[[nodiscard]] nlohmann::json
+buildInitReportDocument( const SolverMultiSetBase< Model >& solver )
+{
+   nlohmann::json initReport = makeInitReportDocument();
+   addConfigSection( initReport, solver.parameters );
+
+   for( int i = 0; i < solver.numberOfSubsets; i++ ) {
+      initReport[ "fluids" ].push_back( solver.fluidSets[ i ]->writeInitReport() );
+      initReport[ "boundaries" ].push_back( solver.boundarySets[ i ]->writeInitReport() );
+   }
+
+   for( long unsigned int i = 0; i < solver.openBoundaryPatches.size(); i++ )
+      initReport[ "open_boundary_patches" ].push_back( solver.openBoundaryPatches[ i ]->writeInitReport() );
+
+   for( long unsigned int i = 0; i < solver.fluidSets[ 0 ]->periodicPatches.size(); i++ )
+      initReport[ "periodic_patches" ].push_back( solver.fluidSets[ 0 ]->periodicPatches[ i ]->writeInitReport() );
+
+   return initReport;
+}
+
 template< typename Model >
 void
 SolverMultiSetBase< Model >::writeProlog( bool writeSystemInformation ) noexcept
@@ -525,6 +559,10 @@ SolverMultiSetBase< Model >::writeProlog( bool writeSystemInformation ) noexcept
          fluidSets[ 0 ]->periodicPatches[ i ]->writeProlog( logger );
       }
    }
+
+   // Structured initialization report (JSON) - mirrors the sections logged above.
+   const nlohmann::json initReport = buildInitReportDocument( *this );
+   writeInitReportFile( initReport, outputDirectory );
 
    logger.writeHeader( "System information." );
    if( writeSystemInformation ) {
