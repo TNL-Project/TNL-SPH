@@ -89,6 +89,68 @@ def _load_report(path: Path) -> dict:
                          f" (run the case binary past init first)") from None
 
 
+def validate(case_rel: str,
+             config_name: str | None = None,
+             distributed: int | None = None) -> list[Finding]:
+    """Programmatic entry point for the tier runners (infra boot driver).
+
+    Runs the same expectations/invariant pipeline as :func:`main` but
+    without any printing and without the ``--ref`` deep-compare; returns the
+    collected findings (an empty list means all rules passed).  The CLI in
+    :func:`main` below is untouched and stays byte-compatible.
+    """
+    case_dir = _resolve_case_dir(case_rel)
+    config_path = _resolve_config(case_dir, config_name)
+    # A case's distributed subdomain layout comes from the nested subdomains
+    # loader and is not always mirrored by a top-level numberOfSubdomains
+    # key (e.g. damBreak3D_*_distributed inlines it), so the explicit
+    # distributed=N flag is the n_subdomains authority for the rule gates.
+    case_expectations = exp_mod.from_config(
+        config_path,
+        init_overrides={"number_of_subdomains": int(distributed)}
+        if distributed is not None else None)
+
+    results_dir = case_dir / str(case_expectations.get("output_directory")
+                                 or "results")
+    # Under MPI every rank writes init_report_subdomain<i>.json and NO
+    # plain init_report.json exists (the emission is per-rank only) -- a
+    # distributed validation therefore anchors the shared rules at rank 0
+    # and lets the tiling rule cover the rest.
+    report_path = results_dir / "init_report.json"
+    if distributed is not None and not report_path.exists():
+        report_path = results_dir / "init_report_subdomain0.json"
+    report = _load_report(report_path)
+
+    case_expectations["vtk_counts"] = exp_mod.vtk_counts(
+        case_dir / "sources",
+        fluid_vtk=case_expectations.get("fluid_vtk"),
+        boundary_vtk=case_expectations.get("boundary_vtk"))
+
+    findings: list[Finding] = []
+    if distributed is not None:
+        rank_reports = []
+        for rank in range(distributed):
+            rank_path = results_dir / f"init_report_subdomain{rank}.json"
+            if not rank_path.exists():
+                findings.append(Finding(
+                    DECOMP_TILING,
+                    f"rank file missing: {rank_path} "
+                    f"(expected {distributed} per-rank reports)"))
+                continue
+            rank_reports.append(_load_report(rank_path))
+        case_expectations["rank_reports"] = rank_reports
+        case_expectations["distributed"] = True
+
+    for rule in RULES:
+        name = RULE_NAMES[rule]
+        if name == DECOMP_TILING and distributed is None:
+            continue
+        finding = rule(report, case_expectations)
+        if finding is not None:
+            findings.append(finding)
+    return findings
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="infrastructure.validators.validate_case",
@@ -107,10 +169,16 @@ def main(argv: list[str] | None = None) -> int:
 
     case_dir = _resolve_case_dir(args.case)
     config_path = _resolve_config(case_dir, args.config_name)
-    expectations = exp_mod.from_config(config_path)
+    expectations = exp_mod.from_config(
+        config_path,
+        init_overrides={"number_of_subdomains": int(args.distributed)}
+        if args.distributed is not None else None)
 
     results_dir = case_dir / str(expectations.get("output_directory") or "results")
-    report = _load_report(results_dir / "init_report.json")
+    report_path = results_dir / "init_report.json"
+    if args.distributed is not None and not report_path.exists():
+        report_path = results_dir / "init_report_subdomain0.json"
+    report = _load_report(report_path)
 
     expectations["vtk_counts"] = exp_mod.vtk_counts(
         case_dir / "sources",
@@ -134,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"case   : {case_dir}")
     print(f"config : {config_path}")
-    print(f"report : {results_dir / 'init_report.json'}")
+    print(f"report : {report_path}")
     vtk_counts = expectations["vtk_counts"]
     if vtk_counts.get("fluid") is not None or vtk_counts.get("error"):
         print(f"vtk    : fluid={vtk_counts.get('fluid')} "
