@@ -57,3 +57,4 @@ src/Benchmarks/multiResolutionBenchmarks/damBreak2D_WCSPH-BI_MR-results
 
 # sph-bare
 bare
+src/tools/3rdparty/GenCase_linux64
