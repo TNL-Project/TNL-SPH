@@ -1,6 +1,6 @@
 # TNL-SPH PROJECT KNOWLEDGE BASE
 
-**Updated:** 2026-10-01
+**Updated:** 2026-10-20
 **Branch:** multiresolution-patch-lts
 
 ## OVERVIEW
@@ -41,12 +41,19 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │   ├── WCSPH-DBC/    WCSPH-BI/    RSPH/    SHTC/
 │   └── extra/  resources/              # auxiliary cases + shared images/data
 ├── src/
-│   ├── tools/                          # Python utilities (multirunner.py, splitToSubdomains.py,
-│   │                                   #  testSolver.py, plotting, VTK writers) — imported by init.py scripts
-│   ├── UnitTests/                      # CTest-registered test executables
-│   │   ├── multiresolution/            # dummy MR simulations used as test fixtures
-│   │   └── DistributedParticles/
-│   ├── Benchmarks/                     # optional (TNL-SPH_BUILD_BENCHMARKS)
+│   ├── tools/                          # case-init tooling only (splitToSubdomains.py,
+│   │                                   #  writeInitConfigFile.py, saveParticlesVTK.py, plotting)
+│   │                                   #  + kept multirunner.py — imported by init.py scripts
+│   ├── Tests/                          # unified test suite, one orchestrator runTests.py (see TESTING)
+│   │   ├── suite/                      # shared lib: paths, bootstrap, results, reporting, build,
+│   │   │                               #  runner_core, config_loader, cli
+│   │   ├── unit/                       # python check groups + cpp/ (DistributedParticles); CTest label "unit"
+│   │   ├── infrastructure/             # boot validators/, MR fixture machinery + fixtures/,
+│   │   │                               #  boot driver (infra_runner) incl. distributed boot
+│   │   ├── regression/                 # runner, configurations/, metrics/, references/ (+ _staging/),
+│   │   │                               #  referentialComputationalTimes/, perf.py
+│   │   └── logs/                       # session logs log_<stamp>.{json,md} (gitignored)
+│   ├── Benchmarks/                     # optional (TNL_SPH_BUILD_BENCHMARKS)
 │   └── extra/  archivedParts/          # auxiliary and legacy code
 ├── Documentation/                      # Doxygen config + multiresolution design documents
 ├── CMakeLists.txt                      # Root config: C++20+CUDA, -Werror, FetchContent deps
@@ -86,7 +93,12 @@ postpro.py                 # post-processing
 | MPI decomposition | `include/SPH/DecompositionTopology.h`, `src/tools/splitToSubdomains.py` | 1D split with domain overlaps; `SubdomainDescriptor`/`InterfaceDescriptor` |
 | Measurement: probes, sensors, grid output | `include/SPH/shared/Measuretool.h` (`InterpolateToGrid`, `SensorInterpolation`, `SensorWaterLevel`), `measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Driven by `SimulationMonitor.h` timers; runtime-configured via `.jsonc` |
 | Create a new example | copy e.g. `examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/` | Keep the layout convention; CMakeLists adds a `<case>_cuda` executable linked to `TNL::TNL` |
-| Unit tests | `src/UnitTests/{multiresolution,DistributedParticles}/` | Plain test executables registered via `add_test`; MR fixtures are dummy simulations with their own `run.py` |
+| Unit tests (python + C++ test) | `src/Tests/unit/` | Python check groups (built-in collector, no pytest) + `cpp/DistributedParticles/`; CTest label `unit` |
+| Regression configurations | `src/Tests/regression/configurations/` | Pure-data group modules (`suite_all` default, `qa_smoke` pinned smoke set); entries carry case, case-tag, evaluation-function, target, init-script + init kwargs |
+| Evaluation functions | `src/Tests/regression/metrics/` | String-named `REGISTRY` (also collects values for `--generate-references`); frozen references in `regression/references/` |
+| MR fixture tests | `src/Tests/infrastructure/run_sph_tests.py` + `tests.yaml` | 21 dummy MR simulations under `fixtures/`, log-compare against tracked `_ref.json` (legacy solver — no init report) |
+| Init report | `include/SPH/InitReport.h` (+ per-class `writeInitReport` methods) | Emits `results/init_report.json` (per-rank `init_report_subdomain<i>.json` under MPI) at every solver init; validated by the infrastructure tier |
+| Test-suite orchestrator | `src/Tests/runTests.py` | `--tier {all,unit,infrastructure,regression}`, `--group`, `--conf`, `--list`, `--report`; exit 0/1/2 (see TESTING) |
 
 ## CODE MAP
 
@@ -115,6 +127,7 @@ postpro.py                 # post-processing
 | `InterpolateToGrid` / `SensorInterpolation` / `SensorWaterLevel` | class | `include/SPH/shared/Measuretool.h` | Grid interpolation and point-sensor measurements used by the monitor |
 | `MeasureVolumetricFlowRate` / `MassConservationMonitor` | class | `include/SPH/shared/measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Open-boundary flow-rate and mass tracking |
 | `TimerMeasurement` | class | `include/SPH/TimeMeasurement.h` | Per-stage wall-time accounting |
+| `InitReport` helpers + per-class `writeInitReport(nlohmann::json&)` | fn + methods | `include/SPH/InitReport.h/.hpp`, `ParticleSet.h`, `MultiresolutionRectangleBuffer*.h`, ... | Structured init report (`results/init_report*.json`): config/params, particle-set geometry, open-boundary/periodic patches, MR buffers, decomposition |
 | `ElasticBounce`, `PST`, `MFD`, `TaylorMonomials` | class | `include/SPH/shared/` | Cross-model helpers: boundary-bounce modes, particle shifting, MLS/Taylor interpolation |
 
 ## CONVENTIONS
@@ -144,6 +157,10 @@ postpro.py                 # post-processing
 - **Committing generated content**: `results/`, VTK/VTU output, `sources/`, `__pycache__`, and simulation logs are git-ignored helpers; adding them with `-A`/force pollutes the repo.
 - **Host-only builds**: TNL's `HeadersOnly` mode and non-CUDA devices are unsupported here; CUDA is required and configs pin `TNL::Devices::Cuda`.
 - **CUDA error-chasing bottom-up**: `nvcc` errors cascade; fix the first error, rebuild with `--parallel 2` (or the single failing TU), repeat. Runtime CUDA failures: `compute-sanitizer`; segfaults: rebuild `RelWithDebInfo`/`Debug`, then `gdb`.
+- **Committing staged references or session logs**: `references/_staging/` content and `src/Tests/logs/` are git-ignored by design; staged refs are unverified until the TESTING freeze workflow completes — never force-add them.
+- **Freezing a reference without the H0 pilot**: run the cross-GPU tolerance pilot first (local RTX 2050 vs one cluster GPU on 2-3 pilot tags; decide global vs per-GPU namespaced `references/`) before any freeze.
+- **Invoking solver binaries bare**: always pass `--config <path>`; bare `--config-help`/`--print-static-configuration` can abort with an uncaught ConfigError (TNL-fork CLI).
+- **`run.py --init` on MR examples**: auto-init is broken there (no arg forwarding); call `init_multi_resolution*.py` scripts directly.
 
 ## UNIQUE STYLES
 
@@ -178,12 +195,62 @@ cmake --build build --parallel 2 --target damBreak2D_WCSPH-DBC_cuda
 python3 src/tools/splitToSubdomains.py --help
 mpirun -np 2 ./build/examples/WCSPH-DBC/damBreak2D_WCSPH-DBC_distributed/damBreak2D_WCSPH-DBC_distributed_cuda --config sources/config.jsonc
 
-# Tests
-ctest --test-dir build
-ctest --test-dir build -R DistributedParticleSystemTest
+# Unified test suite (src/Tests) — tiers run serially: unit -> infrastructure -> regression (see TESTING)
+python3 src/Tests/runTests.py --list                        # per-tier crumbs, nothing executes
+python3 src/Tests/runTests.py --tier unit                   # python-only checks, no solver runs
+python3 src/Tests/runTests.py --report src/Tests/logs/log_<stamp>.json   # reprint a stored session (exit 0 on parse)
+ctest --test-dir build -N                                  # list registered tests
+ctest --test-dir build -L unit                             # CTest path: unit-tier + DistributedParticleSystemTest
+                                                           # (red while a staging reference is unfrozen — sentinel, see TESTING)
+# Regression tier + reference staging involve full solver runs — CLUSTER-scale by design, do not run locally
 
 # LSP: build/compile_commands.json is produced at configure time
 ```
+
+## TESTING
+
+One orchestrator, three serial tiers: `python3 src/Tests/runTests.py --tier {all,unit,infrastructure,regression}`
+(default `all`; `--group`, `--conf`, `--list`, `--report`; exit 0 pass / 1 failures / 2 harness error; SKIPs never fail).
+Session logs land in `src/Tests/logs/log_<stamp>.{json,md}`; `--report <json>` reprints them.
+
+- **unit** — python-only, no solver runs (built-in collector, no pytest): decomposition math, `writeInitConfigFile`
+  kwargs, VTK roundtrip, config schema/rot (kwargs vs init-script argparse AST, target vs `CMakeLists.txt`,
+  staging gate). CTest path: `ctest --test-dir build -L unit` (adds `DistributedParticleSystemTest`).
+- **infrastructure** — boots every discovered example + 21 MR fixtures + 2-rank distributed boot; validates the
+  `results/init_report*.json` emitted at solver init by `InitReport.h`/`writeInitReport` (derivable invariants +
+  deep-compare vs frozen refs); legacy dummy fixtures stay log-compare.
+- **regression** — config-driven from `regression/configurations/` (default `suite_all`, `qa_smoke` = pinned smoke
+  set); metrics resolved by string name from `regression/metrics/REGISTRY` against per-case-tag JSON references
+  (`value` + `atol`/`rtol`); per-GPU computational-time report is informational, never gates.
+
+Reference freeze (manual, user-owned; cluster-side — do not run locally):
+
+1. cluster run: `python3 src/Tests/runTests.py --tier regression --conf suite_all --store-results`
+   (backs up `results/` → `results_<tag>/` on pass)
+2. eyeball `results_<tag>/` output
+3. `PYTHONPATH=src/Tests python3 -m regression.runner --conf configurations/suite_all.py --generate-references [--from-stored]`
+   → writes `references/_staging/<sanitized-tag>.json` with `verified:false`, `atol:null`, `tolerance_pending` marker
+4. eyeball staged values, set `atol` per metric, drop `tolerance_pending`, set `verified:true`
+5. `git mv` from `references/_staging/` to `references/` + commit
+6. the gate is active from then on (tags without a frozen ref report SKIP, never validate silently)
+
+Current state (expected on this branch):
+
+- unit tier + `--tier all` exit nonzero while an unfrozen staging ref exists (sentinel by design; resolves once
+  the ref is frozen or removed)
+- qa_smoke DBC reports SKIP "unfrozen reference (staging only)"
+- pre-existing boot-board findings:
+  - 2D distributed target commented out (`examples/WCSPH-DBC/CMakeLists.txt:2`)
+  - damBreak3D distributed tiling covers [1,24) of 25 cells
+  - movingSquare2D_WCSPH-DBC stale template compile FATAL
+  - poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI init emits invalid jsonc
+  - openChannel3D_WCSPH-BI VTK missing Normals
+  - flat-config cases exceed the validator's nested-config model
+  - dummy2D-lts-center fixture diff (pre-existing)
+  - ported damBreak2D-DBC seeded reference stale on this branch (1/4)
+  - bare `--config-help`/`--print-static-configuration` aborts with uncaught ConfigError (TNL-fork CLI)
+- LOCAL RUNS RULE: regression/testing with solver runs is cluster-scale; local sanity runs are capped at
+  ≤ 10 time steps
 
 ## MULTIRESOLUTION & LOCAL TIME STEPPING
 
@@ -202,7 +269,7 @@ ctest --test-dir build -R DistributedParticleSystemTest
   (updating from the neighbor fluid is a selectable method; recent commits reworked
   `ghostBoundaryIndices` handling and split the code into `BoundaryGhostParticles.h`).
 - Working examples: `examples/WCSPH-BI/*_multiresolution*/`; unit fixtures under
-  `src/UnitTests/multiresolution/testConfigurations/` (dummy 2D/3D MR and MR-LTS
+  `src/Tests/infrastructure/fixtures/` (dummy 2D/3D MR and MR-LTS
   simulations, each with its own `run.py` and JSONC template).
 - `MultiresolutionBuffer.h` and `MultiresolutionRectangleBuffer.h` are two generations
   of the same classes — do not mix them (see anti-patterns).
