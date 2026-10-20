@@ -45,6 +45,12 @@ src/Tests/infrastructure/fixtures/dummyMultiresolutionSimulation*D/sources
 src/Tests/infrastructure/fixtures/dummyMultiresolutionLTSSimulation*D/results
 src/Tests/infrastructure/fixtures/dummyMultiresolutionLTSSimulation*D/sources
 
+# unified test suite: session logs and unverified staged regression references
+# (staged refs become tracked only after the manual freeze workflow moves them
+#  one level up into src/Tests/regression/references/)
+src/Tests/logs/
+src/Tests/regression/references/_staging/
+
 # content in src
 src/extra/accelerateImp/spectrum-results
 src/Benchmarks/multiResolutionBenchmarks/damBreak2D_WCSPH-BI_MR-results
