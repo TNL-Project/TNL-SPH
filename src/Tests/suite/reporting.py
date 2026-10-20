@@ -102,7 +102,7 @@ def summary_table(
     console = _console()
     from rich.table import Table
 
-    table = Table(title=title, show_lines=True)
+    table = Table(title=title, show_lines=False, header_style="bold cyan")
     table.add_column("Case tag")
     table.add_column("Result")
     table.add_column("Comp. time")
