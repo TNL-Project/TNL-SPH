@@ -22,11 +22,18 @@ magnitude below the stated atols, and the pinned comparator default is
 
 Collect mode (todo 10's ``--generate-references`` contract): registry
 functions accept ``collect=True`` and return ``{metric_name: value}`` with
-JSON-serializable values instead of comparing.  ``damBreak2D_WCSPH_DBC``
-reports under the legacy short aliases ``wl_*``/``ps_*`` which map 1:1 onto
-the canonical JSON metric names via ``_DAMBREAK2D_SENSOR_FILES``
-(``wl -> sensorsWaterLevel``, ``ps -> sensorsPressure``); todo 10's stager
-writes the aliases into staging refs.  Stubs return ``(0, 0)`` / ``{}``.
+JSON-serializable values instead of comparing.  The metric names are the
+CANONICAL ones the comparator consumes (``<sensor-stem>_avg`` /
+``<sensor-stem>_std``), so a generated staging reference is
+comparator-consumable once frozen.  (The legacy short aliases
+``wl_*``/``ps_*`` are gone -- they produced staging refs the comparator
+could never read.)  Stubs return ``(0, 0)`` / ``{}``.
+
+Reference selection rule (per-tag resolution): a registry function serving
+several case tags loads the PER-TAG committed reference
+``references.reference_path( case_tag )`` when that file exists and falls
+back to its hardcoded BASE reference otherwise -- entries frozen against
+the base keep the pre-variant default behavior.
 
 Diagnostic lines are printed per sub-check in the legacy per-check style,
 naming the metric -- including on failure (selfcheck relies on it).
@@ -40,14 +47,16 @@ import numpy as np
 
 from . import references
 
-# The one gated reference of the plan (seeded from the legacy hardcoded
-# arrays of evaluateExamplesMetrics.damBreak2D_WCSPH_DBC).
+# The base reference of the 2D damBreak evaluation (seeded from the legacy
+# hardcoded arrays of evaluateExamplesMetrics.damBreak2D_WCSPH_DBC); the
+# fallback for every served case tag without its own committed reference.
 _DAMBREAK2D_WCSPH_DBC_TAG = "WCSPH-DBC/damBreak2D_WCSPH-DBC"
 
-# (legacy short alias, sensor filename) pairs of the 2D damBreak evaluation.
+# Sensor filenames of the 2D damBreak evaluation; the canonical metric
+# names are ``<filename-stem>_avg`` / ``<filename-stem>_std``.
 _DAMBREAK2D_SENSOR_FILES = (
-    ( "wl", "sensorsWaterLevel.dat" ),
-    ( "ps", "sensorsPressure.dat" ),
+    "sensorsWaterLevel.dat",
+    "sensorsPressure.dat",
 )
 
 
@@ -124,91 +133,108 @@ def sensor_avg_std_check(
     return passed, total
 
 
-def damBreak2D_WCSPH_DBC( case_dir: Path, collect: bool = False ):
-    """Evaluate the 2D DBC damBreak case against the seeded reference JSON."""
+def damBreak2D_WCSPH_DBC(
+    case_dir: Path, *, collect: bool = False, case_tag: str | None = None
+):
+    """Evaluate the 2D DBC damBreak case against its reference JSON.
+
+    Reference selection rule: ``tag = case_tag or <base tag>``; the per-tag
+    committed reference ``references.reference_path( tag )`` is loaded when
+    that file exists, otherwise the BASE reference
+    ``references/WCSPH-DBC/damBreak2D_WCSPH-DBC.json`` (seeded from the
+    legacy arrays) -- every entry frozen against the base keeps the
+    pre-variant default behavior.
+
+    Collect mode ignores references entirely and returns the CANONICAL
+    metric names (``sensorsWaterLevel_avg/_std``,
+    ``sensorsPressure_avg/_std``) -- the same names the comparator looks
+    up -- so generated staging references are freeze-ready.
+    """
     if collect:
         values = {}
-        for alias, sensor_file in _DAMBREAK2D_SENSOR_FILES:
+        for sensor_file in _DAMBREAK2D_SENSOR_FILES:
+            stem = Path( sensor_file ).stem
             mean_sim, std_sim = _sensor_mean_std( case_dir, sensor_file )
-            values[ f"{alias}_avg" ] = mean_sim.tolist()
-            values[ f"{alias}_std" ] = std_sim.tolist()
+            values[ f"{stem}_avg" ] = mean_sim.tolist()
+            values[ f"{stem}_std" ] = std_sim.tolist()
         return values
-    ref = references.load_reference(
-        references.reference_path( _DAMBREAK2D_WCSPH_DBC_TAG )
-    )
+    path = references.reference_path( case_tag or _DAMBREAK2D_WCSPH_DBC_TAG )
+    if not path.is_file():
+        path = references.reference_path( _DAMBREAK2D_WCSPH_DBC_TAG )
+    ref = references.load_reference( path )
     passed = 0
     total = 0
-    for _, sensor_file in _DAMBREAK2D_SENSOR_FILES:
+    for sensor_file in _DAMBREAK2D_SENSOR_FILES:
         sub_passed, sub_total = sensor_avg_std_check( case_dir, sensor_file, ref )
         passed += sub_passed
         total += sub_total
     return passed, total
 
 
-def damBreak2D_WCSPH_MDBC( case_dir: Path, collect: bool = False ):
+def damBreak2D_WCSPH_MDBC( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def damBreak3D_WCSPH_DBC( case_dir: Path, collect: bool = False ):
+def damBreak3D_WCSPH_DBC( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def damBreak3D_WCSPH_MDBC( case_dir: Path, collect: bool = False ):
+def damBreak3D_WCSPH_MDBC( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def damBreak2D_WCSPH_BI( case_dir: Path, collect: bool = False ):
+def damBreak2D_WCSPH_BI( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def damBreak3D_WCSPH_BI( case_dir: Path, collect: bool = False ):
+def damBreak3D_WCSPH_BI( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def poiseuilleFlowWithOpenBoundary2D_WCSPH( case_dir: Path, collect: bool = False ):
+def poiseuilleFlowWithOpenBoundary2D_WCSPH( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def poiseuilleFlowWithPeriodicBoundary2D_WCSPH( case_dir: Path, collect: bool = False ):
+def poiseuilleFlowWithPeriodicBoundary2D_WCSPH( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def poiseuilleFlowWithOpenBoundary2D_WCSPH_BI( case_dir: Path, collect: bool = False ):
+def poiseuilleFlowWithOpenBoundary2D_WCSPH_BI( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def poiseuilleFlowWithPeriodicBoundary2D_WCSPH_BI( case_dir: Path, collect: bool = False ):
+def poiseuilleFlowWithPeriodicBoundary2D_WCSPH_BI( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Stub (legacy semantics): no evaluation until references are frozen."""
     if collect:
         return {}
     return 0, 0
 
 
-def empty( case_dir: Path, collect: bool = False ):
+def empty( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ):
     """Default no-op evaluation (legacy ``evaluateExamplesMetrics.empty``)."""
     if collect:
         return {}

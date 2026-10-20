@@ -170,6 +170,15 @@ def evaluate(conf: dict, case_dir: Path) -> tuple[int, int]:
     this module loads before todo 8's registry exists) and called with
     ``case_dir``. Unknown names raise ``ValueError`` listing the valid
     registry names; raw callables are rejected with a ``ValueError``.
+
+    Registry call rule (uniform contract, see
+    ``regression.metrics.__init__``): every registry function has the
+    signature ``fn(case_dir, *, collect=False, case_tag=None)`` and this
+    function ALWAYS threads the entry's ``case-tag`` into the call, so a
+    metric function serving several tags can resolve its per-tag committed
+    reference -- falling back to its hardcoded base reference when the
+    per-tag file is absent.  A missing ``case-tag`` arrives as ``None``,
+    which selects the function's base reference.
     """
     name = conf.get("evaluation-function")
     if name is None or name == "":
@@ -199,7 +208,7 @@ def evaluate(conf: dict, case_dir: Path) -> tuple[int, int]:
             f"unknown evaluation function '{name}' for case '{tag}'. "
             f"Valid registry names: {valid}"
         )
-    passed, total = registry[name](Path(case_dir))
+    passed, total = registry[name](Path(case_dir), case_tag=conf.get("case-tag"))
     return int(passed), int(total)
 
 

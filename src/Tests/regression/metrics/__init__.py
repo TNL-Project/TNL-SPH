@@ -8,15 +8,23 @@ function performing the evaluation.
 Registry contract (todo 6's runner imports this LAZILY inside ``evaluate()``
 and depends only on the names; todo 10's generator depends on collect mode)::
 
-    fn( case_dir: Path, collect: bool = False ) -> tuple[ int, int ] | dict
+    fn( case_dir: Path, *, collect: bool = False, case_tag: str | None = None ) -> tuple[ int, int ] | dict
 
 - compare mode (default): evaluate the results of the case in ``case_dir``
   against the committed reference store (see :mod:`.references`) and return
   ``(passed, total)`` sub-check counts, printing one legacy-style diagnostic
   line per sub-check.  Stubs return ``(0, 0)`` ("no evaluation yet").
+- ``case_tag`` is the configuration entry's case tag, threaded by the
+  caller (``suite.runner_core.evaluate``); a function serving several tags
+  resolves its PER-TAG committed reference with it and falls back to its
+  hardcoded base reference when the per-tag file is absent.  ``None``
+  selects the base reference; collect mode ignores it.
 - collect mode (``collect=True``, used by todo 10's
   ``--generate-references`` staging): return ``{metric_name: value}`` with
-  JSON-serializable values and never compare.  Stubs return ``{}``.
+  the CANONICAL metric names the comparator consumes
+  (``<sensor-stem>_avg`` / ``<sensor-stem>_std``) and JSON-serializable
+  values, never compare -- generated staging refs are freeze-ready.
+  Stubs return ``{}``.
 
 Selftest::
 
@@ -25,8 +33,8 @@ Selftest::
 prints the sorted REGISTRY (11 entries), runs the tag-sanitizer assertions,
 seeds a TEMP reference from the legacy arrays into ``references/_staging/``
 (cleaned up afterwards) and demonstrates the comparator on synthetic sensor
-files: a pass case ``(4, 4)`` and a beyond-atol perturbed case ``(3, 4)``
-naming the failing metric.
+files: a pass case ``(4, 4)`` including the variant-tag base fallback, and
+a beyond-atol perturbed case ``(3, 4)`` naming the failing metric.
 """
 
 from __future__ import annotations
@@ -234,6 +242,18 @@ def selftest() -> int:
         print( f"pass-case comparator result: {result} (expect (4, 4))" )
         assert result == ( 4, 4 ), f"pass case must return (4, 4), got {result}"
 
+        # Variant tag with NO committed per-tag reference -> base fallback.
+        result_variant = REGISTRY[ "damBreak2D_WCSPH_DBC" ](
+            case_dir, case_tag="WCSPH-DBC/damBreak2D_WCSPH-DBC:no-such-variant"
+        )
+        print(
+            f"variant-tag base-fallback result: {result_variant} (expect (4, 4))"
+        )
+        assert result_variant == ( 4, 4 ), (
+            f"variant tag without a per-tag reference must fall back to the base "
+            f"reference and return (4, 4), got {result_variant}"
+        )
+
         # Perturb column 0 of the water-level file by +5*atol(avg) -> mean out.
         shift = 5.0 * wl_avg[ "atol" ]
         _write_sensor_file(
@@ -258,9 +278,15 @@ def selftest() -> int:
         )
         print( "failing metric named in diagnostics: OK" )
 
-        # collect mode returns the legacy aliases with JSON-serializable values.
+        # collect mode returns the canonical metric names the comparator
+        # consumes, with JSON-serializable values.
         collected = REGISTRY[ "damBreak2D_WCSPH_DBC" ]( case_dir, collect=True )
-        assert set( collected ) == { "wl_avg", "wl_std", "ps_avg", "ps_std" }
+        assert set( collected ) == {
+            "sensorsWaterLevel_avg",
+            "sensorsWaterLevel_std",
+            "sensorsPressure_avg",
+            "sensorsPressure_std",
+        }
         json.dumps( collected )
         print( f"collect-mode keys {sorted( collected )} JSON-serializable: OK" )
 
