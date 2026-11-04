@@ -1,10 +1,7 @@
 #include "SolverMultiSetBlockMultiresolutionLocalTimestepping.h"
 #include "../tempFunctionsToConfigMultiresolution.h"
 
-#include <SPH/InitReport.h>
-
 #include <cmath>
-#include <functional>
 
 namespace TNL {
 namespace SPH {
@@ -101,12 +98,23 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBas
        this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
     }
 
-    this->modelParams.init( params );
-    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ){
-      const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
-      const float refinementFactor = getLevelRefinementFactor( iface.ownIdx );
-      multiresolutionBoundaryPatchesLTS[ p ]->initMassNodes( this->modelParams, iface.ownIdx, iface.neighborIdx, refinementFactor );
-   }
+     this->modelParams.init( params );
+
+      /* Mass nodes belong only to interface faces backed by the neighbor fluid's
+         support: faces lying at the global domain boundary (tank walls, bottom) have
+         no fluid beyond them, and flux bookkeeping anchored there degenerates the
+         interface state. The domain extent and the excluded faces of each interface
+         frame are computed by the multiresolution helpers and applied by the buffers. */
+      const auto domBox = computeSubdomainUnionBox< SPHConfig::spaceDimension >( this->topology );
+      const RealType globalCell = this->topology.getGlobalGrid().getSpaceSteps()[ 0 ];
+      for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
+         const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
+         multiresolutionBoundaryPatchesLTS[ p ]->initMassNodesWithDomainExclusion(
+               this->modelParams, iface.ownIdx, iface.neighborIdx, getLevelRefinementFactor( iface.ownIdx ),
+               this->topology.getSubdomain( iface.ownIdx ), this->topology.getSubdomain( iface.neighborIdx ),
+               globalCell, domBox.first, domBox.second );
+      }
+
 
    /* Per-level time steps: the configured time step is the FINEST level's step (as written
       by the init script from CFL*h_min/c0); coarser levels scale with the refinement-factor
@@ -269,7 +277,23 @@ void
 SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateLevel( int idx )
 {
    this->timeMeasurement.start( "integrate" );
-   this->integrator->integratStepVerlet( this->fluidSets[ idx ], this->boundarySets[ idx ], levelTimeStepping[ idx ], false );
+   /* One Euler rebase per 20 steps of THIS level = one per 20*dt_L of physical
+      time at any refinement ratio - the uniform drivers' semantics (their
+      getStep()%20 counts fine-dt steps). Keying on the global window counter
+      instead under-rebases fine levels by the refinement ratio (2x at 2:1: one
+      rebase per 40 fine steps vs the control's 20), leaving the swap-based
+      leapfrog's v/v_old and rho/rho_old desync unpurged twice as long; on a
+      stiff, strongly oscillating flow (the impeller pocket) the desync then
+      converts density excursions into net kinetic energy at the integrate
+      kick. Rebasing several times per window is equally wrong (also an
+      energy ratchet), hence the per-level-step key: at 1:1 it degenerates to
+      the window keying bit-for-bit, at 2:1 it restores the control cadence. */
+   const bool doResync = ( levelTimeStepping[ idx ].getStep() % 20 == 0 );
+   this->integrator->integratStepVerlet( this->fluidSets[ idx ],
+                                         this->boundarySets[ idx ],
+                                         levelTimeStepping[ idx ],
+                                         false,
+                                         doResync );
    levelTimeStepping[ idx ].updateTimeStep();
    this->timeMeasurement.stop( "integrate" );
 }
@@ -279,6 +303,49 @@ int
 SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getNumberOfSubsteps( int level ) const
 {
    return levelSubsteps[ level ];
+}
+
+template< typename Model >
+template< typename SubstepUpdate >
+void
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep )
+{
+   const int nLevels = this->numberOfSubsets;
+   const RealType theta = this->modelParams.ltsTheta;
+
+   std::function< void( int, int, int ) > advanceLevel = [ & ]( int level, int count, int base )
+   {
+      for( int substep = 0; substep < count; substep++ )
+      {
+         const int g = base + substep;  // window-global substep index of this level
+         const RealType dtLevel = levelTimeStepping[ level ].getTimeStep();
+
+         if( g != 0 )
+            refreshSubstepSearches( level );
+
+         subdomainSubstep( level, substep, g, dtLevel );
+
+         if( level + 1 < nLevels ) {
+            const int ratio = getNumberOfSubsteps( level + 1 ) / getNumberOfSubsteps( level );
+            advanceLevel( level + 1, ratio, g * ratio );
+
+            /* R1 - exact coincidence refresh: the child invocation just brought the
+               band's clock to the same physical time as this level; re-stamp the
+               anchors so the following blends stay bracketed. Skipped after the last
+               substep - the sync-point lifecycle re-grounds all bands anyway. */
+            if( substep + 1 < count ) {
+               refreshBuffersFromNeighbor( 1.0, level + 1 );
+               stampBuffersAnchor( level + 1 );
+            }
+         }
+
+         /* R2 - midpoint blend of the band owned by this level (the interface toward
+            its coarser neighbor), firing once per invocation at the midpoint substep. */
+         if( theta > 0 && level > 0 && substep == count / 2 - 1 )
+            refreshBuffersFromNeighbor( theta, level );
+      }
+   };
+   advanceLevel( 0, 1, 0 );
 }
 
 template< typename Model >
@@ -383,49 +450,16 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshSubstepSear
       multiresolutionBoundaryPatchesLTS[ p ]->removeParticlesOutOfGrid( multiresolutionBoundaryPatchesLTS[ p ]->getParticles() );
       multiresolutionBoundaryPatchesLTS[ p ]->searchForNeighbors();
    }
-}
 
-template< typename Model >
-template< typename SubstepUpdate >
-void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep )
-{
-   const int nLevels = this->numberOfSubsets;
-   const RealType theta = this->modelParams.ltsTheta;
-
-   std::function< void( int, int, int ) > advanceLevel = [ & ]( int level, int count, int base )
-   {
-      for( int substep = 0; substep < count; substep++ )
-      {
-         const int g = base + substep;  // window-global substep index of this level
-         const RealType dtLevel = levelTimeStepping[ level ].getTimeStep();
-
-         if( g != 0 )
-            refreshSubstepSearches( level );
-
-         subdomainSubstep( level, substep, g, dtLevel );
-
-         if( level + 1 < nLevels ) {
-            const int ratio = getNumberOfSubsteps( level + 1 ) / getNumberOfSubsteps( level );
-            advanceLevel( level + 1, ratio, g * ratio );
-
-            /* R1 - exact coincidence refresh: the child invocation just brought the
-               band's clock to the same physical time as this level; re-stamp the
-               anchors so the following blends stay bracketed. Skipped after the last
-               substep - the sync-point lifecycle re-grounds all bands anyway. */
-            if( substep + 1 < count ) {
-               refreshBuffersFromNeighbor( 1.0, level + 1 );
-               stampBuffersAnchor( level + 1 );
-            }
-         }
-
-         /* R2 - midpoint blend of the band owned by this level (the interface toward
-            its coarser neighbor), firing once per invocation at the midpoint substep. */
-         if( theta > 0 && level > 0 && substep == count / 2 - 1 )
-            refreshBuffersFromNeighbor( theta, level );
-      }
-   };
-   advanceLevel( 0, 1, 0 );
+   /* The boundary sets of the refreshed level must be re-searched as well: the fine
+      fluid was just re-sorted and the boundary markers may move inside substeps, so
+      keeping the window-start boundary search leaves boundary-fluid walks built on
+      stale structures. Without it the fine level slowly loses wall support (fluid
+      leaks through walls, mostly at the bottom, and is culled as out-of-domain),
+      degenerating the interface until the mass-flux bookkeeping explodes - the
+      uniform-stepping drivers re-search the boundary every step for this reason. */
+   if( fineIdx >= 0 && fineIdx < int( this->boundarySets.size() ) )
+      this->boundarySets[ fineIdx ]->searchForNeighbors();
 }
 
 template< typename Model >

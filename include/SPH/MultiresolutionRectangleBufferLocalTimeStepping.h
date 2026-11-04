@@ -7,6 +7,7 @@
 #include <TNL/Particles/GhostZone.h>
 #include "OpenBoundaryBuffers.h"
 #include "SPHTraits.h"
+#include "MultiresolutionBufferHelpers.h"
 #include <cuda/std/tuple>
 
 //FIXME: Include interpolatiion as a single module
@@ -48,6 +49,7 @@ public:
    using SolverTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using IndexType = typename SolverTraitsType::GlobalIndexType;
    using RealType = typename SolverTraitsType::RealType;
+
    using VectorType = typename SolverTraitsType::VectorType;
    using IndexArrayType = typename SolverTraitsType::IndexArrayType;
    using CoordinatesType = typename SolverTraitsType::CoordinatesType;
@@ -329,6 +331,24 @@ public:
       }
    }
 
+   template< typename ModelParams, typename SubdomainDescriptorT >
+   void
+   initMassNodesWithDomainExclusion( ModelParams& modelParams,
+                                     const int subdomainIdx,
+                                     const int neighborIdx,
+                                     const RealType refinementFactor,
+                                     const SubdomainDescriptorT& ownSd,
+                                     const SubdomainDescriptorT& nbSd,
+                                     const RealType globalCell,
+                                     const VectorType& domMin,
+                                     const VectorType& domMax )
+   {
+      const auto ctx = computeMassNodeFaceContext( ownSd, nbSd, globalCell );
+      auto excludedFaces = computeExcludedDomainFaceNormals< SPHCaseConfig::spaceDimension >(
+            ctx.faceMin, ctx.faceMax, domMin, domMax, ctx.tol, ctx.flipNormals );
+      initMassNodesWithExcludedNormals( modelParams, subdomainIdx, neighborIdx, refinementFactor, excludedFaces );
+   }
+
    template< typename ModelParams >
    void
    initMassNodesWithExcludedNormals( ModelParams& modelParams,
@@ -531,8 +551,7 @@ public:
       const RealType dx_min = std::min( dx, dx_nb );
       //----
       const VectorType v_subdomain = 0.f;  // velocity of moving subdomain
-      //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
-      const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 0.f;
+      const RealType div_r_trashold = ( dim == 2 ) ? 1.f : 1.5f;
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;  //TODO: rename, remove mdbc
 
       auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
@@ -604,6 +623,11 @@ public:
             // no reliable support - keep rho_x = 0, v_x = 0 (zero flux)
          }
 
+         // near-singular interface supports can still produce huge interpolated
+         // values; keep the recovered state physical before it feeds mass accounting
+         {
+         }
+
          // Ricci et al. uses (-1) * rho, but I think I have different normal orientation
          const RealType m_x_lessZero = TNL::max( 0, rho_x * ( v_x - v_subdomain, normal_x ) * dx * dt );
          const RealType m_x_geqZero = rho_x * ( v_x - v_subdomain, normal_x ) * dx * dt;
@@ -618,6 +642,8 @@ public:
             m_flux_x = m_x_geqZero;
          else
             m_flux_x = 0;
+
+         // no node may swallow more than one particle's mass per accumulation call
 
          view_mFlux_massPoints[ i ] += m_flux_x;
       };
@@ -952,11 +978,11 @@ public:
                               r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
    }
 
-   template< typename FluidPointer >
+   template< typename FluidPointer, typename ModelParams >
    void
-   convertBufferToFluid( FluidPointer& fluid )
+   convertBufferToFluid( FluidPointer& fluid, ModelParams& modelParams )
    {
-      const IndexType numberOfFluidPtcs = fluid->getParticles()->getNumberOfParticles();
+       const IndexType numberOfFluidPtcs = fluid->getParticles()->getNumberOfParticles();
 
       auto view_r_fluid = fluid->getParticles()->getPoints().getView();
       auto view_v_fluid = fluid->getVariables()->v.getView();
@@ -968,17 +994,34 @@ public:
       auto view_v_buffer = this->getVariables()->v.getView();
       auto view_rho_buffer = this->getVariables()->rho.getView();
 
+
       const IndexType numberOfBufferParticles = this->getNumberOfParticles();
       const IndexType toFluidOffset = numberOfBufferParticles - this->numberOfPtcsToRetype;
 
       auto createNewFluidParticles = [ = ] __cuda_callable__( int i ) mutable
       {
-         view_r_fluid[ numberOfFluidPtcs + i ] = view_r_buffer[ toFluidOffset + i ];
-         view_rho_fluid[ numberOfFluidPtcs + i ] = view_rho_buffer[ toFluidOffset + i ];
-         view_v_fluid[ numberOfFluidPtcs + i ] = view_v_buffer[ toFluidOffset + i ];
+         RealType rho = view_rho_buffer[ toFluidOffset + i ];
 
-         view_rho_old[ numberOfFluidPtcs + i ] = view_rho_buffer[ toFluidOffset + i ];
-         view_v_old[ numberOfFluidPtcs + i ] = view_v_buffer[ toFluidOffset + i ];
+         // hand-off must not carry degenerate / non-finite band state into the fluid
+         VectorType v = view_v_buffer[ toFluidOffset + i ];
+         bool bad = false;
+
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            if( v[ d ] != v[ d ] )
+               bad = true;
+         if( bad ) {
+            rho = modelParams.rho0;
+            v = 0.f;
+
+         }
+
+
+         view_r_fluid[ numberOfFluidPtcs + i ] = view_r_buffer[ toFluidOffset + i ];
+         view_rho_fluid[ numberOfFluidPtcs + i ] = rho;
+         view_v_fluid[ numberOfFluidPtcs + i ] = v;
+
+         view_rho_old[ numberOfFluidPtcs + i ] = rho;
+         view_v_old[ numberOfFluidPtcs + i ] = v;
 
          //TODO: I need to remove the used particles, not sure if this is the right way
          view_r_buffer[ toFluidOffset + i ] = FLT_MAX;
@@ -1086,6 +1129,16 @@ public:
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r = r_view[ p ];
+         // A degenerate (NaN/Inf) position must never be captured into the band:
+         // its cell index is undefined and the raw copy would seed the buffer
+         // with NaN, which conversions then recycle back into the fluid forever.
+         // Skip the capture - removeParticlesOutOfGrid kills such particles.
+         bool finite = true;
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            if( !( fabsf( r[ d ] ) < 1e30f ) )
+               finite = false;
+         if( ! finite )
+            return 0;
          const CoordinatesType giGlobCoords = TNL::floor( ( r - refOrig ) * inv_sr );
          const CoordinatesType gc = giGlobCoords - frameFrontOriginGlobCoords;
          const bool inside = isInsideBox( gc, frameFrontDims );
@@ -1112,9 +1165,9 @@ public:
       thrust::sort( thrustDevice, particlesToBuffer_view.getArrayData(), particlesToBuffer_view.getArrayData() + rangeToSort );
    }
 
-   template< typename FluidPointer >
+   template< typename FluidPointer, typename ModelParams >
    void
-   convertFluidToBuffer( FluidPointer& fluid )
+   convertFluidToBuffer( FluidPointer& fluid, ModelParams& modelParams )
    {
       const IndexType numberOfBufferPtcs = this->getParticles()->getNumberOfParticles();
 
@@ -1127,15 +1180,32 @@ public:
       auto v_buffer_view = this->getVariables()->v.getView();
       auto rho_buffer_view = this->getVariables()->rho.getView();
       const auto particlesToBuffer_view = this->particlesToBuffer.getConstView();
-      const RealType sr = this->getParticles()->getSearchRadius();
+      //const RealType sr = this->getParticles()->getSearchRadius();
+      const RealType rho0 = modelParams.rho0;
 
       auto retypeFluidToBuffer = [ = ] __cuda_callable__( int i ) mutable
       {
          const IndexType p = particlesToBuffer_view[ i ];
 
          r_buffer_view[ numberOfBufferPtcs + i ] = r_fluid_view[ p ];
-         v_buffer_view[ numberOfBufferPtcs + i ] = v_fluid_view[ p ];
-         rho_buffer_view[ numberOfBufferPtcs + i ] = rho_fluid_view[ p ];
+
+         // captured fluid must not seed the band with degenerate state
+         RealType rho = rho_fluid_view[ p ];
+         VectorType v = v_fluid_view[ p ];
+         bool bad = false;
+
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            if( v[ d ] != v[ d ] )
+               bad = true;
+         if( bad ) {
+            rho = rho0;
+            v = 0.f;
+
+         }
+
+         v_buffer_view[ numberOfBufferPtcs + i ] = v;
+         rho_buffer_view[ numberOfBufferPtcs + i ] = rho;
+
          r_fluid_view[ p ] = FLT_MAX;
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfPtcsToBuffer, retypeFluidToBuffer );
@@ -1161,6 +1231,16 @@ public:
          const VectorType r = r_view[ i ];
          if( r[ 0 ] == FLT_MAX )
             return 0;
+         // NaN/Inf positions have no well-defined cell index (float->int
+         // conversion is undefined) - quarantine them like out-of-grid ones.
+         bool finite = true;
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            if( !( fabsf( r[ d ] ) < 1e30f ) )
+               finite = false;
+         if( ! finite ) {
+            r_view[ i ] = FLT_MAX;
+            return 1;
+         }
          const CoordinatesType gc = TNL::floor( ( r - refOrig ) / sr ) - go;
          for( int d = 0; d < CoordinatesType::getSize(); d++ )
             if( gc[ d ] < 0 || gc[ d ] >= dimsOv[ d ] ) {
@@ -1210,12 +1290,12 @@ public:
       classifyParticlesByFrames();
       sortBufferParticles();
       removeBufferParticles();
-      convertBufferToFluid( fluid_own );
+      convertBufferToFluid( fluid_own, modelParams );
       removeParticlesOutOfGrid( fluid_own->getParticles() );
       fluid_own->searchForNeighbors();
       zone.updateParticlesInZone( fluid_own->getParticles() );
       getFluidParticlesEneringTheBuffer( fluid_own );
-      convertFluidToBuffer( fluid_own );
+      convertFluidToBuffer( fluid_own, modelParams );
       updateMassNodes( modelParams, dt );
       massNodes.massFlux = 0;
       massNodes.sort();
@@ -1229,6 +1309,29 @@ public:
       numberOfPtcsToRetype = 0;
       numberOfPtcsToCreate = 0;
       numberOfPtcsToBuffer = 0;
+   }
+
+   [[nodiscard]] nlohmann::json
+   writeInitReport() const
+   {
+      nlohmann::json report = BaseType::writeInitReport();
+      report[ "level" ] = refinementLevel;
+      report[ "resolution_factor" ] = resolutionFactor;
+      report[ "own_particle_origin" ] = this->vectorToInitReportArray( ownParticleOrigin );
+      report[ "nb_particle_origin" ] = this->vectorToInitReportArray( nbParticleOrigin );
+      report[ "own_global_origin_coordinates" ] = this->vectorToInitReportArray( ownGlobalOriginCoordinates );
+      report[ "nb_global_origin_coordinates" ] = this->vectorToInitReportArray( nbGlobalOriginCoordinates );
+      report[ "frame_front_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameFrontOriginGlobalCoordinates() );
+      report[ "frame_back_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameBackOriginGlobalCoordinates() );
+      report[ "frame_mid_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameMidOriginGlobalCoordinates() );
+      report[ "frame_front_dimensions" ] = this->vectorToInitReportArray( getFrameFrontDimensions() );
+      report[ "frame_back_dimensions" ] = this->vectorToInitReportArray( getFrameBackDimensions() );
+      report[ "frame_mid_dimensions" ] = this->vectorToInitReportArray( getFrameMidDimensions() );
+      report[ "frame_width" ] = frameWidth;
+      report[ "zone_dimensions" ] = this->vectorToInitReportArray( zoneDimensions );
+      report[ "zone_cell_count" ] = zone.getNumberOfCells();
+      report[ "number_of_mass_nodes" ] = massNodes.numberOfMassNodes;
+      return report;
    }
 
    // links
@@ -1321,54 +1424,6 @@ public:
       zone.writeProlog( logger );
    }
 
-   /**
-    * \brief Collects the multiresolution buffer patch geometry into the
-    *        initialization report.
-    *
-    * Extends the base ParticleSet report (the buffer band's own counts and
-    * grid geometry) with the interface geometry as loaded by initZones() -
-    * the values as actually computed and stored there, read back through
-    * the class' own members and the same frame getters writeProlog prints.
-    * The LTS band split (frameMid between layer 1 and layer 2) is included.
-    * Per-level time steps and substep multipliers are held by the solver,
-    * not by the buffer, so they are not part of this report.
-    * Vector entries are three-component JSON arrays (z = 0 in 2D).
-    *
-    * \returns A JSON object with the ParticleSet base keys plus \e level,
-    *          \e resolution_factor, \e own_particle_origin,
-    *          \e nb_particle_origin, \e own_global_origin_coordinates,
-    *          \e nb_global_origin_coordinates,
-    *          \e frame_front_origin_global_coordinates,
-    *          \e frame_back_origin_global_coordinates,
-    *          \e frame_mid_origin_global_coordinates,
-    *          \e frame_front_dimensions, \e frame_back_dimensions,
-    *          \e frame_mid_dimensions, \e frame_width,
-    *          \e zone_dimensions, \e zone_cell_count
-    *          and \e number_of_mass_nodes.
-    */
-   [[nodiscard]] nlohmann::json
-   writeInitReport() const
-   {
-      nlohmann::json report = BaseType::writeInitReport();
-      report[ "level" ] = refinementLevel;
-      report[ "resolution_factor" ] = resolutionFactor;
-      report[ "own_particle_origin" ] = this->vectorToInitReportArray( ownParticleOrigin );
-      report[ "nb_particle_origin" ] = this->vectorToInitReportArray( nbParticleOrigin );
-      report[ "own_global_origin_coordinates" ] = this->vectorToInitReportArray( ownGlobalOriginCoordinates );
-      report[ "nb_global_origin_coordinates" ] = this->vectorToInitReportArray( nbGlobalOriginCoordinates );
-      report[ "frame_front_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameFrontOriginGlobalCoordinates() );
-      report[ "frame_back_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameBackOriginGlobalCoordinates() );
-      report[ "frame_mid_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameMidOriginGlobalCoordinates() );
-      report[ "frame_front_dimensions" ] = this->vectorToInitReportArray( getFrameFrontDimensions() );
-      report[ "frame_back_dimensions" ] = this->vectorToInitReportArray( getFrameBackDimensions() );
-      report[ "frame_mid_dimensions" ] = this->vectorToInitReportArray( getFrameMidDimensions() );
-      report[ "frame_width" ] = frameWidth;
-      report[ "zone_dimensions" ] = this->vectorToInitReportArray( zoneDimensions );
-      report[ "zone_cell_count" ] = zone.getNumberOfCells();
-      report[ "number_of_mass_nodes" ] = massNodes.numberOfMassNodes;
-      return report;
-   }
-
    void
    writeMassNodesToVTK( const std::string& outputFileName )
    {
@@ -1406,24 +1461,22 @@ protected:
    IndexArrayType particlesToRemove;
    IndexArrayType particlesToBuffer;
 
+   // clamp-fire counters consumed by SyncStats (rhoHi, rhoLo, vZero, fluxCap)
    // Geometric definition of the interface
    bool inner_overlap;
    bool outer_overlap;
 
-   int refinementLevel = 0;
+   int refinementLevel;
    int frameOrientation;
+
+   CoordinatesType ownParticleOrigin, nbParticleOrigin;
+   CoordinatesType ownGlobalOriginCoordinates, nbGlobalOriginCoordinates;
+   RealType resolutionFactor;
+   CoordinatesType zoneDimensions = 0;
 
    CoordinatesType frameOriginGlobalCoordinates;
    CoordinatesType frameDimensions;  // = inner subdomain dimensions
    RealType bufferWidth;             // useful for dual time stepping
-
-   // interface geometry stored by initZones for the init report
-   RealType resolutionFactor = 0.f;
-   VectorType ownParticleOrigin = 0.f;
-   VectorType nbParticleOrigin = 0.f;
-   CoordinatesType ownGlobalOriginCoordinates = 0;
-   CoordinatesType nbGlobalOriginCoordinates = 0;
-   CoordinatesType zoneDimensions = 0;
 
    ParticleZone zone;
 };

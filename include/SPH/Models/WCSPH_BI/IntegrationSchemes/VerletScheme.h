@@ -173,7 +173,23 @@ public:
    void
    integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping, bool integrateBoundary )
    {
-      if( timeStepping.getStep() % 20 == 0 ) {
+      integratStepVerlet( fluid, boundary, timeStepping, integrateBoundary, timeStepping.getStep() % 20 == 0 );
+   }
+
+   /* The periodic integrateEuler rebase of the leapfrog storages (v_old/rho_old) must
+      fire with a cadence tied to the physical window of the caller: multiresolution 
+      local-timestepping integrates the fine levels several times per global window, 
+      so their step counters advance several times per window. Callers that drive per-level
+      substeps decide the resync themselves and pass it via doResync. */
+   template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
+   void
+   integratStepVerlet( FluidPointer& fluid,
+                       BoundaryPointer& boundary,
+                       TimeStepping& timeStepping,
+                       bool integrateBoundary,
+                       bool doResync )
+   {
+      if( doResync ) {
          integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
       }
       else {

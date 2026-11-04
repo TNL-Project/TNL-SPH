@@ -22,6 +22,7 @@ import saveParticlesVTK
 import decomposition as dec
 import initialCondifionFunctions as ic
 import writeInitConfigFile as cf
+from decomposition import SubdomainGrid
 
 
 # ---------------------------------------------------------------------------

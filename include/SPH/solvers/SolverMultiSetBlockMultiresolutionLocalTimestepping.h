@@ -2,6 +2,7 @@
 
 #include "SolverMultiSetBlockMultiresolution.h"
 #include "../MultiresolutionRectangleBufferLocalTimeStepping.h"
+#include "../MultiresolutionBufferHelpers.h"
 #include "../TimeStep.h"
 
 namespace TNL {
@@ -121,9 +122,6 @@ public:
     void
     accumulateInterfaceMassesFromNeighbor( int neighborIdx, RealType dt );
 
-    void
-    refreshSubstepSearches( int fineIdx );
-
     /* Berger-Colella recursion over the refinement levels with the coarsest level
       included: drives the whole local-timestepping schedule of one global window and
       invokes subdomainSubstep( level, substep, globalSubstep, dt ) for every level
@@ -141,8 +139,11 @@ public:
     void
     recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep );
 
-    void
-    syncMultiresolutionUpdate();
+   void
+   refreshSubstepSearches( int fineIdx );
+
+   void
+   syncMultiresolutionUpdate();
 
    void
    save( bool writeParticleCellIndex = false );
@@ -157,6 +158,7 @@ public:
 
    std::vector< TimeStepping > levelTimeStepping;
    std::vector< int > levelSubsteps;
+
 
 };
 

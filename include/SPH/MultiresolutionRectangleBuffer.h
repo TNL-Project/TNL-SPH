@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 #include "ParticleSet.h"
+#include "MultiresolutionBufferHelpers.h"
 #include <TNL/Particles/GhostZone.h>
 #include "OpenBoundaryBuffers.h"
 #include "SPHTraits.h"
@@ -360,6 +361,24 @@ public:
       }
    }
 
+   template< typename ModelParams, typename SubdomainDescriptorT >
+   void
+   initMassNodesWithDomainExclusion( ModelParams& modelParams,
+                                     const int subdomainIdx,
+                                     const int neighborIdx,
+                                     const RealType refinementFactor,
+                                     const SubdomainDescriptorT& ownSd,
+                                     const SubdomainDescriptorT& nbSd,
+                                     const RealType globalCell,
+                                     const VectorType& domMin,
+                                     const VectorType& domMax )
+   {
+      const auto ctx = computeMassNodeFaceContext( ownSd, nbSd, globalCell );
+      auto excludedFaces = computeExcludedDomainFaceNormals< SPHCaseConfig::spaceDimension >(
+            ctx.faceMin, ctx.faceMax, domMin, domMax, ctx.tol, ctx.flipNormals );
+      initMassNodesWithExcludedNormals( modelParams, subdomainIdx, neighborIdx, refinementFactor, excludedFaces );
+   }
+
    template< typename ModelParams >
    void
    initMassNodesWithExcludedNormals( ModelParams& modelParams,
@@ -563,7 +582,7 @@ public:
       //----
       const VectorType v_subdomain = 0.f;  // velocity of moving subdomain
       //const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
-      const RealType div_r_trashold = ( dim == 2 ) ? 1.5f : 0.f;
+      const RealType div_r_trashold = ( dim == 2 ) ? 1.f : 1.5f;
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;  //TODO: rename, remove mdbc
 
       auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
