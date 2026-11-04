@@ -1,7 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "Interactions.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
@@ -146,5 +150,4 @@ RSPH< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPointe
    physicalObject->getParticles()->forAll( evalPressure ); //TODO: forloop?
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH

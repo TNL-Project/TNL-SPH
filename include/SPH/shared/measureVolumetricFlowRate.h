@@ -1,11 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <fstream>
 #include "../SPHTraits.h"
 #include <TNL/Particles/GhostZone.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename ParticlesConfig, typename SPHDefs >
 class MeasureVolumetricFlowRate
@@ -127,6 +129,5 @@ public:
    ParticlesZone zone;
 };
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

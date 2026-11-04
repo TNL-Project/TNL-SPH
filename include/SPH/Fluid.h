@@ -1,9 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "ParticleSet.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename ParticleSystem,
           typename SPHCaseConfig,
@@ -49,6 +51,5 @@ class Fluid : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, Inte
    }
 };
 
-}
-}
+}  // namespace TNL::SPH
 

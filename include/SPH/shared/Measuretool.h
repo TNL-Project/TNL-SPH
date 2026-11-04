@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Meshes/Writers/VTKWriter.h>
@@ -8,8 +11,7 @@
 #include <TNL/Config/ParameterContainer.h>
 #include <TNL/Particles/CellIndexer.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename SPHConfig, typename SPHSimulation >
 class InterpolateToGrid
@@ -266,8 +268,7 @@ protected:
    RealType endLevel;
 };
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 
 #include "Measuretool.hpp"
 

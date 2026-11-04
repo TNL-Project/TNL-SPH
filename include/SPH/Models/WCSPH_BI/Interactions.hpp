@@ -1,3 +1,8 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "BoundaryConditionsTypes.h"
 #include "Interactions.h"
 #include "../../shared/Interpolation.h"
@@ -5,8 +10,7 @@
 #include <cmath>
 #include <type_traits>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
@@ -832,5 +836,4 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource( Boudary
    Algorithms::parallelFor< DeviceType >( 0, ghostIndices.getSize(), updateGhost );
 }
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH

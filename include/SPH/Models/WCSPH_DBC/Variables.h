@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "../../ParticleField.h"
@@ -8,8 +11,7 @@
 
 #include "BoundaryConditionsTypes.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 /**
  * \brief Shared field holder for fluid-like particle sets.
@@ -138,6 +140,5 @@ public:
    }
 };
 
-}  // namespace SPH
-}  // namespace TNL
+}  // namespace TNL::SPH
 

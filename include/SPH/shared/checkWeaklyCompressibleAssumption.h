@@ -1,5 +1,9 @@
-namespace TNL {
-namespace SPH {
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
+namespace TNL::SPH {
 namespace features {
 
 template< typename ObjectPointer, typename ModelParams, typename RealType >
@@ -30,6 +34,5 @@ void checkWeaklyCompressibleAssumption( ObjectPointer& object,
 }
 
 } // features
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

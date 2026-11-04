@@ -1,7 +1,9 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 class SPHMultisetSolverTemplate
@@ -80,6 +82,5 @@ public:
    {}
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

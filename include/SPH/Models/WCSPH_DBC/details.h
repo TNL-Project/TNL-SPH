@@ -1,7 +1,9 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Matrix, typename RealType, typename VectorType >
 __cuda_callable__
@@ -179,6 +181,5 @@ interpolateGhostNode( VectorExtendedType& variableValAndGrad, VectorType& dist )
 
 } // ghostNodeDetails
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

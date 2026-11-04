@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Containers/Array.h>
@@ -7,8 +10,7 @@
 #include "../../../shared/MidpointSchemeOutputLog.h"
 #include "../../../SPHTraits.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace IntegrationSchemes {
 
 template< typename SPHConfig >
@@ -309,6 +311,5 @@ public:
 };
 
 } // IntegrationSchemes
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

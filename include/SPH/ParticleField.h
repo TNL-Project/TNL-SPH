@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "SPHTraits.h"
@@ -8,8 +11,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 enum class Swap
 {
@@ -186,5 +188,4 @@ private:
    [[no_unique_address]] swap_storage_t field_swap_;
 };
 
-}  // namespace SPH
-}  // namespace TNL
+}  // namespace TNL::SPH

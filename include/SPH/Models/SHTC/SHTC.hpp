@@ -1,9 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "SHTC.h"
 #include "details.h"
 #include <TNL/Containers/StaticVector.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
@@ -295,5 +299,4 @@ SHTC< Particles, ModelConfig >::relaxDistortion( FluidPointer& fluid, TimeSteppi
    fluid->getParticles()->forAll( particleLoop );
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH

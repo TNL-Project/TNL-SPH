@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Containers/Vector.h>
@@ -18,8 +21,7 @@
 // custom shared modules
 #include "shared/removeParticlesOutOfDensityLimits.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 class SPHMultiset_CFD
@@ -358,8 +360,7 @@ public:
 
 };
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 
 template< typename Model >
 std::ostream&

@@ -1,3 +1,8 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "InitReport.h"
 
 #include <algorithm>
@@ -9,8 +14,7 @@
 #include <TNL/Containers/StaticVector.h>
 #include <TNL/MPI.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 inline nlohmann::json
 makeInitReportDocument()
@@ -74,5 +78,4 @@ writeInitReportFile( const nlohmann::json& doc, const std::string& outputDirecto
    reportFile << doc.dump( 2 ) << '\n';
 }
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH

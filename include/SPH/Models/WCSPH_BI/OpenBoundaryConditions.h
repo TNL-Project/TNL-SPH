@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Containers/Array.h>
@@ -16,8 +19,7 @@
    #include "../../shared/utils.h"
 #endif
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename SPHConfig, typename ModelConfig >
 class OpenBoundaryConditionsBuffers
@@ -91,8 +93,7 @@ public:
    periodicityParticleTransfer( FluidPointer& fluid, PeriodicBoundaryPatch& periodicPatch );
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 
 #include "OpenBoundaryConditions.hpp"
 

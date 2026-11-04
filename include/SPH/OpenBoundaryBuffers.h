@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <string>
@@ -5,8 +8,7 @@
 #include <TNL/Particles/GhostZone.h>
 #include "OpenBoundaryConfig.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename ParticleSystem,
           typename SPHCaseConfig,
@@ -109,6 +111,5 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
 
 };
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

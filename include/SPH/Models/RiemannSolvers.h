@@ -1,8 +1,10 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <algorithm>
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace RiemannSolvers {
 
 template< typename SPHCaseConfig >
@@ -48,6 +50,5 @@ class RoeLinearized
 };
 
 } // RiemannSolvers
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

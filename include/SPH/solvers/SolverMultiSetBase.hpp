@@ -1,3 +1,8 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "SolverMultiSetBase.h"
 
 #include <SPH/configInit.h>
@@ -7,8 +12,7 @@
 #include "../shared/removeParticlesOutOfDensityLimits.h"
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 void
@@ -802,5 +806,4 @@ SolverMultiSetBase< Model >::getTotalParticlesCount() const
    return getTotalFluidParticlesCount() + getTotalBoundaryParticlesCount();
 }
 
-} // namespace SPH
-} // namespace TNL
+}  // namespace TNL::SPH

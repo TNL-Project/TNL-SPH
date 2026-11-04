@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <cuda_runtime.h>
@@ -62,8 +65,7 @@
 #endif
 
 // Debug functions
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace Debugging {
 
 // Inspect a particle set for out-of-domain or NaN/Inf particles.
@@ -170,6 +172,5 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
 }
 
 }  // namespace Debugging
-}  // namespace SPH
-}  // namespace TNL
+}  // namespace TNL::SPH
 

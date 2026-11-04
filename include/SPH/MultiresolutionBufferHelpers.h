@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Containers/Array.h>
@@ -6,8 +9,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 namespace detail {
 
@@ -99,5 +101,4 @@ computeMassNodeFaceContext( const SubdomainDescriptor& ownSd,
    return { faceMin, faceMin + faceSize, tol, detail::isInsideBox( nbMin, ownMin, ownSize ) };
 }
 
-} // namespace SPH
-} // namespace TNL
+}  // namespace TNL::SPH

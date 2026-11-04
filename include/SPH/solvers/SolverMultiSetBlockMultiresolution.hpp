@@ -1,10 +1,14 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "SolverMultiSetBlockMultiresolution.h"
 #include "../tempFunctionsToConfigMultiresolution.h"
 
 #include <SPH/InitReport.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 void
@@ -692,5 +696,4 @@ SolverMultiSetBlockMultiresolution< Model >::writeInfo() noexcept
    log.writeSeparator();
 }
 
-} // namespace SPH
-} // namespace TNL
+}  // namespace TNL::SPH

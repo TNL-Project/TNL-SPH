@@ -1,8 +1,12 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include <SPH/shared/Measuretool.h>
 #include <cmath>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace features {
 
 template< typename SPHSimulation, typename FluidPointer, typename BoundaryPointer, typename OpenBoundaryPointer, typename ModelParams, typename RealType,typename VectorType >
@@ -76,6 +80,5 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
 }
 
 } // features
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

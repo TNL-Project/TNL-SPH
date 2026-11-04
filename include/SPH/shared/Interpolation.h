@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Containers/StaticVector.h>
@@ -5,8 +8,7 @@
 #include "mfdConstants.h"
 #include "TaylorMonomials.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace Interpolation {
 
 // TODO: Pass this real type to ABFs directisimo!
@@ -42,6 +44,5 @@ class MFD
 };
 
 } //namespace Interpolation
-} //namespace SPH
-} //namespace TNL
+}  // namespace TNL::SPH
 

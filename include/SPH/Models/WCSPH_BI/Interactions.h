@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "../../SPHTraits.h"
@@ -15,8 +18,7 @@
 #include "../VisousTerms.h"
 #include "control.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 class WCSPH_BI
@@ -230,8 +232,7 @@ public:
    finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 
 #include "Interactions.hpp"
 #include "OpenBoundaryConditionsDataExtrapolation.h"

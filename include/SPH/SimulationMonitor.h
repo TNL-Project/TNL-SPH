@@ -1,3 +1,8 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include <TNL/Logger.h>
 
 #include "SPHTraits.h"
@@ -8,8 +13,7 @@
 #include "shared/Measuretool.h"
 #include "shared/measureVolumetricFlowRate.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename SimulationType >
 class SimulationMonitor
@@ -417,6 +421,5 @@ protected:
    std::string outputDirecotry;
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

@@ -1,8 +1,12 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include <string>
 #include <fstream>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace Info {
 
 template< typename MidpointTimeIntegrationSchemePointer, typename ModelParams, typename TimeStepping >
@@ -40,6 +44,5 @@ mipodintSchemeOutputSubiterationsLog( const MidpointTimeIntegrationSchemePointer
 }
 
 } // Info
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

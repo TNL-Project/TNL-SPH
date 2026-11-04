@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "SPHTraits.h"
@@ -14,8 +17,7 @@
 #include <TNL/Particles/DistributedParticles.h>
 #include <TNL/Particles/DistributedParticlesSynchronizer.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 class ParticleSetMetada
 {};
@@ -464,6 +466,5 @@ protected:
    IntegratorVariablesPointerType integratorVariables;
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

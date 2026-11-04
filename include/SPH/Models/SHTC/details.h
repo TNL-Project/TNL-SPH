@@ -1,7 +1,9 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace details {
 
 template< typename MatrixType  >
@@ -47,6 +49,5 @@ unitMatrix()
 }
 
 } // details
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

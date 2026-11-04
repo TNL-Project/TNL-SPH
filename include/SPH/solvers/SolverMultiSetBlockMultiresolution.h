@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Meshes/Grid.h>
@@ -8,8 +11,7 @@
 #include "../MultiresolutionRectangleBuffer.h"
 #include "../VariablesGhostInit.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 class SolverMultiSetBlockMultiresolution : public SolverMultiSetBase< Model >
@@ -112,8 +114,7 @@ public:
 
 };
 
-} // namespace SPH
-} // namespace TNL
+}  // namespace TNL::SPH
 
 template< typename Model >
 std::ostream&

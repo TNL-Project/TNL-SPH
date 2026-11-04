@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <TNL/Devices/Cuda.h>
 #include <TNL/Devices/Host.h>
@@ -5,8 +8,7 @@
 #include <TNL/Config/ConfigDescription.h>
 #include <SPH/parseConfigFile.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 void
 configSetup( TNL::Config::ConfigDescription& config,
@@ -278,6 +280,5 @@ parseUserDefinedConfig( const std::string& configPath,
    }
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Config/parseCommandLine.h>
@@ -6,8 +9,7 @@
 #include <SPH/parseConfigFile.h>
 #include <cstdlib>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Simulation >
 inline void
@@ -83,6 +85,5 @@ initialize( int argc,
 
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

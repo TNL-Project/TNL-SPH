@@ -1,11 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Particles/GhostZone.h>
 
 #include <nlohmann/json.hpp>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename ParticlesType, typename OpenBoundaryConfigType >
 class PeriodicBoundary
@@ -62,6 +64,5 @@ class PeriodicBoundary
    ParticleZone particleZone;
 };
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

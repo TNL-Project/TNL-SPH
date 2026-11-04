@@ -1,7 +1,9 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace Interpolation {
 
 constexpr int factorial( int n ) {
@@ -27,6 +29,5 @@ constexpr int get_p() {
 }
 
 }  //namespace Interpolation
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

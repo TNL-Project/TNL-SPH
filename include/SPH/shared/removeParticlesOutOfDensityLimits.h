@@ -1,8 +1,10 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <TNL/Algorithms/reduce.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace customFunctions {
 
 template< typename FluidPointer, typename ModelParams >
@@ -41,6 +43,5 @@ removeParticlesOutOfDensityLimits( FluidPointer& fluid, ModelParams& modelParams
 }
 
 }  //namespace customFunctions
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

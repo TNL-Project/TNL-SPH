@@ -1,7 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "SolverMultiSetRemeshed.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 void
@@ -124,5 +128,4 @@ SolverMultiSetRemeshed< Model >::remeshParticles()
    this->writeLog( "Remesh...", "Done." );
 }
 
-} // namespace SPH
-} // namespace TNL
+}  // namespace TNL::SPH

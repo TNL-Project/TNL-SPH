@@ -1,8 +1,12 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "../Interactions.h"
 #include "../details.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer,
@@ -226,6 +230,5 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& 
    boundary->getParticles()->forAll( particleLoop ); //TODO: forloop?
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

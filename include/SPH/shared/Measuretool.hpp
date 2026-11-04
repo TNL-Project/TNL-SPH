@@ -1,5 +1,9 @@
-namespace TNL {
-namespace SPH {
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
+namespace TNL::SPH {
 
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -533,5 +537,4 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::save( const std::string outputFile
 }
 
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH

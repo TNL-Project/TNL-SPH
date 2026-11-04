@@ -1,9 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <nlohmann/json.hpp>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename SPHConfig >
 void
@@ -219,6 +221,5 @@ class OpenBoundaryConfig
 };
 
 
-}
-}
+}  // namespace TNL::SPH
 

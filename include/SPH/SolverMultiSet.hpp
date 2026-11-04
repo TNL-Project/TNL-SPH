@@ -1,3 +1,8 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "SPH/configSetup.h"
 #include "SolverMultiSet.h"
 #include "SPH/OpenBoundaryConfig.h"
@@ -17,8 +22,7 @@
 
 #include <SPH/configInit.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 void
@@ -949,5 +953,4 @@ SolverMultiSet< Model >::writeEpilog() noexcept
    timeMeasurement.writeInfoToJson( saveTimersOutputName, timeStepping.getStep() );
 }
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH

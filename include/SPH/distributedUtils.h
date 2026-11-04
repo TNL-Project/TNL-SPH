@@ -1,5 +1,9 @@
-namespace TNL {
-namespace SPH {
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
+namespace TNL::SPH {
 namespace distributed {
 
 Containers::StaticVector< 2, int >
@@ -23,6 +27,5 @@ getSubdomainKey( int rank, Containers::StaticVector< 2, int > numberOfSubdomains
 }
 
 }  //namespace distributed
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

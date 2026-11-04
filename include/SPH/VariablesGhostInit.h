@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "VariablesBase.h"
@@ -7,8 +10,7 @@
 #include <tuple>
 #include <utility>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace detail {
 
 template< typename Field, typename Index >
@@ -71,5 +73,4 @@ initGhostRangeFrom( DstVariables& dst, SrcVariables& src, const Index& dstBegin,
       dstFields, srcFields, dstBegin, count, std::make_index_sequence< std::tuple_size_v< decltype( dstFields ) > >{} );
 }
 
-}  // namespace SPH
-}  // namespace TNL
+}  // namespace TNL::SPH

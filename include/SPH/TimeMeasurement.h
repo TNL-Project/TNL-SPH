@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Benchmarks/Benchmark.h>
@@ -5,8 +8,7 @@
 #include <map>
 #include <string>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 class TimerMeasurement
 {
@@ -100,6 +102,5 @@ protected:
 };
 
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

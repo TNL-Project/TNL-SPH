@@ -1,7 +1,9 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace WCSPH_BCTypes {
 
 struct BI_numeric
@@ -36,6 +38,5 @@ enum class OpenBoundaryConditionsType
 };
 
 } // BCTypes
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

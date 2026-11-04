@@ -1,10 +1,12 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <TNL/Containers/StaticVector.h>
 #include "./../Kernels.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace Interpolation {
 
 template< int Dim, int Order, typename SolverConfig >
@@ -83,6 +85,5 @@ public:
 };
 
 }  //namespace Interpolation
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

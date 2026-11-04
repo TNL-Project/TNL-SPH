@@ -1,11 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "ParticleField.h"
 
 #include <tuple>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 /**
  * \brief CRTP base providing the five lifecycle methods (setSize,
@@ -88,5 +90,4 @@ protected:
    }
 };
 
-}  // namespace SPH
-}  // namespace TNL
+}  // namespace TNL::SPH

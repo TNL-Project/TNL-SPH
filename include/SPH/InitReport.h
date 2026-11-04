@@ -1,11 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 /**
  * \brief Creates the root document of the solver initialization report.
@@ -60,7 +62,6 @@ addConfigSection( nlohmann::json& doc, const Params& parameters );
 inline void
 writeInitReportFile( const nlohmann::json& doc, const std::string& outputDirectory );
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 
 #include "InitReport.hpp"

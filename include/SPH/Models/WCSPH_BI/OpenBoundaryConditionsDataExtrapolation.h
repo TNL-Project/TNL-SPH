@@ -1,8 +1,12 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "Interactions.h"
 #include "../WCSPH_DBC/details.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Particles, typename SPHState >
 template< typename FluidPointer, typename OpenBoudaryPointer >
@@ -702,6 +706,5 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D( FluidPointer
    Algorithms::parallelFor< DeviceType >( 0, openBoundary->getNumberOfParticles(), particleLoopOpenBoundary );
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

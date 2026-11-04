@@ -1,8 +1,12 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include <vector>
 #include "../SPHTraits.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename SPHDefs >
 class MassConservationMonitor
@@ -63,6 +67,5 @@ protected:
    RealType totalMass;
 };
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

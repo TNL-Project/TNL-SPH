@@ -1,9 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "SolverMultiSetBase.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename Model >
 class SolverMultiSet : public SolverMultiSetBase< Model >
@@ -57,8 +59,7 @@ public:
 
 };
 
-} // namespace SPH
-} // namespace TNL
+}  // namespace TNL::SPH
 
 template< typename Model >
 std::ostream&

@@ -1,9 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
 #include "OpenBoundaryConditions.h"
 #include "SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h"
 #include <cuda/std/tuple>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename SPHConfig, typename ModelConfig >
 template< typename OpenBoundaryPointer >
@@ -313,5 +317,4 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::periodicityParticleTran
    Algorithms::parallelFor< DeviceType >( 0, numberOfZoneParticles, moveParticles );
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH

@@ -1,8 +1,10 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <TNL/Algorithms/reduce.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace customFunctions {
 
 //TODO: During refactoring, this could move to particle class
@@ -62,6 +64,5 @@ removeParticlesOutOfGivenBox(
 }
 
 }  //namespace customFunctions
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

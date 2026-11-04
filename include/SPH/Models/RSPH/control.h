@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <SPH/Models/EquationOfState.h>
@@ -8,8 +11,7 @@
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 /**
  * \brief Class used to store core parameters of SPH scheme.
@@ -162,6 +164,5 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "External bulk force:", modelParams.gravity );
 }
 
-} //namespace SPH
-} //namespace TNL
+}  // namespace TNL::SPH
 

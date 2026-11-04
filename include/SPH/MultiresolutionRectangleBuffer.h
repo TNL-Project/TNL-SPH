@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <climits>
@@ -14,8 +17,7 @@
 #include "shared/Interpolation.h"
 #include "shared/WendlandC2ABFs.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 //TODO: Consider MassNodes to be standard ParticleSet with custom variables
 template< typename SPHCaseConfig >
@@ -1322,6 +1324,5 @@ protected:
    ParticleZone zone;
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

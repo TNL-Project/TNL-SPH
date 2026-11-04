@@ -1,11 +1,13 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <TNL/Devices/Cuda.h>
 #include <TNL/Devices/Host.h>
 #include <TNL/MPI.h>
 #include <TNL/Config/ConfigDescription.h>
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 //TODO: Merge configSetupDistributedSubdomain and configSubdomain, since these are basically the same
 void
@@ -36,6 +38,5 @@ configSubdomain( int subdomain, TNL::Config::ConfigDescription& config )
    config.addEntry< int >( subdomainKey + "grid-dimensions-z", "The size of domain in cells in z direction.", 0. );
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

@@ -1,9 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "../SPHTraits.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 namespace VelocityFilters {
 
 class None
@@ -161,6 +163,5 @@ class ShepardFilter
 
 
 } // ViscousTerms
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 

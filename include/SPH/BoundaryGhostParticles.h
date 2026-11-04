@@ -1,9 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "SPHTraits.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 /*
    Ghost band of one directed interface appended at the tail of the own boundary
@@ -41,5 +43,4 @@ enum class BoundaryGhostUpdate
    DirectFromSource
 };
 
-}  // namespace SPH
-}  // namespace TNL
+}  // namespace TNL::SPH

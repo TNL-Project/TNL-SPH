@@ -1,3 +1,6 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <climits>
@@ -17,8 +20,7 @@
 // MassNodes are shared with the single-timestep variant
 #include "MultiresolutionRectangleBuffer.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 /**
  * \brief Multiresolution buffer patch for local timestepping (LTS, schedule v2).
@@ -1481,6 +1483,5 @@ protected:
    ParticleZone zone;
 };
 
-}  //namespace SPH
-}  //namespace TNL
+}  // namespace TNL::SPH
 

@@ -1,9 +1,11 @@
+// SPDX-FileComment: This file is part of TNL-SPH (https://gitlab.com/tnl-project/tnl-sph)
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "../Interactions.h"
 
-namespace TNL {
-namespace SPH {
+namespace TNL::SPH {
 
 template< typename ParticleSystem, typename SPHFluidConfig >
 template< typename FluidPointer,
@@ -19,6 +21,5 @@ WCSPH_DBC< ParticleSystem, SPHFluidConfig >::updateSolidBoundary( FluidPointer& 
 
 }
 
-} // SPH
-} // TNL
+}  // namespace TNL::SPH
 
