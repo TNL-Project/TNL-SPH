@@ -1,0 +1,53 @@
+# Adopted from the TNL project's ruff.toml (tnl-project/tnl, fork branch TH/particles).
+# Scope: the project's Python under src/tools and src/Tests (task T2); other Python trees
+# (examples/, src/extra/, archived parts) are excluded — they follow older conventions and
+# are outside the QA gate. line-length 88 matches TNL and the dominant style in scope
+# (>93% of lines in src/tools + src/Tests already fit 88 columns).
+target-version = "py312"
+line-length = 88
+
+[files]
+extend-exclude = [
+   ".venv/",
+   "build/",           # CMake tree incl. the _deps/tnl-src mirror (separate repo)
+   "Documentation/",
+   "examples/",        # per-case init/run/postpro scripts — outside the T2 ruff scope
+   "results/",         # generated simulation output
+   "sources/",         # generated particles + config.jsonc (output of init.py)
+   "src/extra/",       # auxiliary/legacy scripts
+   "src/archivedParts/",
+   "src/Tests/logs/",  # session logs, not source
+   "src/tools/3rdparty/",
+]
+
+[lint]
+select = [
+    #"ANN",   # flake8-annotations
+    "ASYNC", # flake8-async
+    "C90",   # mccabe
+    "DTZ",   # flake8-datetimez
+    "E",     # pycodestyle errors
+    "EXE",   # flake8-executable
+    "F",     # Pyflakes
+    "FA",    # flake8-future-annotations
+    "FLY",   # flynt
+    "G",     # flake8-logging-format
+    "I",     # isort
+    "ICN",   # flake8-import-conventions
+    "ISC",   # flake8-implicit-str-concat
+    "LOG",   # flake8-logging
+    "PIE",   # flake8-pie
+    "PLC",   # Pylint conventions
+    "PLE",   # Pylint errors
+    "PLW",   # Pylint warnings
+    "RSE",   # flake8-raise
+    "RUF",   # Ruff-specific rules
+    "SLOT",  # flake8-slot
+    "T10",   # flake8-debugger
+    "UP",    # pyupgrade
+    "W",     # pycodestyle warnings
+    "YTT",   # flake8-2020
+]
+
+[lint.mccabe]
+max-complexity = 20 # for C901 errors (default: 10)

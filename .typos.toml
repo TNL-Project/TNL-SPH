@@ -1,0 +1,44 @@
+# Reference: https://github.com/crate-ci/typos/blob/master/docs/reference.md
+# Adopted from the TNL project's .typos.toml (tnl-project/tnl, fork branch TH/particles),
+# extended with project exceptions below. Keep the exceptions minimal: every other spelling
+# finding must fail the check intentionally.
+
+[files]
+ignore-hidden = false
+extend-exclude = [
+   # Typos-specific ignore globs (gitignore syntax).
+   ".git/",
+   "build/",          # CMake tree; _deps/tnl-src is a mirror of the separate TNL repo
+   "3rdparty/",
+   "results/",        # generated simulation output
+   "sources/",        # generated particles + config.jsonc (output of init.py)
+   "src/Tests/logs/", # session logs incl. captured compiler output, not project code
+   "*.vtk",
+   "*.vti",
+   "*.vtu",
+   "*.pvti",
+   "*.pvtu",
+]
+
+[default]
+extend-ignore-re = [
+   # Custom ignore regex patterns: https://github.com/crate-ci/typos/blob/master/docs/reference.md#example-configurations
+   "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+   "(?s)(#|//)\\s*spellchecker:disable-next-line[^\\n]*\\n[^\\n]*",
+]
+
+# Word-level exceptions (match inside compound identifiers, e.g. comptueForce, numberOfPtcs).
+[default.extend-words]
+setp = "setp"         # from TNL: also here, "integration setp" doc comments in SPHMultiset_CFD.h
+Visous = "Visous"     # TEMPORARY: misspelling of Viscous in the VisousTerms.h module; removed by W2-T6
+Boudary = "Boudary"   # TEMPORARY: misspelling of Boundary in the BoudaryPointer template parameter; removed by W2-T7
+comptue = "comptue"   # TEMPORARY: misspelling of compute in comptueForce/comptueViscousForce lambdas; removed by W2-T7
+Ptcs = "Ptcs"         # TEMPORARY: legacy particles abbreviation (numberOfPtcs etc.); renamed by W2-T10
+
+# Exact-identifier exceptions (case-sensitive; SPH physics idioms and acronyms).
+[default.extend-identifiers]
+drs = "drs"                 # SPH idiom: distance |r_i - r_j| between particles i and j
+v_subdomain = "v_subdomain" # velocity of a moving subdomain (MultiresolutionBuffer.h)
+rho_x = "rho_x"             # reconstructed density at point x (MR MassNodes linear fit)
+r_i = "r_i"                 # position vector of particle i (SPH physics notation)
+MDBC = "MDBC"               # Moving Dynamic Boundary Condition (boundary-condition type acronym)

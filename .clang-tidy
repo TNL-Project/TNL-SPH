@@ -1,0 +1,53 @@
+# Documentation: https://clang.llvm.org/extra/clang-tidy/
+# Adopted from the TNL project's .clang-tidy (tnl-project/tnl, fork branch TH/particles).
+# Config-only adoption: no clang-tidy run is implied by this commit. Verified to parse with
+# clang-tidy 22 (LLVM 22.1.8); no entries dropped.
+---
+HeaderFilterRegex: '.*'
+FormatStyle:      file
+User:             user
+UseColor:         true
+
+Checks: >
+  readability-*,
+  -readability-braces-around-statements,
+  -readability-else-after-return,
+  -readability-named-parameter,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses,
+  -readability-function-cognitive-complexity,
+  -readability-function-size,
+  -readability-identifier-length,
+  -readability-use-concise-preprocessor-directives,
+  modernize-*,
+  -modernize-avoid-c-arrays,
+  -modernize-use-trailing-return-type,
+  -modernize-raw-string-literal,
+  performance-*,
+  -performance-unnecessary-value-param,
+  mpi-*,
+  clang-diagnostic-extra-semi,
+  clang-diagnostic-extra-semi-stmt,
+  bugprone-suspicious-semicolon,
+# FIXME: skip checking performance-unnecessary-value-param only for views
+
+WarningsAsErrors: >
+  clang-analyzer-core.*,
+  modernize-*,
+  performance-*,
+  mpi-*,
+  clang-diagnostic-extra-semi*,
+  bugprone-suspicious-semicolon,
+
+CheckOptions:
+  readability-function-size.LineThreshold: 64
+  readability-function-size.ParameterThreshold: 15
+  readability-magic-numbers.IgnoreAllFloatingPointValues: true
+  readability-magic-numbers.IgnorePowersOf2IntegerValues: true
+  modernize-use-default-member-init.UseAssignment: true
+  modernize-use-auto.MinTypeNameLength: 10
+  performance-unnecessary-value-param.AllowedTypes: "std::shared_ptr;std::unique_ptr"
+  cppcoreguidelines-pro-type-member-init.UseAssignment: true
+
+...
+# vim: ft=yaml
