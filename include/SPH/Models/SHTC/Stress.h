@@ -4,7 +4,7 @@
 #pragma once
 
 #include <SPH/SPHTraits.h>
-#include <SPH/Models/SHTC/details.h>
+#include <SPH/Models/SHTC/Details.h>
 
 namespace TNL::SPH {
 namespace Stress {

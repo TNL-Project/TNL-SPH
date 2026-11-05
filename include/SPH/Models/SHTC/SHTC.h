@@ -8,9 +8,9 @@
 /**
  * Modules used as default.
  **/
-#include <SPH/Models/SHTC/control.h>
+#include <SPH/Models/SHTC/Control.h>
 // placeholder for empty open boundary conditions
-#include <SPH/Models/emptyOpenBCPlaceholder.h>
+#include <SPH/Models/EmptyOpenBCPlaceholder.h>
 #include <SPH/Models/SPHMultiSetSolverTemplate.h>
 
 namespace TNL::SPH {

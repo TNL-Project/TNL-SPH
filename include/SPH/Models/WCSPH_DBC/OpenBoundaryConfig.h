@@ -12,7 +12,7 @@
 #include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
 #include <SPH/SPHTraits.h>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <SPH/Models/WCSPH_BI/Interactions.h>
-#include <SPH/Models/WCSPH_DBC/details.h>
+#include <SPH/Models/WCSPH_DBC/Details.h>
 
 namespace TNL::SPH {
 

@@ -6,7 +6,7 @@
 #include <cmath>
 
 #include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.h>
-#include <SPH/tempFunctionsToConfigMultiresolution.h>
+#include <SPH/MultiresolutionConfigHelpers.h>
 
 namespace TNL::SPH {
 

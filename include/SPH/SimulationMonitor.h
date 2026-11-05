@@ -9,8 +9,8 @@
 #include <TNL/Functional.h>
 
 #include <SPH/SPHTraits.h>
-#include <SPH/parseConfigFile.h>
-#include <SPH/shared/Measuretool.h>
+#include <SPH/ParseConfigFile.h>
+#include <SPH/shared/MeasureTool.h>
 #include <SPH/shared/measureVolumetricFlowRate.h>
 
 namespace TNL::SPH {

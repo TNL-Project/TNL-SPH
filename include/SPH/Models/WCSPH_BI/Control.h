@@ -20,7 +20,7 @@
 #include <SPH/TimeStep.h>
 #include <SPH/Models/WCSPH_BI/OpenBoundaryConfig.h>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

@@ -5,7 +5,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

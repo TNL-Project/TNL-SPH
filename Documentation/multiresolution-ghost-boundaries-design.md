@@ -110,7 +110,7 @@ particles (currently the 3D example, whose init script does not emit ghost files
 | `include/SPH/VariablesGhostInit.h` | `initGhostRangeFrom` — generic ghost variable init: copies `readable` (file-carried) fields, zero-fills the rest; never touches non-field members (`referentialIdx`) |
 | `include/SPH/Models/WCSPH_BI/Variables.h` | variables migrated to the `ParticleField` + `VariablesBase` field lists (`allFields()`); the flags encode read/write/sort and thereby the ghost-init policy |
 | `include/SPH/ParticleField.h` | `readable`/`writable` constexpr flags exposed for the generic ghost init |
-| `include/SPH/configSetup.h` | `boundary-ghost-method` entry; `configBoundaryGhostBuffer` (`boundary-ghost-buffer-<p>-{particles,n}`) |
+| `include/SPH/ConfigSetup.h` | `boundary-ghost-method` entry; `configBoundaryGhostBuffer` (`boundary-ghost-buffer-<p>-{particles,n}`) |
 | `src/tools/decomposition.py` | `boundary-ghost-buffers` section plumbing into the distributed-domain config |
 | `examples/WCSPH-BI/damBreak2D_WCSPH-BI_multiresolution/init_multi_resolution.py` | `_wall_lattice` / `_frame_and_band` / `generate_ghost_band_boundaries` |
 | model kernels (`WCSPH_BI/*`) | none |

@@ -16,7 +16,7 @@
 #include <SPH/Models/EquationOfState.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/ViscousTerms.h>
-#include <SPH/Models/WCSPH_BI/control.h>
+#include <SPH/Models/WCSPH_BI/Control.h>
 
 namespace TNL::SPH {
 

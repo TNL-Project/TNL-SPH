@@ -2,11 +2,11 @@
 #include <TNL/Config/parseINIConfigFile.h>
 #include <TNL/Logger.h>
 
-#include <SPH/configSetup.h>
-#include <SPH/configInit.h>
+#include <SPH/ConfigSetup.h>
+#include <SPH/ConfigInit.h>
 #include "template/config.h"
 
-#include <SPH/Models/WCSPH_BI/control.h>
+#include <SPH/Models/WCSPH_BI/Control.h>
 
 template< typename Simulation >
 requires std::is_same_v<

@@ -4,10 +4,10 @@
 #pragma once
 
 #include <SPH/solvers/SolverMultiSetBlockMultiresolution.h>
-#include <SPH/tempFunctionsToConfigMultiresolution.h>
+#include <SPH/MultiresolutionConfigHelpers.h>
 #include <SPH/InitReport.h>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

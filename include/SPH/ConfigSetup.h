@@ -7,7 +7,7 @@
 #include <TNL/MPI.h>
 #include <TNL/Config/ConfigDescription.h>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

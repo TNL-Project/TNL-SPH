@@ -13,7 +13,7 @@
 #include <TNL/MPI.h>
 
 #include <SPH/InitReport.h>
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

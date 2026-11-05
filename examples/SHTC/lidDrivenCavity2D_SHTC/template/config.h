@@ -38,7 +38,7 @@ class SPHConfig
 #include <SPH/Kernels.h>
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Models/SHTC/IntegrationSchemes/ExplicitEulerScheme.h>
-#include <SPH/Models/SHTC/stress.h>
+#include <SPH/Models/SHTC/Stress.h>
 #include <SPH/TimeStep.h>
 
 /**

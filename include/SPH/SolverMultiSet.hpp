@@ -13,13 +13,13 @@
 #include <TNL/Logger.h>
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
-#include <SPH/configSetup.h>
+#include <SPH/ConfigSetup.h>
 #include <SPH/SolverMultiSet.h>
 #include <SPH/OpenBoundaryConfig.h>
 #include <SPH/TimeMeasurement.h>
-#include <SPH/distributedUtils.h>
-#include <SPH/tempFunctionsToConfigMultiresolution.h>
-#include <SPH/configInit.h>
+#include <SPH/DistributedUtils.h>
+#include <SPH/MultiresolutionConfigHelpers.h>
+#include <SPH/ConfigInit.h>
 
 namespace TNL::SPH {
 

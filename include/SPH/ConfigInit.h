@@ -8,8 +8,8 @@
 #include <TNL/Config/parseCommandLine.h>
 #include <TNL/Config/parseINIConfigFile.h>
 
-#include <SPH/configSetup.h>
-#include <SPH/parseConfigFile.h>
+#include <SPH/ConfigSetup.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

@@ -9,7 +9,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 /*
    All grid-level parameters for one subdomain, extracted from config once
    and reused by both initParticleSets and initZones.

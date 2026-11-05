@@ -16,9 +16,9 @@
 
 #include <SPH/SPHTraits.h>
 #include <SPH/OpenBoundaryConfig.h>
-#include <SPH/PeriodicBoundaryBuffers.h>
+#include <SPH/PeriodicBoundary.h>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

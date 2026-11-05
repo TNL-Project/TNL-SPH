@@ -4,7 +4,7 @@
 #pragma once
 
 #include <SPH/solvers/SolverMultiSetRemeshed.h>
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>
 
 namespace TNL::SPH {
 

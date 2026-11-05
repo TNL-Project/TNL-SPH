@@ -6,10 +6,10 @@
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
 #include <SPH/solvers/SolverMultiSetBase.h>
-#include <SPH/configInit.h>
-#include <SPH/configSetup.h>
+#include <SPH/ConfigInit.h>
+#include <SPH/ConfigSetup.h>
 #include <SPH/InitReport.h>
-#include <SPH/distributedUtils.h>
+#include <SPH/DistributedUtils.h>
 #include <SPH/shared/removeParticlesOutOfDensityLimits.h>
 
 namespace TNL::SPH {

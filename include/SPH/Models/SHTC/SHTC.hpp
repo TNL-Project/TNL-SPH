@@ -6,7 +6,7 @@
 #include <TNL/Containers/StaticVector.h>
 
 #include <SPH/Models/SHTC/SHTC.h>
-#include <SPH/Models/SHTC/details.h>
+#include <SPH/Models/SHTC/Details.h>
 
 namespace TNL::SPH {
 

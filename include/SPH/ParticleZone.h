@@ -183,4 +183,4 @@ protected:
 }  //namespace ParticleSystem
 }  //namespace TNL
 
-#include <SPH/GhostZone.hpp>
+#include <SPH/ParticleZone.hpp>

@@ -27,16 +27,16 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │       │       DensityFilters.h, VelocityFilters.h, RiemannSolvers.h,
 │       │       PressureGradient.h, BoundaryViscousTerms.h   # interchangeable policy terms
 │       ├── solvers/                    # SolverMultiSet* family (single-res, remeshed, MR, MR+LTS)
-│       ├── shared/                     # Cross-model utilities (Measuretool, PST, interpolation, energy, ...)
+│       ├── shared/                     # Cross-model utilities (MeasureTool, PST, interpolation, energy, ...)
 │       ├── SPHMultiSet_CFD.h/.hpp      # Main simulation orchestrator
 │       ├── ParticleSet.h, Fluid.h, Boundary.h   # particle-set base + fluid/boundary sets
-│       ├── OpenBoundaryBuffers.h, OpenBoundaryConfig.h, PeriodicBoundaryBuffers.h
+│       ├── OpenBoundaryBuffers.h, OpenBoundaryConfig.h, PeriodicBoundary.h
 │       ├── MultiresolutionBuffer.h, MultiresolutionRectangleBuffer.h,
 │       │   MultiresolutionRectangleBufferLocalTimeStepping.h
-│       ├── GhostZone.h, BoundaryGhostParticles.h   # multiresolution ghost handling
+│       ├── ParticleZone.h, BoundaryGhostParticles.h   # multiresolution ghost handling
 │       ├── DecompositionTopology.h     # 1D MPI domain decomposition
 │       ├── SPHTraits.h, Kernels.h, TimeStep.h, SimulationMonitor.h, TimeMeasurement.h
-│       └── configInit.h, configSetup.h, parseConfigFile.h   # JSONC runtime configuration
+│       └── ConfigInit.h, ConfigSetup.h, ParseConfigFile.h   # JSONC runtime configuration
 ├── examples/                           # Stand-alone case problems, one directory per case
 │   ├── WCSPH-DBC/    WCSPH-BI/    RSPH/    SHTC/
 │   └── extra/  resources/              # auxiliary cases + shared images/data
@@ -77,7 +77,7 @@ postpro.py                 # post-processing
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add a new SPH formulation | `include/SPH/Models/<NewModel>/` | Mirror `WCSPH_DBC/` layout: `control.h` (config class), `Interactions.h/.hpp` (model class deriving from `SPHMultiSetSolverTemplate`), `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/` |
+| Add a new SPH formulation | `include/SPH/Models/<NewModel>/` | Mirror `WCSPH_DBC/` layout: `Control.h` (config class), `Interactions.h/.hpp` (model class deriving from `SPHMultiSetSolverTemplate`), `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/` |
 | Add a diffusive term | `include/SPH/Models/DiffusiveTerms.h` | Existing: `None`, `MolteniDiffusiveTerm`, `FourtakasDiffusiveTerm`; select in the example's `SPHParams` |
 | Add a viscous term | `include/SPH/Models/ViscousTerms.h` (fluid), `BoundaryViscousTerms.h` (boundary) | Existing: `ArtificialViscosity`, `PhysicalViscosity`, `PhysicalViscosity_MVT/_MGVT`, `CombinedViscosity` |
 | Add an equation of state | `include/SPH/Models/EquationOfState.h` | Existing: `TaitWeaklyCompressibleEOS` (+ linearized) |
@@ -87,11 +87,11 @@ postpro.py                 # post-processing
 | Add an integration scheme | `include/SPH/Models/<model>/IntegrationSchemes/` | Verlet, SymplecticVerlet, RK4, Midpoint (BI), ExplicitEuler (SHTC); each file defines scheme + scheme-variables classes |
 | Change time stepping | `include/SPH/TimeStep.h` | `ConstantTimeStep`, `VariableTimeStep`, `VariableTimeStepWithReduction`; selected via `SPHParams::TimeStepping` |
 | Change solver strategy (MR / remeshing / LTS) | `include/SPH/solvers/SolverMultiSet*.h/.hpp` | `SolverMultiSet` (single-resolution), `SolverMultiSetRemeshed`, `SolverMultiSetBlockMultiresolution`, `SolverMultiSetBlockMultiresolutionLocalTimeStepping` |
-| Multiresolution buffers / level overlays | `include/SPH/MultiresolutionRectangleBuffer{,LocalTimeStepping}.h`, `GhostZone.h`, `BoundaryGhostParticles.h` | Design docs: `Documentation/multiresolution-*.md` — read before touching |
+| Multiresolution buffers / level overlays | `include/SPH/MultiresolutionRectangleBuffer{,LocalTimeStepping}.h`, `ParticleZone.h`, `BoundaryGhostParticles.h` | Design docs: `Documentation/multiresolution-*.md` — read before touching |
 | Open boundaries (inlet/outlet) | `include/SPH/OpenBoundary*.h` + per-model `OpenBoundaryConditions*` / `OpenBoundaryConfig.h` | Buffers store free-zone/buffer-zone particles; per-model extrapolation in `OpenBoundaryConditionsDataExtrapolation.h` |
-| Periodic boundaries | `include/SPH/PeriodicBoundaryBuffers.h`, `include/SPH/shared/PeriodicBoundaryConditions.h` | `SPHConfig::numberOfPeriodicBuffers` selects copies per side |
+| Periodic boundaries | `include/SPH/PeriodicBoundary.h`, `include/SPH/shared/PeriodicBoundaryConditions.h` | `SPHConfig::numberOfPeriodicBuffers` selects copies per side |
 | MPI decomposition | `include/SPH/DecompositionTopology.h`, `src/tools/splitToSubdomains.py` | 1D split with domain overlaps; `SubdomainDescriptor`/`InterfaceDescriptor` |
-| Measurement: probes, sensors, grid output | `include/SPH/shared/Measuretool.h` (`InterpolateToGrid`, `SensorInterpolation`, `SensorWaterLevel`), `measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Driven by `SimulationMonitor.h` timers; runtime-configured via `.jsonc` |
+| Measurement: probes, sensors, grid output | `include/SPH/shared/MeasureTool.h` (`InterpolateToGrid`, `SensorInterpolation`, `SensorWaterLevel`), `measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Driven by `SimulationMonitor.h` timers; runtime-configured via `.jsonc` |
 | Create a new example | copy e.g. `examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/` | Keep the layout convention; CMakeLists adds a `<case>_cuda` executable linked to `TNL::TNL` |
 | Unit tests (python + C++ test) | `src/Tests/unit/` | Python check groups (built-in collector, no pytest) + `cpp/DistributedParticles/`; CTest label `unit` |
 | Regression configurations | `src/Tests/regression/configurations/` | Pure-data group modules (`suite_all` default, `qa_smoke` pinned smoke set); entries carry case, case-tag, evaluation-function, target, init-script + init kwargs |
@@ -120,11 +120,11 @@ postpro.py                 # post-processing
 | `ConstantTimeStep` / `VariableTimeStep` / `VariableTimeStepWithReduction` | class | `include/SPH/TimeStep.h` | Time-step computation; variable variants from CFL-type conditions |
 | `MultiresolutionBoundary` / `MassNodes` | class | `include/SPH/MultiresolutionRectangleBuffer{,LocalTimeStepping}.h` | Per-level boundary particle buffers for MR; `MultiresolutionBoundaryLTS` adds local time stepping |
 | `BoundaryGhostParticles` | class | `include/SPH/BoundaryGhostParticles.h` | Boundary ghost values on MR block interfaces (updated from the neighbor fluid — model-dependent) |
-| `ParticleZone` | class | `include/SPH/GhostZone.h` | Ghost-zone classification of MR blocks |
+| `ParticleZone` | class | `include/SPH/ParticleZone.h` | Ghost-zone classification of MR blocks |
 | `DecompositionTopology(Flat)` | class | `include/SPH/DecompositionTopology.h` | 1D MPI subdomain layout and 1-ring interface graph |
 | `ParticleSystemConfig` / `SPHConfig` / `SPHParams` (“SPHDefs”) | struct | per-example `template/config.h` | Compile-time policy bundle: particle-system types, kernel, EOS, diffusive/viscous terms, BC type, time stepping, integration scheme |
 | `SimulationMonitor` | class | `include/SPH/SimulationMonitor.h` | Timed snapshots, measurements, energy evaluation, mass conservation |
-| `InterpolateToGrid` / `SensorInterpolation` / `SensorWaterLevel` | class | `include/SPH/shared/Measuretool.h` | Grid interpolation and point-sensor measurements used by the monitor |
+| `InterpolateToGrid` / `SensorInterpolation` / `SensorWaterLevel` | class | `include/SPH/shared/MeasureTool.h` | Grid interpolation and point-sensor measurements used by the monitor |
 | `MeasureVolumetricFlowRate` / `MassConservationMonitor` | class | `include/SPH/shared/measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Open-boundary flow-rate and mass tracking |
 | `TimerMeasurement` | class | `include/SPH/TimeMeasurement.h` | Per-stage wall-time accounting |
 | `InitReport` helpers + per-class `writeInitReport(nlohmann::json&)` | fn + methods | `include/SPH/InitReport.h/.hpp`, `ParticleSet.h`, `MultiresolutionRectangleBuffer*.h`, ... | Structured init report (`results/init_report*.json`): config/params, particle-set geometry, open-boundary/periodic patches, MR buffers, decomposition |
@@ -168,9 +168,9 @@ postpro.py                 # post-processing
 - **Uniform `case.h` driver loop**: every example's `case.h` is the same thin `main()`: `init → while(runTheSimulation()){ performNeighborSearch; interact; computeTimeStep; integrate{Scheme}Step(BCType::integrateInTime()); makeSnapshot; measure; updateTime; }` — model differences live in the headers, not the loop.
 - **Everything is a `ParticleSet`**: `Fluid`, `Boundary`, `OpenBoundary`, and the multiresolution buffers all derive `ParticleSet` with their own variable sets, so ghost/boundary logic shares the particle-machinery API.
 - **CRTP variable sets**: `VariablesBase<Derived>` + per-model `FluidVariables`/`BoundaryVariables`/`OpenBoundaryVariables` (two layers: `FluidVariablesBase` + final class); ghost initialization via `VariablesGhostInit.h`.
-- **Model subpackages mirror each other**: each `Models/<name>/` carries `control.h` (typed config class), `Interactions.h/.hpp`, `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/`, and (where relevant) `OpenBoundary*` files — adding a model means reproducing this layout.
+- **Model subpackages mirror each other**: each `Models/<name>/` carries `Control.h` (typed config class), `Interactions.h/.hpp`, `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/`, and (where relevant) `OpenBoundary*` files — adding a model means reproducing this layout.
 - **Python-driven case management**: `init.py` generates particles + config from `template/` into `sources/` (imports helpers from `src/tools`), `run.py` resolves the binary in the build mirror `build/<same relative path>/<case>_cuda` and streams solver output; distributed examples run under `mpirun` after `splitToSubdomains.py`.
-- **Measurement as monitor plug-ins**: grid interpolation, point sensors, water level, mass conservation, and flow rate are assembled in `SimulationMonitor` from `shared/Measuretool*.h` and timer-driven from the runtime `.jsonc` config.
+- **Measurement as monitor plug-ins**: grid interpolation, point sensors, water level, mass conservation, and flow rate are assembled in `SimulationMonitor` from `shared/MeasureTool*.h` and timer-driven from the runtime `.jsonc` config.
 - **Suffix conventions**: executables `_cuda`; config templates `config_template.{h,jsonc}` generated into concrete `sources/config.jsonc`.
 
 ## COMMANDS
@@ -263,7 +263,7 @@ Current state (expected on this branch):
 - Buffers: `MultiresolutionBoundary` provides per-level boundary particle overlays
   (with `MassNodes` for density/mass redistribution across levels);
   `MultiresolutionBoundaryLTS` is the LTS-specific buffer variant.
-- Ghost interfaces: `GhostZone.h` classifies blocks at level interfaces;
+- Ghost interfaces: `ParticleZone.h` classifies blocks at level interfaces;
   `BoundaryGhostParticles` holds ghost values of boundary particles on interfaces.
   On the current branch, **boundary-ghost updates moved into the WCSPH-BI model**
   (updating from the neighbor fluid is a selectable method; recent commits reworked

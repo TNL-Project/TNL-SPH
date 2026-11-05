@@ -285,6 +285,6 @@ protected:
 
 }  // namespace TNL::SPH
 
-#include <SPH/shared/Measuretool.hpp>
+#include <SPH/shared/MeasureTool.hpp>
 
-#include <SPH/parseConfigFile.h>
+#include <SPH/ParseConfigFile.h>

@@ -2,10 +2,10 @@
 #include <TNL/Config/parseINIConfigFile.h>
 #include <TNL/Logger.h>
 
-#include <SPH/configSetup.h>
+#include <SPH/ConfigSetup.h>
 #include "template/config.h"
 
-#include <SPH/Models/WCSPH_DBC/control.h>
+#include <SPH/Models/WCSPH_DBC/Control.h>
 #include <string>
 
 int
