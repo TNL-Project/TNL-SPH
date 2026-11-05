@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 #pragma once
+
+// Public helper - kept intentionally; may be unused inside the library.
+
 #include <TNL/Algorithms/reduce.h>
 
 namespace TNL::SPH {

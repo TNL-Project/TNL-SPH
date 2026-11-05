@@ -3,6 +3,8 @@
 
 #pragma once
 
+// Public helper - kept intentionally; may be unused inside the library.
+
 namespace TNL::SPH {
 namespace features {
 

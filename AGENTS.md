@@ -21,7 +21,6 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │       │   ├── WCSPH_BI/               # WCSPH with boundary integrals (has experimental/ subdir)
 │       │   ├── RSPH/                   # Riemann SPH
 │       │   ├── SHTC/                   # SHTC formulation
-│       │   ├── WCSPH_MFD/              # archived/incomplete (only Interactions.hpp)
 │       │   ├── SPHMultiSetSolverTemplate.h   # base class for models
 │       │   └── DiffusiveTerms.h, ViscousTerms.h, EquationOfState.h,
 │       │       DensityFilters.h, VelocityFilters.h, RiemannSolvers.h,
@@ -278,7 +277,7 @@ Current state (expected on this branch):
 
 ## NOTES
 
-- `include/SPH/Models/WCSPH_MFD/` is archived/incomplete (only `Interactions.hpp`).
+- The archived `WCSPH_MFD/` model (incomplete, only `Interactions.hpp`, zero includers) was removed from `include/SPH/Models/`.
 - `include/SPH/Models/WCSPH_BI/experimental/` holds non-production BI variants.
 - Release builds compile with `-O3 -DNDEBUG -use_fast_math`; `RelWithDebInfo` adds `--generate-line-info` (nvcc) for `gdb`-friendly line tables.
 - `build/` may contain ad-hoc experiment directories (`mr2d-*`, `*-smoke`, `ghost-test`, `opencode-tests`) and scratch configs — they are not build targets.

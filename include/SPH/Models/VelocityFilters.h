@@ -3,6 +3,8 @@
 
 #pragma once
 
+// Public helper - kept intentionally; may be unused inside the library.
+
 #include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
