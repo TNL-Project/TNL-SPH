@@ -1,6 +1,6 @@
 # TNL-SPH PROJECT KNOWLEDGE BASE
 
-**Updated:** 2026-10-20
+**Updated:** 2026-11-05
 **Branch:** multiresolution-patch-lts
 
 ## OVERVIEW
@@ -27,7 +27,8 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │       │       PressureGradient.h, BoundaryViscousTerms.h   # interchangeable policy terms
 │       ├── solvers/                    # SolverMultiSet* family (single-res, remeshed, MR, MR+LTS)
 │       ├── legacy/                     # Quarantined LegacySolverMultiSet + old buffer (dummy MR fixtures only)
-│       ├── shared/                     # Cross-model utilities (measurement/MeasureTool, PST, interpolation, energy, ...)
+│       ├── shared/                     # Cross-model helpers (PST, interpolation, energyEvaluation/, ...)
+│       │   └── measurement/            # MeasureTool, flow-rate/mass monitors, output log, force diagnostics
 │       ├── SPHMultiSet_CFD.h/.hpp      # Main simulation orchestrator
 │       ├── ParticleSet.h, Fluid.h, Boundary.h   # particle-set base + fluid/boundary sets
 │       ├── OpenBoundaryBuffers.h, OpenBoundaryConfig.h, PeriodicBoundary.h
@@ -202,7 +203,7 @@ python3 src/Tests/runTests.py --tier unit                   # python-only checks
 python3 src/Tests/runTests.py --report src/Tests/logs/log_<stamp>.json   # reprint a stored session (exit 0 on parse)
 ctest --test-dir build -N                                  # list registered tests
 ctest --test-dir build -L unit                             # CTest path: unit-tier + DistributedParticleSystemTest
-                                                           # (red while a staging reference is unfrozen — sentinel, see TESTING)
+                                                           # (expected green after the staging-sentinel resolution, see TESTING)
 # Regression tier + reference staging involve full solver runs — CLUSTER-scale by design, do not run locally
 
 # LSP: build/compile_commands.json is produced at configure time
@@ -237,9 +238,8 @@ Reference freeze (manual, user-owned; cluster-side — do not run locally):
 
 Current state (expected on this branch):
 
-- unit tier + `--tier all` exit nonzero while an unfrozen staging ref exists (sentinel by design; resolves once
-  the ref is frozen or removed)
-- qa_smoke DBC reports SKIP "unfrozen reference (staging only)"
+- unit tier is expected all-PASS (30/30 verified 2026-11-05); the unfrozen staging-ref sentinel was resolved
+  2026-10-22 and `references/_staging/` is empty
 - pre-existing boot-board findings:
   - 2D distributed target commented out (`examples/WCSPH-DBC/CMakeLists.txt:2`)
   - damBreak3D distributed tiling covers [1,24) of 25 cells
