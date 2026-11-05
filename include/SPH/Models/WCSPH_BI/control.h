@@ -9,7 +9,7 @@
 #include <SPH/Models/EquationOfState.h>
 #include <SPH/Models/PressureGradient.h>
 #include <SPH/Models/DiffusiveTerms.h>
-#include <SPH/Models/VisousTerms.h>
+#include <SPH/Models/ViscousTerms.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/VerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>

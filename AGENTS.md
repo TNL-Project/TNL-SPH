@@ -23,7 +23,7 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │       │   ├── SHTC/                   # SHTC formulation
 │       │   ├── WCSPH_MFD/              # archived/incomplete (only Interactions.hpp)
 │       │   ├── SPHMultisetSolverTemplate.h   # base class for models
-│       │   └── DiffusiveTerms.h, VisousTerms.h, EquationOfState.h,
+│       │   └── DiffusiveTerms.h, ViscousTerms.h, EquationOfState.h,
 │       │       DensityFilters.h, VelocityFilters.h, RiemannSolvers.h,
 │       │       PressureGradient.h, BoundaryViscousTerms.h   # interchangeable policy terms
 │       ├── solvers/                    # SolverMultiSet* family (single-res, remeshed, MR, MR+LTS)
@@ -79,7 +79,7 @@ postpro.py                 # post-processing
 |------|----------|-------|
 | Add a new SPH formulation | `include/SPH/Models/<NewModel>/` | Mirror `WCSPH_DBC/` layout: `control.h` (config class), `Interactions.h/.hpp` (model class deriving from `SPHMultisetSolverTemplate`), `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/` |
 | Add a diffusive term | `include/SPH/Models/DiffusiveTerms.h` | Existing: `None`, `MolteniDiffusiveTerm`, `FourtakasDiffusiveTerm`; select in the example's `SPHParams` |
-| Add a viscous term | `include/SPH/Models/VisousTerms.h` (fluid), `BoundaryViscousTerms.h` (boundary) | Existing: `ArtificialViscosity`, `PhysicalViscosity`, `PhysicalViscosity_MVT/_MGVT`, `CombinedViscosity` |
+| Add a viscous term | `include/SPH/Models/ViscousTerms.h` (fluid), `BoundaryViscousTerms.h` (boundary) | Existing: `ArtificialViscosity`, `PhysicalViscosity`, `PhysicalViscosity_MVT/_MGVT`, `CombinedViscosity` |
 | Add an equation of state | `include/SPH/Models/EquationOfState.h` | Existing: `TaitWeaklyCompressibleEOS` (+ linearized) |
 | Add a pressure gradient formulation | `include/SPH/Models/PressureGradient.h` | Existing: `Symmetric`, `TIC` |
 | Add a boundary condition type (DBC) | `include/SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h` + `BoundaryConditions/` | Enum-like structs (`DBC`, `MDBC`, `OpenBoundary`), each with `integrateInTime()`; `MDBCVelocity`/`GWBC` are stubs |
@@ -116,7 +116,7 @@ postpro.py                 # post-processing
 | `WCSPH_DBC` / `WCSPH_BI` / `RSPH` / `SHTC` | class | `include/SPH/Models/*/Interactions.h(.hpp)`, `SHTC.h` | SPH model implementations, composed of the policy terms below |
 | `SPHMultisetSolverTemplate<Particles,ModelConfig>` | class | `include/SPH/Models/SPHMultisetSolverTemplate.h` | Base class shared by models (RSPH, SHTC derive publicly) |
 | `WendlandKernel` | class | `include/SPH/Kernels.h` | Wendland C2 kernel, 2D/3D specializations |
-| `DiffusiveTerms::*`, `ViscousTerms::*`, `EquationsOfState::*` | classes | `include/SPH/Models/{DiffusiveTerms,VisousTerms,EquationOfState}.h` | Interchangeable compile-time policy terms |
+| `DiffusiveTerms::*`, `ViscousTerms::*`, `EquationsOfState::*` | classes | `include/SPH/Models/{DiffusiveTerms,ViscousTerms,EquationOfState}.h` | Interchangeable compile-time policy terms |
 | `ConstantTimeStep` / `VariableTimeStep` / `VariableTimeStepWithReduction` | class | `include/SPH/TimeStep.h` | Time-step computation; variable variants from CFL-type conditions |
 | `MultiresolutionBoundary` / `MassNodes` | class | `include/SPH/MultiresolutionRectangleBuffer{,LocalTimeStepping}.h` | Per-level boundary particle buffers for MR; `MultiresolutionBoundaryLTS` adds local time stepping |
 | `BoundaryGhostParticles` | class | `include/SPH/BoundaryGhostParticles.h` | Boundary ghost values on MR block interfaces (updated from the neighbor fluid — model-dependent) |

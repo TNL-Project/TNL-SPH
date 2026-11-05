@@ -30,7 +30,6 @@ extend-ignore-re = [
 # Word-level exceptions (match inside compound identifiers, e.g. comptueForce, numberOfPtcs).
 [default.extend-words]
 setp = "setp"         # from TNL: also here, "integration setp" doc comments in SPHMultiset_CFD.h
-Visous = "Visous"     # TEMPORARY: misspelling of Viscous in the VisousTerms.h module; removed by W2-T6
 Boudary = "Boudary"   # TEMPORARY: misspelling of Boundary in the BoudaryPointer template parameter; removed by W2-T7
 comptue = "comptue"   # TEMPORARY: misspelling of compute in comptueForce/comptueViscousForce lambdas; removed by W2-T7
 Ptcs = "Ptcs"         # TEMPORARY: legacy particles abbreviation (numberOfPtcs etc.); renamed by W2-T10

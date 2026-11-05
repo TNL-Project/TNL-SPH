@@ -2,7 +2,7 @@
 
 #include "../../../../../SPH/Models/EquationOfState.h"
 #include "../../../../../SPH/Models/DiffusiveTerms.h"
-#include "../../../../../SPH/Models/VisousTerms.h"
+#include "../../../../../SPH/Models/ViscousTerms.h"
 
 #include "../../../../../SPH/SPHTraits.h"
 #include <limits>
