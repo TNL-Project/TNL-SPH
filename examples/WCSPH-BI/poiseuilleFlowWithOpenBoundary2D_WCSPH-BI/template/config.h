@@ -100,6 +100,6 @@ using Simulation = TNL::SPH::SPHMultiSet_CFD< Model >;
 using EnergyFields = TNL::SPH::WCSPHEnergyFields< SPHDefs >;
 #include <SPH/shared/energyEvaluation/energyFieldsInletOutlet.h>
 using EnergyFieldsInletOutlet = TNL::SPH::WCSPHOpenBoundaryEnergyFields< SPHDefs >;
-#include <SPH/shared/measureVolumetricFlowRate.h>
+#include <SPH/shared/measurement/measureVolumetricFlowRate.h>
 using FlowRateMonitor = TNL::SPH::MeasureVolumetricFlowRate< ParticlesConfig, SPHDefs >;
 

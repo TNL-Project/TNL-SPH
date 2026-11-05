@@ -10,8 +10,8 @@
 
 #include <SPH/SPHTraits.h>
 #include <SPH/ParseConfigFile.h>
-#include <SPH/shared/MeasureTool.h>
-#include <SPH/shared/measureVolumetricFlowRate.h>
+#include <SPH/shared/measurement/MeasureTool.h>
+#include <SPH/shared/measurement/measureVolumetricFlowRate.h>
 
 namespace TNL::SPH {
 

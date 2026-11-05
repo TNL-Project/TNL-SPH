@@ -7,7 +7,7 @@
 #include <TNL/Containers/ArrayView.h>
 #include <TNL/Pointers/SharedPointer.h>
 
-#include <SPH/shared/MidpointSchemeOutputLog.h>
+#include <SPH/shared/measurement/MidpointSchemeOutputLog.h>
 #include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {

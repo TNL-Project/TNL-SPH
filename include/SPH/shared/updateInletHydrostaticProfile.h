@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-#include <SPH/shared/MeasureTool.h>
+#include <SPH/shared/measurement/MeasureTool.h>
 
 namespace TNL::SPH {
 namespace features {

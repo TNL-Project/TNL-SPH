@@ -27,7 +27,7 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │       │       PressureGradient.h, BoundaryViscousTerms.h   # interchangeable policy terms
 │       ├── solvers/                    # SolverMultiSet* family (single-res, remeshed, MR, MR+LTS)
 │       ├── legacy/                     # Quarantined LegacySolverMultiSet + old buffer (dummy MR fixtures only)
-│       ├── shared/                     # Cross-model utilities (MeasureTool, PST, interpolation, energy, ...)
+│       ├── shared/                     # Cross-model utilities (measurement/MeasureTool, PST, interpolation, energy, ...)
 │       ├── SPHMultiSet_CFD.h/.hpp      # Main simulation orchestrator
 │       ├── ParticleSet.h, Fluid.h, Boundary.h   # particle-set base + fluid/boundary sets
 │       ├── OpenBoundaryBuffers.h, OpenBoundaryConfig.h, PeriodicBoundary.h
@@ -91,7 +91,7 @@ postpro.py                 # post-processing
 | Open boundaries (inlet/outlet) | `include/SPH/OpenBoundary*.h` + per-model `OpenBoundaryConditions*` / `OpenBoundaryConfig.h` | Buffers store free-zone/buffer-zone particles; per-model extrapolation in `OpenBoundaryConditionsDataExtrapolation.h` |
 | Periodic boundaries | `include/SPH/PeriodicBoundary.h`, `include/SPH/shared/PeriodicBoundaryConditions.h` | `SPHConfig::numberOfPeriodicBuffers` selects copies per side |
 | MPI decomposition | `include/SPH/DecompositionTopology.h`, `src/tools/splitToSubdomains.py` | 1D split with domain overlaps; `SubdomainDescriptor`/`InterfaceDescriptor` |
-| Measurement: probes, sensors, grid output | `include/SPH/shared/MeasureTool.h` (`InterpolateToGrid`, `SensorInterpolation`, `SensorWaterLevel`), `measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Driven by `SimulationMonitor.h` timers; runtime-configured via `.jsonc` |
+| Measurement: probes, sensors, grid output | `include/SPH/shared/measurement/MeasureTool.h` (`InterpolateToGrid`, `SensorInterpolation`, `SensorWaterLevel`), `include/SPH/shared/measurement/measureVolumetricFlowRate.h`, `include/SPH/shared/measurement/massConservationMonitor.h` | Driven by `SimulationMonitor.h` timers; runtime-configured via `.jsonc` |
 | Create a new example | copy e.g. `examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/` | Keep the layout convention; CMakeLists adds a `<case>_cuda` executable linked to `TNL::TNL` |
 | Unit tests (python + C++ test) | `src/Tests/unit/` | Python check groups (built-in collector, no pytest) + `cpp/DistributedParticles/`; CTest label `unit` |
 | Regression configurations | `src/Tests/regression/configurations/` | Pure-data group modules (`suite_all` default, `qa_smoke` pinned smoke set); entries carry case, case-tag, evaluation-function, target, init-script + init kwargs |
@@ -125,8 +125,8 @@ postpro.py                 # post-processing
 | `DecompositionTopology(Flat)` | class | `include/SPH/DecompositionTopology.h` | 1D MPI subdomain layout and 1-ring interface graph |
 | `ParticleSystemConfig` / `SPHConfig` / `SPHParams` (“SPHDefs”) | struct | per-example `template/config.h` | Compile-time policy bundle: particle-system types, kernel, EOS, diffusive/viscous terms, BC type, time stepping, integration scheme |
 | `SimulationMonitor` | class | `include/SPH/SimulationMonitor.h` | Timed snapshots, measurements, energy evaluation, mass conservation |
-| `InterpolateToGrid` / `SensorInterpolation` / `SensorWaterLevel` | class | `include/SPH/shared/MeasureTool.h` | Grid interpolation and point-sensor measurements used by the monitor |
-| `MeasureVolumetricFlowRate` / `MassConservationMonitor` | class | `include/SPH/shared/measureVolumetricFlowRate.h`, `massConservationMonitor.h` | Open-boundary flow-rate and mass tracking |
+| `InterpolateToGrid` / `SensorInterpolation` / `SensorWaterLevel` | class | `include/SPH/shared/measurement/MeasureTool.h` | Grid interpolation and point-sensor measurements used by the monitor |
+| `MeasureVolumetricFlowRate` / `MassConservationMonitor` | class | `include/SPH/shared/measurement/measureVolumetricFlowRate.h`, `include/SPH/shared/measurement/massConservationMonitor.h` | Open-boundary flow-rate and mass tracking |
 | `TimerMeasurement` | class | `include/SPH/TimeMeasurement.h` | Per-stage wall-time accounting |
 | `InitReport` helpers + per-class `writeInitReport(nlohmann::json&)` | fn + methods | `include/SPH/InitReport.h/.hpp`, `ParticleSet.h`, `MultiresolutionRectangleBuffer*.h`, ... | Structured init report (`results/init_report*.json`): config/params, particle-set geometry, open-boundary/periodic patches, MR buffers, decomposition |
 | `ElasticBounce`, `PST`, `MFD`, `TaylorMonomials` | class | `include/SPH/shared/` | Cross-model helpers: boundary-bounce modes, particle shifting, MLS/Taylor interpolation |
@@ -171,7 +171,7 @@ postpro.py                 # post-processing
 - **CRTP variable sets**: `VariablesBase<Derived>` + per-model `FluidVariables`/`BoundaryVariables`/`OpenBoundaryVariables` (two layers: `FluidVariablesBase` + final class); ghost initialization via `VariablesGhostInit.h`.
 - **Model subpackages mirror each other**: each `Models/<name>/` carries `Control.h` (typed config class), `Interactions.h/.hpp`, `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/`, and (where relevant) `OpenBoundary*` files — adding a model means reproducing this layout.
 - **Python-driven case management**: `init.py` generates particles + config from `template/` into `sources/` (imports helpers from `src/tools`), `run.py` resolves the binary in the build mirror `build/<same relative path>/<case>_cuda` and streams solver output; distributed examples run under `mpirun` after `splitToSubdomains.py`.
-- **Measurement as monitor plug-ins**: grid interpolation, point sensors, water level, mass conservation, and flow rate are assembled in `SimulationMonitor` from `shared/MeasureTool*.h` and timer-driven from the runtime `.jsonc` config.
+- **Measurement as monitor plug-ins**: grid interpolation, point sensors, water level, mass conservation, and flow rate are assembled in `SimulationMonitor` from `shared/measurement/MeasureTool*.h` and timer-driven from the runtime `.jsonc` config.
 - **Suffix conventions**: executables `_cuda`; config templates `config_template.{h,jsonc}` generated into concrete `sources/config.jsonc`.
 
 ## COMMANDS
