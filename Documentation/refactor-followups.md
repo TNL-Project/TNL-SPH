@@ -29,22 +29,22 @@ bare `assert()` (4 sites, all overlap-state guards in MR buffers):
 - include/SPH/MultiresolutionRectangleBuffer.h:160,176
 
 `throw` sites (7):
-- include/SPH/parseConfigFile.h:114,195,202,225 (`std::runtime_error`)
+- include/SPH/ParseConfigFile.h:114,195,202,225 (`std::runtime_error`)
 - include/SPH/InitReport.hpp:73 (`std::runtime_error`)
 - include/SPH/solvers/SolverMultiSetBlockMultiresolution.hpp:344 (`std::runtime_error`)
 - include/SPH/DecompositionTopology.h:125 (`std::out_of_range` — acceptable as-is or align)
 
 `std::cerr` per file (36 hits / 16 files):
-- include/SPH/configSetup.h:9, configInit.h:4, SimulationMonitor.h:3, shared/debugging.h:3,
-  SPHMultiSet_CFD.hpp:2 (was SPHMultiset_CFD.hpp), legacy/SolverMultiSet.hpp:2 (post-quarantine path),
+- include/SPH/ConfigSetup.h:9, ConfigInit.h:4, SimulationMonitor.h:3, shared/debugging.h:3,
+  SPHMultiSet_CFD.hpp:2 (renamed during the T8 pass), legacy/SolverMultiSet.hpp:2 (post-quarantine path),
   shared/PeriodicBoundaryConditions.h:2, Models/WCSPH_DBC/OpenBoundaryConfig.h:2,
   Models/WCSPH_BI/OpenBoundaryConfig.h:2, solvers/SolverMultiSetRemeshed.hpp:1,
-  solvers/SolverMultiSet.hpp:1, solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.hpp:1
-  (post-T9 path ends with LocalTimeStepping), solvers/SolverMultiSetBlockMultiresolution.hpp:1,
+  solvers/SolverMultiSet.hpp:1, solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.hpp:1
+  (renamed during the T9 pass), solvers/SolverMultiSetBlockMultiresolution.hpp:1,
   solvers/SolverMultiSetBase.hpp:1, Models/WCSPH_DBC/OpenBoundaryConditions.hpp:1,
   Models/WCSPH_BI/OpenBoundaryConditions.hpp:1
 
-`std::exit` (2): include/SPH/configInit.h:52,59 — after `--config-help` printing; CLI semantics, keep
+`std::exit` (2): include/SPH/ConfigInit.h:52,59 — after `--config-help` printing; CLI semantics, keep
 behavior but route output through `TNL::Logger`.
 
 ### Proposed approach (former plan task T15)
@@ -53,10 +53,10 @@ behavior but route output through `TNL::Logger`.
 2. Triage the 36 `std::cerr` sites: genuine user-facing diagnostics → keep (documented keep-list in the
    change's evidence) or route through `TNL::Logger`; true fatal errors → `TNL::Exceptions::ConfigError`
    / `BackendRuntimeError`.
-3. Type the 6 `std::runtime_error` throws from `TNL/Exceptions/*` (ConfigError for parseConfigFile.h +
+3. Type the 6 `std::runtime_error` throws from `TNL/Exceptions/*` (ConfigError for ParseConfigFile.h +
    InitReport.hpp; BackendRuntimeError for the MR solver check).
 4. Keep `DecompositionTopology.h:125` `std::out_of_range` or align; document the choice.
-5. Keep `configInit.h` exit-after-help semantics; logger for output. Do NOT touch the known
+5. Keep `ConfigInit.h` exit-after-help semantics; logger for output. Do NOT touch the known
    uncaught-ConfigError abort on bare `--config-help` (pre-existing issue listed in AGENTS.md).
 6. Guardrails: no exceptions inside hot GPU/device code paths; no silent return-contract changes.
 
@@ -78,7 +78,7 @@ Header documentation is essentially absent (verified census): 0 of 116 headers c
 while TNL heads every file with a full Doxygen block (`\brief`, `\tparam`, `\ref`, `\par`;
 idiom: build/_deps/tnl-src/src/TNL/Containers/Array.h:14-25). Examples of critical undocumented API
 files: include/SPH/ParticleSet.h (base class of all particle sets — zero doc blocks),
-VariablesBase.h, SPHTraits.h, SPHMultiset_CFD.h driver API, Models/*/Interactions.h model classes.
+VariablesBase.h, SPHTraits.h, SPHMultiSet_CFD.h driver API, Models/*/Interactions.h model classes.
 
 ### Proposed approach (former plan tasks T17 + T18)
 
@@ -190,13 +190,13 @@ bundle (kept in the active plan): T13 legacy-quarantine move and the W2 MR-adjac
 ## DEFERRED-T22 — Solver-stack audit (SPHMultiSet_CFD decomposition etc.)
 
 Deferred 2026-10-22 at user request during the plan walkthrough: "we slowly moved from
-SPHMultiset_CFD to solvers — we audit the solver in detail next time." The driver/solver
+SPHMultiSet_CFD to solvers — we audit the solver in detail next time." The driver/solver
 architecture is the next audit's own session; only its comment-level noise stays in the
 active plan (T24 triages the 12 markers inside SPHMultiSet_CFD.hpp without touching architecture).
 
 ### Findings
 
-- The top-level driver `include/SPH/SPHMultiset_CFD.{h,hpp}` (→ `SPHMultiSet_CFD` post-T8;
+- The top-level driver `include/SPH/SPHMultiSet_CFD.{h,hpp}` (T8 post-rename path;
   376 + 1039 lines) does ~5 jobs in one class: init (8 methods), config (SIX Config/ParameterContainer
   pairs), the time-loop, I/O, and monitoring; ~40 public methods; self-flagged
   comments: `IntegratorPointer integrator; // I hate this.` (current line 314) and
@@ -205,7 +205,7 @@ active plan (T24 triages the 12 markers inside SPHMultiSet_CFD.hpp without touch
   writeProlog(bool)) is REMOVED by in-plan task T14 — the split session need not care about it.
 - The migration question (driver vs solvers/ hierarchy) is exactly what this audit session
   must decide — gather: who consumes SPHMultiSet_CFD today vs who already instantiates
-  SolverMultiSet* directly (grep: examples all call SPHMultiset_CFD<Model> via case.h;
+  SolverMultiSet* directly (grep: examples all call SPHMultiSet_CFD<Model> via case.h;
   fixture configs use the two solver generations directly).
 
 ### Proposed approach (former plan task T22)
