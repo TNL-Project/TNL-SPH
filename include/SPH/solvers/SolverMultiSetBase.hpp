@@ -38,11 +38,12 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       openBoundaryPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
-      openBoundaryPatches[ i ]->initialize( parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
-                                            parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
-                                            searchRadius,
-                                            dimensions,
-                                            domainOrigin );
+      openBoundaryPatches[ i ]->initialize(
+         parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
+         parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+         searchRadius,
+         dimensions,
+         domainOrigin );
    }
    logger.writeParameter( "Initialization of open boundary patches.", "Done." );
 }
@@ -63,7 +64,8 @@ SolverMultiSetBase< Model >::initPeriodicBoundaryPatches( TNL::Config::Parameter
       std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
       configSetupOpenBoundaryModelPatch< SPHConfig >( configPeriodicBoundary, prefix );
    }
-   parseOpenBoundaryConfig( periodicBoundaryConfigPath, parametersPeriodicBoundary, configPeriodicBoundary, logger, periodicBoundaryInline );
+   parseOpenBoundaryConfig(
+      periodicBoundaryConfigPath, parametersPeriodicBoundary, configPeriodicBoundary, logger, periodicBoundaryInline );
 
    fluidSets[ 0 ]->initializePeriodicity( parameters, parametersPeriodicBoundary );
    boundarySets[ 0 ]->initializePeriodicity( parameters, parametersPeriodicBoundary );
@@ -75,13 +77,13 @@ SolverMultiSetBase< Model >::performNeighborSearch( bool performBoundarySearch )
 {
    timeMeasurement.start( "search" );
 
-   if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ){
-      for( int i = 0; i < numberOfSubsets; i++ ){
+   if constexpr( ParticlesType::specifySearchedSetExplicitly() == false ) {
+      for( int i = 0; i < numberOfSubsets; i++ ) {
          fluidSets[ i ]->searchForNeighbors();
          if( verbose == "full" )
             logger.writeParameter( "Fluid " + std::to_string( i ) + " search procedure:", "Done." );
 
-         if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
+         if( timeStepping.getStep() == 0 || performBoundarySearch == true ) {
             boundarySets[ i ]->searchForNeighbors();
             if( verbose == "full" )
                logger.writeParameter( "Boundary " + std::to_string( i ) + " search procedure:", "Done." );
@@ -89,20 +91,19 @@ SolverMultiSetBase< Model >::performNeighborSearch( bool performBoundarySearch )
       }
 
       if( openBoundaryPatches.size() > 0 )
-         for( auto& openBoundaryPatch : openBoundaryPatches ){
+         for( auto& openBoundaryPatch : openBoundaryPatches ) {
             openBoundaryPatch->searchForNeighbors();
             if( verbose == "full" )
                logger.writeParameter( "Open boundary patch search procedure:", "Done." );
          }
    }
-   else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ){
-
-      for( int i = 0; i < numberOfSubsets; i++ ){
+   else if constexpr( ParticlesType::specifySearchedSetExplicitly() == true ) {
+      for( int i = 0; i < numberOfSubsets; i++ ) {
          fluidSets[ i ]->makeSetSearchable();
          if( verbose == "full" )
             logger.writeParameter( "Fluid " + std::to_string( i ) + "-fluid search procedure:", "Done." );
 
-         if( timeStepping.getStep() == 0 || performBoundarySearch == true ){
+         if( timeStepping.getStep() == 0 || performBoundarySearch == true ) {
             boundarySets[ i ]->makeSetSearchable();
             if( verbose == "full" )
                logger.writeParameter( "Boundary " + std::to_string( i ) + "-boundary search procedure:", "Done." );
@@ -141,14 +142,16 @@ template< typename Model >
 void
 SolverMultiSetBase< Model >::removeParticlesOutOfDomain()
 {
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
-      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain(); //TODO: This could directly return the count
+      fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain();  //TODO: This could directly return the count
 
-      if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ){
-         const int numberOfParticlesOutOfDomain = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
+      if( fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() > numberOfParticlesToRemove ) {
+         const int numberOfParticlesOutOfDomain =
+            fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove() - numberOfParticlesToRemove;
          this->totalNumberOfParticlesOutOfDomain += numberOfParticlesOutOfDomain;
-         logger.writeParameter( "Particles out of domain removed (set " + std::to_string( i ) + "):", numberOfParticlesOutOfDomain );
+         logger.writeParameter(
+            "Particles out of domain removed (set " + std::to_string( i ) + "):", numberOfParticlesOutOfDomain );
          logger.writeParameter( "Total particles out of domain removed:", this->totalNumberOfParticlesOutOfDomain );
       }
    }
@@ -158,11 +161,13 @@ template< typename Model >
 void
 SolverMultiSetBase< Model >::removeParticlesOutOfDensityLimits()
 {
-   for( int i = 0; i < numberOfSubsets; i++ ){
-      const int numberOfParticlesOutOfDensityLimits = customFunctions::removeParticlesOutOfDensityLimits( fluidSets[ i ], modelParams );
-      if( numberOfParticlesOutOfDensityLimits > 0 ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
+      const int numberOfParticlesOutOfDensityLimits =
+         customFunctions::removeParticlesOutOfDensityLimits( fluidSets[ i ], modelParams );
+      if( numberOfParticlesOutOfDensityLimits > 0 ) {
          this->totalNumberOfParticlesOutOfDensityLimits += numberOfParticlesOutOfDensityLimits;
-         logger.writeParameter( "Particles out of density limits (set " + std::to_string( i ) + "):", numberOfParticlesOutOfDensityLimits );
+         logger.writeParameter(
+            "Particles out of density limits (set " + std::to_string( i ) + "):", numberOfParticlesOutOfDensityLimits );
          logger.writeParameter( "Total particles out of density limits:", this->totalNumberOfParticlesOutOfDensityLimits );
       }
    }
@@ -175,7 +180,8 @@ SolverMultiSetBase< Model >::extrapolateOpenBC()
 {
    timeMeasurement.start( "extrapolate-openbc" );
    for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ ) {
-      model.extrapolateOpenBoundaryData( fluidSets[ 0 ], openBoundaryPatches[ i ], modelParams, openBoundaryPatches[ i ]->config );
+      model.extrapolateOpenBoundaryData(
+         fluidSets[ 0 ], openBoundaryPatches[ i ], modelParams, openBoundaryPatches[ i ]->config );
    }
    timeMeasurement.stop( "extrapolate-openbc" );
    writeLog( "Extrapolate open BC...", "Done." );
@@ -189,7 +195,10 @@ SolverMultiSetBase< Model >::applyOpenBC( const RealType timeStepFact )
    timeMeasurement.start( "apply-openbc" );
    for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ ) {
       openBoundaryModel.applyOpenBoundary(
-         timeStepFact * timeStepping.getTimeStep(), fluidSets[ 0 ], openBoundaryPatches[ i ], openBoundaryPatches[ i ]->config );
+         timeStepFact * timeStepping.getTimeStep(),
+         fluidSets[ 0 ],
+         openBoundaryPatches[ i ],
+         openBoundaryPatches[ i ]->config );
    }
    timeMeasurement.stop( "apply-openbc" );
    writeLog( "Update open BC...", "Done." );
@@ -247,7 +256,7 @@ SolverMultiSetBase< Model >::measure()
 {
    //FIXME: Needs generalization for multi-set simulations
    simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-         fluidSets[ 0 ], boundarySets[ 0 ], modelParams, timeStepping, logger, verbose );
+      fluidSets[ 0 ], boundarySets[ 0 ], modelParams, timeStepping, logger, verbose );
 }
 
 template< typename Model >
@@ -337,7 +346,7 @@ template< typename Model >
 void
 SolverMultiSetBase< Model >::midpointResidualsAndRelaxationFactor()
 {
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       integrator->computeResiduals( fluidSets[ i ], modelParams );
       integrator->updateRelaxationFactor( modelParams );
    }
@@ -359,7 +368,7 @@ void
 SolverMultiSetBase< Model >::midpointCorrector()
 {
    timeMeasurement.start( "integrate" );
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       if( timeStepping.getStep() == 0 )
          integrator->corrector( 0, fluidSets[ i ] );
       else
@@ -379,15 +388,17 @@ SolverMultiSetBase< Model >::save( bool writeParticleCellIndex )
    const int step = timeStepping.getStep();
    const RealType time = timeStepping.getTime();
 
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
 #ifdef HAVE_MPI
-      std::string outputFileNameFluid = outputDirectory + "/fluid_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( time ) + "_particles.vtk";
+      std::string outputFileNameFluid = outputDirectory + "/fluid_rank" + std::to_string( TNL::MPI::GetRank() ) + "_"
+                                      + std::to_string( time ) + "_particles.vtk";
 #else
       std::string outputFileNameFluid;
       if( numberOfSubsets == 1 )
          outputFileNameFluid = outputDirectory + "/fluid_" + std::to_string( time ) + "_particles.vtk";
       else
-         outputFileNameFluid = outputDirectory + "/fluid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
+         outputFileNameFluid =
+            outputDirectory + "/fluid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
 #endif
       std::string tmpOutputFileNameFluid = outputFileNameFluid + ".tmp";
       fluidSets[ i ]->template writeParticlesAndVariables< Writer >( tmpOutputFileNameFluid, writeParticleCellIndex );
@@ -395,13 +406,15 @@ SolverMultiSetBase< Model >::save( bool writeParticleCellIndex )
       logger.writeParameter( "Saved:", outputFileNameFluid );
 
 #ifdef HAVE_MPI
-      std::string outputFileNameBound = outputDirectory + "/boundary_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( time ) + "_particles.vtk";
+      std::string outputFileNameBound = outputDirectory + "/boundary_rank" + std::to_string( TNL::MPI::GetRank() ) + "_"
+                                      + std::to_string( time ) + "_particles.vtk";
 #else
       std::string outputFileNameBound;
       if( numberOfSubsets == 1 )
          outputFileNameBound = outputDirectory + "/boundary_" + std::to_string( time ) + "_particles.vtk";
       else
-         outputFileNameBound = outputDirectory + "/boundary_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
+         outputFileNameBound =
+            outputDirectory + "/boundary_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
 #endif
       std::string tmpOutputFileNameBound = outputFileNameBound + ".tmp";
       boundarySets[ i ]->template writeParticlesAndVariables< Writer >( tmpOutputFileNameBound, writeParticleCellIndex );
@@ -421,7 +434,8 @@ SolverMultiSetBase< Model >::save( bool writeParticleCellIndex )
    }
 
 #ifdef HAVE_MPI
-   std::string outputFileNameGrid = outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( time ) + ".vtk";
+   std::string outputFileNameGrid =
+      outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::to_string( time ) + ".vtk";
 #else
    std::string outputFileNameGrid;
    if( numberOfSubsets == 1 )
@@ -429,7 +443,11 @@ SolverMultiSetBase< Model >::save( bool writeParticleCellIndex )
    else
       outputFileNameGrid = outputDirectory + "/grid_subdomain" + std::to_string( 0 ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-   TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, fluidSets[ 0 ]->getParticles()->getDimensions(), fluidSets[ 0 ]->getParticles()->getOrigin(), fluidSets[ 0 ]->getParticles()->getSearchRadius() );
+   TNL::Particles::Writers::writeBackgroundGrid(
+      outputFileNameGrid,
+      fluidSets[ 0 ]->getParticles()->getDimensions(),
+      fluidSets[ 0 ]->getParticles()->getOrigin(),
+      fluidSets[ 0 ]->getParticles()->getSearchRadius() );
    logger.writeParameter( "Saved:", outputFileNameGrid );
 
    simulationMonitor.save( logger );
@@ -440,9 +458,9 @@ void
 SolverMultiSetBase< Model >::makeSnapshot()
 {
    const bool savePressure = true;
-   if( timeStepping.checkOutputTimer( "save_results" ) ){
-      if( savePressure ){
-         for( int i = 0; i < numberOfSubsets; i++ ){
+   if( timeStepping.checkOutputTimer( "save_results" ) ) {
+      if( savePressure ) {
+         for( int i = 0; i < numberOfSubsets; i++ ) {
             model.computePressureFromDensity( fluidSets[ i ], modelParams );
             model.computePressureFromDensity( boundarySets[ i ], modelParams );
          }
@@ -527,20 +545,22 @@ SolverMultiSetBase< Model >::writeProlog( bool writeSystemInformation ) noexcept
    logger.writeParameter( "Output directory:", outputDirectory );
    logger.writeParameter( "Particles format", particlesFormat );
 #ifdef HAVE_MPI
-   if( TNL::MPI::isInitialized() ){
+   if( TNL::MPI::isInitialized() ) {
       logger.writeParameter( "Load balancing step interval: ", loadBalancingStepInterval );
       logger.writeParameter( "Load balancing measure:", loadBalancingMeasure );
       if( loadBalancingMeasure == "computationalTime" )
-         logger.writeParameter( "Comp. time fraction difference to balance [-]:",
-             fluidSets[ 0 ]->getDistributedParticles()->getCompTimeResizePercentageThreshold() );
+         logger.writeParameter(
+            "Comp. time fraction difference to balance [-]:",
+            fluidSets[ 0 ]->getDistributedParticles()->getCompTimeResizePercentageThreshold() );
       else if( loadBalancingMeasure == "numberOfParticles" )
-         logger.writeParameter( "Particles count fraction difference to balance [-]:",
-             fluidSets[ 0 ]->getDistributedParticles()->getParticlesCountResizeThreshold() );
+         logger.writeParameter(
+            "Particles count fraction difference to balance [-]:",
+            fluidSets[ 0 ]->getDistributedParticles()->getParticlesCountResizeThreshold() );
    }
 #endif
    writePrologModel( logger, modelParams );
 
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       logger.writeHeader( "Fluid " + std::to_string( i ) + " object information." );
       fluidSets[ i ]->writeProlog( logger );
       logger.writeHeader( "Boundary " + std::to_string( i ) + " object information:" );
@@ -591,9 +611,10 @@ void
 SolverMultiSetBase< Model >::writeInfo() noexcept
 {
    logger.writeSeparator();
-   logger.writeParameter( "Simulation time: " + std::to_string( timeStepping.getTime() )
-                             + " s, simulation step: " + std::to_string( timeStepping.getStep() ),
-                          "" );
+   logger.writeParameter(
+      "Simulation time: " + std::to_string( timeStepping.getTime() )
+         + " s, simulation step: " + std::to_string( timeStepping.getStep() ),
+      "" );
    logger.writeCurrentTime( "Current time:" );
 
    const GlobalIndexType currentStep = timeStepping.getStep();
@@ -608,7 +629,7 @@ SolverMultiSetBase< Model >::writeInfo() noexcept
    snapshotWallTimer.reset();
    snapshotWallTimer.start();
 
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       logger.writeParameter( "Number of fluid particles:", fluidSets[ i ]->getNumberOfParticles() );
       logger.writeParameter( "Number of allocated fluid particles:", fluidSets[ i ]->getNumberOfAllocatedParticles() );
       logger.writeParameter( "Number of boundary particles:", boundarySets[ i ]->getNumberOfParticles() );
@@ -616,17 +637,19 @@ SolverMultiSetBase< Model >::writeInfo() noexcept
    }
    if( openBoundaryPatches.size() > 0 ) {
       for( long unsigned int i = 0; i < openBoundaryPatches.size(); i++ )
-         logger.writeParameter( "Number of buffer" + std::to_string( i + 1 ) + " particles:",
-                                openBoundaryPatches[ i ]->getNumberOfParticles() );
+         logger.writeParameter(
+            "Number of buffer" + std::to_string( i + 1 ) + " particles:", openBoundaryPatches[ i ]->getNumberOfParticles() );
    }
    if( fluidSets[ 0 ]->periodicPatches.size() > 0 ) {
       if( verbose == "full" ) {
          for( long unsigned int i = 0; i < fluidSets[ 0 ]->periodicPatches.size(); i++ )
-            logger.writeParameter( "Number of fluid particles in periodic patch " + std::to_string( i + 1 ) + ": ",
-                                   fluidSets[ 0 ]->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
+            logger.writeParameter(
+               "Number of fluid particles in periodic patch " + std::to_string( i + 1 ) + ": ",
+               fluidSets[ 0 ]->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
          for( long unsigned int i = 0; i < boundarySets[ 0 ]->periodicPatches.size(); i++ )
-            logger.writeParameter( "Number of boundary particles in periodic patch " + std::to_string( i + 1 ) + " :",
-                                   boundarySets[ 0 ]->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
+            logger.writeParameter(
+               "Number of boundary particles in periodic patch " + std::to_string( i + 1 ) + " :",
+               boundarySets[ 0 ]->periodicPatches[ i ]->particleZone.getNumberOfParticles() );
       }
    }
    logger.writeSeparator();
@@ -652,7 +675,7 @@ SolverMultiSetBase< Model >::synchronizeDistributedSimulation()
 {
    writeLog( "Starting synchronization.", "" );
    timeMeasurement.start( "synchronize" );
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       fluidSets[ i ]->synchronizeObject();
       boundarySets[ i ]->synchronizeObject();
    }
@@ -664,7 +687,7 @@ template< typename Model >
 void
 SolverMultiSetBase< Model >::resetOverlaps()
 {
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       fluidSets[ i ]->getParticles()->removeParticlesOutOfDomain();
       boundarySets[ i ]->getParticles()->removeParticlesOutOfDomain();
    }
@@ -675,7 +698,8 @@ void
 SolverMultiSetBase< Model >::performLoadBalancing()
 {
    fluidSets[ 0 ]->getDistributedParticles()->setNumberOfParticlesForLoadBalancing( fluidSets[ 0 ]->getNumberOfParticles() );
-   fluidSets[ 0 ]->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
+   fluidSets[ 0 ]->getDistributedParticles()->setCompTimeForLoadBalancing(
+      timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
    fluidSets[ 0 ]->synchronizeBalancingMeasures();
 
    std::pair< CoordinatesType, VectorType > subdomainAdjustment;
@@ -697,34 +721,33 @@ SolverMultiSetBase< Model >::performLoadBalancing()
    logger.writeParameter( "Grid origin adjustment: ", gridOriginAdjustment );
    logger.writeParameter( "Old grid dimensions: ", fluidSets[ 0 ]->getParticles()->getDimensions() );
    logger.writeParameter( "Old grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getOrigin() );
-   logger.writeParameter( "Old firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
+   logger.writeParameter(
+      "Old firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       fluidSets[ i ]->getParticles()->setDimensions( updatedGridDimensions );
       fluidSets[ i ]->getParticles()->setOrigin( updatedOrigin );
       boundarySets[ i ]->getParticles()->setDimensions( updatedGridDimensions );
       boundarySets[ i ]->getParticles()->setOrigin( updatedOrigin );
    }
 
-   const CoordinatesType updatedOriginGlobalCoords = fluidSets[ 0 ]->getParticles()->getGlobalOriginCoordinates() + subdomainAdjustment.second;
-   for( int i = 0; i < numberOfSubsets; i++ ){
+   const CoordinatesType updatedOriginGlobalCoords =
+      fluidSets[ 0 ]->getParticles()->getGlobalOriginCoordinates() + subdomainAdjustment.second;
+   for( int i = 0; i < numberOfSubsets; i++ ) {
       fluidSets[ i ]->getParticles()->setGlobalOriginCoordinates( updatedOriginGlobalCoords );
       boundarySets[ i ]->getParticles()->setGlobalOriginCoordinates( updatedOriginGlobalCoords );
    }
 
    logger.writeParameter( "New grid dimensions: ", fluidSets[ 0 ]->getParticles()->getDimensions() );
    logger.writeParameter( "New grid origin adjustment: ", fluidSets[ 0 ]->getParticles()->getOrigin() );
-   logger.writeParameter( "New firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
+   logger.writeParameter(
+      "New firstLastCellParticleList size: ", fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() );
 
-   for( int i = 0; i < numberOfSubsets; i++ ){
-      fluidSets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
-                                                                                  updatedOrigin,
-                                                                                  1,
-                                                                                  fluidSets[ i ]->getParticles()->getSearchRadius() );
-      boundarySets[ i ]->getDistributedParticles()->updateDistributedGridParameters( updatedGridDimensions,
-                                                                                     updatedOrigin,
-                                                                                     1,
-                                                                                     boundarySets[ i ]->getParticles()->getSearchRadius() );
+   for( int i = 0; i < numberOfSubsets; i++ ) {
+      fluidSets[ i ]->getDistributedParticles()->updateDistributedGridParameters(
+         updatedGridDimensions, updatedOrigin, 1, fluidSets[ i ]->getParticles()->getSearchRadius() );
+      boundarySets[ i ]->getDistributedParticles()->updateDistributedGridParameters(
+         updatedGridDimensions, updatedOrigin, 1, boundarySets[ i ]->getParticles()->getSearchRadius() );
    }
    writeLoadBalancingInfo( gridDimensionsAdjustment[ 0 ] );
    this->subdomainCompTimeBackup = timeMeasurement.getTotalTime();
@@ -734,26 +757,22 @@ template< typename Model >
 void
 SolverMultiSetBase< Model >::writeLoadBalancingInfo( const int gridResize )
 {
-   const std::string outputPath = outputDirectory + "/loadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
+   const std::string outputPath =
+      outputDirectory + "/loadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
    std::ofstream outfile;
    outfile.open( outputPath, std::ios_base::app );
-   outfile << timeStepping.getStep() << " "
-           << timeStepping.getTime() << " "
-           << fluidSets[ 0 ]->getNumberOfParticles() << " "
-           << fluidSets[ 0 ]->getNumberOfAllocatedParticles() << " "
-           << boundarySets[ 0 ]->getNumberOfParticles() << " "
+   outfile << timeStepping.getStep() << " " << timeStepping.getTime() << " " << fluidSets[ 0 ]->getNumberOfParticles() << " "
+           << fluidSets[ 0 ]->getNumberOfAllocatedParticles() << " " << boundarySets[ 0 ]->getNumberOfParticles() << " "
            << boundarySets[ 0 ]->getNumberOfAllocatedParticles() << " "
            << timeMeasurement.getTotalTime() - subdomainCompTimeBackup << " "
-           << fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() << " "
-           << gridResize << std::endl;
+           << fluidSets[ 0 ]->getParticles()->getCellFirstLastParticleList().getSize() << " " << gridResize << std::endl;
 }
 
 template< typename Model >
 void
 SolverMultiSetBase< Model >::balanceSubdomains()
 {
-   if( ( timeStepping.getStep() % loadBalancingStepInterval == 0 ) && ( timeStepping.getStep() > 1 ) ){
-
+   if( ( timeStepping.getStep() % loadBalancingStepInterval == 0 ) && ( timeStepping.getStep() > 1 ) ) {
       performNeighborSearch( true );
 
       logger.writeSeparator();

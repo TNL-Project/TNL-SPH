@@ -15,7 +15,6 @@ template< typename Boundary >
 class Motion
 {
 public:
-
    using DeviceType = typename Boundary::DeviceType;
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
 
@@ -39,26 +38,30 @@ public:
    void
    transform( BoundaryPointer& boundary, const VectorType rotVect, const VectorType translVect )
    {
-
       const RealType sx = sin( rotVect.x() );
       const RealType cx = cos( rotVect.x() );
       const RealType sy = sin( rotVect.y() );
       const RealType cy = cos( rotVect.y() );
       const RealType sz = sin( rotVect.z() );
       const RealType cz = cos( rotVect.z() );
-      const MatrixType rotMatrix = { ( cz * cy ), ( cz * sy * sx - sz * cx ), ( cz * sy * cx + sz * sx ),
-                                     ( sz * cy ), ( sz * sy * sx + cz * cx ), ( sz * sy * cx - cz * sx ),
-                                     ( -sy     ), ( cy * sx                ), ( cy * cx                ) };
+      const MatrixType rotMatrix = { ( cz * cy ),
+                                     cz * sy * sx - sz * cx,
+                                     cz * sy * cx + sz * sx,
+                                     sz * cy,
+                                     sz * sy * sx + cz * cx,
+                                     sz * sy * cx - cz * sx,
+                                     -sy,
+                                     cy * sx,
+                                     ( cy * cx ) };
 
       auto r_view = boundary->getPoints().getView();
       auto v_view = boundary->getVariables()->v.getView();
       auto n_view = boundary->getVariables()->n.getView();
       const auto marker_view = boundary->getVariables()->marker.getConstView();
 
-      auto rotate  = [ = ] __cuda_callable__( int i ) mutable
+      auto rotate = [ = ] __cuda_callable__( int i ) mutable
       {
-         if( marker_view[ i ] == movingBoundary )
-         {
+         if( marker_view[ i ] == movingBoundary ) {
             const VectorType r = r_view[ i ];
             const VectorType n = n_view[ i ];
 
@@ -77,7 +80,7 @@ public:
    {
       // synchronize positions, normals and element sizes (the rest can be ignored)
       boundary->getParticles()->reorderArray(
-            boundaryRefConfiguration->getParticles()->getPoints(), boundaryRefConfiguration->getParticles()->getPointsSwap() );
+         boundaryRefConfiguration->getParticles()->getPoints(), boundaryRefConfiguration->getParticles()->getPointsSwap() );
       boundaryRefConfiguration->getVariables()->sortVariables( boundary->getParticles() );
 
       // copy geometridal data from the referential boundary and transfer them to actual boundary
@@ -90,11 +93,8 @@ public:
    }
 
 protected:
-
    BoundaryPointer boundaryRefConfiguration;
-
 };
 
-} // features
+}  //namespace features
 }  // namespace TNL::SPH
-

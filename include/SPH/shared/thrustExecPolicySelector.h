@@ -29,6 +29,5 @@ struct ThrustExecutionPolicySelector< TNL::Devices::Cuda >
 template< typename DeviceType >
 using ThrustExecutionPolicy = typename ThrustExecutionPolicySelector< DeviceType >::type;
 
-} // Thrust
-} // TNL
-
+}  //namespace Thrust
+}  //namespace TNL

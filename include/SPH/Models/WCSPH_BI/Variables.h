@@ -68,7 +68,7 @@ public:
       referentialIdx.setSize( size );
       referentialIdx_swap.setSize( size );
       referentialIdx.forAllElements(
-         [] __cuda_callable__( GlobalIndexType i, GlobalIndexType& value )
+         [] __cuda_callable__( GlobalIndexType i, GlobalIndexType & value )
          {
             value = i;
          } );
@@ -187,8 +187,8 @@ public:
  * both sized but neither read, written nor reordered.
  */
 template< typename SPHState >
-class OpenBoundaryVariables
-: public BoundaryVariablesBase< SPHState >, public VariablesBase< OpenBoundaryVariables< SPHState > >
+class OpenBoundaryVariables : public BoundaryVariablesBase< SPHState >,
+                              public VariablesBase< OpenBoundaryVariables< SPHState > >
 {
 public:
    using FieldBase = BoundaryVariablesBase< SPHState >;

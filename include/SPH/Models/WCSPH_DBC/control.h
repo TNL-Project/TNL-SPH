@@ -25,7 +25,6 @@ template< typename SPHDefs >
 class WCSPH_DBCConfig
 {
 public:
-
    using SPHConfig = typename SPHDefs::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
@@ -152,7 +151,8 @@ public:
 };
 
 template< typename ModelParams >
-void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
+void
+writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 {
    logger.writeHeader( "TNL::SPH::WCSPH_DBC (delta-WCSPH) model parameters" );
    logger.writeParameter( "Resolution parameters", "" );
@@ -161,51 +161,74 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Spatial resolution (h/dp):", modelParams.h / modelParams.dp, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Model parameters", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::DiffusiveTerm,
+                    DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::DiffusiveTerm,
+                    DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Diffusive term:", "TNL::SPH::FourtakasDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    ViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Viscous term:", "TNL::SPH::ArtificialViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::PhysicalViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    ViscousTerms::PhysicalViscosity< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Viscous term:", "TNL::SPH::CombinedViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::EOS,
+                    EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Equation of state:", "TNL::SPH::TaitWeaklyCompressibleEOS", 1 );
       logger.writeParameter( "Coefficient of EOS (coefB): ", modelParams.coefB );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::EOS,
+                    EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
    logger.writeParameter( "Background pressure (p0):", modelParams.p0, 1 );
-   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::DBC > ){
+   if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::DBC > ) {
       logger.writeParameter( "Boundary condition type", "TNL::SPH::WCSPH_DBC::DBC" );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::MDBC > ){
+   if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::MDBC > ) {
       logger.writeParameter( "Boundary condition type", "TNL::SPH::WCSPH_DBC::MDBC" );
-      logger.writeParameter( "MDBC determinant threshold (mdbcExtrapolationDetTreshold): ", modelParams.mdbcExtrapolationDetTreshold );
+      logger.writeParameter(
+         "MDBC determinant threshold (mdbcExtrapolationDetTreshold): ", modelParams.mdbcExtrapolationDetTreshold );
    }
    logger.writeParameter( "Time integration", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::IntegrationScheme, IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_DBC::VerletScheme", 1 );
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::VariableTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
       logger.writeParameter( "Minimal time step (dtMin):", modelParams.dtMin, 1 );
@@ -215,4 +238,3 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 }
 
 }  // namespace TNL::SPH
-

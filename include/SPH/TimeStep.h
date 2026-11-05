@@ -13,7 +13,6 @@ template< typename SPHConfig >
 class ConstantTimeStep
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -25,7 +24,8 @@ public:
    }
 
    ConstantTimeStep( RealType initialTimeStep, RealType endTime )
-   : timeStep( initialTimeStep ), endTime( endTime )
+   : timeStep( initialTimeStep ),
+     endTime( endTime )
    {
       step = 0;
       time = 0;
@@ -92,7 +92,7 @@ public:
    void
    addOutputTimer( const std::string keyword, const RealType outputTime )
    {
-      outputTimers.insert({ keyword , { outputTime, this->getTime() } } );
+      outputTimers.insert( { keyword, { outputTime, this->getTime() } } );
    }
 
    void
@@ -105,8 +105,7 @@ public:
    bool
    checkOutputTimer( const std::string keyword )
    {
-      if( this->getTime() >= this->outputTimers[ keyword ].second )
-      {
+      if( this->getTime() >= this->outputTimers[ keyword ].second ) {
          this->outputTimers[ keyword ].second += this->outputTimers[ keyword ].first;
          return true;
       }
@@ -115,13 +114,15 @@ public:
    }
 
    void
-   outputTimeStep( const std::string& outputPath ) {}
+   outputTimeStep( const std::string& outputPath )
+   {}
 
    template< typename FluidPointer, typename SPHState >
-   void computeTimeStep( FluidPointer& fluid, SPHState& params ) {}
+   void
+   computeTimeStep( FluidPointer& fluid, SPHState& params )
+   {}
 
 protected:
-
    GlobalIndexType step;
    RealType time;
    RealType timeStep;
@@ -129,29 +130,30 @@ protected:
 
    //control timers for arbitrary outpus
    std::map< std::string, std::pair< RealType, RealType > > outputTimers;
-
 };
 
 template< typename SPHConfig >
 class VariableTimeStep : public ConstantTimeStep< SPHConfig >
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
 
-   VariableTimeStep() : ConstantTimeStep< SPHConfig >() {};
+   VariableTimeStep()
+   : ConstantTimeStep< SPHConfig >()
+   {}
 
    VariableTimeStep( RealType initialTimeStep, RealType endTime )
-   : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime ) {};
+   : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime )
+   {}
 
    void
    outputTimeStep( const std::string& outputPath )
    {
       std::ofstream outfile;
-      outfile.open(outputPath, std::ios_base::app );
+      outfile.open( outputPath, std::ios_base::app );
       outfile << this->step << " " << this->time << " " << this->timeStep << std::endl;
    }
 
@@ -167,21 +169,19 @@ public:
       const auto view_v = fluid->getFluidVariables()->v.getConstView();
       const auto view_a = fluid->getFluidVariables()->a.getConstView();
 
-      auto fetch = [=] __cuda_callable__ ( int i )
+      auto fetch = [ = ] __cuda_callable__( int i )
       {
          const RealType dt_vel = delta_r_max / l2Norm( view_v[ i ] );
          const RealType dt_acc = sqrt( delta_r_max / ( 0.5f * l2Norm( view_a[ i ] ) ) );
 
          return cfl * min( dt_vel, dt_acc );
       };
-      return Algorithms::reduce< DeviceType >( 0,
-                                               fluid->getNumberOfParticles(),
-                                               fetch,
-                                               TNL::Min() );
+      return Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), fetch, TNL::Min() );
    }
 
    template< typename FluidPointer, typename SPHState >
-   void computeTimeStep( FluidPointer& fluid, SPHState& params )
+   void
+   computeTimeStep( FluidPointer& fluid, SPHState& params )
    {
       const RealType newTimeStep = getTimeStepCFL( fluid, params );
 
@@ -193,14 +193,14 @@ template< typename SPHConfig >
 class VariableTimeStepWithReduction : public ConstantTimeStep< SPHConfig >
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
 
    VariableTimeStepWithReduction( RealType initialTimeStep, RealType endTime )
-   : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime ) {};
+   : ConstantTimeStep< SPHConfig >( initialTimeStep, endTime )
+   {}
 
    const RealType
    getMaxViscosEffect() const
@@ -208,13 +208,15 @@ public:
       return maxViscosityEffect;
    }
 
-   void setMaxViscosityEffect( RealType maxViscosity )
+   void
+   setMaxViscosityEffect( RealType maxViscosity )
    {
       maxViscosityEffect = maxViscosity;
    }
 
    template< typename FluidPointer, typename SPHState >
-   void computeTimeStep( FluidPointer& fluid, SPHState& params )
+   void
+   computeTimeStep( FluidPointer& fluid, SPHState& params )
    {
       const RealType delta_r_max = 0.1f * params.h;
       const RealType CFL = params.CFL;
@@ -223,14 +225,12 @@ public:
       const auto view_v = fluid->getFluidVariables()->v.getConstView();
       const auto view_a = fluid->getFluidVariables()->a.getConstView();
 
-      auto fetch = [=] __cuda_callable__ ( int i )
+      auto fetch = [ = ] __cuda_callable__( int i )
       {
          return sqrt( h / ( l2Norm( view_a[ i ] ) ) );
       };
-      RealType dt_acc = Algorithms::reduce< DeviceType >( fluid->getFirstActiveParticle(),
-                                                          fluid->getLastActiveParticle() + 1,
-                                                          fetch,
-                                                          TNL::Max() );
+      RealType dt_acc = Algorithms::reduce< DeviceType >(
+         fluid->getFirstActiveParticle(), fluid->getLastActiveParticle() + 1, fetch, TNL::Max() );
 
       RealType dt_visco = params.h / ( params.speedOfSound + params.h * maxViscosityEffect );
 
@@ -238,11 +238,7 @@ public:
    }
 
 protected:
-
    RealType maxViscosityEffect;
-
 };
 
-
 }  // namespace TNL::SPH
-

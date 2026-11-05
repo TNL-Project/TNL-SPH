@@ -21,9 +21,8 @@ struct SubdomainDescriptor
    int index;
    float refinementFactor;
    GridType grid;
-   CoordinatesType originCoordinates; //TODO: We need coordinates of the dmoain in terms of global grid. (Do we?)
+   CoordinatesType originCoordinates;  //TODO: We need coordinates of the dmoain in terms of global grid. (Do we?)
 };
-
 
 struct InterfaceDescriptor
 {
@@ -40,18 +39,19 @@ public:
    using Interface = InterfaceDescriptor;
 
    virtual ~DecompositionTopology() = default;
-   virtual int getNumberOfSubdomains() const = 0;
-   virtual std::vector< Interface > getInterfacesOfSubdomain( int idx ) const = 0;
+   virtual int
+   getNumberOfSubdomains() const = 0;
+   virtual std::vector< Interface >
+   getInterfacesOfSubdomain( int idx ) const = 0;
 };
 
 /*
    Flat topology - linear and nested both supported via explicit addInterface()
 */
-template< typename GridType>
+template< typename GridType >
 class DecompositionTopologyFlat : public DecompositionTopology
 {
 public:
-
    using RealType = typename GridType::RealType;
    using PointType = typename GridType::PointType;
    using CoordinatesType = typename GridType::CoordinatesType;
@@ -59,8 +59,8 @@ public:
    using Interface = InterfaceDescriptor;
 
    // Construction from config - call once, reuse everywhere
-   void loadFromConfig( TNL::Config::ParameterContainer& parameters,
-                        TNL::Config::ParameterContainer& parametersSubdomains )
+   void
+   loadFromConfig( TNL::Config::ParameterContainer& parameters, TNL::Config::ParameterContainer& parametersSubdomains )
    {
       const RealType radius = parameters.getParameter< RealType >( "searchRadius" );
       const PointType origin = parameters.getXyz< PointType >( "domainOrigin" );
@@ -72,7 +72,7 @@ public:
       global.setOrigin( origin );
       global.setSpaceSteps( PointType( radius ) );
       setGlobalGrid( global );
-      numberOfOverlapLayers = 1; // TODO: from config, but for pure particles, it is 1 by default
+      numberOfOverlapLayers = 1;  // TODO: from config, but for pure particles, it is 1 by default
 
       // Build local domains a s TNL grids
       const int n = parameters.getParameter< int >( "numberOfSubdomains" );
@@ -83,7 +83,7 @@ public:
 
          GridType local;
          local.setDimensions( parametersSubdomains.getXyz< CoordinatesType >( key + "grid-dimensions" ) );
-         local.setOrigin( parametersSubdomains.getXyz< PointType >( key + "origin" ) ); //TODO: Remove?
+         local.setOrigin( parametersSubdomains.getXyz< PointType >( key + "origin" ) );  //TODO: Remove?
          local.setSpaceSteps( PointType( local_radius ) );
 
          SubdomainDescriptor< GridType > sd;
@@ -95,36 +95,43 @@ public:
       }
    }
 
-   void addInterface( int subdomain_idx_a, int subdomain_idx_b )
+   void
+   addInterface( int subdomain_idx_a, int subdomain_idx_b )
    {
       interfaces.push_back( { subdomain_idx_a, subdomain_idx_b } );
       interfaces.push_back( { subdomain_idx_b, subdomain_idx_a } );
    }
 
-   void finalizeLinear()
+   void
+   finalizeLinear()
    {
-      for( int i = 0; i + 1 < ( int )subdomains.size(); ++i )
+      for( int i = 0; i + 1 < (int) subdomains.size(); ++i )
          addInterface( subdomains[ i ].index, subdomains[ i + 1 ].index );
    }
 
    // DecompositionTopology interface
-   int getNumberOfSubdomains() const override
+   int
+   getNumberOfSubdomains() const override
    {
       return subdomains.size();
    }
 
-   std::vector< Interface > getInterfacesOfSubdomain( int idx ) const override
+   std::vector< Interface >
+   getInterfacesOfSubdomain( int idx ) const override
    {
       std::vector< Interface > result;
       for( const auto& iface : interfaces )
-         if( iface.ownIdx == idx ) result.push_back( iface );
+         if( iface.ownIdx == idx )
+            result.push_back( iface );
       return result;
    }
 
-   const Subdomain& getSubdomain( int idx ) const
+   const Subdomain&
+   getSubdomain( int idx ) const
    {
       for( const auto& sd : subdomains )
-         if( sd.index == idx ) return sd;
+         if( sd.index == idx )
+            return sd;
       throw std::out_of_range( "DecompositionTopologyFlat: unknown subdomain index" );
    }
 
@@ -180,7 +187,6 @@ public:
       return numberOfOverlapLayers;
    }
 
-
    // Local domain accessors
    const GridType&
    getLocalGrid( int subdomain_idx ) const
@@ -231,7 +237,8 @@ public:
 
       report[ "subdomains" ] = nlohmann::json::array();
       for( const Subdomain& sd : subdomains ) {
-         // footprint in global coarse-grid cells, materialized via the scalar-left promotion used by MrRectangleBuffer's frameDimensions
+         // footprint in global coarse-grid cells, materialized via the scalar-left promotion used by MrRectangleBuffer's
+         // frameDimensions
          const PointType regionDimensions = sd.refinementFactor * sd.grid.getDimensions();
          nlohmann::json subdomain = nlohmann::json::object();
          subdomain[ "index" ] = sd.index;
@@ -243,7 +250,6 @@ public:
    }
 
 protected:
-
    /**
     * \brief Serializes a space-dimension-sized static vector as a
     *        three-component JSON array.
@@ -265,10 +271,8 @@ protected:
    }
 
 private:
-
    std::vector< Subdomain > subdomains;
    std::vector< Interface > interfaces;
    GridType globalGrid;
    int numberOfOverlapLayers = 1;
 };
-

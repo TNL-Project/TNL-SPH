@@ -14,16 +14,16 @@ namespace DiffusiveTerms {
 template< typename SPHCaseConfig >
 class None
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState ) {}
    };
 
    __cuda_callable__
@@ -42,21 +42,22 @@ class None
 template< typename SPHCaseConfig >
 class MolteniDiffusiveTerm
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ),
-       preventZero( sphState.h * sphState.h * sphState.eps ){}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const RealType coefDT;
-     const RealType preventZero;
+      const RealType coefDT;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -75,27 +76,28 @@ class MolteniDiffusiveTerm
 template< typename SPHCaseConfig >
 class FourtakasDiffusiveTerm
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : gravity( sphState.gravity ),
-       rho0( sphState.rho0 ),
-       coefB( sphState.coefB ),
-       coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ),
-       preventZero( sphState.h * sphState.h * sphState.eps ){}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : gravity( sphState.gravity ),
+        rho0( sphState.rho0 ),
+        coefB( sphState.coefB ),
+        coefDT( ( 2.f ) * sphState.h * sphState.delta * sphState.speedOfSound ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const VectorType gravity;
-     const RealType rho0;
-     const RealType coefDT;
-     const RealType coefB;
-     const RealType preventZero;
+      const VectorType gravity;
+      const RealType rho0;
+      const RealType coefDT;
+      const RealType coefB;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -155,6 +157,5 @@ class FourtakasDiffusiveTerm
 };
 */
 
-} // DiffusiveTerms
+}  //namespace DiffusiveTerms
 }  // namespace TNL::SPH
-

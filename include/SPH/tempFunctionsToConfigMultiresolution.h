@@ -21,14 +21,17 @@ configSubdomain( int subdomain, TNL::Config::ConfigDescription& config )
    config.addEntry< int >( subdomainKey + "boundary_n", "The initial number of fluid particles.", 0 );
    config.addEntry< int >( subdomainKey + "boundary_n_allocated", "The allocated number of fluid particles.", 0 );
 
-   config.addEntry< double >( subdomainKey + "refinement-factor", "Refinement factor of current subdomain.", 0. ); //different
+   config.addEntry< double >( subdomainKey + "refinement-factor", "Refinement factor of current subdomain.", 0. );  //different
 
    config.addEntry< double >( subdomainKey + "origin-x", "The origin of domain in x direction.", 0. );
    config.addEntry< double >( subdomainKey + "origin-y", "The origin of domain in y direction.", 0. );
    config.addEntry< double >( subdomainKey + "origin-z", "The origin of domain in z direction.", 0. );
-   config.addEntry< int >( subdomainKey + "origin-global-coords-x", "The origin of domain in global cell coords. in x direction.", 0. );
-   config.addEntry< int >( subdomainKey + "origin-global-coords-y", "The origin of domain in global cell coords. in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "origin-global-coords-z", "The origin of domain in global cell coords. in z direction.", 0. );
+   config.addEntry< int >(
+      subdomainKey + "origin-global-coords-x", "The origin of domain in global cell coords. in x direction.", 0. );
+   config.addEntry< int >(
+      subdomainKey + "origin-global-coords-y", "The origin of domain in global cell coords. in y direction.", 0. );
+   config.addEntry< int >(
+      subdomainKey + "origin-global-coords-z", "The origin of domain in global cell coords. in z direction.", 0. );
 
    config.addEntry< double >( subdomainKey + "size-x", "The size of domain in x direction.", 0. );
    config.addEntry< double >( subdomainKey + "size-y", "The size of domain in y direction.", 0. );
@@ -39,4 +42,3 @@ configSubdomain( int subdomain, TNL::Config::ConfigDescription& config )
 }
 
 }  // namespace TNL::SPH
-

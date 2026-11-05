@@ -16,7 +16,7 @@ namespace IntegrationSchemes {
 template< typename SPHConfig >
 class MidpointIntegrationSchemeVariables
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -116,7 +116,6 @@ template< typename SPHConfig >
 class MidpointScheme
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -141,7 +140,6 @@ public:
    void
    midpointUpdateVariables( RealType dt, FluidPointer& fluid )
    {
-
       // backup derivatives
       fluid->getIntegratorVariables()->drhodt_in = fluid->getVariables()->drho;
       fluid->getIntegratorVariables()->dvdt_in = fluid->getVariables()->a;
@@ -155,7 +153,7 @@ public:
 
       const RealType dt05 = 0.5f * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          v_view[ i ] = v_in_view[ i ] + dt05 * dvdt_view[ i ];
          rho_view[ i ] = rho_in_view[ i ] + dt05 * drhodt_view[ i ];
@@ -173,7 +171,7 @@ public:
 
       const RealType dt05 = 0.5f * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          r_view[ i ] = r_in_view[ i ] + dt05 * v_view[ i ];
       };
@@ -192,8 +190,10 @@ public:
       else
          relaxMidpoint = midpointRelaxCoef;
 
-      fluid->getVariables()->a.getArray() = relaxMidpoint * fluid->getIntegratorVariables()->dvdt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->a.getArray();
-      fluid->getVariables()->drho.getArray() = relaxMidpoint * fluid->getIntegratorVariables()->drhodt_in + ( 1.f - relaxMidpoint ) * fluid->getVariables()->drho.getArray();
+      fluid->getVariables()->a.getArray() = relaxMidpoint * fluid->getIntegratorVariables()->dvdt_in
+                                          + ( 1.f - relaxMidpoint ) * fluid->getVariables()->a.getArray();
+      fluid->getVariables()->drho.getArray() = relaxMidpoint * fluid->getIntegratorVariables()->drhodt_in
+                                             + ( 1.f - relaxMidpoint ) * fluid->getVariables()->drho.getArray();
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -213,7 +213,7 @@ public:
       const auto drhodt_view = fluid->getVariables()->drho.getConstView();
       const auto drhodt_in_view = fluid->getIntegratorVariables()->drhodt_in.getConstView();
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          const RealType rho_i = rho_view[ i ];
          const RealType rho2_i = rho_i * rho_i;
@@ -244,7 +244,7 @@ public:
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          r_view[ i ] = r_in_view[ i ] + dt * v_in_view[ i ] + dtdt05 * dvdt_view[ i ];
          v_view[ i ] = v_in_view[ i ] + dt * dvdt_view[ i ];
@@ -257,7 +257,7 @@ public:
    bool
    runMidpointSubiteration( ModelParams& modelParams )
    {
-      if( midpointIteration == 0 ){
+      if( midpointIteration == 0 ) {
          midpointIteration = 0;
          residual = 0.f;
          residualPrevious = 0.f;
@@ -274,7 +274,6 @@ public:
          midpointIteration = 0;
          return false;
       }
-
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -292,24 +291,22 @@ public:
    updateRelaxationFactor( ModelParams& modelParams )
    {
       // control residuals decay (NOTE: -1 since midpointIteration are icreased at the start of the loop)
-      if( ( midpointIteration - 1 )  > 0 )
+      if( ( midpointIteration - 1 ) > 0 )
          if( residual / residualPrevious > modelParams.midpointResidualMinimalDecay )
-            midpointRelaxCoef = modelParams.midpointRelaxCoefIncrement
-                              + ( 1.0 - modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
+            midpointRelaxCoef =
+               modelParams.midpointRelaxCoefIncrement + ( 1.0 - modelParams.midpointRelaxCoefIncrement ) * midpointRelaxCoef;
 
       // backup the residuals
       residualPrevious = residual;
    }
 
-
    // Midpoint integration scheme  variables
    int midpointIteration = 0;
-   int midpointIterationBackup = 0; // temp iteraction backup just due to outpu
+   int midpointIterationBackup = 0;  // temp iteraction backup just due to outpu
    RealType residual = 0.f;
    RealType residualPrevious = 0.f;
    RealType midpointRelaxCoef = 0.f;
 };
 
-} // IntegrationSchemes
+}  //namespace IntegrationSchemes
 }  // namespace TNL::SPH
-

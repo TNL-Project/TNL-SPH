@@ -28,12 +28,13 @@ isInsideBox( const VectorType& point, const VectorType& boxOrigin, const VectorT
 }
 template< int spaceDimension, typename VectorType, typename RealType >
 TNL::Containers::Array< VectorType, TNL::Devices::Host >
-computeExcludedDomainFaceNormals( const VectorType& faceMin,
-                                  const VectorType& faceMax,
-                                  const VectorType& domMin,
-                                  const VectorType& domMax,
-                                  const RealType tol,
-                                  const bool flipNormals )
+computeExcludedDomainFaceNormals(
+   const VectorType& faceMin,
+   const VectorType& faceMax,
+   const VectorType& domMin,
+   const VectorType& domMax,
+   const RealType tol,
+   const bool flipNormals )
 {
    VectorType excludedTmp[ 2 * spaceDimension ];
    int nExcluded = 0;
@@ -65,16 +66,20 @@ computeSubdomainUnionBox( const Topology& topology )
       for( int d = 0; d < spaceDimension; d++ ) {
          const RealType lo = topology.getSubdomain( sd ).grid.getOrigin()[ d ];
          const RealType hi =
-            lo + topology.getSubdomain( sd ).grid.getDimensions()[ d ] * topology.getSubdomain( sd ).refinementFactor * globalCell;
-         if( sd == 0 || lo < domMin[ d ] ) domMin[ d ] = lo;
-         if( sd == 0 || hi > domMax[ d ] ) domMax[ d ] = hi;
+            lo
+            + topology.getSubdomain( sd ).grid.getDimensions()[ d ] * topology.getSubdomain( sd ).refinementFactor * globalCell;
+         if( sd == 0 || lo < domMin[ d ] )
+            domMin[ d ] = lo;
+         if( sd == 0 || hi > domMax[ d ] )
+            domMax[ d ] = hi;
       }
    }
    return std::make_pair( domMin, domMax );
 }
 
 template< typename VectorType, typename RealType >
-struct MassNodeFaceContext {
+struct MassNodeFaceContext
+{
    VectorType faceMin, faceMax;
    RealType tol;
    bool flipNormals;
@@ -82,9 +87,7 @@ struct MassNodeFaceContext {
 
 template< typename SubdomainDescriptor, typename RealType >
 MassNodeFaceContext< std::decay_t< decltype( SubdomainDescriptor::grid.getOrigin() ) >, RealType >
-computeMassNodeFaceContext( const SubdomainDescriptor& ownSd,
-                            const SubdomainDescriptor& nbSd,
-                            const RealType globalCell )
+computeMassNodeFaceContext( const SubdomainDescriptor& ownSd, const SubdomainDescriptor& nbSd, const RealType globalCell )
 {
    using VectorType = std::decay_t< decltype( ownSd.grid.getOrigin() ) >;
    const RealType ownCell = ownSd.refinementFactor * globalCell;

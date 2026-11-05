@@ -88,9 +88,10 @@ public:
    RealType extrapolationDetTreshold = 0.f;
 
    void
-   init( TNL::Config::ParameterContainer& parameters,
-         TNL::Config::ParameterContainer& parametersOpenBoundary,
-         std::string prefix )
+   init(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersOpenBoundary,
+      std::string prefix )
    {
       Base::init( parameters, parametersOpenBoundary, prefix );
 
@@ -176,4 +177,3 @@ public:
 };
 
 }  // namespace TNL::SPH
-

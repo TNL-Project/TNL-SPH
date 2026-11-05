@@ -92,8 +92,9 @@ class BoundaryVariables : public FluidVariables< SPHState >
  * so \ref ParticleField::read wraps the read in try/catch automatically.
  */
 template< typename SPHState >
-requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::DBC > class BoundaryVariables< SPHState >
-: public FluidVariablesBase< SPHState >, public VariablesBase< BoundaryVariables< SPHState > >
+   requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::DBC >
+class BoundaryVariables< SPHState > : public FluidVariablesBase< SPHState >,
+                                      public VariablesBase< BoundaryVariables< SPHState > >
 {
 public:
    using FieldBase = FluidVariablesBase< SPHState >;
@@ -117,8 +118,9 @@ public:
  * read, written, reordered, or synchronized.
  */
 template< typename SPHState >
-requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::MDBC > class BoundaryVariables< SPHState >
-: public FluidVariablesBase< SPHState >, public VariablesBase< BoundaryVariables< SPHState > >
+   requires std::same_as< typename SPHState::BCType, WCSPH_BCTypes::MDBC >
+class BoundaryVariables< SPHState > : public FluidVariablesBase< SPHState >,
+                                      public VariablesBase< BoundaryVariables< SPHState > >
 {
 public:
    using FieldBase = FluidVariablesBase< SPHState >;
@@ -140,4 +142,3 @@ public:
 };
 
 }  // namespace TNL::SPH
-

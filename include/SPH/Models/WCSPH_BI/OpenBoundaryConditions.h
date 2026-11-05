@@ -39,24 +39,27 @@ public:
     */
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   applyOpenBoundary( RealType dt,
-                      FluidPointer& fluid,
-                      OpenBoundaryPointer& openBoundary,
-                      OpenBoundaryConfig& openBoundaryParams );
+   applyOpenBoundary(
+      RealType dt,
+      FluidPointer& fluid,
+      OpenBoundaryPointer& openBoundary,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   applyInletBoundaryCondition( RealType dt,
-                                FluidPointer& fluid,
-                                OpenBoundaryPointer& openBoundary,
-                                OpenBoundaryConfig& openBoundaryParams );
+   applyInletBoundaryCondition(
+      RealType dt,
+      FluidPointer& fluid,
+      OpenBoundaryPointer& openBoundary,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   applyOuletBoundaryCondition( RealType dt,
-                                FluidPointer& fluid,
-                                OpenBoundaryPointer& openBoundary,
-                                OpenBoundaryConfig& openBoundaryParams );
+   applyOuletBoundaryCondition(
+      RealType dt,
+      FluidPointer& fluid,
+      OpenBoundaryPointer& openBoundary,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename OpenBoundaryPointer >
    GlobalIndexType
@@ -72,10 +75,11 @@ public:
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   convertBufferToFluid( FluidPointer& fluid,
-                         OpenBoundaryPointer& openBoundary,
-                         OpenBoundaryConfig& openBoundaryParams,
-                         const GlobalIndexType numberOfRetyped );
+   convertBufferToFluid(
+      FluidPointer& fluid,
+      OpenBoundaryPointer& openBoundary,
+      OpenBoundaryConfig& openBoundaryParams,
+      const GlobalIndexType numberOfRetyped );
 
    template< typename FluidPointer, typename OpenBoundaryPointer >
    GlobalIndexType
@@ -96,4 +100,3 @@ public:
 }  // namespace TNL::SPH
 
 #include <SPH/Models/WCSPH_BI/OpenBoundaryConditions.hpp>
-

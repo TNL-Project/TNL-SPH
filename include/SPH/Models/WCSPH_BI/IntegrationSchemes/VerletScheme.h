@@ -15,7 +15,7 @@ namespace IntegrationSchemes {
 template< typename SPHConfig >
 class IntegrationSchemeVariables
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -27,7 +27,11 @@ class IntegrationSchemeVariables
    IntegrationSchemeVariables() = default;
 
    IntegrationSchemeVariables( GlobalIndexType size )
-   : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size ) {}
+   : rho_old( size ),
+     v_old( size ),
+     rho_old_swap( size ),
+     v_old_swap( size )
+   {}
 
    void
    setSize( const GlobalIndexType& size )
@@ -53,12 +57,10 @@ class IntegrationSchemeVariables
    VectorArrayType v_old_swap;
 };
 
-
 template< typename SPHConfig >
 class VerletScheme
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -83,7 +85,7 @@ public:
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
          v_old_view[ i ] += a_view[ i ] * dt2;
@@ -105,7 +107,7 @@ public:
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
       };
@@ -128,7 +130,7 @@ public:
 
       const RealType dtdt05 = 0.5 * dt * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
          v_old_view[ i ] = v_view[ i ];
@@ -149,7 +151,7 @@ public:
 
       const RealType dtdt05 = 0.5 * dt * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
@@ -163,10 +165,10 @@ public:
    {
       auto rho_view = boundary->getVariables()->rho.getView();
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          if( rho_view[ i ] < 1000.f )
-            rho_view[ i ] = 1000.f; //TODO: Use referential density or move this to different part
+            rho_view[ i ] = 1000.f;  //TODO: Use referential density or move this to different part
       };
       boundary->getParticles()->forAll( init );
    }
@@ -179,20 +181,21 @@ public:
    }
 
    /* The periodic integrateEuler rebase of the leapfrog storages (v_old/rho_old) must
-      fire with a cadence tied to the physical window of the caller: multiresolution 
-      local-timestepping integrates the fine levels several times per global window, 
+      fire with a cadence tied to the physical window of the caller: multiresolution
+      local-timestepping integrates the fine levels several times per global window,
       so their step counters advance several times per window. Callers that drive per-level
       substeps decide the resync themselves and pass it via doResync. */
    template< typename FluidPointer, typename BoundaryPointer, typename TimeStepping >
    void
-   integratStepVerlet( FluidPointer& fluid,
-                       BoundaryPointer& boundary,
-                       TimeStepping& timeStepping,
-                       bool integrateBoundary,
-                       bool doResync )
+   integratStepVerlet(
+      FluidPointer& fluid,
+      BoundaryPointer& boundary,
+      TimeStepping& timeStepping,
+      bool integrateBoundary,
+      bool doResync )
    {
       if( doResync ) {
-         integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+         integrateEuler( timeStepping.getTimeStep(), fluid );  //TODO: Timer!
       }
       else {
          integrateVerlet( timeStepping.getTimeStep(), fluid );
@@ -201,6 +204,5 @@ public:
    }
 };
 
-} // IntegrationSchemes
+}  //namespace IntegrationSchemes
 }  // namespace TNL::SPH
-

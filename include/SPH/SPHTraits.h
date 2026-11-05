@@ -13,7 +13,7 @@ namespace TNL::SPH {
 template< typename SPHFluidConfig >
 class SPHFluidTraits
 {
-   public:
+public:
    static constexpr int spaceDimension = SPHFluidConfig::spaceDimension;
 
    using DeviceType = typename SPHFluidConfig::DeviceType;
@@ -23,7 +23,7 @@ class SPHFluidTraits
    using RealType = typename SPHFluidConfig::RealType;
 
    /* particle related */
-   using MarkerType = int; //FIXME
+   using MarkerType = int;  //FIXME
    using MarkerArrayType = Containers::Vector< MarkerType, DeviceType, GlobalIndexType >;
    using ScalarType = RealType;
    using ScalarArrayType = Containers::Vector< ScalarType, DeviceType, GlobalIndexType >;
@@ -38,10 +38,9 @@ class SPHFluidTraits
 
    using VectorExtendedType = Containers::StaticVector< SPHFluidConfig::spaceDimension + 1, RealType >;
    using VectorExtendedArrayType = Containers::Array< VectorExtendedType, DeviceType, GlobalIndexType >;
-   using MatrixExtendedType = Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension + 1, SPHFluidConfig::spaceDimension + 1 >;
+   using MatrixExtendedType =
+      Matrices::StaticMatrix< RealType, SPHFluidConfig::spaceDimension + 1, SPHFluidConfig::spaceDimension + 1 >;
    using MatrixExtendedArrayType = Containers::Array< MatrixExtendedType, DeviceType, GlobalIndexType >;
-
 };
 
 }  // namespace TNL::SPH
-

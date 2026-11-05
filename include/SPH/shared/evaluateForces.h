@@ -13,9 +13,7 @@ namespace TNL::SPH {
 template< typename SPHDefs >
 class EvaluateForces
 {
-
 public:
-
    using SPHConfig = typename SPHDefs::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using IndexType = typename SPHTraitsType::GlobalIndexType;
@@ -69,26 +67,24 @@ public:
       auto view_F_pressure = F_pressure.getView();
       auto view_F_visco = F_visco.getView();
 
-      auto comptueForce = [=] __cuda_callable__ (
-            IndexType i,
-            IndexType j,
-            VectorType& r_i,
-            VectorType& v_i,
-            RealType& rho_i,
-            RealType& p_i,
-            VectorType* F_pressure_i,
-            VectorType* F_visco_i ) mutable
+      auto comptueForce = [ = ] __cuda_callable__(
+                             IndexType i,
+                             IndexType j,
+                             VectorType & r_i,
+                             VectorType & v_i,
+                             RealType & rho_i,
+                             RealType & p_i,
+                             VectorType * F_pressure_i,
+                             VectorType * F_visco_i ) mutable
       {
          const VectorType r_j = view_points[ j ];
          const VectorType r_ij = r_i - r_j;
          const RealType drs = l2Norm( r_ij );
-         if( drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             const RealType rho_j = view_rho[ j ];
             const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
             const VectorType v_j = view_v[ j ];
             const VectorType v_ij = v_i - v_j;
-
 
             const RealType WV_j = KernelFunction::W( drs, h ) * m / rho_j;
             const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
@@ -100,13 +96,13 @@ public:
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( IndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
       {
          const VectorType r_i = view_points_bound[ i ];
          const VectorType v_i = view_v_bound[ i ];
          const RealType rho_i = view_rho_bound[ i ];
          const RealType p_i = EOS::DensityToPressure( rho_i, eosParams );
-         const int maker_i  = view_marker_bound[ i ];
+         const int maker_i = view_marker_bound[ i ];
          VectorType F_pressure_i = 0.f;
          VectorType F_visco_i = 0.f;
 
@@ -115,11 +111,11 @@ public:
          F_pressure_i *= m / rho_i;
          F_visco_i *= m / rho_i;
 
-         if( maker_i == markerValueToProcess ){
+         if( maker_i == markerValueToProcess ) {
             view_F_pressure[ i ] = F_pressure_i;
             view_F_visco[ i ] = F_visco_i;
          }
-         else{
+         else {
             view_F_pressure[ i ] = 0.f;
             view_F_visco[ i ] = 0.f;
          }
@@ -134,8 +130,8 @@ public:
    output( const std::string& outputPath, const int step, const RealType time )
    {
       std::ofstream outfile;
-      outfile.open(outputPath, std::ios_base::app );
-      outfile << step << " " << time << " " << F_pressure_sum  << " " << F_visco_sum << std::endl;
+      outfile.open( outputPath, std::ios_base::app );
+      outfile << step << " " << time << " " << F_pressure_sum << " " << F_visco_sum << std::endl;
    }
 
    VectorArrayType F_pressure;
@@ -143,14 +139,12 @@ public:
 
    RealType F_pressure_sum;
    RealType F_visco_sum;
-
 };
 
 template< typename SPHDefs >
 class EvaluateForces_BoundaryIntegrals
 {
 public:
-
    using SPHConfig = typename SPHDefs::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using IndexType = typename SPHTraitsType::GlobalIndexType;
@@ -211,22 +205,21 @@ public:
       auto view_F_pressure = F_pressure.getView();
       auto view_F_visco = F_visco.getView();
 
-      auto comptueViscousForce = [=] __cuda_callable__ (
-            IndexType i,
-            IndexType j,
-            VectorType& r_i,
-            VectorType& v_i,
-            RealType& rho_i,
-            RealType& p_i,
-            VectorType& n_i,
-            RealType& S_i,
-            VectorType* F_visco_i ) mutable
+      auto comptueViscousForce = [ = ] __cuda_callable__(
+                                    IndexType i,
+                                    IndexType j,
+                                    VectorType & r_i,
+                                    VectorType & v_i,
+                                    RealType & rho_i,
+                                    RealType & p_i,
+                                    VectorType & n_i,
+                                    RealType & S_i,
+                                    VectorType * F_visco_i ) mutable
       {
          const VectorType r_j = view_points[ j ];
          const VectorType r_ij = r_i - r_j;
          const RealType drs = l2Norm( r_ij );
-         if( drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             const RealType rho_j = view_rho[ j ];
             const RealType gamma_j = view_gamma[ j ];
             const VectorType v_j = view_v[ j ];
@@ -235,18 +228,18 @@ public:
             const RealType WS_i = KernelFunction::W( drs, h ) * S_i;
 
             // for MGVT formulation
-            if( std::is_same_v< ViscousTerm, TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig > > ){
-                const RealType r2 = drs * drs + preventZero;
-                *F_visco_i -= mgvt_const * m * WS_i * ( v_ij, r_ij ) / ( r2 * rho_j * gamma_j ) * n_i;
+            if( std::is_same_v< ViscousTerm, TNL::SPH::BIViscousTerms::PhysicalViscosity_MGVT< SPHConfig > > ) {
+               const RealType r2 = drs * drs + preventZero;
+               *F_visco_i -= mgvt_const * m * WS_i * ( v_ij, r_ij ) / ( r2 * rho_j * gamma_j ) * n_i;
             }
 
             const RealType dr_n = std::max( std::fabs( ( r_ij, n_i ) ), dp );
             const VectorType dv_t = v_ij - ( v_ij, n_i ) * n_i;
-            *F_visco_i -= 2.f * WS_i * dv_t * m  / ( rho_j * dr_n );
+            *F_visco_i -= 2.f * WS_i * dv_t * m / ( rho_j * dr_n );
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( IndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
       {
          const VectorType r_i = view_points_bound[ i ];
          const VectorType v_i = view_v_bound[ i ];
@@ -257,13 +250,14 @@ public:
          const int maker_i = view_marker_bound[ i ];
 
          VectorType F_visco_i = 0.f;
-         ParticlesType::NeighborsLoop::exec( i, r_i, searchInFluid, comptueViscousForce, v_i, rho_i, p_i, n_i, S_i, &F_visco_i );
+         ParticlesType::NeighborsLoop::exec(
+            i, r_i, searchInFluid, comptueViscousForce, v_i, rho_i, p_i, n_i, S_i, &F_visco_i );
 
-         if( maker_i == markerValueToProcess ){
+         if( maker_i == markerValueToProcess ) {
             view_F_pressure[ i ] = p_i * n_i * S_i;
             view_F_visco[ i ] = dynamicViscosity * F_visco_i;
          }
-         else{
+         else {
             view_F_pressure[ i ] = 0.f;
             view_F_visco[ i ] = 0.f;
          }
@@ -278,8 +272,8 @@ public:
    output( const std::string& outputPath, const int step, const RealType time )
    {
       std::ofstream outfile;
-      outfile.open(outputPath, std::ios_base::app );
-      outfile << step << " " << time << " " << F_pressure_sum  << " " << F_visco_sum << std::endl;
+      outfile.open( outputPath, std::ios_base::app );
+      outfile << step << " " << time << " " << F_pressure_sum << " " << F_visco_sum << std::endl;
    }
 
    VectorArrayType F_pressure;
@@ -287,8 +281,6 @@ public:
 
    RealType F_pressure_sum;
    RealType F_visco_sum;
-
 };
 
 }  // namespace TNL::SPH
-

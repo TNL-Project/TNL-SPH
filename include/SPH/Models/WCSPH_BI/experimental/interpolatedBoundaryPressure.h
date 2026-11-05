@@ -9,11 +9,12 @@ namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
-requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
 void
-WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
-                                                         BoudaryPointer& boundary,
-                                                         ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
+   FluidPointer& fluid,
+   BoudaryPointer& boundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -40,12 +41,13 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    auto view_dvdt_bound = boundary->getVariables()->a.getView();
    auto view_gamma_bound = boundary->getVariables()->gamma.getView();
 
-   auto getVelocityLaplacian = [ = ] __cuda_callable__( LocalIndexType i,
-                                                        LocalIndexType j,
-                                                        VectorType& r_i,
-                                                        VectorType& v_i,
-                                                        VectorType* lap_v_i,
-                                                        RealType* gamma_i ) mutable
+   auto getVelocityLaplacian = [ = ] __cuda_callable__(
+                                  LocalIndexType i,
+                                  LocalIndexType j,
+                                  VectorType & r_i,
+                                  VectorType & v_i,
+                                  VectorType * lap_v_i,
+                                  RealType * gamma_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -62,17 +64,15 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 
          // Morris - free slip:
          const RealType FV_j = KernelFunction::F( drs, h ) * m / rho_j;
-         *lap_v_i -=  2.f * FV_j * v_ij;
+         *lap_v_i -= 2.f * FV_j * v_ij;
 
          *gamma_i += WV_j;
       }
    };
 
-   auto interpolate = [ = ] __cuda_callable__( LocalIndexType i,
-                                               LocalIndexType j,
-                                               VectorType& r_i,
-                                               VectorType& grad_p_rho_i,
-                                               RealType* p_i ) mutable
+   auto interpolate =
+      [ = ] __cuda_callable__(
+         LocalIndexType i, LocalIndexType j, VectorType & r_i, VectorType & grad_p_rho_i, RealType * p_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -80,11 +80,11 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       if( drs <= searchRadius ) {
          const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
-         const RealType WV_j = KernelFunction::W( drs, h ) * m / rho_j;;
+         const RealType WV_j = KernelFunction::W( drs, h ) * m / rho_j;
+         ;
 
          *p_i += ( p_j + ( grad_p_rho_i, r_ij ) ) * WV_j;
       }
-
    };
 
    auto particleLoopBoundaryConservative = [ = ] __cuda_callable__( LocalIndexType i ) mutable
@@ -117,12 +117,12 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoundaryPointer >
-requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
+   requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
 void
-WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
-                                                                 BoundaryPointer& boundary,
-                                                                 ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction(
+   FluidPointer& fluid,
+   BoundaryPointer& boundary,
+   ModelParams& modelParams )
 {}
 
 }  // namespace TNL::SPH
-

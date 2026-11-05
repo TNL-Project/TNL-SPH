@@ -15,7 +15,7 @@ namespace IntegrationSchemes {
 template< typename SPHConfig >
 class IntegrationSchemeVariables
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -27,7 +27,11 @@ class IntegrationSchemeVariables
    IntegrationSchemeVariables() = default;
 
    IntegrationSchemeVariables( GlobalIndexType size )
-   : rho_old( size ), v_old( size ), rho_old_swap( size ), v_old_swap( size ) {}
+   : rho_old( size ),
+     v_old( size ),
+     rho_old_swap( size ),
+     v_old_swap( size )
+   {}
 
    void
    setSize( const GlobalIndexType& size )
@@ -54,8 +58,7 @@ class IntegrationSchemeVariables
 #ifdef HAVE_MPI
    template< typename Synchronizer, typename DistributedParticlesPointer >
    void
-   synchronizeVariables( Synchronizer& synchronizer,
-                         DistributedParticlesPointer& distributedParticles )
+   synchronizeVariables( Synchronizer& synchronizer, DistributedParticlesPointer& distributedParticles )
    {
       synchronizer.synchronize( rho_old, distributedParticles );
       synchronizer.synchronize( v_old, distributedParticles );
@@ -73,7 +76,6 @@ template< typename SPHConfig >
 class VerletScheme
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -98,7 +100,7 @@ public:
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
          v_old_view[ i ] += a_view[ i ] * dt2;
@@ -122,7 +124,7 @@ public:
       const RealType dtdt05 = 0.5 * dt * dt;
       const RealType dt2 = 2 * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          rho_old_view[ i ] += drho_view[ i ] * dt2;
          r_view[ i ] += v_view[ i ] * dt;
@@ -146,7 +148,7 @@ public:
 
       const RealType dtdt05 = 0.5 * dt * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          r_view[ i ] += v_view[ i ] * dt + a_view[ i ] * dtdt05;
          v_old_view[ i ] = v_view[ i ];
@@ -169,7 +171,7 @@ public:
 
       const RealType dtdt05 = 0.5 * dt * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          rho_old_view[ i ] = rho_view[ i ];
          rho_view[ i ] += drho_view[ i ] * dt;
@@ -184,7 +186,7 @@ public:
    {
       auto rho_view = boundary->getVariables()->rho.getView();
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          if( rho_view[ i ] < 1000.f )
             rho_view[ i ] = 1000.f;
@@ -197,7 +199,7 @@ public:
    integratStepVerlet( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping, bool integrateBoundary )
    {
       if( timeStepping.getStep() % 20 == 0 ) {
-         integrateEuler( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+         integrateEuler( timeStepping.getTimeStep(), fluid );  //TODO: Timer!
          if( integrateBoundary )
             integrateEulerBoundary( timeStepping.getTimeStep(), boundary );
       }
@@ -210,9 +212,7 @@ public:
       //TODO: Should I use this?
       correctBoundaryDensity( boundary );
    }
-
 };
 
-} // IntegrationSchemes
+}  //namespace IntegrationSchemes
 }  // namespace TNL::SPH
-

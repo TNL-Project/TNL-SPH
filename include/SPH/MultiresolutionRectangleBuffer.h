@@ -55,11 +55,13 @@ public:
    {
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::sort_by_key( thrustDevice,
-                           particlesToCreate.getData(),
-                           particlesToCreate.getData() + numberOfMassNodes,
-                           thrust::make_zip_iterator( cuda::std::make_tuple(
-                              points.getArrayData(), normal.getArrayData(), massFlux.getArrayData(), mass.getArrayData() ) ) );
+      thrust::sort_by_key(
+         thrustDevice,
+         particlesToCreate.getData(),
+         particlesToCreate.getData() + numberOfMassNodes,
+         thrust::make_zip_iterator(
+            cuda::std::make_tuple(
+               points.getArrayData(), normal.getArrayData(), massFlux.getArrayData(), mass.getArrayData() ) ) );
    }
 
    IndexType numberOfMassNodes = 0;
@@ -70,12 +72,13 @@ public:
    IndexArrayType particlesToCreate;
 };
 
-template< typename ParticlesType,
-          typename SPHCaseConfig,
-          typename Variables,
-          typename IntegratorVariables,
-          typename OpenBoundaryConfig,
-          typename SPHDefs >
+template<
+   typename ParticlesType,
+   typename SPHCaseConfig,
+   typename Variables,
+   typename IntegratorVariables,
+   typename OpenBoundaryConfig,
+   typename SPHDefs >
 // TODO: Derive from ParticleSet or OpenBoundaryBuffer?
 class MultiresolutionBoundary : public ParticleSet< ParticlesType, SPHCaseConfig, Variables, IntegratorVariables >
 {
@@ -134,10 +137,11 @@ public:
    // needs to be called after the object is initialized
    template< typename ParticleSetPointer >
    void
-   initZones( const ParticleSetPointer& ownParticles,
-              const ParticleSetPointer& nbParticles,
-              const RealType refinementFraction,
-              const int maxPtcsPerCell = 175 )
+   initZones(
+      const ParticleSetPointer& ownParticles,
+      const ParticleSetPointer& nbParticles,
+      const RealType refinementFraction,
+      const int maxPtcsPerCell = 175 )
    {
       //const VectorType globalOrig = ownParticles->getReferentialOrigin();
       const VectorType ownOrig = ownParticles->getOrigin();
@@ -187,8 +191,7 @@ public:
       //TODO: I dont like the "over-offset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
-         zoneOrigin =
-            getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates() + 2;
+         zoneOrigin = getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates() + 2;
          zoneDimensions = getFrameFrontDimensions() - 2;
       }
       if( outer_overlap ) {
@@ -198,10 +201,11 @@ public:
       zone.assignCellsFrame( zoneOrigin, zoneDimensions, frameWidth + 1, ownDimsWithOverlap );
       //---------------
       const std::string outputFilename = "results/zone_L" + std::to_string( int( 1 / refinementFraction ) ) + ".vtk";
-      zone.saveZoneToVTK( outputFilename,
-                          ownDimsWithOverlap,
-                          ownParticles->getOriginWithOverlap(),  //ownOrigin
-                          ownParticles->getSearchRadius() );
+      zone.saveZoneToVTK(
+         outputFilename,
+         ownDimsWithOverlap,
+         ownParticles->getOriginWithOverlap(),  //ownOrigin
+         ownParticles->getSearchRadius() );
 
       // Set size of multi-resoluton algorithm arrays (NOTE: Consider setSize function)
       const IndexType n_alloc = this->getNumberOfAllocatedParticles();
@@ -367,29 +371,31 @@ public:
 
    template< typename ModelParams, typename SubdomainDescriptorT >
    void
-   initMassNodesWithDomainExclusion( ModelParams& modelParams,
-                                     const int subdomainIdx,
-                                     const int neighborIdx,
-                                     const RealType refinementFactor,
-                                     const SubdomainDescriptorT& ownSd,
-                                     const SubdomainDescriptorT& nbSd,
-                                     const RealType globalCell,
-                                     const VectorType& domMin,
-                                     const VectorType& domMax )
+   initMassNodesWithDomainExclusion(
+      ModelParams& modelParams,
+      const int subdomainIdx,
+      const int neighborIdx,
+      const RealType refinementFactor,
+      const SubdomainDescriptorT& ownSd,
+      const SubdomainDescriptorT& nbSd,
+      const RealType globalCell,
+      const VectorType& domMin,
+      const VectorType& domMax )
    {
       const auto ctx = computeMassNodeFaceContext( ownSd, nbSd, globalCell );
       auto excludedFaces = computeExcludedDomainFaceNormals< SPHCaseConfig::spaceDimension >(
-            ctx.faceMin, ctx.faceMax, domMin, domMax, ctx.tol, ctx.flipNormals );
+         ctx.faceMin, ctx.faceMax, domMin, domMax, ctx.tol, ctx.flipNormals );
       initMassNodesWithExcludedNormals( modelParams, subdomainIdx, neighborIdx, refinementFactor, excludedFaces );
    }
 
    template< typename ModelParams >
    void
-   initMassNodesWithExcludedNormals( ModelParams& modelParams,
-                                     const int subdomainIdx,
-                                     const int neighborIdx,
-                                     const RealType refinementFactor,
-                                     const TNL::Containers::Array< VectorType, TNL::Devices::Host >& excludedNormals = {} )
+   initMassNodesWithExcludedNormals(
+      ModelParams& modelParams,
+      const int subdomainIdx,
+      const int neighborIdx,
+      const RealType refinementFactor,
+      const TNL::Containers::Array< VectorType, TNL::Devices::Host >& excludedNormals = {} )
    {
       const RealType local_dp = refinementFactor * modelParams.dp;
       const RealType eps = local_dp * 1e-4f;
@@ -589,14 +595,15 @@ public:
       const RealType div_r_trashold = ( dim == 2 ) ? 1.f : 1.5f;
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;  //TODO: rename, remove mdbc
 
-      auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
-                                                       IndexType j,
-                                                       VectorType & r_x,
-                                                       MfdMatrixType * M_x,
-                                                       MfdVectorType * brho_x,
-                                                       MfdVectorPackType * bv_x,
-                                                       RealType * div_r_x,
-                                                       RealType * drs_min ) mutable
+      auto interpolateFluid = [ = ] __cuda_callable__(
+                                 IndexType i,
+                                 IndexType j,
+                                 VectorType & r_x,
+                                 MfdMatrixType * M_x,
+                                 MfdVectorType * brho_x,
+                                 MfdVectorPackType * bv_x,
+                                 RealType * div_r_x,
+                                 RealType * drs_min ) mutable
       {
          const VectorType r_j = view_points_fluid[ j ];
          const VectorType r_xj = r_x - r_j;
@@ -701,12 +708,13 @@ public:
       //TODO: const RealType trasholdM00 = ..
       //TODO: const RealType extrapolationDetTreshold = modelParams.extrapolationDetTrashold;
 
-      auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
-                                                       IndexType j,
-                                                       VectorType & r_x,
-                                                       MfdMatrixType * M_x,
-                                                       MfdVectorType * brho_x,
-                                                       MfdVectorPackType * bv_x ) mutable
+      auto interpolateFluid = [ = ] __cuda_callable__(
+                                 IndexType i,
+                                 IndexType j,
+                                 VectorType & r_x,
+                                 MfdMatrixType * M_x,
+                                 MfdVectorType * brho_x,
+                                 MfdVectorPackType * bv_x ) mutable
       {
          const VectorType r_j = view_points_fluid[ j ];
          const VectorType r_xj = r_x - r_j;
@@ -767,8 +775,7 @@ public:
             return 1;
          }
       };
-      const IndexType numberOfDryBufferParticles =
-         Algorithms::reduce< DeviceType >( 0, numberOfBufferParticles, particleLoop );
+      const IndexType numberOfDryBufferParticles = Algorithms::reduce< DeviceType >( 0, numberOfBufferParticles, particleLoop );
       (void) numberOfDryBufferParticles;
    }
 
@@ -900,11 +907,12 @@ public:
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
 
-      thrust::sort_by_key( thrustDevice,
-                           retypeMarker_view.getArrayData(),
-                           retypeMarker_view.getArrayData() + numberOfBufferPtcs,
-                           thrust::make_zip_iterator( cuda::std::make_tuple(
-                              r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
+      thrust::sort_by_key(
+         thrustDevice,
+         retypeMarker_view.getArrayData(),
+         retypeMarker_view.getArrayData() + numberOfBufferPtcs,
+         thrust::make_zip_iterator(
+            cuda::std::make_tuple( r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
    }
 
    template< typename FluidPointer >
@@ -1095,8 +1103,8 @@ public:
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfPtcsToBuffer, retypeFluidToBuffer );
       this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + numberOfPtcsToBuffer );
-      fluid->getParticles()->setNumberOfParticlesToRemove( fluid->getParticles()->getNumberOfParticlesToRemove()
-                                                           + numberOfPtcsToBuffer );
+      fluid->getParticles()->setNumberOfParticlesToRemove(
+         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfPtcsToBuffer );
    }
 
    // Marks particles whose cell lies outside the own grid including overlap, so the
@@ -1124,8 +1132,7 @@ public:
             }
          return 0;
       };
-      const IndexType nOutOfGrid =
-         Algorithms::reduce< DeviceType >( 0, particles->getNumberOfParticles(), markOutOfGrid );
+      const IndexType nOutOfGrid = Algorithms::reduce< DeviceType >( 0, particles->getNumberOfParticles(), markOutOfGrid );
       if( nOutOfGrid )
          particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove() + nOutOfGrid );
       return nOutOfGrid;
@@ -1133,11 +1140,12 @@ public:
 
    template< typename FluidPointer, typename ModelParams >
    void
-   updateInterfaceBuffer( FluidPointer& fluid_own,
-                          FluidPointer& fluid_neihgbor,
-                          const ModelParams& modelParams,
-                          const RealType dt,
-                          const int subdomainIdx )
+   updateInterfaceBuffer(
+      FluidPointer& fluid_own,
+      FluidPointer& fluid_neihgbor,
+      const ModelParams& modelParams,
+      const RealType dt,
+      const int subdomainIdx )
    {
       massNodes.massFlux = 0;
 
@@ -1207,23 +1215,27 @@ public:
       logger.writeSeparator();
 
       // Frame front configuration
-      logger.writeParameter( "Frame front origin:",
-                             this->getParticles()->getReferentialOrigin()
-                                + getFrameFrontOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
-      logger.writeParameter( "Frame front origin coords:",
-                             getFrameFrontOriginGlobalCoordinates() - this->getParticles()->getGlobalOriginCoordinates() );
+      logger.writeParameter(
+         "Frame front origin:",
+         this->getParticles()->getReferentialOrigin()
+            + getFrameFrontOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
+      logger.writeParameter(
+         "Frame front origin coords:",
+         getFrameFrontOriginGlobalCoordinates() - this->getParticles()->getGlobalOriginCoordinates() );
       logger.writeParameter( "Frame front origin global coords:", getFrameFrontOriginGlobalCoordinates() );
       logger.writeParameter( "Frame front dims:", getFrameFrontDimensions() );
-      logger.writeParameter( "Frame front end:",
-                             getFrameFrontOriginGlobalCoordinates() + getFrameFrontDimensions()
-                                - this->getParticles()->getGlobalOriginCoordinates() );
+      logger.writeParameter(
+         "Frame front end:",
+         getFrameFrontOriginGlobalCoordinates() + getFrameFrontDimensions()
+            - this->getParticles()->getGlobalOriginCoordinates() );
       logger.writeParameter( "Frame orientation:", frameOrientation );
       logger.writeSeparator();
 
       // Frame back configuration
-      logger.writeParameter( "Frame back origin:",
-                             this->getParticles()->getReferentialOrigin()
-                                + getFrameBackOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
+      logger.writeParameter(
+         "Frame back origin:",
+         this->getParticles()->getReferentialOrigin()
+            + getFrameBackOriginGlobalCoordinates() * this->getParticles()->getSearchRadius() );
       logger.writeParameter( "Frame back size:", getFrameBackDimensions() * this->getParticles()->getSearchRadius() );
       logger.writeParameter( "Frame back dims:", getFrameBackDimensions() );
       logger.writeSeparator();
@@ -1262,7 +1274,8 @@ public:
       report[ "nb_particle_origin" ] = this->vectorToInitReportArray( nbParticleOrigin );
       report[ "own_global_origin_coordinates" ] = this->vectorToInitReportArray( ownGlobalOriginCoordinates );
       report[ "nb_global_origin_coordinates" ] = this->vectorToInitReportArray( nbGlobalOriginCoordinates );
-      report[ "frame_front_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameFrontOriginGlobalCoordinates() );
+      report[ "frame_front_origin_global_coordinates" ] =
+         this->vectorToInitReportArray( getFrameFrontOriginGlobalCoordinates() );
       report[ "frame_back_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameBackOriginGlobalCoordinates() );
       report[ "frame_front_dimensions" ] = this->vectorToInitReportArray( getFrameFrontDimensions() );
       report[ "frame_back_dimensions" ] = this->vectorToInitReportArray( getFrameBackDimensions() );
@@ -1327,4 +1340,3 @@ protected:
 };
 
 }  // namespace TNL::SPH
-

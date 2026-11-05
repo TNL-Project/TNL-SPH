@@ -27,11 +27,12 @@ public:
 
    template< typename FluidPointer >
    void
-   init( const FluidPointer& fluid,
-         const VectorType pointMin,
-         const VectorType pointMax,
-         const VectorType orientation,
-         const IndexType numberOfParticlesPerCell = 75 )
+   init(
+      const FluidPointer& fluid,
+      const VectorType pointMin,
+      const VectorType pointMax,
+      const VectorType orientation,
+      const IndexType numberOfParticlesPerCell = 75 )
    {
       // turn the pointMin and pointMax to zone points
       this->pointMin = pointMin;
@@ -71,7 +72,7 @@ public:
       const auto zoneParticleIndices_view = zone.getParticlesInZone().getConstView();
       const IndexType numberOfZoneParticles = zone.getNumberOfParticles();
 
-      auto countParticles = [=] __cuda_callable__ ( int i ) -> RealType
+      auto countParticles = [ = ] __cuda_callable__( int i ) -> RealType
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r_i = r_view[ p ];
@@ -85,13 +86,12 @@ public:
 
          if( ( r_i_n_relative < 0.f ) && ( r_i_new_n_relative > 0.f ) )
             return m / rho_j;
-         else if ( ( r_i_n_relative > 0.f ) && ( r_i_new_n_relative < 0.f ) )
+         else if( ( r_i_n_relative > 0.f ) && ( r_i_new_n_relative < 0.f ) )
             return ( -1.f ) * m / rho_j;
          else
             return 0.f;
       };
-      const RealType volume = Algorithms::reduce< DeviceType >(
-            0, numberOfZoneParticles, countParticles, TNL::Plus() );
+      const RealType volume = Algorithms::reduce< DeviceType >( 0, numberOfZoneParticles, countParticles, TNL::Plus() );
 
       intervalVolumeSum += volume;
    }
@@ -101,7 +101,7 @@ public:
    {
       intervalTime += dt;
 
-      if( intervalTime > averagingInterval ){
+      if( intervalTime > averagingInterval ) {
          volumetricFlux = intervalVolumeSum / intervalTime;
          intervalVolumeSum = 0.f;
          intervalTime = 0.f;
@@ -132,4 +132,3 @@ public:
 };
 
 }  // namespace TNL::SPH
-

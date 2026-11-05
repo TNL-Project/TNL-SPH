@@ -12,7 +12,6 @@ template< typename SPHConfig >
 class Symmetric
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
@@ -36,7 +35,6 @@ template< typename SPHConfig >
 class TIC
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
@@ -58,7 +56,5 @@ public:
    }
 };
 
-
-} // Pressure gradient
+}  //namespace PressureGradients
 }  // namespace TNL::SPH
-

@@ -9,7 +9,6 @@ template< typename Particles, typename ModelConfig >
 class SPHMultisetSolverTemplate
 {
 public:
-
    /**
     * Constructor.
     */
@@ -39,7 +38,10 @@ public:
 
    template< typename OpenBoundaryPointer, typename BoudaryPointer, typename ModelParams >
    void
-   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundaryPointer, ModelParams& modelParams )
+   updateSolidBoundaryOpenBoundary(
+      BoudaryPointer& boundary,
+      OpenBoundaryPointer& openBoundaryPointer,
+      ModelParams& modelParams )
    {}
 
    template< typename FluidPointer, typename OpenBoudaryPointer, typename ModelParams >
@@ -57,7 +59,8 @@ public:
    // */
    //template< typename FluidPointer, typename OpenBoudaryPointer, typename ModelParams, typename OpenBoundaryConfig  >
    //void
-   //extrapolateOpenBoundaryData( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams, OpenBoundaryConfig& openBoundaryParams )
+   //extrapolateOpenBoundaryData( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams,
+   //OpenBoundaryConfig& openBoundaryParams )
    //{}
 
    template< typename FluidPointer, typename BoundaryPointer, typename ModelParams >
@@ -83,4 +86,3 @@ public:
 };
 
 }  // namespace TNL::SPH
-

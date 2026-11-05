@@ -14,16 +14,16 @@ namespace EquationsOfState {
 template< typename SPHCaseConfig >
 class None
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState ) {}
    };
 
    __cuda_callable__
@@ -45,20 +45,21 @@ template< typename SPHCaseConfig >
 class TaitWeaklyCompressibleEOS
 {
 public:
-   using RealType = typename SPHCaseConfig::RealType; //fix this
+   using RealType = typename SPHCaseConfig::RealType;  //fix this
 
    struct ParamsType
    {
-     template< typename SPHState >
+      template< typename SPHState >
       __cuda_callable__
-     ParamsType( SPHState sphState )
-     : rho0( sphState.rho0 ),
-       coefB( sphState.coefB ),
-       p0( sphState.p0 ){}
+      ParamsType( SPHState sphState )
+      : rho0( sphState.rho0 ),
+        coefB( sphState.coefB ),
+        p0( sphState.p0 )
+      {}
 
-     const RealType rho0;
-     const RealType coefB;
-     const RealType p0;
+      const RealType rho0;
+      const RealType coefB;
+      const RealType p0;
    };
 
    __cuda_callable__
@@ -84,20 +85,21 @@ template< typename SPHCaseConfig >
 class TaitLinearizedWeaklyCompressibleEOS
 {
 public:
-   using RealType = typename SPHCaseConfig::RealType; //fix this
+   using RealType = typename SPHCaseConfig::RealType;  //fix this
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : rho0( sphState.rho0 ),
-       c0( sphState.speedOfSound ),
-       p0 ( sphState.p0 ){}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : rho0( sphState.rho0 ),
+        c0( sphState.speedOfSound ),
+        p0( sphState.p0 )
+      {}
 
-     const RealType rho0;
-     const RealType c0;
-     const RealType p0;
+      const RealType rho0;
+      const RealType c0;
+      const RealType p0;
    };
 
    __cuda_callable__
@@ -121,7 +123,5 @@ public:
    }
 };
 
-
-} // EquationsOfState
+}  //namespace EquationsOfState
 }  // namespace TNL::SPH
-

@@ -8,11 +8,10 @@
 
 namespace TNL::SPH {
 
-template< typename ParticleSystem, typename SPHConfig>
+template< typename ParticleSystem, typename SPHConfig >
 class ElasticBounce
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
 
@@ -23,10 +22,7 @@ public:
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
    static void
-   boundaryCorrection( FluidPointer& fluid,
-                       BoudaryPointer& boundary,
-                       SPHState& sphState,
-                       const RealType& dt )
+   boundaryCorrection( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
       GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
@@ -50,15 +46,15 @@ public:
       const auto view_v_bound = boundary->getVariables()->v.getView();
       const auto view_n_bound = boundary->getVariables()->n.getView();
 
-      auto elasticBounce = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-            VectorType& r_i, VectorType* ve_i, VectorType* ae_i ) mutable
+      auto elasticBounce =
+         [ = ] __cuda_callable__(
+            LocalIndexType i, LocalIndexType j, VectorType & r_i, VectorType * ve_i, VectorType * ae_i ) mutable
       {
          const VectorType r_j = view_points_bound[ j ];
          const VectorType r_ji = r_j - r_i;
          const RealType drs = l2Norm( r_ji );
 
-         if (drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             const VectorType v_j = view_v_bound[ j ];
             const VectorType n_j = ( -1.f ) * view_n_bound[ j ];
 
@@ -73,23 +69,22 @@ public:
                return;
 
             const RealType v_n = ( *ve_i - v_j, n_j );
-            const RealType dvdt_n = ( *ae_i, n_j ); //TODO: include dvdt_j
-            const RealType r_n = dt * v_n + 0.5f * dt * dt *  dvdt_n ;
+            const RealType dvdt_n = ( *ae_i, n_j );  //TODO: include dvdt_j
+            const RealType r_n = dt * v_n + 0.5f * dt * dt * dvdt_n;
 
             // Particle is already running away from boundary
             if( r_n < 0.f )
                return;
 
             // Reflect the particle
-            if( r0 - r_n <= minimalDistanceFactor * dp ){
+            if( r0 - r_n <= minimalDistanceFactor * dp ) {
                *ve_i = ( *ve_i ) - ( 1.f + elasticFactor ) * v_n * n_j;
                *ae_i = ( *ae_i ) - ( 1.f + elasticFactor ) * dvdt_n * n_j;
-
             }
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
       {
          const VectorType r_i = view_points[ i ];
          const VectorType v_i = view_v[ i ];
@@ -100,28 +95,22 @@ public:
          ParticleSystem::NeighborsLoopAnotherSet::exec( i, r_i, searchInBound, elasticBounce, &ve_i, &ae_i );
          view_v[ i ] = ve_i;
          view_a[ i ] = ae_i;
-
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
    }
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
    static void
-   boundaryCorrectionPST( FluidPointer& fluid,
-                          BoudaryPointer& boundary,
-                          SPHState& sphState,
-                          const RealType& dt )
+   boundaryCorrectionPST( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       // do nothing
    }
-
 };
 
-template< typename ParticleSystem, typename SPHConfig>
+template< typename ParticleSystem, typename SPHConfig >
 class ElasticBounceLight
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
 
@@ -132,10 +121,7 @@ public:
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
    static void
-   boundaryCorrection( FluidPointer& fluid,
-                       BoudaryPointer& boundary,
-                       SPHState& sphState,
-                       const RealType& dt )
+   boundaryCorrection( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
       GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
@@ -159,14 +145,18 @@ public:
       const auto view_n_bound = boundary->getVariables()->n.getView();
       const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
-      auto elasticBounce = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-            VectorType& r_i,  VectorType& v_i, VectorType* ve_i, VectorType* dvdte_i ) mutable
+      auto elasticBounce = [ = ] __cuda_callable__(
+                              LocalIndexType i,
+                              LocalIndexType j,
+                              VectorType & r_i,
+                              VectorType & v_i,
+                              VectorType * ve_i,
+                              VectorType * dvdte_i ) mutable
       {
          const VectorType r_j = view_points_bound[ j ];
          const VectorType r_ji = r_j - r_i;
          const RealType drs = l2Norm( r_ji );
-         if (drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             //const VectorType v_j = view_v_bound[ j ];
             const VectorType n_j = ( -1.f ) * view_n_bound[ j ];
             const RealType s_j = view_elementSize_bound[ j ];
@@ -192,7 +182,7 @@ public:
                return;
 
             // Reflect the particle if is inside or is entering effective area
-            if( rn - drn <= minimalDistanceFactor * dp ){
+            if( rn - drn <= minimalDistanceFactor * dp ) {
                const VectorType v_updated = v_i + dt * ( *dvdte_i );
                const VectorType v_updated_r = v_updated - 2.f * ( v_updated, n_j ) * n_j;
                *dvdte_i = ( v_updated_r - v_i ) / dt;
@@ -201,7 +191,7 @@ public:
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
       {
          const VectorType r_i = view_points[ i ];
          const VectorType v_i = view_v[ i ];
@@ -215,15 +205,11 @@ public:
          view_a[ i ] = dvdte_i;
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
-
    }
 
    template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
    static void
-   boundaryCorrectionPST( FluidPointer& fluid,
-                          BoudaryPointer& boundary,
-                          SPHState& sphState,
-                          const RealType& dt )
+   boundaryCorrectionPST( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
       const RealType searchRadius = fluid->getParticles()->getSearchRadius();
@@ -238,18 +224,14 @@ public:
       const auto view_n_bound = boundary->getVariables()->n.getConstView();
       const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
-      auto pstLoop = [=] __cuda_callable__ ( LocalIndexType i,
-                                             LocalIndexType j,
-                                             VectorType& r_i,
-                                             RealType& Ri,
-                                             VectorType* r_i_mod ) mutable
+      auto pstLoop = [ = ] __cuda_callable__(
+                        LocalIndexType i, LocalIndexType j, VectorType & r_i, RealType & Ri, VectorType * r_i_mod ) mutable
       {
          const VectorType r_j = view_points_bound[ j ];
          //const VectorType r_ji = r_j - ( *r_i_mod );
          const VectorType r_ji = r_j - view_points[ i ];
          const RealType drs = l2Norm( r_ji );
-         if (drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             const VectorType n_j = ( -1.f ) * view_n_bound[ j ];
             const RealType r_ji_n = ( r_ji, n_j );
             const RealType s_j = view_elementSize_bound[ j ];
@@ -274,7 +256,7 @@ public:
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
       {
          const VectorType r_i = view_points[ i ];
          const RealType rho_i = view_rho[ i ];
@@ -289,6 +271,4 @@ public:
    }
 };
 
-
 }  // namespace TNL::SPH
-

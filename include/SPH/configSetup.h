@@ -12,90 +12,98 @@
 namespace TNL::SPH {
 
 void
-configSetup( TNL::Config::ConfigDescription& config,
-             std::string sectionPrefix = "SPH" )
+configSetup( TNL::Config::ConfigDescription& config, std::string sectionPrefix = "SPH" )
 {
-    config.addEntry< std::string >( "case-name", "Name of solved case." );
-    config.addEntry< std::string >( "output-directory", "Path to the output directory." );
+   config.addEntry< std::string >( "case-name", "Name of solved case." );
+   config.addEntry< std::string >( "output-directory", "Path to the output directory." );
 
-    config.addDelimiter( sectionPrefix + " space discretisation" );
-    config.addRequiredEntry< std::string >( "fluid-particles", "Input fluid particles file path." );
-    config.addRequiredEntry< std::string >( "boundary-particles", "Input boundary particles file path." );
+   config.addDelimiter( sectionPrefix + " space discretisation" );
+   config.addRequiredEntry< std::string >( "fluid-particles", "Input fluid particles file path." );
+   config.addRequiredEntry< std::string >( "boundary-particles", "Input boundary particles file path." );
 
-    config.addEntry< std::string >( "particles-format", "Input pa file format.", "auto" );
-        config.addEntryEnum( "auto" );
-        config.addEntryEnum( "vtk" );
-        config.addEntryEnum( "vtu" );
-    config.addEntry< std::string >( "boundary-conditions-file", "Path to the boundary conditions file." );
-    config.addEntry< std::string >( "verbose-intensity", "Information write during simulation runtime." ,"with-snapshot" );
-        config.addEntryEnum( "full" );
-        config.addEntryEnum( "with-snapshot" );
-        config.addEntryEnum( "none" );
-    config.addEntry< bool >( "save-fluid-particles", "Save fluid particles (bool).", true );
-    config.addEntry< bool >( "save-boundary-particles", "Save fluid particles (bool).", true );
+   config.addEntry< std::string >( "particles-format", "Input pa file format.", "auto" );
+   config.addEntryEnum( "auto" );
+   config.addEntryEnum( "vtk" );
+   config.addEntryEnum( "vtu" );
+   config.addEntry< std::string >( "boundary-conditions-file", "Path to the boundary conditions file." );
+   config.addEntry< std::string >( "verbose-intensity", "Information write during simulation runtime.", "with-snapshot" );
+   config.addEntryEnum( "full" );
+   config.addEntryEnum( "with-snapshot" );
+   config.addEntryEnum( "none" );
+   config.addEntry< bool >( "save-fluid-particles", "Save fluid particles (bool).", true );
+   config.addEntry< bool >( "save-boundary-particles", "Save fluid particles (bool).", true );
 
-    config.addDelimiter( sectionPrefix + " time discretisation" );
-    config.addEntry< std::string >( "initial-condition", "File name with the initial condition." );
-    config.addRequiredEntry< double >( "final-time", "Stop time of the time dependent problem." );
-    config.addEntry< double >( "initial-time-step", "Initial time of the time dependent problem.", 0 );
-    config.addEntry< double >( "start-time", "Initial simulation time for restart (0 = classical mode).", 0. );
-    config.addRequiredEntry< double >( "snapshot-period", "Time period for writing the problem status.");
-    config.addEntry< double >( "time-step", "The time step for the time discretisation.", 1.0 );
+   config.addDelimiter( sectionPrefix + " time discretisation" );
+   config.addEntry< std::string >( "initial-condition", "File name with the initial condition." );
+   config.addRequiredEntry< double >( "final-time", "Stop time of the time dependent problem." );
+   config.addEntry< double >( "initial-time-step", "Initial time of the time dependent problem.", 0 );
+   config.addEntry< double >( "start-time", "Initial simulation time for restart (0 = classical mode).", 0. );
+   config.addRequiredEntry< double >( "snapshot-period", "Time period for writing the problem status." );
+   config.addEntry< double >( "time-step", "The time step for the time discretisation.", 1.0 );
 
-    config.addEntry< double >( "searchRadius", "The cut of radius of particle interactions.", 0. );
-    config.addEntry< int >( "numberOfParticles", "The initial number of fluid particles.", 0. );
-    config.addEntry< int >( "numberOfAllocatedParticles", "The allocated number of fluid particles.", 0. );
-    config.addEntry< int >( "numberOfBoundaryParticles", "The initial number of fluid particles.", 0. );
-    config.addEntry< int >( "numberOfAllocatedBoundaryParticles", "The allocated number of fluid particles.", 0. );
+   config.addEntry< double >( "searchRadius", "The cut of radius of particle interactions.", 0. );
+   config.addEntry< int >( "numberOfParticles", "The initial number of fluid particles.", 0. );
+   config.addEntry< int >( "numberOfAllocatedParticles", "The allocated number of fluid particles.", 0. );
+   config.addEntry< int >( "numberOfBoundaryParticles", "The initial number of fluid particles.", 0. );
+   config.addEntry< int >( "numberOfAllocatedBoundaryParticles", "The allocated number of fluid particles.", 0. );
 
-    config.addEntry< double >( "domainOrigin-x", "The origin of domain in x direction.", 0. );
-    config.addEntry< double >( "domainOrigin-y", "The origin of domain in y direction.", 0. );
-    config.addEntry< double >( "domainOrigin-z", "The origin of domain in z direction.", 0. );
-    config.addEntry< double >( "domainSize-x", "The size of domain in x direction.", 0. );
-    config.addEntry< double >( "domainSize-y", "The size of domain in y direction.", 0. );
-    config.addEntry< double >( "domainSize-z", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( "domainOrigin-x", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( "domainOrigin-y", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( "domainOrigin-z", "The origin of domain in z direction.", 0. );
+   config.addEntry< double >( "domainSize-x", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( "domainSize-y", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( "domainSize-z", "The size of domain in y direction.", 0. );
 
-    config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
-    config.addEntry< std::string >( "open-boundary-config", "Configuration file for open boundary.", "" );
-    config.addEntry< std::string >( "open-boundary", "Inline open boundary config as a JSON object. Used when open-boundary-config is empty.", "" );
+   config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
+   config.addEntry< std::string >( "open-boundary-config", "Configuration file for open boundary.", "" );
+   config.addEntry< std::string >(
+      "open-boundary", "Inline open boundary config as a JSON object. Used when open-boundary-config is empty.", "" );
    config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
    config.addEntry< std::string >( "periodic-boundary-config", "Configuration file for periodic boundary.", "" );
-   config.addEntry< std::string >( "periodic-boundary", "Inline periodic boundary config as a JSON object. Used when periodic-boundary-config is empty.", "" );
+   config.addEntry< std::string >(
+      "periodic-boundary",
+      "Inline periodic boundary config as a JSON object. Used when periodic-boundary-config is empty.",
+      "" );
 
    config.addEntry< int >( "numberOfSubdomains", "Number of particles subdomains.", 0 );
    config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
-   config.addEntry< std::string >( "subdomains", "Inline subdomains config as a JSON object. Used when subdomains-config is empty.", "" );
-   config.addEntry< std::string >( "boundary-ghost-method", "Update method for boundary ghost particles at multiresolution interfaces.", "interpolation" );
-        config.addEntryEnum( "interpolation" );
-        config.addEntryEnum( "direct-from-source" );
+   config.addEntry< std::string >(
+      "subdomains", "Inline subdomains config as a JSON object. Used when subdomains-config is empty.", "" );
+   config.addEntry< std::string >(
+      "boundary-ghost-method", "Update method for boundary ghost particles at multiresolution interfaces.", "interpolation" );
+   config.addEntryEnum( "interpolation" );
+   config.addEntryEnum( "direct-from-source" );
 
-    // distributed simulation parameters
+   // distributed simulation parameters
    config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
    config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
    config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
-   config.addEntry< std::string >( "distributed-domain", "Inline distributed domain config as a JSON object. Used when distributed-config is empty.", "" );
-    config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
-    config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "computationalTime" );
-        config.addEntryEnum( "numberOfParticles" );
-        config.addEntryEnum( "computationalTime" );
-    config.addEntry< float >( "number-of-particles-balancing-coef", "Particles count treshold for rebalancing [%].", 0.05 );
-    config.addEntry< float >( "computational-time-balancing-coef", "Comp. time treshold for rebalancing.", 0.001 );
-    config.addEntry< int >( "load-balancing-step-inteval", "Number of steps after load balancing is performed", 100 );
+   config.addEntry< std::string >(
+      "distributed-domain", "Inline distributed domain config as a JSON object. Used when distributed-config is empty.", "" );
+   config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
+   config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "computationalTime" );
+   config.addEntryEnum( "numberOfParticles" );
+   config.addEntryEnum( "computationalTime" );
+   config.addEntry< float >( "number-of-particles-balancing-coef", "Particles count treshold for rebalancing [%].", 0.05 );
+   config.addEntry< float >( "computational-time-balancing-coef", "Comp. time treshold for rebalancing.", 0.001 );
+   config.addEntry< int >( "load-balancing-step-inteval", "Number of steps after load balancing is performed", 100 );
 
-    // simulation monitor parameters
-    config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
-    config.addEntry< std::string >( "measuretool", "Inline measuretool config as a JSON object. Used when measuretool-config is empty.", "" );
-    config.addEntry< int >( "interpolation-planes-count", "Number of interpolation planes.", 0 );
-    config.addEntry< int >( "pressure-sensors-count", "Number of pressure evalutaion sensors.", 0 );
-    config.addEntry< int >( "water-level-sensors-count", "Number of water level evaluation sensors.", 0 );
-    config.addEntry< int >( "volumetric-flow-rate-planes-count", "Number of volumetric flow rate evaluation planes", 0 );
+   // simulation monitor parameters
+   config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
+   config.addEntry< std::string >(
+      "measuretool", "Inline measuretool config as a JSON object. Used when measuretool-config is empty.", "" );
+   config.addEntry< int >( "interpolation-planes-count", "Number of interpolation planes.", 0 );
+   config.addEntry< int >( "pressure-sensors-count", "Number of pressure evalutaion sensors.", 0 );
+   config.addEntry< int >( "water-level-sensors-count", "Number of water level evaluation sensors.", 0 );
+   config.addEntry< int >( "volumetric-flow-rate-planes-count", "Number of volumetric flow rate evaluation planes", 0 );
 
-    //TODO: Move this to suiteble place, it is used also for open zones
-    config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
+   //TODO: Move this to suiteble place, it is used also for open zones
+   config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
 
    // user defined parameters
    config.addEntry< std::string >( "user-defined-config", "Configuration file for user's custom parameters.", "" );
-   config.addEntry< std::string >( "user-defined", "Inline user-defined config as a JSON object. Used when user-defined-config is empty.", "" );
+   config.addEntry< std::string >(
+      "user-defined", "Inline user-defined config as a JSON object. Used when user-defined-config is empty.", "" );
 }
 
 void
@@ -114,9 +122,12 @@ configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::
    config.addEntry< double >( subdomainKey + "origin-x", "The origin of domain in x direction.", 0. );
    config.addEntry< double >( subdomainKey + "origin-y", "The origin of domain in y direction.", 0. );
    config.addEntry< double >( subdomainKey + "origin-z", "The origin of domain in z direction.", 0. );
-   config.addEntry< int >( subdomainKey + "origin-global-coords-x", "The origin of domain in global cell coords. in x direction.", 0. );
-   config.addEntry< int >( subdomainKey + "origin-global-coords-y", "The origin of domain in global cell coords. in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "origin-global-coords-z", "The origin of domain in global cell coords. in z direction.", 0. );
+   config.addEntry< int >(
+      subdomainKey + "origin-global-coords-x", "The origin of domain in global cell coords. in x direction.", 0. );
+   config.addEntry< int >(
+      subdomainKey + "origin-global-coords-y", "The origin of domain in global cell coords. in y direction.", 0. );
+   config.addEntry< int >(
+      subdomainKey + "origin-global-coords-z", "The origin of domain in global cell coords. in z direction.", 0. );
 
    config.addEntry< double >( subdomainKey + "size-x", "The size of domain in x direction.", 0. );
    config.addEntry< double >( subdomainKey + "size-y", "The size of domain in y direction.", 0. );
@@ -163,123 +174,136 @@ configBoundaryGhostBuffer( int bufferIdx, TNL::Config::ConfigDescription& config
 }
 
 template< typename Simulation >
-void writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
+void
+writeProlog( TNL::Logger& logger, bool writeSystemInformation = true )
 {
-    const bool printGPUs = std::is_same< typename Simulation::DeviceType, TNL::Devices::Cuda >::value;
+   const bool printGPUs = std::is_same< typename Simulation::DeviceType, TNL::Devices::Cuda >::value;
 
-    //logger.writeHeader( Problem::getPrologHeader() );
-    if( TNL::MPI::isInitialized() )
-        logger.writeParameter( "MPI processes:", TNL::MPI::GetSize() );
-    logger.writeParameter( "Device type:", TNL::getType< typename Simulation::DeviceType >() );
+   //logger.writeHeader( Problem::getPrologHeader() );
+   if( TNL::MPI::isInitialized() )
+      logger.writeParameter( "MPI processes:", TNL::MPI::GetSize() );
+   logger.writeParameter( "Device type:", TNL::getType< typename Simulation::DeviceType >() );
 
-    if( ! printGPUs ) {
-        if( TNL::Devices::Host::isOMPEnabled() ) {
-            logger.writeParameter( "OMP enabled:", "yes", 1 );
-            logger.writeParameter( "OMP threads:", TNL::Devices::Host::getMaxThreadsCount(), 1 );
-        }
-        else
-            logger.writeParameter( "OMP enabled:", "no", 1 );
-    }
+   if( ! printGPUs ) {
+      if( TNL::Devices::Host::isOMPEnabled() ) {
+         logger.writeParameter( "OMP enabled:", "yes", 1 );
+         logger.writeParameter( "OMP threads:", TNL::Devices::Host::getMaxThreadsCount(), 1 );
+      }
+      else
+         logger.writeParameter( "OMP enabled:", "no", 1 );
+   }
 }
 
 void
-parseOpenBoundaryConfig( const std::string& configOpenBoundaryPath,
-                         TNL::Config::ParameterContainer& parametersOpenBoundary,
-                         TNL::Config::ConfigDescription& configOpenBoundary,
-                         TNL::Logger& logger,
-                         const std::string& inlineConfig = "" )
+parseOpenBoundaryConfig(
+   const std::string& configOpenBoundaryPath,
+   TNL::Config::ParameterContainer& parametersOpenBoundary,
+   TNL::Config::ConfigDescription& configOpenBoundary,
+   TNL::Logger& logger,
+   const std::string& inlineConfig = "" )
 {
    if( configOpenBoundaryPath != "" ) {
       logger.writeParameter( "Parsing open boundaries simulation config.", "" );
       try {
-          parametersOpenBoundary = TNL::SPH::parseConfigFile( configOpenBoundaryPath, configOpenBoundary );
+         parametersOpenBoundary = TNL::SPH::parseConfigFile( configOpenBoundaryPath, configOpenBoundary );
       }
-      catch ( const std::exception& e ) {
-          std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath << " due to the following error:\n" << e.what() << std::endl;
+      catch( const std::exception& e ) {
+         std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath
+                   << " due to the following error:\n"
+                   << e.what() << std::endl;
       }
-      catch (...) {
-          std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath << " due to an unknown C++ exception." << std::endl;
-          throw;
+      catch( ... ) {
+         std::cerr << "Failed to parse the open boundary configuration file " << configOpenBoundaryPath
+                   << " due to an unknown C++ exception." << std::endl;
+         throw;
       }
       logger.writeParameter( "Parsing open boundaries config.", "Done." );
    }
    else if( ! inlineConfig.empty() ) {
       logger.writeParameter( "Parsing open boundaries config.", "inline (config.jsonc subsection)" );
       try {
-          parametersOpenBoundary = TNL::SPH::parseJSONConfigString( inlineConfig, "inline open-boundary", configOpenBoundary );
+         parametersOpenBoundary = TNL::SPH::parseJSONConfigString( inlineConfig, "inline open-boundary", configOpenBoundary );
       }
       catch( const std::exception& e ) {
-          std::cerr << "Failed to parse the inline open boundary configuration due to the following error:\n" << e.what() << std::endl;
+         std::cerr << "Failed to parse the inline open boundary configuration due to the following error:\n"
+                   << e.what() << std::endl;
       }
       logger.writeParameter( "Parsing open boundaries config.", "Done." );
    }
 }
 
 void
-parseDistributedConfig( const std::string& configPath,
-                        TNL::Config::ParameterContainer& params,
-                        TNL::Config::ConfigDescription& config,
-                        TNL::Logger& logger,
-                        const std::string& inlineConfig = "" )
+parseDistributedConfig(
+   const std::string& configPath,
+   TNL::Config::ParameterContainer& params,
+   TNL::Config::ConfigDescription& config,
+   TNL::Logger& logger,
+   const std::string& inlineConfig = "" )
 {
    if( configPath != "" ) {
       logger.writeParameter( "Parsing distributed simulation config.", "" );
       try {
-          params = TNL::SPH::parseConfigFile( configPath, config );
+         params = TNL::SPH::parseConfigFile( configPath, config );
       }
-      catch ( const std::exception& e ) {
-          std::cerr << "Failed to parse the distributed configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
+      catch( const std::exception& e ) {
+         std::cerr << "Failed to parse the distributed configuration file " << configPath << " due to the following error:\n"
+                   << e.what() << std::endl;
       }
-      catch (...) {
-          std::cerr << "Failed to parse the distributed configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
-          throw;
+      catch( ... ) {
+         std::cerr << "Failed to parse the distributed configuration file " << configPath << " due to an unknown C++ exception."
+                   << std::endl;
+         throw;
       }
       logger.writeParameter( "Parsing distributed simulation config.", "Done." );
    }
    else if( ! inlineConfig.empty() ) {
       logger.writeParameter( "Parsing distributed simulation config.", "inline (config.jsonc subsection)" );
       try {
-          params = TNL::SPH::parseJSONConfigString( inlineConfig, "inline distributed-domain", config );
+         params = TNL::SPH::parseJSONConfigString( inlineConfig, "inline distributed-domain", config );
       }
       catch( const std::exception& e ) {
-          std::cerr << "Failed to parse the inline distributed configuration due to the following error:\n" << e.what() << std::endl;
+         std::cerr << "Failed to parse the inline distributed configuration due to the following error:\n"
+                   << e.what() << std::endl;
       }
       logger.writeParameter( "Parsing distributed simulation config.", "Done." );
    }
 }
 
 void
-parseUserDefinedConfig( const std::string& configPath,
-                        TNL::Config::ParameterContainer& params,
-                        TNL::Config::ConfigDescription& config,
-                        TNL::Logger& logger,
-                        const std::string& inlineConfig = "" )
+parseUserDefinedConfig(
+   const std::string& configPath,
+   TNL::Config::ParameterContainer& params,
+   TNL::Config::ConfigDescription& config,
+   TNL::Logger& logger,
+   const std::string& inlineConfig = "" )
 {
    if( configPath != "" ) {
       logger.writeParameter( "Parsing user defined params config.", "" );
       try {
-          params = TNL::SPH::parseConfigFile( configPath, config );
+         params = TNL::SPH::parseConfigFile( configPath, config );
       }
-      catch ( const std::exception& e ) {
-          std::cerr << "Failed to parse the user defined params config file " << configPath << " due to the following error:\n" << e.what() << std::endl;
+      catch( const std::exception& e ) {
+         std::cerr << "Failed to parse the user defined params config file " << configPath << " due to the following error:\n"
+                   << e.what() << std::endl;
       }
-      catch (...) {
-          std::cerr << "Failed to parse the user defined params config file " << configPath << " due to an unknown C++ exception." << std::endl;
-          throw;
+      catch( ... ) {
+         std::cerr << "Failed to parse the user defined params config file " << configPath
+                   << " due to an unknown C++ exception." << std::endl;
+         throw;
       }
       logger.writeParameter( "Parsing user defined params config.", "Done." );
    }
    else if( ! inlineConfig.empty() ) {
       logger.writeParameter( "Parsing user defined params config.", "inline (config.jsonc subsection)" );
       try {
-          params = TNL::SPH::parseJSONConfigString( inlineConfig, "inline user-defined", config );
+         params = TNL::SPH::parseJSONConfigString( inlineConfig, "inline user-defined", config );
       }
       catch( const std::exception& e ) {
-          std::cerr << "Failed to parse the inline user defined params config due to the following error:\n" << e.what() << std::endl;
+         std::cerr << "Failed to parse the inline user defined params config due to the following error:\n"
+                   << e.what() << std::endl;
       }
       logger.writeParameter( "Parsing user defined params config.", "Done." );
    }
 }
 
 }  // namespace TNL::SPH
-

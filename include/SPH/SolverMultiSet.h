@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <memory> //shared_ptr
+#include <memory>  //shared_ptr
 
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
@@ -27,12 +27,12 @@ template< typename Model >
 class SolverMultiSet
 {
 public:
-
    using SimulationType = SolverMultiSet< Model >;
    using DeviceType = typename Model::DeviceType;
    using ModelType = Model;
    using ModelParams = typename ModelType::ModelParams;
-   using ParticlesType = typename ModelType::ParticlesType;;
+   using ParticlesType = typename ModelType::ParticlesType;
+   ;
    using IntegrationSchemeType = typename ModelType::IntegrationSchemeType;
    using IntegratorPointer = typename Pointers::SharedPointer< IntegrationSchemeType, DeviceType >;
    using IntegrationSchemeVariablesType = typename Model::IntegrationSchemeVariables;
@@ -52,14 +52,19 @@ public:
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
    using OpenBoundaryVariables = typename Model::OpenBoundaryVariables;
    using OpenBoundaryConfigType = typename Model::OpenBoundaryConfig;
-   using OpenBoundary = OpenBoundary<
-      ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
+   using OpenBoundary =
+      OpenBoundary< ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
    using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
    using OpenBoundaryModel = typename Model::OpenBoundaryModel;
 
    // MR
    using MultiresolutionBoundary = MultiresolutionBoundary<
-      ParticlesType, SPHConfig, FluidVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType, ModelParams >;
+      ParticlesType,
+      SPHConfig,
+      FluidVariables,
+      IntegrationSchemeVariablesType,
+      OpenBoundaryConfigType,
+      ModelParams >;
    using MultiresolutionBoundaryPointer = Pointers::SharedPointer< MultiresolutionBoundary, DeviceType >;
 
    //Reader
@@ -68,12 +73,13 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
-
    //SolverMultiSet() = default;
 
    //SolverMultiSet() : logger( 100, std::cout ) {};
 
-   SolverMultiSet( std::ostream& out = std::cout ) : logger( 100, out ) {};
+   SolverMultiSet( std::ostream& out = std::cout )
+   : logger( 100, out )
+   {}
 
    void
    init( int argc, char* argv[] );
@@ -111,26 +117,28 @@ public:
    void
    readOpenBoundaryFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
-
 #ifdef HAVE_MPI
    // protected
    void
-   initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
-                                TNL::Config::ParameterContainer& parametersDistributed,
-                                TNL::Logger& logger );
+   initDistributedParticleSets(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 
    // protected
    void
-   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
-                                 TNL::Config::ParameterContainer& parametersDistributed,
-                                 TNL::Logger& logger );
+   readParticleFilesDistributed(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 #endif
 
    // protected
    void
-   initOverlaps( TNL::Config::ParameterContainer& parameters,
-                 TNL::Config::ParameterContainer& parametersDistributed,
-                 TNL::Logger& logger );
+   initOverlaps(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -275,7 +283,7 @@ public:
    void
    writeEpilog() noexcept;
 
-//protected:
+   //protected:
 
    using GridType = TNL::Meshes::Grid< SPHConfig::spaceDimension, RealType >;
    using Topology = DecompositionTopologyFlat< GridType >;
@@ -291,7 +299,7 @@ public:
    ModelParams modelParams;
    OpenBoundaryModel openBoundaryModel;
 
-   IntegratorPointer integrator; // I hate this.
+   IntegratorPointer integrator;  // I hate this.
 
    TimeStepping timeStepping;
    ComputationTimeMeasurement timeMeasurement;
@@ -328,7 +336,6 @@ public:
    // Configurations of subdomains
    TNL::Config::ConfigDescription configSubdomains;
    TNL::Config::ParameterContainer parametersSubdomains;
-
 };
 
 }  // namespace TNL::SPH
@@ -345,4 +352,3 @@ operator<<( std::ostream& str, const TNL::SPH::SolverMultiSet< Model >& sphSimul
 }
 
 #include <SPH/SolverMultiSet.hpp>
-

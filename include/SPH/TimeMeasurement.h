@@ -14,7 +14,6 @@ namespace TNL::SPH {
 class TimerMeasurement
 {
 public:
-
    TimerMeasurement()
    {
       timers.insert( { "search", std::make_pair( TNL::Timer(), true ) } );
@@ -48,8 +47,8 @@ public:
    getTotalTime() const
    {
       float totalTime = 0.f;
-      for ( auto const& [ key, val ] : this->timers ) {
-         if ( val.second == true )
+      for( auto const& [ key, val ] : this->timers ) {
+         if( val.second == true )
             totalTime += val.first.getRealTime();
       }
       return totalTime;
@@ -60,12 +59,12 @@ public:
    {
       logger.writeHeader( "Computation time" );
       float totalTime = 0.f;
-      for ( auto const& [ key, val ] : this->timers ) {
-         if ( val.second == true )
+      for( auto const& [ key, val ] : this->timers ) {
+         if( val.second == true )
             totalTime += val.first.getRealTime();
       }
 
-      for ( auto const& [ key, val ] : this->timers ) {
+      for( auto const& [ key, val ] : this->timers ) {
          logger.writeParameter( key, val.first.getRealTime() );
          logger.writeParameter( key + "-average", val.first.getRealTime() / stepsTotal );
          logger.writeParameter( key + "-percentage", val.first.getRealTime() / totalTime * 100 );
@@ -81,12 +80,12 @@ public:
       std::map< std::string, std::string > timeResults;
 
       float totalTime = 0.f;
-      for ( auto const& [ key, val ] : this->timers ) {
-         if ( val.second == true )
+      for( auto const& [ key, val ] : this->timers ) {
+         if( val.second == true )
             totalTime += val.first.getRealTime();
       }
 
-      for ( auto const& [ key, val ] : this->timers ) {
+      for( auto const& [ key, val ] : this->timers ) {
          timeResults.insert( { key, std::to_string( val.first.getRealTime() ) } );
          timeResults.insert( { key + "-average", std::to_string( val.first.getRealTime() / stepsTotal ) } );
          timeResults.insert( { key + "-percentage", std::to_string( val.first.getRealTime() / totalTime * 100 ) } );
@@ -97,11 +96,7 @@ public:
    }
 
 protected:
-
-   std::map< std::string, std::pair< TNL::Timer, bool >> timers;
-
+   std::map< std::string, std::pair< TNL::Timer, bool > > timers;
 };
 
-
 }  // namespace TNL::SPH
-

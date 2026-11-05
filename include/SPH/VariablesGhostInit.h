@@ -67,8 +67,9 @@ initGhostRangeFrom( DstVariables& dst, SrcVariables& src, const Index& dstBegin,
 {
    auto dstFields = dst.allFields();
    auto srcFields = src.allFields();
-   static_assert( std::tuple_size_v< decltype( dstFields ) > == std::tuple_size_v< decltype( srcFields ) >,
-                  "Source and destination variable lists must have the same number of fields." );
+   static_assert(
+      std::tuple_size_v< decltype( dstFields ) > == std::tuple_size_v< decltype( srcFields ) >,
+      "Source and destination variable lists must have the same number of fields." );
    detail::initGhostFields(
       dstFields, srcFields, dstBegin, count, std::make_index_sequence< std::tuple_size_v< decltype( dstFields ) > >{} );
 }

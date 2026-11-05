@@ -24,7 +24,6 @@ template< typename Particles, typename ModelConfig >
 class WCSPH_DBC
 {
 public:
-
    using Model = WCSPH_DBC< Particles, ModelConfig >;
    using ModelParams = WCSPH_DBCConfig< ModelConfig >;
    using ParticlesType = Particles;
@@ -41,8 +40,8 @@ public:
    using Matrix = Matrices::StaticMatrix< RealType, SPHConfig::spaceDimension + 1, SPHConfig::spaceDimension + 1 >;
    using VectorExtendedType = Containers::StaticVector< SPHConfig::spaceDimension + 1, RealType >;
 
-	using FluidVariables = FluidVariables< SPHConfig >;
-	using BoundaryVariables = BoundaryVariables< ModelConfig >;
+   using FluidVariables = FluidVariables< SPHConfig >;
+   using BoundaryVariables = BoundaryVariables< ModelConfig >;
    using OpenBoundaryVariables = OpenBoundaryVariables< SPHConfig >;
    using IntegrationSchemeType = typename ModelConfig::IntegrationScheme;
    using IntegrationSchemeVariables = typename IntegrationSchemeType::IntegrationSchemeVariablesType;
@@ -57,7 +56,7 @@ public:
    /**
     * Constructor.
     */
-   WCSPH_DBC( ) = default;
+   WCSPH_DBC() = default;
 
    /**
     * Print model identifier.
@@ -71,8 +70,9 @@ public:
    /**
     * Compute pressure from density.
     */
-   template< typename EquationOfState = EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >,
-             typename PhysicalObjectPointer >
+   template<
+      typename EquationOfState = EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >,
+      typename PhysicalObjectPointer >
    void
    computePressureFromDensity( PhysicalObjectPointer& physicalObject, ModelParams& modelParams );
 
@@ -87,17 +87,19 @@ public:
     * Function to realize boundary conditions for solid wall.
     * Realized by Dynamic Boundary Conditions (DBC) - Crespo et. 2007
     */
-   template< typename FluidPointer,
-             typename BoudaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoudaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
-   template< typename OpenBoundaryPointer,
-             typename BoudaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   template<
+      typename OpenBoundaryPointer,
+      typename BoudaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
    updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
 
@@ -105,17 +107,19 @@ public:
     * Function to realize boundary conditions for solid wall.
     * Realized by Modified Dynamic Boundary Conditions (MDBC) - English et. al. 2021
     */
-   template< typename FluidPointer,
-             typename BoudaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoudaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
 
-   template< typename OpenBoundaryPointer,
-             typename BoudaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   template<
+      typename OpenBoundaryPointer,
+      typename BoudaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
    updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
 
@@ -125,13 +129,13 @@ public:
     *
     * TODO: Not implemented.
     */
-   template< typename FluidPointer,
-             typename BoudaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoudaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled = true >
    void
    updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
-
 
    //TODO: Where should be this placed
    template< typename FluidPointer, typename OpenBoudaryPointer >
@@ -151,24 +155,27 @@ public:
     */
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryDensity2D( FluidPointer& fluid,
-                                     OpenBoudaryPointer& openBoundary,
-                                     ModelParams& modelParams,
-                                     OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryDensity2D(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryVelocity2D( FluidPointer& fluid,
-                                      OpenBoudaryPointer& openBoundary,
-                                      ModelParams& modelParams,
-                                      OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryVelocity2D(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryData2D( FluidPointer& fluid,
-                                  OpenBoudaryPointer& openBoundary,
-                                  ModelParams& modelParams,
-                                  OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryData2D(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    /**
     * Functions to extrapolate data on open boundary buffers in 3D.
@@ -178,71 +185,80 @@ public:
     */
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryDensity3D( FluidPointer& fluid,
-                                     OpenBoudaryPointer& openBoundary,
-                                     ModelParams& modelParams,
-                                     OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryDensity3D(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryVelocity3D( FluidPointer& fluid,
-                                      OpenBoudaryPointer& openBoundary,
-                                      ModelParams& modelParams,
-                                      OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryVelocity3D(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryData3D( FluidPointer& fluid,
-                                  OpenBoudaryPointer& openBoundary,
-                                  ModelParams& modelParams,
-                                  OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryData3D(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    /**
     * General function to perform extrapolation of open boundary conditions.
     */
    template< typename FluidPointer, typename OpenBoudaryPointer >
    void
-   extrapolateOpenBoundaryData( FluidPointer& fluid,
-                                OpenBoudaryPointer& openBoundary,
-                                ModelParams& modelParams,
-                                OpenBoundaryConfig& openBoundaryParams );
+   extrapolateOpenBoundaryData(
+      FluidPointer& fluid,
+      OpenBoudaryPointer& openBoundary,
+      ModelParams& modelParams,
+      OpenBoundaryConfig& openBoundaryParams );
 
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
-   template< typename FluidPointer,
-             typename BoundaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoundaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
-   template< typename FluidPointer,
-             typename BoundaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoundaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
    finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   initializeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   initializeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
-   template< typename FluidPointer,
-             typename BoundaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoundaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
    finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
-   template< typename FluidPointer,
-             typename BoundaryPointer,
-             typename BCType = typename ModelConfig::BCType,
-             typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
+   template<
+      typename FluidPointer,
+      typename BoundaryPointer,
+      typename BCType = typename ModelConfig::BCType,
+      typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
    finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
-
 };
 
 }  // namespace TNL::SPH
@@ -253,4 +269,3 @@ public:
 //#include <SPH/Models/WCSPH_DBC/OpenBoundaryConditionsInteractions.h>
 
 #include <SPH/Models/WCSPH_DBC/OpenBoundaryConditionsDataExtrapolation.h>
-

@@ -21,9 +21,10 @@ public:
    NoOpenBC() = default;
 
    void
-   init( TNL::Config::ParameterContainer& parameters,
-         TNL::Config::ParameterContainer& parametersOpenBoundary,
-         std::string prefix )
+   init(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersOpenBoundary,
+      std::string prefix )
    {}
 
    void

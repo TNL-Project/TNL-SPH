@@ -15,7 +15,7 @@ namespace IntegrationSchemes {
 template< typename SPHConfig >
 class SymplecticVerletSchemeVariables
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -27,7 +27,13 @@ class SymplecticVerletSchemeVariables
    SymplecticVerletSchemeVariables() = default;
 
    SymplecticVerletSchemeVariables( GlobalIndexType size )
-   : rho_old( size ), r_old( size ), v_old( size ), rho_old_swap( size ), r_old_swap( size ), v_old_swap( size ) {}
+   : rho_old( size ),
+     r_old( size ),
+     v_old( size ),
+     rho_old_swap( size ),
+     r_old_swap( size ),
+     v_old_swap( size )
+   {}
 
    void
    setSize( const GlobalIndexType& size )
@@ -68,7 +74,6 @@ template< typename SPHConfig >
 class SymplecticVerletScheme
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -88,7 +93,6 @@ public:
       return "TNL::SPH::IntegrationSchemes::SymplecticVerletScheme";
    }
 
-
    template< typename FluidPointer >
    void
    predictorStep( RealType dt, FluidPointer& fluid )
@@ -106,7 +110,7 @@ public:
 
       //TODO: To resolve notes about fucked swap require initialize integrator variables with
       //      the initial condition fields.
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          //TODO: Workaround due to slow swap, otherwise r_old_viw[ i ] += v_view[ i ] dt05 and r.swap( r_old )
          //r_old_viw[ i ] += v_view[ i ] * dt05
@@ -137,7 +141,7 @@ public:
 
       const RealType dt05 = 0.5f * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          rho_old_view[ i ] += drho_view[ i ] * dt05;
       };
@@ -161,11 +165,11 @@ public:
 
       const RealType dt05 = 0.5f * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          v_view[ i ] = v_old_view[ i ] + a_view[ i ] * dt;
          r_view[ i ] = r_old_view[ i ] + ( v_view[ i ] + v_old_view[ i ] ) * dt05;
-         const RealType epsilon =  ( -1.f ) * ( drho_view[ i ] / rho_view[ i ] ) * dt;
+         const RealType epsilon = ( -1.f ) * ( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
       fluid->getParticles()->forAll( init );
@@ -181,14 +185,13 @@ public:
 
       const RealType dt05 = 0.5 * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
-         const RealType epsilon =  - ( drho_view[ i ] / rho_view[ i ] ) * dt;
+         const RealType epsilon = -( drho_view[ i ] / rho_view[ i ] ) * dt;
          rho_view[ i ] = rho_old_view[ i ] * ( ( 2.f - epsilon ) / ( 2.f + epsilon ) );
       };
       boundary->getParticles()->forAll( init );
    }
-
 
    template< typename BoundaryPointer >
    void
@@ -196,10 +199,10 @@ public:
    {
       auto rho_view = boundary->getVariables()->rho.getView();
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          if( rho_view[ i ] < 1000.f )
-            rho_view[ i ] = 1000.f; //TODO: Use referential density or move this to different part
+            rho_view[ i ] = 1000.f;  //TODO: Use referential density or move this to different part
       };
       boundary->getParticles()->forAll( init );
    }
@@ -208,7 +211,7 @@ public:
    void
    integratePredictorStep( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
    {
-      predictorStep( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+      predictorStep( timeStepping.getTimeStep(), fluid );  //TODO: Timer!
       //correctBoundaryDensity( boundary );
    }
 
@@ -216,11 +219,10 @@ public:
    void
    integrateCorrectorStep( FluidPointer& fluid, BoundaryPointer& boundary, TimeStepping& timeStepping )
    {
-      correctorStep( timeStepping.getTimeStep(), fluid ); //TODO: Timer!
+      correctorStep( timeStepping.getTimeStep(), fluid );  //TODO: Timer!
       //correctBoundaryDensity( boundary );
    }
 };
 
-} // IntegrationSchemes
+}  //namespace IntegrationSchemes
 }  // namespace TNL::SPH
-

@@ -17,15 +17,14 @@ template< typename SPHConfig, typename SPHSimulation >
 class InterpolateToGrid
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using DeviceType = typename SPHConfig::DeviceType;
 
-    using LocalIndexType = typename SPHTraitsType::LocalIndexType;
-    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
-    using RealType = typename SPHTraitsType::RealType;
-    using VectorType = typename SPHTraitsType::VectorType;
-    using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+   using LocalIndexType = typename SPHTraitsType::LocalIndexType;
+   using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
+   using RealType = typename SPHTraitsType::RealType;
+   using VectorType = typename SPHTraitsType::VectorType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -49,20 +48,26 @@ public:
     * CLLwL, for measuretool we need to load the base class.
     */
    //using ParticlesType = typename SPHSimulation::ParticlesType;
-   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
-                                             typename SPHSimulation::ParticlesType::BaseType,
-                                             typename SPHSimulation::ParticlesType >;
+   using ParticlesType = std::conditional_t<
+      SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+      typename SPHSimulation::ParticlesType::BaseType,
+      typename SPHSimulation::ParticlesType >;
 
-   InterpolateToGrid() : variables() {}
+   InterpolateToGrid()
+   : variables()
+   {}
 
    void
-   init( TNL::Config::ParameterContainer& parameters, const std::string& prefix, const int interpolatedGridEntity = SPHConfig::spaceDimension )
+   init(
+      TNL::Config::ParameterContainer& parameters,
+      const std::string& prefix,
+      const int interpolatedGridEntity = SPHConfig::spaceDimension )
    {
       //TODO: test: interpolateGridEntity can be 0 i.e point or spaceDimension, i.e. cell
       this->interpolatedGridEntity = interpolatedGridEntity;
 
       interpolationGrid.setOrigin( parameters.getXyz< VectorType >( prefix + "gridOrigin" ) );
-      interpolationGrid.setDimensions( parameters.getXyz< CoordinatesType >( prefix +"gridSize" ) );
+      interpolationGrid.setDimensions( parameters.getXyz< CoordinatesType >( prefix + "gridSize" ) );
       interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
 
       variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
@@ -85,7 +90,6 @@ public:
    save( const std::string outputFileName );
 
 protected:
-
    int interpolatedGridEntity;
 
    GridType interpolationGrid;
@@ -94,14 +98,12 @@ protected:
    ScalarArrayType gamma;
 
    VectorType gridStep;
-
-
 };
 
 template< typename SPHConfig, typename SPHSimulation >
 class SensorInterpolation
 {
-   public:
+public:
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
@@ -121,19 +123,25 @@ class SensorInterpolation
     * CLLwL, for measuretool we need to load the base class.
     */
    //using ParticlesType = typename SPHSimulation::ParticlesType;
-   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
-                                             typename SPHSimulation::ParticlesType::BaseType,
-                                             typename SPHSimulation::ParticlesType >;
+   using ParticlesType = std::conditional_t<
+      SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+      typename SPHSimulation::ParticlesType::BaseType,
+      typename SPHSimulation::ParticlesType >;
 
-   using SensorsDataArray = Containers::NDArray< RealType,  // Value
-                                                 Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
-                                                 std::index_sequence< 0, 1 >,  // Permutation
-                                                 DeviceType >;         // Device
+   using SensorsDataArray = Containers::NDArray<
+      RealType,                              // Value
+      Containers::SizesHolder< int, 0, 0 >,  // SizesHolder
+      std::index_sequence< 0, 1 >,           // Permutation
+      DeviceType >;                          // Device
 
-   SensorInterpolation() : sensorPositions( 0 ) {}
+   SensorInterpolation()
+   : sensorPositions( 0 )
+   {}
 
    SensorInterpolation( GlobalIndexType numberOfSavedSteps, std::vector< VectorType >& sensorsPoints )
-   : sensorPositions( sensorsPoints ), numberOfSensors( sensorsPoints.size() ), numberOfSavedSteps( numberOfSavedSteps )
+   : sensorPositions( sensorsPoints ),
+     numberOfSensors( sensorsPoints.size() ),
+     numberOfSavedSteps( numberOfSavedSteps )
    {
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
    }
@@ -149,7 +157,7 @@ class SensorInterpolation
       this->includeBoundary = includeBoundary;
    }
 
-   template<typename SPHKernelFunction, typename EOS, typename SPHState >
+   template< typename SPHKernelFunction, typename EOS, typename SPHState >
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
@@ -157,7 +165,6 @@ class SensorInterpolation
    save( const std::string outputFileName );
 
 protected:
-
    GlobalIndexType numberOfSensors;
    SensorsDataArray sensors;
    VectorArrayType sensorPositions;
@@ -170,7 +177,7 @@ protected:
 template< typename SPHConfig, typename SPHSimulation >
 class SensorWaterLevel
 {
-   public:
+public:
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
 
@@ -191,25 +198,33 @@ class SensorWaterLevel
     * CLLwL, for measuretool we need to load the base class.
     */
    //using ParticlesType = typename SPHSimulation::ParticlesType;
-   using ParticlesType = std::conditional_t< SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
-                                             typename SPHSimulation::ParticlesType::BaseType,
-                                             typename SPHSimulation::ParticlesType >;
+   using ParticlesType = std::conditional_t<
+      SPHSimulation::ParticlesType::specifySearchedSetExplicitly(),
+      typename SPHSimulation::ParticlesType::BaseType,
+      typename SPHSimulation::ParticlesType >;
 
-   using SensorsDataArray = Containers::NDArray< RealType,  // Value
-                                                 Containers::SizesHolder< int, 0, 0 >,     // SizesHolder
-                                                 std::index_sequence< 0, 1 >,  // Permutation
-                                                 Devices::Host >;         // Device - store data on HOST
+   using SensorsDataArray = Containers::NDArray<
+      RealType,                              // Value
+      Containers::SizesHolder< int, 0, 0 >,  // SizesHolder
+      std::index_sequence< 0, 1 >,           // Permutation
+      Devices::Host >;                       // Device - store data on HOST
 
-   SensorWaterLevel() : sensorPositions( 0 ) {}
+   SensorWaterLevel()
+   : sensorPositions( 0 )
+   {}
 
-   SensorWaterLevel( GlobalIndexType numberOfSavedSteps,
-                     std::vector< VectorType >& sensorsPoints,
-                     RealType levelIncrement,
-                     VectorType direction,
-                     RealType startLevel,
-                     RealType endLevel )
-   : sensorPositions( sensorsPoints ), numberOfSensors( sensorsPoints.size() ), numberOfSavedSteps( numberOfSavedSteps ),
-     levelIncrement( levelIncrement ), direction( direction )
+   SensorWaterLevel(
+      GlobalIndexType numberOfSavedSteps,
+      std::vector< VectorType >& sensorsPoints,
+      RealType levelIncrement,
+      VectorType direction,
+      RealType startLevel,
+      RealType endLevel )
+   : sensorPositions( sensorsPoints ),
+     numberOfSensors( sensorsPoints.size() ),
+     numberOfSavedSteps( numberOfSavedSteps ),
+     levelIncrement( levelIncrement ),
+     direction( direction )
    {
       sensors.setSizes( numberOfSavedSteps, numberOfSensors );
 
@@ -219,12 +234,13 @@ class SensorWaterLevel
    }
 
    void
-   init( std::vector< VectorType >& points,
-         const int numberOfSavedSteps,
-         RealType levelIncrement,
-         VectorType direction,
-         RealType startLevel,
-         RealType endLevel )
+   init(
+      std::vector< VectorType >& points,
+      const int numberOfSavedSteps,
+      RealType levelIncrement,
+      VectorType direction,
+      RealType startLevel,
+      RealType endLevel )
    {
       this->numberOfSensors = points.size();
       sensors.setSizes( 2 * numberOfSavedSteps, numberOfSensors );
@@ -252,7 +268,6 @@ class SensorWaterLevel
    save( const std::string outputFileName );
 
 protected:
-
    GlobalIndexType numberOfSensors;
    SensorsDataArray sensors;
    VectorArrayType sensorPositions;
@@ -271,4 +286,3 @@ protected:
 }  // namespace TNL::SPH
 
 #include <SPH/shared/Measuretool.hpp>
-

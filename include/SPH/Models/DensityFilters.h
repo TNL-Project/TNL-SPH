@@ -12,7 +12,6 @@ template< typename ParticlesType, typename ModelConfig >
 class None
 {
 public:
-
    template< typename FluidPointer, typename ModelParams >
    static void
    filterDensity( FluidPointer& fluid, ModelParams& modelParams )
@@ -23,7 +22,6 @@ template< typename ParticlesType, typename ModelConfig >
 class ShepardFilter
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< typename ModelConfig::SPHConfig >;
    using IndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -43,17 +41,13 @@ public:
       const RealType h = modelParams.h;
       const RealType rho0 = modelParams.rho0;
 
-      auto DensityFilter = [=] __cuda_callable__ ( IndexType i,
-                                                   IndexType j,
-                                                   VectorType& r_i,
-                                                   RealType* rho_i,
-                                                   RealType* gamma_i ) mutable
+      auto DensityFilter =
+         [ = ] __cuda_callable__( IndexType i, IndexType j, VectorType & r_i, RealType * rho_i, RealType * gamma_i ) mutable
       {
          const VectorType r_j = view_points[ j ];
          const VectorType r_ij = r_i - r_j;
          const RealType drs = l2Norm( r_ij );
-         if (drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             const RealType rho_j = view_rho[ j ];
             const RealType W = KernelFunction::W( drs, h );
 
@@ -62,14 +56,14 @@ public:
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( IndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
       {
          const VectorType r_i = view_points[ i ];
          RealType rho_i = 0.f;
          RealType gamma_i = 0.f;
-         ParticlesType::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i,  &gamma_i );
+         ParticlesType::NeighborsLoop::exec( i, r_i, searchInFluid, DensityFilter, &rho_i, &gamma_i );
 
-         if( gamma_i > 0.01f ){
+         if( gamma_i > 0.01f ) {
             view_rho[ i ] = rho_i / gamma_i;
          }
          else
@@ -79,7 +73,5 @@ public:
    }
 };
 
-
-} // DensityFilter
+}  //namespace DensityFilters
 }  // namespace TNL::SPH
-

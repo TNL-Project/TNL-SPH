@@ -12,8 +12,8 @@ template< typename FluidPointer >
 int
 removeParticlesOutOfGivenBox(
    FluidPointer& fluid,
-    const typename FluidPointer::ObjectType::CoordinatesType& boxOriginGlobalCoords,
-    const typename FluidPointer::ObjectType::CoordinatesType& boxDimensions )
+   const typename FluidPointer::ObjectType::CoordinatesType& boxOriginGlobalCoords,
+   const typename FluidPointer::ObjectType::CoordinatesType& boxDimensions )
 {
    using ParticleSetType = typename FluidPointer::ObjectType;
    using DeviceType = typename ParticleSetType::DeviceType;
@@ -58,11 +58,10 @@ removeParticlesOutOfGivenBox(
    const int numberOfParticlesToRemove =
       TNL::Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), checkParticlePosition, TNL::Plus() );
    fluid->getParticles()->setNumberOfParticlesToRemove(
-         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
+      fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
 
    return numberOfParticlesToRemove;
 }
 
 }  //namespace customFunctions
 }  // namespace TNL::SPH
-

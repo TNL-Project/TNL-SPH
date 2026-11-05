@@ -9,14 +9,16 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer,
-          typename BoudaryPointer,
-          typename BCType,
-          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
+template<
+   typename FluidPointer,
+   typename BoudaryPointer,
+   typename BCType,
+   typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
 void
-WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
-                                                          BoudaryPointer& boundary,
-                                                          ModelParams& modelParams )
+WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary(
+   FluidPointer& fluid,
+   BoudaryPointer& boundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -40,14 +42,20 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getView();
    auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getView();
 
-   auto BoundFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
+   auto BoundFluid = [ = ] __cuda_callable__(
+                        LocalIndexType i,
+                        LocalIndexType j,
+                        VectorType & ghostNode_i,
+                        VectorType & v_i,
+                        RealType & rho_i,
+                        RealType & p_i,
+                        Matrix * A_gn,
+                        VectorExtendedType * b_gn ) mutable
    {
       const VectorType r_j = view_points[ j ];
-      const VectorType r_ij = ghostNode_i - r_j; // GHOSTNODE_POS - FLUID_POS, originally, I had r_ij = r_j - ghostNode_i
+      const VectorType r_ij = ghostNode_i - r_j;  // GHOSTNODE_POS - FLUID_POS, originally, I had r_ij = r_j - ghostNode_i
       const RealType drs = l2Norm( r_ij );
-      if( drs <= searchRadius )
-      {
+      if( drs <= searchRadius ) {
          const RealType rho_j = view_rho[ j ];
 
          /* Interaction */
@@ -62,7 +70,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       }
    };
 
-   auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
@@ -81,13 +89,12 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    boundary->getParticles()->forAll( particleLoopBoundary );
 
    if( boundary->periodicPatches.size() > 0 ) {
-      for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ){
-
+      for( long unsigned int i = 0; i < std::size( boundary->periodicPatches ); i++ ) {
          const auto zoneParticleIndices_view = boundary->periodicPatches[ i ]->particleZone.getParticlesInZone().getConstView();
          const GlobalIndexType numberOfZoneParticles = boundary->periodicPatches[ i ]->particleZone.getNumberOfParticles();
          const VectorType shift = boundary->periodicPatches[ i ]->config.shift;
 
-         auto periodicParticleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+         auto periodicParticleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
          {
             const GlobalIndexType p = zoneParticleIndices_view[ i ];
             const VectorType v_i = view_v_bound[ p ];
@@ -110,14 +117,16 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename OpenBoundaryPointer,
-          typename BoudaryPointer,
-          typename BCType,
-          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
+template<
+   typename OpenBoundaryPointer,
+   typename BoudaryPointer,
+   typename BCType,
+   typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
 void
-WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary,
-                                                                      OpenBoundaryPointer& openBoundary,
-                                                                      ModelParams& modelParams )
+WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary(
+   BoudaryPointer& boundary,
+   OpenBoundaryPointer& openBoundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->getParticles() );
@@ -140,14 +149,20 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
    auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getView();
    auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getView();
 
-   auto BoundOpenBoundary = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& ghostNode_i, VectorType& v_i, RealType& rho_i, RealType& p_i, Matrix* A_gn, VectorExtendedType* b_gn ) mutable
+   auto BoundOpenBoundary = [ = ] __cuda_callable__(
+                               LocalIndexType i,
+                               LocalIndexType j,
+                               VectorType & ghostNode_i,
+                               VectorType & v_i,
+                               RealType & rho_i,
+                               RealType & p_i,
+                               Matrix * A_gn,
+                               VectorExtendedType * b_gn ) mutable
    {
       const VectorType r_j = view_points_openBound[ j ];
-      const VectorType r_ij = ghostNode_i - r_j; // GHOSTNODE_POS - FLUID_POS, originally, I had r_ij = r_j - ghostNode_i
+      const VectorType r_ij = ghostNode_i - r_j;  // GHOSTNODE_POS - FLUID_POS, originally, I had r_ij = r_j - ghostNode_i
       const RealType drs = l2Norm( r_ij );
-      if( drs <= searchRadius )
-      {
+      if( drs <= searchRadius ) {
          const RealType rho_j = view_rho_openBound[ j ];
 
          /* Interaction */
@@ -162,7 +177,7 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       }
    };
 
-   auto particleLoopBoundary = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   auto particleLoopBoundary = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType v_i = view_v_bound[ i ];
       const RealType rho_i = view_rho_bound[ i ];
@@ -178,19 +193,21 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoi
       view_rhoGradRhoGhostNode_bound[ i ] += b_gn;
       view_correctionMatrices_bound[ i ] += A_gn;
    };
-   boundary->getParticles()->forAll( particleLoopBoundary ); //FIXME: This should use zone with boundary particles
+   boundary->getParticles()->forAll( particleLoopBoundary );  //FIXME: This should use zone with boundary particles
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer,
-          typename BoundaryPointer,
-          typename BCType,
-          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
+template<
+   typename FluidPointer,
+   typename BoundaryPointer,
+   typename BCType,
+   typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled >
 
 void
-WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
-                                                                  BoundaryPointer& boundary,
-                                                                  ModelParams& modelParams )
+WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction(
+   FluidPointer& fluid,
+   BoundaryPointer& boundary,
+   ModelParams& modelParams )
 {
    const RealType rho0 = modelParams.rho0;
    const RealType mdbcExtrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;
@@ -201,7 +218,7 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& 
    const auto view_rhoGradRhoGhostNode_bound = boundary->getVariables()->rhoGradRho_gn.getConstView();
    const auto view_correctionMatrices_bound = boundary->getVariables()->cMatrix_gn.getConstView();
 
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points_bound[ i ];
       const VectorType ghostNode_i = view_ghostNode_bound[ i ];
@@ -227,8 +244,7 @@ WCSPH_DBC< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& 
 
       view_rho_bound[ i ] = rho_bound;
    };
-   boundary->getParticles()->forAll( particleLoop ); //TODO: forloop?
+   boundary->getParticles()->forAll( particleLoop );  //TODO: forloop?
 }
 
 }  // namespace TNL::SPH
-

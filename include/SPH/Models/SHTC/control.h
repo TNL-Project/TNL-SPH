@@ -5,7 +5,7 @@
 
 #include <SPH/Models/DiffusiveTerms.h>
 #include <SPH/Kernels.h>
-#include <SPH/Models/EquationOfState.h> //FIXME: Added due to complaining API.
+#include <SPH/Models/EquationOfState.h>  //FIXME: Added due to complaining API.
 #include <SPH/Models/SHTC/stress.h>
 #include <SPH/Models/SHTC/IntegrationSchemes/ExplicitEulerScheme.h>
 #include <SPH/SPHTraits.h>
@@ -22,7 +22,6 @@ template< typename SPHDefs >
 class SHTCConfig
 {
 public:
-
    using SPHConfig = typename SPHDefs::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
@@ -59,7 +58,7 @@ public:
       mass = parameters.getParameter< double >( "mass" );
       delta = parameters.getParameter< double >( "delta" );
       dynamicViscosity = parameters.getParameter< double >( "dynamicViscosity" );
-      speedOfSound = parameters.getParameter< double >( "speedOfSound_bulk" ); //FIXME: keep default name due to interaces
+      speedOfSound = parameters.getParameter< double >( "speedOfSound_bulk" );  //FIXME: keep default name due to interaces
       speedOfSound_bulk = parameters.getParameter< double >( "speedOfSound_bulk" );
       speedOfSound_shear = parameters.getParameter< double >( "speedOfSound_shear" );
       rho0 = parameters.getParameter< double >( "rho0" );
@@ -97,7 +96,7 @@ public:
    // Define equation of state and its constants.
    using Stress = typename SPHDefs::Stress;
    //speedOfSound - numerical speed of sound used in the SPH calculations [m/s]
-   RealType speedOfSound = 0.f; //FIXME - keep default name due to interfaces
+   RealType speedOfSound = 0.f;  //FIXME - keep default name due to interfaces
    RealType speedOfSound_bulk = 0.f;
    RealType speedOfSound_shear = 0.f;
    //rho0 - referential density of the fluid [kg/m^3]
@@ -134,7 +133,8 @@ public:
 };
 
 template< typename ModelParams >
-void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
+void
+writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 {
    logger.writeHeader( "TNL::SPH::SHTC model parameters" );
    logger.writeParameter( "Resolution parameters", "" );
@@ -143,11 +143,14 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Spatial resolution (h/dp):", modelParams.h / modelParams.dp, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Model parameters", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::DiffusiveTerm, DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::DiffusiveTerm,
+                    DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::Stress, Stress::FluidStress< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::Stress, Stress::FluidStress< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Stress model:", "TNL::SPH::FluidStress", 1 );
    }
    logger.writeParameter( "Build speed of sound (speedOfSound_bulk):", modelParams.speedOfSound_bulk, 1 );
@@ -155,13 +158,15 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Relaxation time (tau):", modelParams.tau, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
    logger.writeParameter( "Time integration", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::IntegrationScheme, IntegrationSchemes::ExplicitEulerScheme< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::ExplicitEulerScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::SHTC::ExplicitEulerScheme", 1 );
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::VariableTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
       logger.writeParameter( "Minimal time step (dtMin):", modelParams.dtMin, 1 );
@@ -171,4 +176,3 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 }
 
 }  // namespace TNL::SPH
-

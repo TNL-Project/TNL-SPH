@@ -141,20 +141,21 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
       const CoordinatesType cc = cg - globalOriginCoordinates;
       for( int d = 0; d < dim; d++ ) {
          if( cc[ d ] < 0 || cc[ d ] >= dimensions[ d ] ) {
-            printf( "  [OUT] i=%d pos=(%.3f,%.3f,%.3f) cell=(%d,%d,%d) local=(%d,%d,%d) dims=(%d,%d,%d)\n",
-                    i,
-                    r[ 0 ],
-                    r[ 1 ],
-                    r[ 2 ],
-                    cg[ 0 ],
-                    cg[ 1 ],
-                    cg[ 2 ],
-                    cc[ 0 ],
-                    cc[ 1 ],
-                    cc[ 2 ],
-                    dimensions[ 0 ],
-                    dimensions[ 1 ],
-                    dimensions[ 2 ] );
+            printf(
+               "  [OUT] i=%d pos=(%.3f,%.3f,%.3f) cell=(%d,%d,%d) local=(%d,%d,%d) dims=(%d,%d,%d)\n",
+               i,
+               r[ 0 ],
+               r[ 1 ],
+               r[ 2 ],
+               cg[ 0 ],
+               cg[ 1 ],
+               cg[ 2 ],
+               cc[ 0 ],
+               cc[ 1 ],
+               cc[ 2 ],
+               dimensions[ 0 ],
+               dimensions[ 1 ],
+               dimensions[ 2 ] );
             return 1;
          }
       }
@@ -174,4 +175,3 @@ checkParticlesOutDomain( const ParticleSetType& particles, const std::string& na
 
 }  // namespace Debugging
 }  // namespace TNL::SPH
-

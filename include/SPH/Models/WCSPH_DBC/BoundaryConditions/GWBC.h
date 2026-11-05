@@ -8,18 +8,17 @@
 namespace TNL::SPH {
 
 template< typename ParticleSystem, typename SPHFluidConfig >
-template< typename FluidPointer,
-          typename BoudaryPointer,
-          typename ModelConfig,
-          typename BCType,
-          typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled >
+template<
+   typename FluidPointer,
+   typename BoudaryPointer,
+   typename ModelConfig,
+   typename BCType,
+   typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled >
 void
-WCSPH_DBC< ParticleSystem, SPHFluidConfig >::updateSolidBoundary( FluidPointer& fluid,
-                                                                  BoudaryPointer& boundary,
-                                                                  ModelParams& sphState )
-{
-
-}
+WCSPH_DBC< ParticleSystem, SPHFluidConfig >::updateSolidBoundary(
+   FluidPointer& fluid,
+   BoudaryPointer& boundary,
+   ModelParams& sphState )
+{}
 
 }  // namespace TNL::SPH
-

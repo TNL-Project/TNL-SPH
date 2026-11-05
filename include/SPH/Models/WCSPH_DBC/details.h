@@ -96,7 +96,7 @@ getCorrectionMatrix( RealType W, VectorType gradW, VectorType r_ij, RealType V )
    using Matrix = Matrices::StaticMatrix< RealType, VectorType::getSize() + 1, VectorType::getSize() + 1 >;
    Matrix A = 0.f;
 
-   if constexpr( VectorType::getSize() == 2 ){
+   if constexpr( VectorType::getSize() == 2 ) {
       A( 0, 0 ) = W * V;
       A( 0, 1 ) = r_ij[ 0 ] * W * V;
       A( 0, 2 ) = r_ij[ 1 ] * W * V;
@@ -109,7 +109,7 @@ getCorrectionMatrix( RealType W, VectorType gradW, VectorType r_ij, RealType V )
       A( 2, 1 ) = r_ij[ 0 ] * gradW[ 1 ] * V;
       A( 2, 2 ) = r_ij[ 1 ] * gradW[ 1 ] * V;
    }
-   else if constexpr( VectorType::getSize() == 3 ){
+   else if constexpr( VectorType::getSize() == 3 ) {
       A( 0, 0 ) = W * V;
       A( 0, 1 ) = r_ij[ 0 ] * W * V;
       A( 0, 2 ) = r_ij[ 1 ] * W * V;
@@ -142,12 +142,12 @@ getVariableValueAndGradient( RealType W, VectorType gradW, VariableType f, RealT
    using VectorExtendedType = Containers::StaticVector< VectorType::getSize() + 1, RealType >;
    VectorExtendedType f_gradf = 0.f;
 
-   if constexpr( VectorType::getSize() == 2 ){
+   if constexpr( VectorType::getSize() == 2 ) {
       f_gradf[ 0 ] = f * W * V;
       f_gradf[ 1 ] = gradW[ 0 ] * f * V;
       f_gradf[ 2 ] = gradW[ 1 ] * f * V;
    }
-   else if constexpr( VectorType::getSize() == 3 ){
+   else if constexpr( VectorType::getSize() == 3 ) {
       f_gradf[ 0 ] = f * W * V;
       f_gradf[ 1 ] = gradW[ 0 ] * f * V;
       f_gradf[ 2 ] = gradW[ 1 ] * f * V;
@@ -164,22 +164,18 @@ interpolateGhostNode( VectorExtendedType& variableValAndGrad, VectorType& dist )
 {
    using RealType = typename VectorType::RealType;
 
-   if constexpr( VectorType::getSize() == 2 ){
-      const RealType valInterpolated = variableValAndGrad[ 0 ] + \
-                                       variableValAndGrad[ 1 ] * dist[ 0 ] + \
-                                       variableValAndGrad[ 2 ] * dist[ 1 ];
+   if constexpr( VectorType::getSize() == 2 ) {
+      const RealType valInterpolated =
+         variableValAndGrad[ 0 ] + variableValAndGrad[ 1 ] * dist[ 0 ] + variableValAndGrad[ 2 ] * dist[ 1 ];
       return valInterpolated;
    }
-   else if constexpr( VectorType::getSize() == 3 ){
-      const RealType valInterpolated = variableValAndGrad[ 0 ] + \
-                                       variableValAndGrad[ 1 ] * dist[ 0 ] + \
-                                       variableValAndGrad[ 2 ] * dist[ 1 ] + \
-                                       variableValAndGrad[ 3 ] * dist[ 2 ];
+   else if constexpr( VectorType::getSize() == 3 ) {
+      const RealType valInterpolated = variableValAndGrad[ 0 ] + variableValAndGrad[ 1 ] * dist[ 0 ]
+                                     + variableValAndGrad[ 2 ] * dist[ 1 ] + variableValAndGrad[ 3 ] * dist[ 2 ];
       return valInterpolated;
    }
 }
 
-} // ghostNodeDetails
+}  //namespace ghostNodeDetail
 
 }  // namespace TNL::SPH
-

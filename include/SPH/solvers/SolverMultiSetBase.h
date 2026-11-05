@@ -30,7 +30,6 @@ template< typename Model >
 class SolverMultiSetBase
 {
 public:
-
    using DeviceType = typename Model::DeviceType;
    using ModelType = Model;
    using ModelParams = typename ModelType::ModelParams;
@@ -54,8 +53,8 @@ public:
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
    using OpenBoundaryVariables = typename Model::OpenBoundaryVariables;
    using OpenBoundaryConfigType = typename Model::OpenBoundaryConfig;
-   using OpenBoundary = OpenBoundary<
-      ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
+   using OpenBoundary =
+      OpenBoundary< ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
    using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
    using OpenBoundaryModel = typename Model::OpenBoundaryModel;
 
@@ -64,7 +63,9 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SolverMultiSetBase< Model > >;
 
-   SolverMultiSetBase( std::ostream& out = std::cout ) : logger( 100, out ) {};
+   SolverMultiSetBase( std::ostream& out = std::cout )
+   : logger( 100, out )
+   {}
 
    void
    initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
@@ -253,10 +254,8 @@ public:
    std::string loadBalancingMeasure;
    int loadBalancingStepInterval = 1;
 #endif
-
 };
 
 }  // namespace TNL::SPH
 
 #include <SPH/solvers/SolverMultiSetBase.hpp>
-

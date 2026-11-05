@@ -7,13 +7,10 @@
 
 namespace TNL::SPH {
 
-template< typename ParticleSystem,
-          typename SPHCaseConfig,
-          typename Variables,
-          typename IntegratorVariables >
+template< typename ParticleSystem, typename SPHCaseConfig, typename Variables, typename IntegratorVariables >
 class Boundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >
 {
-   public:
+public:
    using BaseType = ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >;
    using GlobalIndexType = typename BaseType::GlobalIndexType;
    using RealType = typename BaseType::RealType;
@@ -22,7 +19,8 @@ class Boundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, I
    Boundary() = default;
 
    Boundary( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
-   : ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells ) {};
+   : ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells )
+   {}
 
    VariablesPointerType&
    getBoundaryVariables()
@@ -53,4 +51,3 @@ class Boundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, I
 };
 
 }  // namespace TNL::SPH
-

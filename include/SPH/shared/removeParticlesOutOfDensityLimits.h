@@ -20,7 +20,7 @@ removeParticlesOutOfDensityLimits( FluidPointer& fluid, ModelParams& modelParams
    auto r_view = fluid->getPoints().getView();
    auto rho_view = fluid->getVariables()->rho.getView();
 
-   auto checkParticleDensity  = [ = ] __cuda_callable__( int i ) mutable
+   auto checkParticleDensity = [ = ] __cuda_callable__( int i ) mutable
    {
       // if the particle is already removed, skip
       if( r_view[ i ][ 0 ] == FLT_MAX )
@@ -35,13 +35,12 @@ removeParticlesOutOfDensityLimits( FluidPointer& fluid, ModelParams& modelParams
       }
    };
    const int numberOfParticlesToRemove =
-      TNL::Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), checkParticleDensity , TNL::Plus() );
+      TNL::Algorithms::reduce< DeviceType >( 0, fluid->getNumberOfParticles(), checkParticleDensity, TNL::Plus() );
    fluid->getParticles()->setNumberOfParticlesToRemove(
-         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
+      fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToRemove );
 
    return numberOfParticlesToRemove;
 }
 
 }  //namespace customFunctions
 }  // namespace TNL::SPH
-

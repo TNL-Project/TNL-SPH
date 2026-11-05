@@ -32,7 +32,7 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    try {
       initialize< SimulationType >( argc, argv, this->cliParams, this->cliConfig, params, this->config );
    }
-   catch ( ... ) {
+   catch( ... ) {
       std::cerr << std::endl;
    }
 
@@ -44,18 +44,19 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
-    std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
-    const std::string distributedDomainInline = params.template getParameter< std::string >( "distributed-domain" );
-    parseDistributedConfig( configDistributedPath, this->parametersDistributed, this->configDistributed, log, distributedDomainInline );
+   std::string configDistributedPath = params.template getParameter< std::string >( "distributed-config" );
+   const std::string distributedDomainInline = params.template getParameter< std::string >( "distributed-domain" );
+   parseDistributedConfig(
+      configDistributedPath, this->parametersDistributed, this->configDistributed, log, distributedDomainInline );
 
    initDistributedParticleSets( params, this->parametersDistributed, log );
 
    this->loadBalancingMeasure = params.template getParameter< std::string >( "load-balancing-measure" );
    this->loadBalancingStepInterval = params.template getParameter< int >( "load-balancing-step-inteval" );
    this->fluid()->getDistributedParticles()->setParticlesCountResizeThreshold(
-         params.template getParameter< float >( "number-of-particles-balancing-coef" ) );
+      params.template getParameter< float >( "number-of-particles-balancing-coef" ) );
    this->fluid()->getDistributedParticles()->setCompTimeResizePercentageThreshold(
-         params.template getParameter< float >( "computational-time-balancing-coef" ) );
+      params.template getParameter< float >( "computational-time-balancing-coef" ) );
 
    this->timeMeasurement.addTimer( "synchronize", false );
    this->timeMeasurement.addTimer( "rebalance", false );
@@ -65,17 +66,17 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
 
    const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
    const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
-   if( hasOpenBcFile || hasOpenBcInline ){
+   if( hasOpenBcFile || hasOpenBcInline ) {
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
-    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
-    if( hasPeriodicBcFile || hasPeriodicBcInline ){
-       this->initPeriodicBoundaryPatches( params, log );
+   const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+   const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+   if( hasPeriodicBcFile || hasPeriodicBcInline ) {
+      this->initPeriodicBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
@@ -125,19 +126,21 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
-   this->fluid()->initialize( parameters.getParameter< int >( "numberOfParticles" ),
-                               parameters.getParameter< int >( "numberOfAllocatedParticles" ),
-                               searchRadius,
-                               dimensions,
-                               domainOrigin );
+   this->fluid()->initialize(
+      parameters.getParameter< int >( "numberOfParticles" ),
+      parameters.getParameter< int >( "numberOfAllocatedParticles" ),
+      searchRadius,
+      dimensions,
+      domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluid()->getParticles()->setParticleSetLabel( 0 );
 
-   this->boundary()->initialize( parameters.getParameter< int >( "numberOfBoundaryParticles" ),
-                                  parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
-                                  searchRadius,
-                                  dimensions,
-                                  domainOrigin );
+   this->boundary()->initialize(
+      parameters.getParameter< int >( "numberOfBoundaryParticles" ),
+      parameters.getParameter< int >( "numberOfAllocatedBoundaryParticles" ),
+      searchRadius,
+      dimensions,
+      domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundary()->getParticles()->setParticleSetLabel( 1 );
 }
@@ -145,9 +148,10 @@ SolverMultiSet< Model >::initParticleSets( TNL::Config::ParameterContainer& para
 #ifdef HAVE_MPI
 template< typename Model >
 void
-SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
-                                                       TNL::Config::ParameterContainer& parametersDistributed,
-                                                       TNL::Logger& logger )
+SolverMultiSet< Model >::initDistributedParticleSets(
+   TNL::Config::ParameterContainer& parameters,
+   TNL::Config::ParameterContainer& parametersDistributed,
+   TNL::Logger& logger )
 {
    this->numberOfSubsets = 1;
    this->fluidSets.resize( 1 );
@@ -155,8 +159,10 @@ SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterCont
 
    logger.writeHeader( "SPH simulation initialization." );
    int rank = TNL::MPI::GetRank();
-   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
-   Containers::StaticVector< 2, int > subdomainCoordinates = distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
+   Containers::StaticVector< 2, int > numberOfSubdomains =
+      parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+   Containers::StaticVector< 2, int > subdomainCoordinates =
+      distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
    const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
    logger.writeParameter( "Initializing rank: ", rank );
    logger.writeParameter( "Initializing subdomain: ", subdomainCoordinates );
@@ -170,37 +176,41 @@ SolverMultiSet< Model >::initDistributedParticleSets( TNL::Config::ParameterCont
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );
-   const CoordinatesType subdomainGridDimension = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
-   const CoordinatesType subdomainGridOriginGlobalCoords = parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
+   const CoordinatesType subdomainGridDimension =
+      parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+   const CoordinatesType subdomainGridOriginGlobalCoords =
+      parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
 
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
-   this->fluid()->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
-                                            parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
-                                            searchRadius,
-                                            domainGridDimension,
-                                            domainOrigin,
-                                            subdomainGridDimension,
-                                            subdomainGridOriginGlobalCoords,
-                                            numberOfOverlapLayers,
-                                            numberOfSubdomains,
-                                            subdomainOrigin,
-                                            logger );
+   this->fluid()->initializeAsDistributed(
+      parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
+      parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+      searchRadius,
+      domainGridDimension,
+      domainOrigin,
+      subdomainGridDimension,
+      subdomainGridOriginGlobalCoords,
+      numberOfOverlapLayers,
+      numberOfSubdomains,
+      subdomainOrigin,
+      logger );
    this->fluid()->getDistributedParticles()->writeProlog( logger );
    this->fluid()->setCommunicator( this->communicator );
    this->fluid()->getDistributedParticlesSynchronizer().initialize( this->fluid()->getDistributedParticles() );
 
    logger.writeParameter( "initDistributed:", "boundary->initialize" );
-   this->boundary()->initializeAsDistributed( parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
-                                               parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
-                                               searchRadius,
-                                               domainGridDimension,
-                                               domainOrigin,
-                                               subdomainGridDimension,
-                                               subdomainGridOriginGlobalCoords,
-                                               numberOfOverlapLayers,
-                                               numberOfSubdomains,
-                                               subdomainOrigin,
-                                               logger );
+   this->boundary()->initializeAsDistributed(
+      parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
+      parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+      searchRadius,
+      domainGridDimension,
+      domainOrigin,
+      subdomainGridDimension,
+      subdomainGridOriginGlobalCoords,
+      numberOfOverlapLayers,
+      numberOfSubdomains,
+      subdomainOrigin,
+      logger );
    this->boundary()->getDistributedParticles()->writeProlog( logger );
    this->boundary()->setCommunicator( this->communicator );
    this->boundary()->getDistributedParticlesSynchronizer().initialize( this->boundary()->getDistributedParticles() );
@@ -211,21 +221,21 @@ template< typename Model >
 void
 SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
-   if( parameters.getParameter< int >( "numberOfParticles" ) != 0 ){
+   if( parameters.getParameter< int >( "numberOfParticles" ) != 0 ) {
       logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
       this->fluid()->template readParticlesAndVariables< typename BaseType::Reader >(
          parameters.getParameter< std::string >( "fluid-particles" ) );
    }
-   else{
+   else {
       logger.writeParameter( "Reading fluid particles:", "NO PARTICLES TO READ" );
    }
 
-   if( parameters.getParameter< int >( "numberOfBoundaryParticles" ) != 0 ){
+   if( parameters.getParameter< int >( "numberOfBoundaryParticles" ) != 0 ) {
       logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
       this->boundary()->template readParticlesAndVariables< typename BaseType::Reader >(
          parameters.getParameter< std::string >( "boundary-particles" ) );
    }
-   else{
+   else {
       logger.writeParameter( "Reading boundary particles:", "NO PARTICLES TO READ" );
    }
 
@@ -233,12 +243,14 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
    if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         if( this->parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ) != 0 ){
-            logger.writeParameter( "Reading open boundary particles:", this->parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+         if( this->parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ) != 0 ) {
+            logger.writeParameter(
+               "Reading open boundary particles:",
+               this->parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
             this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::Reader >(
                this->parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
          }
-         else{
+         else {
             logger.writeParameter( "Reading open boundary particles:", "NO PARTICLES TO READ" );
          }
       }
@@ -248,18 +260,22 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
 #ifdef HAVE_MPI
 template< typename Model >
 void
-SolverMultiSet< Model >::readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
-                                                        TNL::Config::ParameterContainer& parametersDistributed,
-                                                        TNL::Logger& logger )
+SolverMultiSet< Model >::readParticleFilesDistributed(
+   TNL::Config::ParameterContainer& parameters,
+   TNL::Config::ParameterContainer& parametersDistributed,
+   TNL::Logger& logger )
 {
    int rank = TNL::MPI::GetRank();
-   Containers::StaticVector< 2, int > numberOfSubdomains = parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+   Containers::StaticVector< 2, int > numberOfSubdomains =
+      parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
    const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
 
-   logger.writeParameter( "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
+   logger.writeParameter(
+      "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
    this->fluid()->template readParticlesAndVariables< typename BaseType::Reader >(
       parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
-   logger.writeParameter( "Reading boundary particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
+   logger.writeParameter(
+      "Reading boundary particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
    this->boundary()->template readParticlesAndVariables< typename BaseType::Reader >(
       parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
 

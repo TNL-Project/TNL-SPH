@@ -19,7 +19,6 @@ template< typename Particles, typename ModelConfig >
 class RSPH : public SPHMultisetSolverTemplate< Particles, ModelConfig >
 {
 public:
-
    using Model = RSPH< Particles, ModelConfig >;
    using ModelParams = RSPHConfig< ModelConfig >;
    using ParticlesType = Particles;
@@ -63,8 +62,9 @@ public:
    /**
     * Compute pressure from density.
     */
-   template< typename EquationOfState = EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >,
-             typename PhysicalObjectPointer >
+   template<
+      typename EquationOfState = EquationsOfState::TaitWeaklyCompressibleEOS< SPHConfig >,
+      typename PhysicalObjectPointer >
    void
    computePressureFromDensity( PhysicalObjectPointer& variables, ModelParams& modelParams );
 
@@ -87,25 +87,26 @@ public:
     */
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
    /**
     * Perform postinteraction procedures.
     */
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
    /**
     * Perform postinteraction procedures.
     */
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
-
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 };
 
 }  // namespace TNL::SPH
 
 #include <SPH/Models/RSPH/Interactions.hpp>
-

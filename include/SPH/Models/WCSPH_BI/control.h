@@ -61,10 +61,14 @@ public:
       config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
       config.addEntry< double >( "elasticFactor", "Elastic bounce conservation factor.", 1.f );
       config.addEntry< double >( "r_boxFactor", "Factor of elastic bounce effective box.", 1.5f );
-       config.addEntry< double >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
-       // parameters of local-timestepping multiresolution band refresh
-       config.addEntry< double >( "lts-theta", "LTS band blend factor for the midpoint state refresh: 0 = keep the sync-time anchor state, 1 = fully current neighbor state.", 0.5 );
-       // parameters of midpoint integration scheme
+      config.addEntry< double >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
+      // parameters of local-timestepping multiresolution band refresh
+      config.addEntry< double >(
+         "lts-theta",
+         "LTS band blend factor for the midpoint state refresh: 0 = keep the sync-time anchor state, 1 = fully current "
+         "neighbor state.",
+         0.5 );
+      // parameters of midpoint integration scheme
       config.addEntry< int >( "midpointMaxInterations", "Number of alowed midpoint iterations.", 30 );
       config.addEntry< double >( "midpointResidualTolerance", "Midpoint iteration residual threshold.", 1e-5 );
       config.addEntry< double >( "midpointRelaxCoef", "Midpoint relaxation coefficient.", 0.f );
@@ -100,9 +104,9 @@ public:
       enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
       elasticFactor = parameters.getParameter< double >( "elasticFactor" );
       r_boxFactor = parameters.getParameter< double >( "r_boxFactor" );
-       minimalDistanceFactor = parameters.getParameter< double >( "minimalDistanceFactor" );
-       ltsTheta = parameters.getParameter< double >( "lts-theta" );
-       // parameters of midpoint integration scheme
+      minimalDistanceFactor = parameters.getParameter< double >( "minimalDistanceFactor" );
+      ltsTheta = parameters.getParameter< double >( "lts-theta" );
+      // parameters of midpoint integration scheme
       midpointMaxInterations = parameters.getParameter< int >( "midpointMaxInterations" );
       midpointResidualTolerance = parameters.getParameter< double >( "midpointResidualTolerance" );
       midpointRelaxCoef = parameters.getParameter< double >( "midpointRelaxCoef" );
@@ -118,18 +122,18 @@ public:
    WCSPH_BIConfig
    refined( const RealType searchRadius ) const
    {
-       WCSPH_BIConfig refined = *this;
-       const RealType refinementFactor = searchRadius / refined.searchRadius;
-       const unsigned int dim = SPHConfig::spaceDimension;
+      WCSPH_BIConfig refined = *this;
+      const RealType refinementFactor = searchRadius / refined.searchRadius;
+      const unsigned int dim = SPHConfig::spaceDimension;
 
-       refined.refinementFactor = refinementFactor;
-       refined.h = refinementFactor * h;
-       refined.mass = std::pow( refinementFactor, dim ) * mass;
-       refined.massBoundary = std::pow( refinementFactor, dim ) * massBoundary;
-       refined.boundaryElementSize = std::pow( refinementFactor, dim - 1 ) * boundaryElementSize;
-       refined.dp = refinementFactor * dp;
-       refined.searchRadius = refinementFactor * searchRadius;
-       return refined;
+      refined.refinementFactor = refinementFactor;
+      refined.h = refinementFactor * h;
+      refined.mass = std::pow( refinementFactor, dim ) * mass;
+      refined.massBoundary = std::pow( refinementFactor, dim ) * massBoundary;
+      refined.boundaryElementSize = std::pow( refinementFactor, dim - 1 ) * boundaryElementSize;
+      refined.dp = refinementFactor * dp;
+      refined.searchRadius = refinementFactor * searchRadius;
+      return refined;
    }
 
    //refinementFactor - refinement factor between two consecutive levels [-]
@@ -190,11 +194,12 @@ public:
    RealType elasticFactor = 1.f;
    //r_box  r_box = r_boxFactor * dp;
    RealType r_boxFactor = 1.5f;
-    //minimalDistanceFactor -
-    RealType minimalDistanceFactor = 0.5f;
+   //minimalDistanceFactor -
+   RealType minimalDistanceFactor = 0.5f;
 
-    //ltsTheta - blend factor of the LTS band state refresh (0 = keep the sync-time anchors, 1 = fully current neighbor state) [-]
-    RealType ltsTheta = 0.5f;
+   //ltsTheta - blend factor of the LTS band state refresh (0 = keep the sync-time anchors, 1 = fully current neighbor state)
+   //[-]
+   RealType ltsTheta = 0.5f;
 
    //Type of integration scheme
    using IntegrationScheme = typename SPHDefs::IntegrationScheme;
@@ -245,62 +250,74 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Boundary particle mass (massBoundary):", modelParams.massBoundary, 1 );
    logger.writeParameter( "Size of boundary elements (boundaryElementSize):", modelParams.boundaryElementSize, 1 );
    logger.writeParameter( "Model parameters", "" );
-   if constexpr( std::is_same_v< typename ModelParams::PressureGradient,
-                                 PressureGradients::Symmetric< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::PressureGradient,
+                    PressureGradients::Symmetric< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Pressure gradient:", "TNL::SPH::Symmetric", 1 );
-   if constexpr( std::is_same_v< typename ModelParams::PressureGradient,
-                                 PressureGradients::TIC< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::PressureGradient,
+                    PressureGradients::TIC< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Pressure gradient:", "TNL::SPH::TIC", 1 );
-   if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
-                                 DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::DiffusiveTerm,
+                    DiffusiveTerms::MolteniDiffusiveTerm< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Diffusive term:", "TNL::SPH::MolteniDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
-   if constexpr( std::is_same_v< typename ModelParams::DiffusiveTerm,
-                                 DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::DiffusiveTerm,
+                    DiffusiveTerms::FourtakasDiffusiveTerm< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Diffusive term:", "TNL::SPH::FourtakasDiffusiveTerm", 1 );
       logger.writeParameter( "Diffusive term coefficient (delta):", modelParams.delta, 1 );
    }
-   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 BIViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    BIViscousTerms::ArtificialViscosity< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Viscous term:", "TNL::SPH::ArtificialViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
    }
-   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 BIViscousTerms::PhysicalViscosity_MVT< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    BIViscousTerms::PhysicalViscosity_MVT< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity_MVT", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
-
    }
-   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm,
-                                 BIViscousTerms::PhysicalViscosity_MGVT< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    BIViscousTerms::PhysicalViscosity_MGVT< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Viscous term:", "TNL::SPH::PhysicalViscosity_MGVT", 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
-
    }
-   if constexpr( std::is_same_v< typename ModelParams::ViscousTerm, ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::ViscousTerm,
+                    ViscousTerms::CombinedViscosity< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Viscous term:", "TNL::SPH::CombinedViscosity", 1 );
       logger.writeParameter( "Artificial vicosity coefficient (alpha):", modelParams.alpha, 1 );
       logger.writeParameter( "Dynamic viscosity (dynamicViscosity):", modelParams.dynamicViscosity, 1 );
    }
-   if constexpr( std::is_same_v< typename ModelParams::BoundaryViscousTerm,
-                                 BoundaryViscousTerms::NewtonViscousLaw< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::BoundaryViscousTerm,
+                    BoundaryViscousTerms::NewtonViscousLaw< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Boundary viscous term:", "TNL::SPH::NewtonViscousLaw", 1 );
       logger.writeParameter( "BVT scale coefficient:", modelParams.scaleBVTCoef, 1 );
    }
-   if constexpr( std::is_same_v< typename ModelParams::EOS,
-                                 EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::EOS,
+                    EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
    {
       logger.writeParameter( "Equation of state:", "TNL::SPH::TaitWeaklyCompressibleEOS", 1 );
       logger.writeParameter( "Coefficient of EOS (coefB): ", modelParams.coefB );
    }
-   if constexpr( std::is_same_v< typename ModelParams::EOS,
-                                 EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::EOS,
+                    EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
@@ -309,22 +326,26 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    if constexpr( std::is_same_v< typename ModelParams::BCType, WCSPH_BCTypes::BI_numeric > )
       boundaryConditionsTypes = "TNL::SPH::WCSPH_BI::BI_numeric";
    logger.writeParameter( "Boundary condition type", boundaryConditionsTypes );
-   if( modelParams.enableElasticBounce == true ){
+   if( modelParams.enableElasticBounce == true ) {
       logger.writeParameter( "Elastic bounce boundary correction:", "Enabled" );
       logger.writeParameter( "Elastic bounce fact. (elasticFactor):", modelParams.elasticFactor, 1 );
       logger.writeParameter( "Bounce efect area fact. (r_boxFactor):", modelParams.r_boxFactor, 1 );
-    logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
-    }
-    logger.writeParameter( "LTS band blend factor (lts-theta):", modelParams.ltsTheta, 1 );
-    logger.writeParameter( "Time integration", "" );
-   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
-                                 IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
+      logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
+   }
+   logger.writeParameter( "LTS band blend factor (lts-theta):", modelParams.ltsTheta, 1 );
+   logger.writeParameter( "Time integration", "" );
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::VerletScheme", 1 );
-   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
-                                 IntegrationSchemes::SymplecticVerletScheme< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::SymplecticVerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::SymplecticVerletScheme", 1 );
-   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
-                                 IntegrationSchemes::MidpointScheme< typename ModelParams::SPHConfig > > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::MidpointScheme< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::MidpointScheme", 1 );
       logger.writeParameter( "Max. midpoint iteractions: ", modelParams.midpointMaxInterations, 1 );
       logger.writeParameter( "Residual tolerance: ", modelParams.midpointResidualTolerance, 1 );
@@ -333,8 +354,9 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Residual minimal decay: ", modelParams.midpointResidualMinimalDecay, 1 );
       logger.writeParameter( "Midpoint relax coef, icrement: ", modelParams.midpointRelaxCoefIncrement, 1 );
    }
-   if constexpr( std::is_same_v< typename ModelParams::IntegrationScheme,
-                                 IntegrationSchemes::RK4Scheme< typename ModelParams::SPHConfig > > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::RK4Scheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::WCSPH_BI::RK4Scheme", 1 );
    if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
@@ -350,4 +372,3 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 }
 
 }  // namespace TNL::SPH
-

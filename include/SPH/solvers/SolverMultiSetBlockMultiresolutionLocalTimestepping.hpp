@@ -20,7 +20,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::init( int argc, ch
    try {
       initialize< typename BaseType::SimulationType >( argc, argv, this->cliParams, this->cliConfig, params, this->config );
    }
-   catch ( ... ) {
+   catch( ... ) {
       std::cerr << std::endl;
    }
 
@@ -68,12 +68,12 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBas
    this->numberOfSubsets = params.template getParameter< int >( "numberOfSubdomains" );
    const std::string configSubdomainsPath = params.template getParameter< std::string >( "subdomains-config" );
    const std::string subdomainsInline = params.template getParameter< std::string >( "subdomains" );
-    for( int subset = 0; subset < this->numberOfSubsets; subset++ )
-       TNL::SPH::configSubdomain( subset, this->configSubdomains );
-    for( int bufferIdx = 0; bufferIdx < 2 * this->numberOfSubsets; bufferIdx++ ) {
-       TNL::SPH::configMultiresolutionBuffer( bufferIdx, this->configSubdomains );
-       TNL::SPH::configBoundaryGhostBuffer( bufferIdx, this->configSubdomains );
-    }
+   for( int subset = 0; subset < this->numberOfSubsets; subset++ )
+      TNL::SPH::configSubdomain( subset, this->configSubdomains );
+   for( int bufferIdx = 0; bufferIdx < 2 * this->numberOfSubsets; bufferIdx++ ) {
+      TNL::SPH::configMultiresolutionBuffer( bufferIdx, this->configSubdomains );
+      TNL::SPH::configBoundaryGhostBuffer( bufferIdx, this->configSubdomains );
+   }
    parseDistributedConfig( configSubdomainsPath, this->parametersSubdomains, this->configSubdomains, log, subdomainsInline );
 
    this->topology.loadFromConfig( params, this->parametersSubdomains );
@@ -84,41 +84,46 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBas
 
    const bool hasOpenBcFile = params.template getParameter< std::string >( "open-boundary-config" ) != "";
    const bool hasOpenBcInline = params.template getParameter< std::string >( "open-boundary" ) != "";
-   if( hasOpenBcFile || hasOpenBcInline ){
+   if( hasOpenBcFile || hasOpenBcInline ) {
       this->initOpenBoundaryPatches( params, log );
 
       this->timeMeasurement.addTimer( "extrapolate-openbc" );
       this->timeMeasurement.addTimer( "apply-openbc" );
    }
 
-    const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
-    const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
-    if( hasPeriodicBcFile || hasPeriodicBcInline ){
-       this->initPeriodicBoundaryPatches( params, log );
+   const bool hasPeriodicBcFile = params.template getParameter< std::string >( "periodic-boundary-config" ) != "";
+   const bool hasPeriodicBcInline = params.template getParameter< std::string >( "periodic-boundary" ) != "";
+   if( hasPeriodicBcFile || hasPeriodicBcInline ) {
+      this->initPeriodicBoundaryPatches( params, log );
 
-       this->timeMeasurement.addTimer( "enforce-periodic-bc" );
-       this->timeMeasurement.addTimer( "transfer-periodic-bc" );
-       this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
-       this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
-    }
+      this->timeMeasurement.addTimer( "enforce-periodic-bc" );
+      this->timeMeasurement.addTimer( "transfer-periodic-bc" );
+      this->timeMeasurement.addTimer( "periodicity-fluid-updateZone", false );
+      this->timeMeasurement.addTimer( "periodicity-boundary-updateZone", false );
+   }
 
-     this->modelParams.init( params );
+   this->modelParams.init( params );
 
-      /* Mass nodes belong only to interface faces backed by the neighbor fluid's
-         support: faces lying at the global domain boundary (tank walls, bottom) have
-         no fluid beyond them, and flux bookkeeping anchored there degenerates the
-         interface state. The domain extent and the excluded faces of each interface
-         frame are computed by the multiresolution helpers and applied by the buffers. */
-      const auto domBox = computeSubdomainUnionBox< SPHConfig::spaceDimension >( this->topology );
-      const RealType globalCell = this->topology.getGlobalGrid().getSpaceSteps()[ 0 ];
-      for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
-         const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
-         multiresolutionBoundaryPatchesLTS[ p ]->initMassNodesWithDomainExclusion(
-               this->modelParams, iface.ownIdx, iface.neighborIdx, getLevelRefinementFactor( iface.ownIdx ),
-               this->topology.getSubdomain( iface.ownIdx ), this->topology.getSubdomain( iface.neighborIdx ),
-               globalCell, domBox.first, domBox.second );
-      }
-
+   /* Mass nodes belong only to interface faces backed by the neighbor fluid's
+      support: faces lying at the global domain boundary (tank walls, bottom) have
+      no fluid beyond them, and flux bookkeeping anchored there degenerates the
+      interface state. The domain extent and the excluded faces of each interface
+      frame are computed by the multiresolution helpers and applied by the buffers. */
+   const auto domBox = computeSubdomainUnionBox< SPHConfig::spaceDimension >( this->topology );
+   const RealType globalCell = this->topology.getGlobalGrid().getSpaceSteps()[ 0 ];
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
+      const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
+      multiresolutionBoundaryPatchesLTS[ p ]->initMassNodesWithDomainExclusion(
+         this->modelParams,
+         iface.ownIdx,
+         iface.neighborIdx,
+         getLevelRefinementFactor( iface.ownIdx ),
+         this->topology.getSubdomain( iface.ownIdx ),
+         this->topology.getSubdomain( iface.neighborIdx ),
+         globalCell,
+         domBox.first,
+         domBox.second );
+   }
 
    /* Per-level time steps: the configured time step is the FINEST level's step (as written
       by the init script from CFL*h_min/c0); coarser levels scale with the refinement-factor
@@ -145,41 +150,42 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBas
       levelSubsteps[ i ] = static_cast< int >( std::lround( dtGlobal / dtLevel ) );
    }
 
-     this->boundaryGhostUpdate =
-        ( params.template getParameter< std::string >( "boundary-ghost-method" ) == "direct-from-source" ) ?
-           BoundaryGhostUpdate::DirectFromSource :
-           BoundaryGhostUpdate::Interpolation;
+   this->boundaryGhostUpdate =
+      ( params.template getParameter< std::string >( "boundary-ghost-method" ) == "direct-from-source" )
+         ? BoundaryGhostUpdate::DirectFromSource
+         : BoundaryGhostUpdate::Interpolation;
 
-     this->readParticlesFiles();
+   this->readParticlesFiles();
 
-     const int numberOfMultiresolutionBuffers = multiresolutionBoundaryPatchesLTS.size();
-     for( int i = 0; i < numberOfMultiresolutionBuffers; i++ ) {
-        std::string bufferKey = "multiresolution-buffer-" + std::to_string( i ) + "-";
-        if( this->parametersSubdomains.template getParameter< int >( bufferKey + "n" ) != 0 ) {
-           const std::string mrbFileName = this->parametersSubdomains.template getParameter< std::string >( bufferKey + "particles" );
-           log.writeParameter( "Reading multiresolution buffer particles:", mrbFileName );
-           multiresolutionBoundaryPatchesLTS[ i ]->template readParticlesAndVariables< typename BaseType::Reader >( mrbFileName );
-        }
-     }
+   const int numberOfMultiresolutionBuffers = multiresolutionBoundaryPatchesLTS.size();
+   for( int i = 0; i < numberOfMultiresolutionBuffers; i++ ) {
+      std::string bufferKey = "multiresolution-buffer-" + std::to_string( i ) + "-";
+      if( this->parametersSubdomains.template getParameter< int >( bufferKey + "n" ) != 0 ) {
+         const std::string mrbFileName =
+            this->parametersSubdomains.template getParameter< std::string >( bufferKey + "particles" );
+         log.writeParameter( "Reading multiresolution buffer particles:", mrbFileName );
+         multiresolutionBoundaryPatchesLTS[ i ]->template readParticlesAndVariables< typename BaseType::Reader >( mrbFileName );
+      }
+   }
 
-     /* Seed the midpoint anchors for any pre-seeded buffer particles: the first
-        midpointUpdateBuffers runs before the first sync, and would otherwise blend
-        with uninitialized rho_old/v_old (TNL arrays do not construct fundamental
-        types on resize). No-op for patches with zero particles. */
-     for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
-        multiresolutionBoundaryPatchesLTS[ p ]->initializeIntegratorVariables();
+   /* Seed the midpoint anchors for any pre-seeded buffer particles: the first
+      midpointUpdateBuffers runs before the first sync, and would otherwise blend
+      with uninitialized rho_old/v_old (TNL arrays do not construct fundamental
+      types on resize). No-op for patches with zero particles. */
+   for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
+      multiresolutionBoundaryPatchesLTS[ p ]->initializeIntegratorVariables();
 
-     this->initBoundaryGhosts();
+   this->initBoundaryGhosts();
 
-    log.writeSeparator();
-    const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
-    const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
-    if( hasMeasuretoolFile || hasMeasuretoolInline ) {
-       log.writeParameter( "Simulation monitor initialization.", "" );
-       this->simulationMonitor.init( params, this->timeStepping, log );
-       this->simulationMonitor.setupVolumetricFlowRateZones( this->fluidSets[ 0 ] );
-       log.writeParameter( "Simulation monitor initialization.", "Done." );
-    }
+   log.writeSeparator();
+   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
+   if( hasMeasuretoolFile || hasMeasuretoolInline ) {
+      log.writeParameter( "Simulation monitor initialization.", "" );
+      this->simulationMonitor.init( params, this->timeStepping, log );
+      this->simulationMonitor.setupVolumetricFlowRateZones( this->fluidSets[ 0 ] );
+      log.writeParameter( "Simulation monitor initialization.", "Done." );
+   }
 }
 
 template< typename Model >
@@ -191,27 +197,27 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initParticleSets()
    this->fluidSets.resize( nSubsets );
    this->boundarySets.resize( nSubsets );
 
-   for( int i = 0; i < nSubsets; i++ ){
+   for( int i = 0; i < nSubsets; i++ ) {
       std::string subdomainKey = "subdomain-" + std::to_string( i ) + "-";
       const int overlapWidth = getLevelOverlapWidth( i );
 
       this->fluidSets[ i ]->initializeAsDistributed(
-            this->parametersSubdomains.template getParameter< int >( subdomainKey + "fluid_n" ),
-            this->parametersSubdomains.template getParameter< int >( subdomainKey + "fluid_n_allocated" ),
-            this->topology.getLocalGrid( i ),
-            this->topology.getLocalOriginCoordinates( i ),
-            this->topology.getGlobalGrid(),
-            overlapWidth );
+         this->parametersSubdomains.template getParameter< int >( subdomainKey + "fluid_n" ),
+         this->parametersSubdomains.template getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+         this->topology.getLocalGrid( i ),
+         this->topology.getLocalOriginCoordinates( i ),
+         this->topology.getGlobalGrid(),
+         overlapWidth );
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
          this->fluidSets[ i ]->getParticles()->setParticleSetLabel( 0 );
 
       this->boundarySets[ i ]->initializeAsDistributed(
-            this->parametersSubdomains.template getParameter< int >( subdomainKey + "boundary_n" ),
-            this->parametersSubdomains.template getParameter< int >( subdomainKey + "boundary_n_allocated" ),
-            this->topology.getLocalGrid( i ),
-            this->topology.getLocalOriginCoordinates( i ),
-            this->topology.getGlobalGrid(),
-            overlapWidth );
+         this->parametersSubdomains.template getParameter< int >( subdomainKey + "boundary_n" ),
+         this->parametersSubdomains.template getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+         this->topology.getLocalGrid( i ),
+         this->topology.getLocalOriginCoordinates( i ),
+         this->topology.getGlobalGrid(),
+         overlapWidth );
       if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
          this->boundarySets[ i ]->getParticles()->setParticleSetLabel( 1 );
    }
@@ -229,7 +235,6 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initMultiResolutio
       const float rf = getLevelRefinementFactor( i );
 
       for( const auto& iface : this->topology.getInterfacesOfSubdomain( i ) ) {
-
          const std::string bufferKey = "multiresolution-buffer-" + std::to_string( mrbIdx ) + "-";
          const int mrbNumOfPtcs = this->parametersSubdomains.template getParameter< int >( bufferKey + "n" );
 
@@ -247,9 +252,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initMultiResolutio
             overlapWidth );
 
          multiresolutionBoundaryPatchesLTS[ mrbIdx ]->initZones(
-            this->fluidSets[ iface.ownIdx ]->getParticles(),
-            this->fluidSets[ iface.neighborIdx ]->getParticles(),
-            rf );
+            this->fluidSets[ iface.ownIdx ]->getParticles(), this->fluidSets[ iface.neighborIdx ]->getParticles(), rf );
 
          this->multiresolutionBoundaryPatchInterfaces.push_back( iface );
          mrbIdx++;
@@ -264,13 +267,14 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interact( int subd
    this->timeMeasurement.start( "interact" );
 
    this->model.updateSolidBoundary( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
-   this->model.finalizeBoundaryInteraction( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
+   this->model.finalizeBoundaryInteraction(
+      this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
 
    this->model.interaction( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
       if( this->multiresolutionBoundaryPatchInterfaces[ p ].ownIdx == subdomainIdx )
          this->model.interactionWithOpenBoundary(
-               this->fluidSets[ subdomainIdx ], multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
+            this->fluidSets[ subdomainIdx ], multiresolutionBoundaryPatchesLTS[ p ], this->modelParams );
    this->model.finalizeInteraction( this->fluidSets[ subdomainIdx ], this->boundarySets[ subdomainIdx ], this->modelParams );
 
    this->timeMeasurement.stop( "interact" );
@@ -293,11 +297,8 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateLevel( in
       energy ratchet), hence the per-level-step key: at 1:1 it degenerates to
       the window keying bit-for-bit, at 2:1 it restores the control cadence. */
    const bool doResync = ( levelTimeStepping[ idx ].getStep() % 20 == 0 );
-   this->integrator->integratStepVerlet( this->fluidSets[ idx ],
-                                         this->boundarySets[ idx ],
-                                         levelTimeStepping[ idx ],
-                                         false,
-                                         doResync );
+   this->integrator->integratStepVerlet(
+      this->fluidSets[ idx ], this->boundarySets[ idx ], levelTimeStepping[ idx ], false, doResync );
    levelTimeStepping[ idx ].updateTimeStep();
    this->timeMeasurement.stop( "integrate" );
 }
@@ -319,8 +320,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::recursiveSubdomain
 
    std::function< void( int, int, int ) > advanceLevel = [ & ]( int level, int count, int base )
    {
-      for( int substep = 0; substep < count; substep++ )
-      {
+      for( int substep = 0; substep < count; substep++ ) {
          const int g = base + substep;  // window-global substep index of this level
          const RealType dtLevel = levelTimeStepping[ level ].getTimeStep();
 
@@ -394,7 +394,8 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffe
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
       const int finerIdx = getLevelRefinementFactor( iface.ownIdx ) < getLevelRefinementFactor( iface.neighborIdx )
-                             ? iface.ownIdx : iface.neighborIdx;
+                            ? iface.ownIdx
+                            : iface.neighborIdx;
       if( finerIdx != fineLevelIdx )
          continue;
       multiresolutionBoundaryPatchesLTS[ p ]->advectBufferParticles( dt );
@@ -408,12 +409,13 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshBuffersFrom
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
       const int finerIdx = getLevelRefinementFactor( iface.ownIdx ) < getLevelRefinementFactor( iface.neighborIdx )
-                              ? iface.ownIdx : iface.neighborIdx;
+                            ? iface.ownIdx
+                            : iface.neighborIdx;
       if( finerIdx != fineLevelIdx || iface.ownIdx != finerIdx )
          continue;
       this->fluidSets[ iface.neighborIdx ]->searchForNeighbors();
       multiresolutionBoundaryPatchesLTS[ p ]->refreshVariablesFromNeighbor(
-            this->fluidSets[ iface.neighborIdx ], this->modelParams, theta );
+         this->fluidSets[ iface.neighborIdx ], this->modelParams, theta );
    }
 }
 
@@ -424,7 +426,8 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::stampBuffersAnchor
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
       const int finerIdx = getLevelRefinementFactor( iface.ownIdx ) < getLevelRefinementFactor( iface.neighborIdx )
-                               ? iface.ownIdx : iface.neighborIdx;
+                            ? iface.ownIdx
+                            : iface.neighborIdx;
       if( finerIdx != fineLevelIdx || iface.ownIdx != finerIdx )
          continue;
       multiresolutionBoundaryPatchesLTS[ p ]->initializeIntegratorVariables();
@@ -433,8 +436,9 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::stampBuffersAnchor
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::accumulateInterfaceMassesFromNeighbor( int neighborIdx,
-                                                                                                      RealType dt )
+SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::accumulateInterfaceMassesFromNeighbor(
+   int neighborIdx,
+   RealType dt )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ )
       if( this->multiresolutionBoundaryPatchInterfaces[ p ].neighborIdx == neighborIdx )
@@ -451,7 +455,8 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshSubstepSear
    this->fluidSets[ fineIdx ]->searchForNeighbors();
 
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
-      multiresolutionBoundaryPatchesLTS[ p ]->removeParticlesOutOfGrid( multiresolutionBoundaryPatchesLTS[ p ]->getParticles() );
+      multiresolutionBoundaryPatchesLTS[ p ]->removeParticlesOutOfGrid(
+         multiresolutionBoundaryPatchesLTS[ p ]->getParticles() );
       multiresolutionBoundaryPatchesLTS[ p ]->searchForNeighbors();
    }
 
@@ -475,14 +480,14 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::syncMultiresolutio
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
       multiresolutionBoundaryPatchesLTS[ p ]->syncUpdateInterfaceBuffer(
-            this->fluidSets[ iface.ownIdx ],
-            this->fluidSets[ iface.neighborIdx ],
-            this->modelParams,
-            this->timeStepping.getTimeStep() );
+         this->fluidSets[ iface.ownIdx ],
+         this->fluidSets[ iface.neighborIdx ],
+         this->modelParams,
+         this->timeStepping.getTimeStep() );
    }
 
    this->timeMeasurement.stop( "multiresolution-update" );
-   this->writeLog( "Update multiresolution BC (LTS)...", "Done.");
+   this->writeLog( "Update multiresolution BC (LTS)...", "Done." );
 }
 
 template< typename Model >
@@ -494,29 +499,41 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::save( bool writePa
 
    const RealType time = this->timeStepping.getTime();
 
-   for( int i = 0; i < this->numberOfSubsets; i++ ){
+   for( int i = 0; i < this->numberOfSubsets; i++ ) {
 #ifdef HAVE_MPI
-      std::string outputFileNameFluid = this->outputDirectory + "/fluid_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( time ) + "_particles.vtk";
+      std::string outputFileNameFluid = this->outputDirectory + "/fluid_rank" + std::to_string( TNL::MPI::GetRank() ) + "_"
+                                      + std::to_string( time ) + "_particles.vtk";
 #else
-      std::string outputFileNameFluid = this->outputDirectory + "/fluid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
+      std::string outputFileNameFluid =
+         this->outputDirectory + "/fluid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
 #endif
-      this->fluidSets[ i ]->template writeParticlesAndVariables< typename BaseType::Writer >( outputFileNameFluid, writeParticleCellIndex );
+      this->fluidSets[ i ]->template writeParticlesAndVariables< typename BaseType::Writer >(
+         outputFileNameFluid, writeParticleCellIndex );
       this->logger.writeParameter( "Saved:", outputFileNameFluid );
 
 #ifdef HAVE_MPI
-      std::string outputFileNameBound = this->outputDirectory + "/boundary_rank" + std::to_string( TNL::MPI::GetRank() ) + "_" + std::to_string( time ) + "_particles.vtk";
+      std::string outputFileNameBound = this->outputDirectory + "/boundary_rank" + std::to_string( TNL::MPI::GetRank() ) + "_"
+                                      + std::to_string( time ) + "_particles.vtk";
 #else
-      std::string outputFileNameBound = this->outputDirectory + "/boundary_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
+      std::string outputFileNameBound =
+         this->outputDirectory + "/boundary_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + "_particles.vtk";
 #endif
-      this->boundarySets[ i ]->template writeParticlesAndVariables< typename BaseType::Writer >( outputFileNameBound, writeParticleCellIndex );
+      this->boundarySets[ i ]->template writeParticlesAndVariables< typename BaseType::Writer >(
+         outputFileNameBound, writeParticleCellIndex );
       this->logger.writeParameter( "Saved:", outputFileNameBound );
 
 #ifdef HAVE_MPI
-      std::string outputFileNameGrid = this->outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::string( time ) + ".vtk";
+      std::string outputFileNameGrid =
+         this->outputDirectory + "/grid_rank" + std::to_string( TNL::MPI::GetRank() + 1 ) + "_" + std::string( time ) + ".vtk";
 #else
-      std::string outputFileNameGrid = this->outputDirectory + "/grid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + ".vtk";
+      std::string outputFileNameGrid =
+         this->outputDirectory + "/grid_subdomain" + std::to_string( i ) + "_" + std::to_string( time ) + ".vtk";
 #endif
-      TNL::Particles::Writers::writeBackgroundGrid( outputFileNameGrid, this->fluidSets[ i ]->getParticles()->getDimensions(), this->fluidSets[ i ]->getParticles()->getOrigin(), this->fluidSets[ i ]->getParticles()->getSearchRadius() );
+      TNL::Particles::Writers::writeBackgroundGrid(
+         outputFileNameGrid,
+         this->fluidSets[ i ]->getParticles()->getDimensions(),
+         this->fluidSets[ i ]->getParticles()->getOrigin(),
+         this->fluidSets[ i ]->getParticles()->getSearchRadius() );
       this->logger.writeParameter( "Saved:", outputFileNameGrid );
 
       this->simulationMonitor.save( this->logger );
@@ -526,9 +543,9 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::save( bool writePa
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
       std::string outputFileNameMultiresolutionBound =
          this->outputDirectory + "/multiresolutionBoundaryPatch_subdomain" + std::to_string( iface.ownIdx ) + "_to_"
-            + std::to_string( iface.neighborIdx ) + "_" + std::to_string( time ) + "_particles.vtk";
+         + std::to_string( iface.neighborIdx ) + "_" + std::to_string( time ) + "_particles.vtk";
       multiresolutionBoundaryPatchesLTS[ p ]->template writeParticlesAndVariables< typename BaseType::Writer >(
-            outputFileNameMultiresolutionBound, writeParticleCellIndex );
+         outputFileNameMultiresolutionBound, writeParticleCellIndex );
       this->logger.writeParameter( "Saved:", outputFileNameMultiresolutionBound );
    }
 }
@@ -542,10 +559,8 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::writeProlog( bool 
    auto& log = this->logger;
    log.writeHeader( "Local timesteps." );
    for( int i = 0; i < this->numberOfSubsets; i++ ) {
-      log.writeParameter( "Time step (subdomain " + std::to_string( i ) + "):",
-                          levelTimeStepping[ i ].getTimeStep() );
-      log.writeParameter( "Substeps per global step (subdomain " + std::to_string( i ) + "):",
-                          levelSubsteps[ i ] );
+      log.writeParameter( "Time step (subdomain " + std::to_string( i ) + "):", levelTimeStepping[ i ].getTimeStep() );
+      log.writeParameter( "Substeps per global step (subdomain " + std::to_string( i ) + "):", levelSubsteps[ i ] );
    }
    log.writeSeparator();
 
@@ -572,8 +587,9 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::writeInfo() noexce
 
    auto& log = this->logger;
    for( long unsigned int i = 0; i < multiresolutionBoundaryPatchesLTS.size(); i++ )
-      log.writeParameter( "Number of mr-buffer (LTS) " + std::to_string( i ) + " particles:",
-                          multiresolutionBoundaryPatchesLTS[ i ]->getNumberOfParticles() );
+      log.writeParameter(
+         "Number of mr-buffer (LTS) " + std::to_string( i ) + " particles:",
+         multiresolutionBoundaryPatchesLTS[ i ]->getNumberOfParticles() );
    log.writeSeparator();
 }
 

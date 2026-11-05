@@ -9,12 +9,10 @@
 namespace TNL {
 namespace ParticleSystem {
 
-
 template< typename ParticleConfig, typename DeviceType >
 class ParticleZone
 {
 public:
-
    using Config = ParticleConfig;
    using ParticleTraitsType = ParticlesTraits< Config, DeviceType >;
    using CellIndexer = typename ParticleConfig::CellIndexerType;
@@ -22,10 +20,9 @@ public:
    using GlobalIndexType = typename ParticleTraitsType::GlobalIndexType;
    using PairIndexType = typename ParticleTraitsType::PairIndexType;
    using CoordinatesType = typename ParticleTraitsType::CoordinatesType;
-   using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType; //FIXME
+   using IndexArrayType = typename ParticleTraitsType::CellIndexArrayType;  //FIXME
    using RealType = typename ParticleTraitsType::RealType;
    using PointType = typename ParticleTraitsType::PointType;
-
 
    /**
     * Constructor.
@@ -35,7 +32,9 @@ public:
    /**
     * Constructor.
     */
-   ParticleZone( GlobalIndexType numberOfParticlesPerCell ) : numberOfParticlesPerCell( numberOfParticlesPerCell ) {}
+   ParticleZone( GlobalIndexType numberOfParticlesPerCell )
+   : numberOfParticlesPerCell( numberOfParticlesPerCell )
+   {}
 
    /**
     * Constructor - allocate only the field.
@@ -45,8 +44,8 @@ public:
      cellsInZone( numberOfCells ),
      numberOfParticlesInCell( numberOfCells ),
      numberOfParticlesPerCell( numberOfParticlesPerCell ),
-     particlesInZone( numberOfCells * numberOfParticlesPerCells ) {}
-
+     particlesInZone( numberOfCells * numberOfParticlesPerCells )
+   {}
 
    /**
     * Assign cells from point and direction for grid-base orthogonal zones
@@ -58,20 +57,22 @@ public:
     * Assign cells from point and direction for grid-base orthogonal zones
     */
    void
-   assignCells( const PointType firstPoint,
-                const PointType secondPoint,
-                CoordinatesType dimensions,
-                PointType origin,
-                RealType searchRadius );
+   assignCells(
+      const PointType firstPoint,
+      const PointType secondPoint,
+      CoordinatesType dimensions,
+      PointType origin,
+      RealType searchRadius );
 
    /**
     * Assing cells as a frame
     */
    void
-   assignCellsFrame( const CoordinatesType frameFrontOrigin, // lower-left corner of shell box, cell indices
-                     const CoordinatesType frameFrontDims, // extent of shell box, in cells
-                     const int frameWidth, // shell thickness in cells (always positive)
-                     const CoordinatesType dimensions );
+   assignCellsFrame(
+      const CoordinatesType frameFrontOrigin,  // lower-left corner of shell box, cell indices
+      const CoordinatesType frameFrontDims,    // extent of shell box, in cells
+      const int frameWidth,                    // shell thickness in cells (always positive)
+      const CoordinatesType dimensions );
 
    /**
     * Assign cells from another array.
@@ -146,43 +147,40 @@ public:
     * Collect particles contained in the zone
     */
    template< typename ParticlesPointer >
-   void updateParticlesInZone( const ParticlesPointer& particles );
+   void
+   updateParticlesInZone( const ParticlesPointer& particles );
 
    /**
     * Collect particles contained in the zone
     */
    template< typename ParticlesPointer, typename TimeMeasurement >
-   void updateParticlesInZone( const ParticlesPointer& particles, TimeMeasurement& timeMeasurement );
+   void
+   updateParticlesInZone( const ParticlesPointer& particles, TimeMeasurement& timeMeasurement );
 
    void
    writeProlog( TNL::Logger& logger ) const noexcept;
 
    void
    saveZoneToVTK(
-   const std::string&    filename,
-    const CoordinatesType dimensions,
-    const PointType      origin,
-   const RealType        searchRadius ) const;
-
+      const std::string& filename,
+      const CoordinatesType dimensions,
+      const PointType origin,
+      const RealType searchRadius ) const;
 
 protected:
-
    GlobalIndexType numberOfParticlesPerCell;
 
    GlobalIndexType numberOfCellsInZone;
 
    IndexArrayType cellsInZone;
 
-   IndexArrayType numberOfParticlesInCell; //FIXME: Rename.
+   IndexArrayType numberOfParticlesInCell;  //FIXME: Rename.
 
    GlobalIndexType numberOfParticlesInZone = 0;
    IndexArrayType particlesInZone;
-
-
 };
 
-} // Particles
-} // TNL
+}  //namespace ParticleSystem
+}  //namespace TNL
 
 #include <SPH/GhostZone.hpp>
-

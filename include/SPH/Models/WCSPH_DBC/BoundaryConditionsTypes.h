@@ -24,7 +24,7 @@ struct MDBC
    }
 };
 
-struct MDBCVelocity //not implement yet
+struct MDBCVelocity  //not implement yet
 {
    static constexpr bool
    integrateInTime()
@@ -33,7 +33,7 @@ struct MDBCVelocity //not implement yet
    }
 };
 
-struct GWBC //not implemented
+struct GWBC  //not implemented
 {
    static constexpr bool
    integrateInTime()
@@ -54,16 +54,14 @@ struct Outlet
 struct None
 {};
 
-enum class OpenBoundaryConditionsType
-: std::uint8_t
+enum class OpenBoundaryConditionsType : std::uint8_t
 {
-    PeriodicBoundary = 0,
+   PeriodicBoundary = 0,
 
-    Inlet = 1,
+   Inlet = 1,
 
-    Outlet = 2
+   Outlet = 2
 };
 
-} // BCTypes
+}  //namespace WCSPH_BCTypes
 }  // namespace TNL::SPH
-

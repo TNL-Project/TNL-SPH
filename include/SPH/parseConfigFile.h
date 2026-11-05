@@ -16,7 +16,7 @@
 #include <TNL/Config/ConfigEntry.h>
 #include <TNL/Config/ConfigEntryList.h>
 #include <TNL/Config/ParameterContainer.h>
-#include <TNL/Config/parseCommandLine.h>  // for addDefaultValues and checkEnumValues
+#include <TNL/Config/parseCommandLine.h>    // for addDefaultValues and checkEnumValues
 #include <TNL/Config/parseINIConfigFile.h>  // for the INI fallback in the dispatcher
 
 namespace TNL::SPH {
@@ -104,9 +104,10 @@ flattenJSON( nlohmann::json& data, const TNL::Config::ConfigDescription& descrip
  * \returns A populated \ref TNL::Config::ParameterContainer.
  */
 [[nodiscard]] inline TNL::Config::ParameterContainer
-parseJSONConfigString( const std::string& jsonString,
-                       const std::string& sourceLabel,
-                       const TNL::Config::ConfigDescription& description )
+parseJSONConfigString(
+   const std::string& jsonString,
+   const std::string& sourceLabel,
+   const TNL::Config::ConfigDescription& description )
 {
    TNL::Config::ParameterContainer parameters;
 
@@ -199,7 +200,8 @@ parseJSONConfigString( const std::string& jsonString,
    }
 
    if( ! undefinedOptions.empty() ) {
-      std::string msg = "The configuration source " + sourceLabel + " contains the following options which are not defined in the program:\n";
+      std::string msg =
+         "The configuration source " + sourceLabel + " contains the following options which are not defined in the program:\n";
       for( const auto& option : undefinedOptions )
          msg += " - " + option + "\n";
       throw std::runtime_error( msg );
@@ -251,7 +253,14 @@ parseConfigFile( const std::string& configPath, const TNL::Config::ConfigDescrip
    const auto dotPos = configPath.find_last_of( '.' );
    if( dotPos != std::string::npos ) {
       std::string ext = configPath.substr( dotPos + 1 );
-      std::transform( ext.begin(), ext.end(), ext.begin(), []( unsigned char c ) { return static_cast< char >( std::tolower( c ) ); } );
+      std::transform(
+         ext.begin(),
+         ext.end(),
+         ext.begin(),
+         []( unsigned char c )
+         {
+            return static_cast< char >( std::tolower( c ) );
+         } );
       if( ext == "json" || ext == "jsonc" )
          return parseJSONConfigFile( configPath, description );
    }

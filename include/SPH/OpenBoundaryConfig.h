@@ -47,7 +47,7 @@ conigSetupOpenBoundaryPatch( TNL::Config::ConfigDescription& config, std::string
 template< typename SPHConfig >
 class OpenBoundaryConfig
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
@@ -76,7 +76,7 @@ class OpenBoundaryConfig
     */
    VectorType position2 = 0.f;
    VectorType bufferWidth = 0.f;
-   VectorType bufferHeight = 0.f; //TODO: Merge with bufferWidth
+   VectorType bufferHeight = 0.f;  //TODO: Merge with bufferWidth
 
    /**
     * Shift of particle during the periodicity transfer.
@@ -93,12 +93,13 @@ class OpenBoundaryConfig
     * Coordinates of adjecent particle zone.
     */
    VectorType zoneFirstPoint = 0.;
-   VectorType zoneSecondPoint = 0. ;
+   VectorType zoneSecondPoint = 0.;
 
    void
-   init( TNL::Config::ParameterContainer& parameters,
-         TNL::Config::ParameterContainer& parametersOpenBoundary,
-         std::string prefix )
+   init(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersOpenBoundary,
+      std::string prefix )
    {
       identifier = parametersOpenBoundary.getParameter< std::string >( prefix + "identifier" );
       orientation = parametersOpenBoundary.getXyz< VectorType >( prefix + "orientation" );
@@ -157,7 +158,7 @@ class OpenBoundaryConfig
       return report;
    }
 
-   protected:
+protected:
    /**
     * \brief Serializes a space-dimension-sized static vector as per-axis
     *        entries \<prefix\>_x/_y/_z of a report object.
@@ -178,12 +179,12 @@ class OpenBoundaryConfig
          report[ prefix + "_z" ] = RealType( 0 );
    }
 
-   private:
-
+private:
    void
-   computeZonePoints( TNL::Config::ParameterContainer& parameters,
-                      TNL::Config::ParameterContainer& parametersOpenBoundary,
-                      std::string prefix )
+   computeZonePoints(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersOpenBoundary,
+      std::string prefix )
    {
       const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
       const VectorType firstPointOfBufferArea = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-1" );
@@ -192,34 +193,36 @@ class OpenBoundaryConfig
       const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
       //TODO: Ugly, ugly code:
       if( orientation[ 0 ] != 0 ) {
-         if( orientation[ 0 ] >= 0. ){
+         if( orientation[ 0 ] >= 0. ) {
             //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
             //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal
+                           - bufferWidth * orientation;  //this could be more narrow
             zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + searchRadius * orientation;
          }
-         if( orientation[ 0 ] <= 0. ){
+         if( orientation[ 0 ] <= 0. ) {
             //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
             //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal;
             zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + searchRadius * orientation;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal - bufferWidth * orientation; //this could be more narrow
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal
+                            - bufferWidth * orientation;  //this could be more narrow
          }
       }
       if( orientation[ 0 ] == 0 ) {
-         if( orientation[ 1 ] >= 0. ){
+         if( orientation[ 1 ] >= 0. ) {
             //zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal;
             //zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + bufferWidth * orientation;
-            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal - bufferWidth[ 0 ] * orientation; //this could be more narrow
+            zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal
+                           - bufferWidth[ 0 ] * orientation;  //this could be more narrow
             zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal + searchRadius * orientation;
          }
-         if( orientation[ 1 ] <= 0. ){
+         if( orientation[ 1 ] <= 0. ) {
             zoneFirstPoint = firstPointOfBufferArea - searchRadius * bufferUnitDiagonal + searchRadius * orientation;
-            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal - bufferWidth[ 0 ] * orientation; //this could be more narrow
+            zoneSecondPoint = secondPointOfBufferArea + searchRadius * bufferUnitDiagonal
+                            - bufferWidth[ 0 ] * orientation;  //this could be more narrow
          }
       }
    }
 };
 
-
 }  // namespace TNL::SPH
-

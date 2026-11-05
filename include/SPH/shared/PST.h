@@ -12,7 +12,6 @@ template< typename ParticlesType, typename ModelConfig >
 class None
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< typename ModelConfig::SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
 
@@ -26,7 +25,6 @@ template< typename ParticlesType, typename ModelConfig >
 class Simple
 {
 public:
-
    using SPHTraitsType = SPHFluidTraits< typename ModelConfig::SPHConfig >;
    using IndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -60,21 +58,20 @@ public:
       auto view_points_boundary = boundary->getParticles()->getPoints().getView();
       //auto view_rho_boundary = boundary->getVariables()->rho.getView();
 
-      auto getGradC = [=] __cuda_callable__ (
-            IndexType i,
-            IndexType j,
-            VectorType& r_i,
-            RealType* gamma_i,
-            RealType* div_r_i,
-            VectorType* gradC_i,
-            VectorTypeArrayViewType& points_view,
-            ScalarArrayViewType& rho_view ) mutable
+      auto getGradC = [ = ] __cuda_callable__(
+                         IndexType i,
+                         IndexType j,
+                         VectorType & r_i,
+                         RealType * gamma_i,
+                         RealType * div_r_i,
+                         VectorType * gradC_i,
+                         VectorTypeArrayViewType & points_view,
+                         ScalarArrayViewType & rho_view ) mutable
       {
          const VectorType r_j = view_points[ j ];
          const VectorType r_ij = r_i - r_j;
          const RealType drs = l2Norm( r_ij );
-         if( drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             const RealType rho_j = view_rho[ j ];
             const RealType WV_j = KernelFunction::W( drs, h ) * m / rho_j;
             const VectorType gradWV_j = r_ij * KernelFunction::F( drs, h ) * m / rho_j;
@@ -85,22 +82,18 @@ public:
          }
       };
 
-      auto cancelNearBoundary = [=] __cuda_callable__ (
-            IndexType i,
-            IndexType j,
-            VectorType& r_i,
-            bool* near_boundary ) mutable
+      auto cancelNearBoundary =
+         [ = ] __cuda_callable__( IndexType i, IndexType j, VectorType & r_i, bool* near_boundary ) mutable
       {
          const VectorType r_j = view_points_boundary[ j ];
          const VectorType r_ij = r_i - r_j;
          const RealType drs = l2Norm( r_ij );
-         if( drs <= searchRadius )
-         {
+         if( drs <= searchRadius ) {
             *near_boundary = true;
          }
       };
 
-      auto particleLoop = [=] __cuda_callable__ ( IndexType i ) mutable
+      auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
       {
          const VectorType r_i = view_points[ i ];
          const VectorType v_i = view_v[ i ];
@@ -110,16 +103,16 @@ public:
          bool near_boundary = false;
 
          ParticlesType::NeighborsLoop::exec(
-               i, r_i, searchInFluid, getGradC, &gamma_i, &div_r_i, &gradC_i, view_points, view_rho );
+            i, r_i, searchInFluid, getGradC, &gamma_i, &div_r_i, &gradC_i, view_points, view_rho );
          //ParticlesType::NeighborsLoop::exec(
          //      i, r_i, searchInBound, getGradC, &gamma_i, &div_r_i, &gradC_i, view_points_boundary, view_rho_boundary );
          ParticlesType::NeighborsLoop::exec( i, r_i, searchInBound, cancelNearBoundary, &near_boundary );
 
-         const RealType const_A_fsc = ( div_r_i - const_A_tfs )  / ( const_A_fsm - const_A_tfs );
+         const RealType const_A_fsc = ( div_r_i - const_A_tfs ) / ( const_A_fsm - const_A_tfs );
          const VectorType delta_r_i_core = ( -1.f ) * const_A * h * l2Norm( v_i ) * gradC_i * dt;
 
          VectorType delta_r_i = 0;
-         if ( div_r_i > const_A_tfs )
+         if( div_r_i > const_A_tfs )
             delta_r_i = const_A_fsc * delta_r_i_core;
          else
             delta_r_i = 0;
@@ -130,7 +123,8 @@ public:
          view_points[ i ] += delta_r_i;
 
          //printf(" [COEF: %f]", const_A * h * dt );
-         //printf("[shifttfs: %f, coefumagn: %f, umagnpre: %f, rs.w: %f, coeftfs: %f, umagn: %f ]", shifttfs, coefumagn, umagnpre, rs.w, coeftfs, umagn );
+         //printf("[shifttfs: %f, coefumagn: %f, umagnpre: %f, rs.w: %f, coeftfs: %f, umagn: %f ]", shifttfs, coefumagn,
+         //umagnpre, rs.w, coeftfs, umagn );
 
          //const RealType query = div_r_i - const_A_tfs;
          //if( query > 0 )
@@ -138,9 +132,7 @@ public:
       };
       fluid->getParticles()->forAll( particleLoop );
    }
-
 };
 
-} // PST
+}  //namespace PST
 }  // namespace TNL::SPH
-

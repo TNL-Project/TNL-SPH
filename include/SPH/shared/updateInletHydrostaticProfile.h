@@ -10,15 +10,24 @@
 namespace TNL::SPH {
 namespace features {
 
-template< typename SPHSimulation, typename FluidPointer, typename BoundaryPointer, typename OpenBoundaryPointer, typename ModelParams, typename RealType,typename VectorType >
-void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
-                                     BoundaryPointer& boundary,
-                                     OpenBoundaryPointer& openBoundary,
-                                     ModelParams& modelParams,
-                                     const VectorType& referentialPoint,
-                                     const VectorType& direction,
-                                     const RealType& waterLevelTrashold,
-                                     const RealType& kineticPressure = 0.f )
+template<
+   typename SPHSimulation,
+   typename FluidPointer,
+   typename BoundaryPointer,
+   typename OpenBoundaryPointer,
+   typename ModelParams,
+   typename RealType,
+   typename VectorType >
+void
+updateOpenBCHydrostaticProfile(
+   FluidPointer& fluid,
+   BoundaryPointer& boundary,
+   OpenBoundaryPointer& openBoundary,
+   ModelParams& modelParams,
+   const VectorType& referentialPoint,
+   const VectorType& direction,
+   const RealType& waterLevelTrashold,
+   const RealType& kineticPressure = 0.f )
 {
    using DeviceType = typename ModelParams::SPHConfig::DeviceType;
    using EOS = typename ModelParams::EOS;
@@ -40,14 +49,9 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
    using SensorWaterLevel = SensorWaterLevel< typename ModelParams::SPHConfig, SPHSimulation >;
    SensorWaterLevel waterLevelSensor;
    std::vector< VectorType > pointsToMeasureWaterLevel = { referentialPoint };
-   waterLevelSensor.init( pointsToMeasureWaterLevel,
-                          1,
-                          modelParams.dp,
-                          direction,
-                          ( referentialPoint, direction ),
-                          0.5 );
+   waterLevelSensor.init( pointsToMeasureWaterLevel, 1, modelParams.dp, direction, ( referentialPoint, direction ), 0.5 );
    waterLevelSensor.template interpolate< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-         fluid, boundary, modelParams );
+      fluid, boundary, modelParams );
    const RealType waterLevel = waterLevelSensor.getSensorData().getElement( 0, 0 );
 
    //update inlet profile
@@ -57,14 +61,15 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
    const RealType gravityMagnitude = TNL::l2Norm( gravity );
    const typename EOS::ParamsType eosParams( modelParams );
    const RealType kineticDensity = EOS::pressureToDensity( kineticPressure, eosParams ) - rho0;
-   std::cout << "direction/nptcs: " << direction << "/" << fluid->getNumberOfParticles() << " waterLevel: " << waterLevel << " kineticDensity: " << kineticDensity << std::endl;
+   std::cout << "direction/nptcs: " << direction << "/" << fluid->getNumberOfParticles() << " waterLevel: " << waterLevel
+             << " kineticDensity: " << kineticDensity << std::endl;
 
    const auto view_points_openBound = openBoundary->getParticles()->getPoints().getConstView();
    auto view_rho_openBound = openBoundary->getVariables()->rho.getView();
 
    // update only if water level is above defined trashold
-   if( waterLevel > waterLevelTrashold ){
-      auto updateParticleDensity = [=] __cuda_callable__ ( GlobalIndexType i ) mutable
+   if( waterLevel > waterLevelTrashold ) {
+      auto updateParticleDensity = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
       {
          const VectorType r_i = view_points_openBound[ i ];
          const RealType h_depth = waterLevel - ( r_i, direction );
@@ -80,6 +85,5 @@ void updateOpenBCHydrostaticProfile( FluidPointer& fluid,
    //}
 }
 
-} // features
+}  //namespace features
 }  // namespace TNL::SPH
-

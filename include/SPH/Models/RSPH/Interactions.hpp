@@ -37,14 +37,20 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
    const auto view_v_bound = boundary->getVariables()->v.getView();
    const auto view_n_bound = boundary->getVariables()->n.getView();
 
-   auto FluidFluid = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
+   auto FluidFluid = [ = ] __cuda_callable__(
+                        LocalIndexType i,
+                        LocalIndexType j,
+                        VectorType & r_i,
+                        VectorType & v_i,
+                        RealType & rho_i,
+                        RealType & p_i,
+                        RealType * drho_i,
+                        VectorType * a_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
-      if (drs <= searchRadius )
-      {
+      if( drs <= searchRadius ) {
          const VectorType v_j = view_v[ j ];
          const RealType rho_j = view_rho[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
@@ -54,9 +60,11 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
          const RealType vL = ( v_i, e_ij );
          const RealType vR = ( v_j, e_ij );
 
-         const RealType v_starScalar = RiemannSolver::stateVelocity( vL, vR, p_i, p_j, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
+         const RealType v_starScalar =
+            RiemannSolver::stateVelocity( vL, vR, p_i, p_j, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
          const VectorType v_star = e_ij * v_starScalar + ( 0.5f * ( v_i + v_j ) - 0.5f * e_ij * ( vL + vR ) );
-         const RealType p_star = RiemannSolver::statePressure( vL, vR, p_i, p_j, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
+         const RealType p_star =
+            RiemannSolver::statePressure( vL, vR, p_i, p_j, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
 
          /* Interaction: */
          const VectorType v_is = v_i - v_star;
@@ -67,18 +75,24 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
          *drho_i += 2.f * ( v_is, gradW ) * m;
 
          const RealType p_term = ( p_star ) / ( rho_i * rho_j );
-         *a_i += ( -2.f ) * ( p_term ) * gradW * m;
+         *a_i += ( -2.f ) * (p_term) *gradW * m;
       }
    };
 
-   auto FluidBound = [=] __cuda_callable__ ( LocalIndexType i, LocalIndexType j,
-         VectorType& r_i, VectorType& v_i, RealType& rho_i, RealType& p_i, RealType* drho_i, VectorType* a_i ) mutable
+   auto FluidBound = [ = ] __cuda_callable__(
+                        LocalIndexType i,
+                        LocalIndexType j,
+                        VectorType & r_i,
+                        VectorType & v_i,
+                        RealType & rho_i,
+                        RealType & p_i,
+                        RealType * drho_i,
+                        VectorType * a_i ) mutable
    {
       const VectorType r_j = view_points_bound[ j ];
       const VectorType r_ij = r_i - r_j;
       const RealType drs = l2Norm( r_ij );
-      if (drs <= searchRadius )
-      {
+      if( drs <= searchRadius ) {
          const VectorType v_j = view_v_bound[ j ];
          const RealType rho_j = view_rho_bound[ j ];
          const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
@@ -86,11 +100,12 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
 
          /* Riemann problem: */
          const VectorType e_ij = ( -1.f ) * r_ij / drs;
-         const RealType vL = ( -1.f ) * ( v_i, n_j ); //normal points to the domain
+         const RealType vL = ( -1.f ) * ( v_i, n_j );  //normal points to the domain
          const RealType vR = -vL;
-         const RealType pR = p_i + ( -1.f ) * rho_i * ( r_ij, gravity ); //sign
+         const RealType pR = p_i + ( -1.f ) * rho_i * ( r_ij, gravity );  //sign
 
-         const RealType v_starScalar = RiemannSolver::stateVelocity( vL, vR, p_i, pR, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
+         const RealType v_starScalar =
+            RiemannSolver::stateVelocity( vL, vR, p_i, pR, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
          const VectorType v_star = e_ij * v_starScalar + ( 0.5f * ( v_i + v_j ) - 0.5f * e_ij * ( vL + vR ) );
          const RealType p_star = RiemannSolver::statePressure( vL, vR, p_i, pR, 0.5f * ( rho_i + rho_j ), riemannSolverParams );
 
@@ -103,11 +118,11 @@ RSPH< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
          *drho_i += 2.f * ( v_is, gradW ) * m;
 
          const RealType p_term = ( p_star ) / ( rho_i * rho_j );
-         *a_i += ( -2.f ) * ( p_term ) * gradW * m;
+         *a_i += ( -2.f ) * (p_term) *gradW * m;
       }
    };
 
-   auto particleLoop = [=] __cuda_callable__ ( LocalIndexType i ) mutable
+   auto particleLoop = [ = ] __cuda_callable__( LocalIndexType i ) mutable
    {
       const VectorType r_i = view_points[ i ];
       const VectorType v_i = view_v[ i ];
@@ -143,11 +158,11 @@ RSPH< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPointe
 
    typename EOS::ParamsType eosParams( sphState );
 
-   auto evalPressure = [=] __cuda_callable__ ( int i ) mutable
+   auto evalPressure = [ = ] __cuda_callable__( int i ) mutable
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   physicalObject->getParticles()->forAll( evalPressure ); //TODO: forloop?
+   physicalObject->getParticles()->forAll( evalPressure );  //TODO: forloop?
 }
 
 }  // namespace TNL::SPH

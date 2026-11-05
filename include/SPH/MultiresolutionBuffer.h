@@ -51,11 +51,13 @@ public:
    {
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::sort_by_key( thrustDevice,
-                           particlesToCreate.getData(),
-                           particlesToCreate.getData() + numberOfMassNodes,
-                           thrust::make_zip_iterator( thrust::make_tuple(
-                              points.getArrayData(), normal.getArrayData(), massFlux.getArrayData(), mass.getArrayData() ) ) );
+      thrust::sort_by_key(
+         thrustDevice,
+         particlesToCreate.getData(),
+         particlesToCreate.getData() + numberOfMassNodes,
+         thrust::make_zip_iterator(
+            thrust::make_tuple(
+               points.getArrayData(), normal.getArrayData(), massFlux.getArrayData(), mass.getArrayData() ) ) );
    }
 
    IndexType numberOfMassNodes = 0;
@@ -66,12 +68,13 @@ public:
    IndexArrayType particlesToCreate;
 };
 
-template< typename ParticlesType,
-          typename SPHCaseConfig,
-          typename Variables,
-          typename IntegratorVariables,
-          typename OpenBoundaryConfig,
-          typename SPHDefs >
+template<
+   typename ParticlesType,
+   typename SPHCaseConfig,
+   typename Variables,
+   typename IntegratorVariables,
+   typename OpenBoundaryConfig,
+   typename SPHDefs >
 // TODO: Derive from ParticleSet or OpenBoundaryBuffer?
 class MultiresolutionBoundary : public ParticleSet< ParticlesType, SPHCaseConfig, Variables, IntegratorVariables >
 {
@@ -94,7 +97,7 @@ public:
    using ABFs = typename MFD::ABFs;
    using MfdVectorType = typename MFD::BaseVectorType;
    using MfdMatrixType = typename MFD::BaseMatrixType;
-   using MfdVectorPackType = Containers::StaticArray< VectorType::getSize(), MfdVectorType >; //TODO: Remove for pure 3D
+   using MfdVectorPackType = Containers::StaticArray< VectorType::getSize(), MfdVectorType >;  //TODO: Remove for pure 3D
 
    static constexpr RealType bufferWidthFactorConst = 1.5f;
 
@@ -103,9 +106,10 @@ public:
    // needs to be called after the object is initialized
    template< typename ParticleSetPointer >
    void
-   initZones( const ParticleSetPointer& ownParticles,
-              const ParticleSetPointer& nbParticles,
-              const int maxNumberOfPtcsPerCell = 75 )
+   initZones(
+      const ParticleSetPointer& ownParticles,
+      const ParticleSetPointer& nbParticles,
+      const int maxNumberOfPtcsPerCell = 75 )
    {
       const RealType searchRadius = ownParticles->getSearchRadius();
       const VectorType ownOrig = ownParticles->getOrigin();
@@ -124,15 +128,14 @@ public:
       //NOTE: The comparison could be done w.r.t. origin in coordinates, this would removed the need for eps
       const RealType eps = searchRadius * 1e-5;
       for( int d = 0; d < VectorType::getSize(); ++d ) {
-
-         if( ownOrig[ d ] - neighborOrig[ d ] > eps ) { // left, normal points inward (+1)
+         if( ownOrig[ d ] - neighborOrig[ d ] > eps ) {  // left, normal points inward (+1)
             bufferOrientation[ d ] = 1.f;
             zoneDims[ d ] = 2;
             interfaceAxis[ d ] = 1;
             break;
          }
 
-         if( ownOrig[ d ] - neighborOrig[ d ]  < ( -1.f ) * eps ) { // rigt, norma points iward (-1)
+         if( ownOrig[ d ] - neighborOrig[ d ] < ( -1.f ) * eps ) {  // rigt, norma points iward (-1)
             bufferOrientation[ d ] = -1.f;
             bufferPosition[ d ] = ownOrig[ d ] + ownDims[ d ] * searchRadius;
             zoneOrigCoords[ d ] = ownDims[ d ] + numberOfOverlapLayers - 1;
@@ -167,14 +170,14 @@ public:
       CoordinatesType end = 0;
       IndexType n_massNodes = 1;
 
-      for( int d = 0; d < VectorType::getSize(); d++ ){
-         if( interfaceAxis[ d ] == 0 ){
-            begin[ d ] = 1; //FIXME 0 is right, 1 is for debug
+      for( int d = 0; d < VectorType::getSize(); d++ ) {
+         if( interfaceAxis[ d ] == 0 ) {
+            begin[ d ] = 1;  //FIXME 0 is right, 1 is for debug
             end[ d ] = subdomainSize[ d ] / local_dp;
             n_massNodes *= end[ d ];
          }
-         else{
-            begin[ d ]= 0;
+         else {
+            begin[ d ] = 0;
             end[ d ] = 1;
          }
       }
@@ -184,7 +187,8 @@ public:
       const VectorType nodeNormal = bufferOrientation;
       const CoordinatesType unitVect = 1;
       const CoordinatesType perpAxis = unitVect - interfaceAxis;
-      const VectorType nodeStartingPoint = bufferPosition + ( -1 ) * overlapWidth * searchRadius * bufferOrientation; //TODO: In for above?
+      const VectorType nodeStartingPoint =
+         bufferPosition + ( -1 ) * overlapWidth * searchRadius * bufferOrientation;  //TODO: In for above?
 
       // Strides for linearisation over perpendicular axes only
       /*
@@ -212,7 +216,8 @@ public:
       auto generateMassNodesCoordinates = [ = ] __cuda_callable__( const CoordinatesType idx ) mutable
       {
          // Linearise: dot product of idx and stride (interface axis contributes 0)
-         IndexType i = ( idx, stride );;
+         IndexType i = ( idx, stride );
+         ;
          const VectorType r = nodeStartingPoint + local_dp * ( idx + 1 ) * perpAxis;
          points_nodes_view[ i ] = r;
          normals_nodes_view[ i ] = nodeNormal;
@@ -240,18 +245,19 @@ public:
       const RealType h = refinementFactor * modelParams.h;
       const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
       const RealType dx = refinementFactor * modelParams.dp * 0.5f;  //FIXME I have no clue why there is 0.5 factor
-      const VectorType v_subdomain = 0.f;  // velocity of moving subdomain
-      const RealType div_r_trashold = 1.5f;  //FIXME add to model params, depends on dimension
+      const VectorType v_subdomain = 0.f;                            // velocity of moving subdomain
+      const RealType div_r_trashold = 1.5f;                          //FIXME add to model params, depends on dimension
       const RealType extrapolationDetTreshold = modelParams.mdbcExtrapolationDetTreshold;  //TODO: rename, remove mdbc
 
-      auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
-                                                       IndexType j,
-                                                       VectorType & r_x,
-                                                       MfdMatrixType * M_x,
-                                                       MfdVectorType * brho_x,
-                                                       MfdVectorPackType * bv_x,
-                                                       RealType * div_r_x,
-                                                       RealType * drs_min ) mutable
+      auto interpolateFluid = [ = ] __cuda_callable__(
+                                 IndexType i,
+                                 IndexType j,
+                                 VectorType & r_x,
+                                 MfdMatrixType * M_x,
+                                 MfdVectorType * brho_x,
+                                 MfdVectorPackType * bv_x,
+                                 RealType * div_r_x,
+                                 RealType * drs_min ) mutable
       {
          const VectorType r_j = view_points_fluid[ j ];
          const VectorType r_xj = r_x - r_j;
@@ -289,15 +295,7 @@ public:
          RealType drs_min = FLT_MAX;
 
          ParticlesType::NeighborsLoop::exec(
-               i,
-               r_x,
-               searchInFluid,
-               interpolateFluid,
-               &M_x,
-               &brho_x,
-               &bv_x,
-               &div_r_x,
-               &drs_min );
+            i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x, &div_r_x, &drs_min );
 
          RealType rho_x;
          VectorType v_x;
@@ -361,12 +359,13 @@ public:
       //TODO: const RealType trasholdM00 = ..
       //TODO: const RealType extrapolationDetTreshold = modelParams.extrapolationDetTrashold;
 
-      auto interpolateFluid = [ = ] __cuda_callable__( IndexType i,
-                                                       IndexType j,
-                                                       VectorType & r_x,
-                                                       MfdMatrixType * M_x,
-                                                       MfdVectorType * brho_x,
-                                                       MfdVectorPackType * bv_x ) mutable
+      auto interpolateFluid = [ = ] __cuda_callable__(
+                                 IndexType i,
+                                 IndexType j,
+                                 VectorType & r_x,
+                                 MfdMatrixType * M_x,
+                                 MfdVectorType * brho_x,
+                                 MfdVectorPackType * bv_x ) mutable
       {
          const VectorType r_j = view_points_fluid[ j ];
          const VectorType r_xj = r_x - r_j;
@@ -424,12 +423,11 @@ public:
             view_points_overlap[ i ] = FLT_MAX;
             return 1;
          }
-
       };
       const IndexType numberOfInvalidBufferParticles =
          Algorithms::reduce< DeviceType >( 0, numberOfBufferParticles, particleLoop );
-      this->getParticles()->setNumberOfParticlesToRemove( this->getParticles()->getNumberOfParticlesToRemove()
-                                                          + numberOfInvalidBufferParticles );
+      this->getParticles()->setNumberOfParticlesToRemove(
+         this->getParticles()->getNumberOfParticlesToRemove() + numberOfInvalidBufferParticles );
    }
 
    /*
@@ -528,11 +526,12 @@ public:
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
 
-      thrust::sort_by_key( thrustDevice,
-                           retypeMarker_view.getArrayData(),
-                           retypeMarker_view.getArrayData() + numberOfBufferPtcs,
-                           thrust::make_zip_iterator(
-                              thrust::make_tuple( r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
+      thrust::sort_by_key(
+         thrustDevice,
+         retypeMarker_view.getArrayData(),
+         retypeMarker_view.getArrayData() + numberOfBufferPtcs,
+         thrust::make_zip_iterator(
+            thrust::make_tuple( r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
    }
 
    template< typename FluidPointer >
@@ -695,17 +694,18 @@ public:
       };
       Algorithms::parallelFor< DeviceType >( 0, numberOfPtcsToBuffer, retypeFluidToBuffer );
       this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + numberOfPtcsToBuffer );
-      fluid->getParticles()->setNumberOfParticlesToRemove( fluid->getParticles()->getNumberOfParticlesToRemove()
-                                                           + numberOfPtcsToBuffer );
+      fluid->getParticles()->setNumberOfParticlesToRemove(
+         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfPtcsToBuffer );
    }
 
    template< typename FluidPointer, typename ModelParams >
    void
-   updateInterfaceBuffer( FluidPointer& fluid_own,
-                          FluidPointer& fluid_neihgbor,
-                          const ModelParams& modelParams,
-                          const RealType dt,
-                          const int subdomainIdx )
+   updateInterfaceBuffer(
+      FluidPointer& fluid_own,
+      FluidPointer& fluid_neihgbor,
+      const ModelParams& modelParams,
+      const RealType dt,
+      const int subdomainIdx )
    {
       massNodes.massFlux = 0;
 
@@ -742,17 +742,16 @@ public:
    }
 
 protected:
-
    MassNodes massNodes;
 
    // temporary constants //TODO: Use names such as fluidToBufferCount
    IndexType numberOfPtcsToRemove = 0;
-   IndexType numberOfPtcsToRetype = 0; //TODO: Rename to "moveToFluid"
+   IndexType numberOfPtcsToRetype = 0;  //TODO: Rename to "moveToFluid"
    IndexType numberOfPtcsToCreate = 0;
    IndexType numberOfPtcsToBuffer = 0;
 
    // temporary arrays
-   IndexArrayType retypeMarker; //TODO: rename
+   IndexArrayType retypeMarker;  //TODO: rename
 
    IndexArrayType particlesToFluid;
    IndexArrayType particlesToRemove;
@@ -768,4 +767,3 @@ protected:
 };
 
 }  // namespace TNL::SPH
-

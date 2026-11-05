@@ -12,14 +12,15 @@
 
 namespace TNL::SPH {
 
-template< typename ParticleSystem,
-          typename SPHCaseConfig,
-          typename Variables,
-          typename IntegratorVariables,
-          typename OpenBoundaryConfig >
+template<
+   typename ParticleSystem,
+   typename SPHCaseConfig,
+   typename Variables,
+   typename IntegratorVariables,
+   typename OpenBoundaryConfig >
 class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >
 {
-   public:
+public:
    using BaseType = ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >;
    using GlobalIndexType = typename BaseType::GlobalIndexType;
    using RealType = typename BaseType::RealType;
@@ -37,15 +38,17 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    OpenBoundary() = default;
 
    OpenBoundary( GlobalIndexType size, GlobalIndexType sizeAllocated, RealType h, GlobalIndexType numberOfCells )
-   : ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells ) {};
+   : ParticleSet< ParticleSystem, SPHCaseConfig, Variables, IntegratorVariables >( size, sizeAllocated, h, numberOfCells )
+   {}
 
    void
-   initialize( int numberOfParticles,
-               int numberOfAllocatedParticles,
-               RealType searchRadius,
-               CoordinatesType dimensions,
-               VectorType origin,
-               GlobalIndexType numberOfParticlesPerCell = 75 )
+   initialize(
+      int numberOfParticles,
+      int numberOfAllocatedParticles,
+      RealType searchRadius,
+      CoordinatesType dimensions,
+      VectorType origin,
+      GlobalIndexType numberOfParticlesPerCell = 75 )
    {
       BaseType::initialize( numberOfParticles, numberOfAllocatedParticles, searchRadius, dimensions, origin );
 
@@ -109,9 +112,6 @@ class OpenBoundary : public ParticleSet< ParticleSystem, SPHCaseConfig, Variable
    OpenBoundaryConfigType config;
    //zone grid
    ParticleZone zone;
-
-
 };
 
 }  // namespace TNL::SPH
-

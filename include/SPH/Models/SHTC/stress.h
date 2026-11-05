@@ -20,18 +20,19 @@ public:
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : rho0( sphState.rho0 ),
-       cl( sphState.speedOfSound_bulk ),
-       cs( sphState.speedOfSound_shear ),
-       antiClumpFact( sphState.antiClumpFactor ){}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : rho0( sphState.rho0 ),
+        cl( sphState.speedOfSound_bulk ),
+        cs( sphState.speedOfSound_shear ),
+        antiClumpFact( sphState.antiClumpFactor )
+      {}
 
-     const RealType rho0;
-     const RealType cs;
-     const RealType cl;
-     const RealType antiClumpFact;
+      const RealType rho0;
+      const RealType cs;
+      const RealType cl;
+      const RealType antiClumpFact;
    };
 
    __cuda_callable__
@@ -43,14 +44,13 @@ public:
       const RealType rho0 = params.rho0;
       const RealType antiClumpFact = params.antiClumpFact;
 
-      const MatrixType E = details::template unitMatrix< MatrixType >(); //FIXME: Do unit matrix constructor!
+      const MatrixType E = details::template unitMatrix< MatrixType >();  //FIXME: Do unit matrix constructor!
       const MatrixType fst = Matrices::matmul( Matrices::transpose( A ), A );
 
-      return powf( cl, 2 ) * ( rho - rho0 / ( 1.f + antiClumpFact ) ) * E +
-             powf( cs, 2 ) * rho * Matrices::matmul( fst, details::deviator( fst ) );
+      return powf( cl, 2 ) * ( rho - rho0 / ( 1.f + antiClumpFact ) ) * E
+           + powf( cs, 2 ) * rho * Matrices::matmul( fst, details::deviator( fst ) );
    }
 };
 
-} // Stress
+}  //namespace Stress
 }  // namespace TNL::SPH
-

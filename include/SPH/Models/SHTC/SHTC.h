@@ -19,7 +19,6 @@ template< typename Particles, typename ModelConfig >
 class SHTC : public SPHMultisetSolverTemplate< Particles, ModelConfig >
 {
 public:
-
    using Model = SHTC< Particles, ModelConfig >;
    using ModelParams = SHTCConfig< ModelConfig >;
    using ParticlesType = Particles;
@@ -38,7 +37,7 @@ public:
    using FluidVariables = SHTCVariables< SPHConfig >;
    using BoundaryVariables = SHTCBoundaryVariables< ModelConfig >;
    //using OpenBoundaryVariables = Empty< SPHConfig >;
-   using OpenBoundaryVariables = SHTCVariables< SPHConfig >; //FIXME: Empty doesn't work since open bc are no constexpr anymore
+   using OpenBoundaryVariables = SHTCVariables< SPHConfig >;  //FIXME: Empty doesn't work since open bc are no constexpr anymore
    using IntegrationSchemeType = typename ModelConfig::IntegrationScheme;
    using IntegrationSchemeVariables = typename IntegrationSchemeType::IntegrationSchemeVariablesType;
    using KernelFunction = typename ModelConfig::KernelFunction;
@@ -85,21 +84,24 @@ public:
     */
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   initializeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
    /**
     * Perform postinteraction procedures.
     */
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   finalizeInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
    /**
     * Perform postinteraction procedures.
     */
    template< typename FluidPointer, typename BoundaryPointer >
    void
-   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams ) {}
+   finalizeBoundaryInteraction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
+   {}
 
    // Empty functions to match the solver interface
 
@@ -114,11 +116,8 @@ public:
    //void
    //interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams )
    //{}
-
-
 };
 
 }  // namespace TNL::SPH
 
 #include <SPH/Models/SHTC/SHTC.hpp>
-

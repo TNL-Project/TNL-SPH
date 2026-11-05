@@ -26,12 +26,12 @@ public:
       particleMassPerSet.resize( numberOfSubsets );
       massPerSet.resize( numberOfSubsets );
 
-      for( int i = 0; i < numberOfSubsets; i++ ){
-            const RealType rcut = fluidSets[ i ]->getParticles()->getSearchRadius();
-            const RealType refinementFactor = rcut / ( 2.f * modelParams.h );
-            const unsigned int dim = SPHConfig::spaceDimension;
-            const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
-            particleMassPerSet[ i ] = m;
+      for( int i = 0; i < numberOfSubsets; i++ ) {
+         const RealType rcut = fluidSets[ i ]->getParticles()->getSearchRadius();
+         const RealType refinementFactor = rcut / ( 2.f * modelParams.h );
+         const unsigned int dim = SPHConfig::spaceDimension;
+         const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+         particleMassPerSet[ i ] = m;
       }
    }
 
@@ -41,7 +41,7 @@ public:
    {
       totalMass = 0.;
 
-      for( int i = 0; i < numberOfSubsets; i++ ){
+      for( int i = 0; i < numberOfSubsets; i++ ) {
          const RealType m = particleMassPerSet[ i ];
          const IndexType np = fluidSets[ i ]->getNumberOfParticles();
          massPerSet[ i ] = m * np;
@@ -53,15 +53,14 @@ public:
    output( const std::string& outputPath, const int step, const RealType time )
    {
       std::ofstream outfile;
-      outfile.open(outputPath, std::ios_base::app );
+      outfile.open( outputPath, std::ios_base::app );
       outfile << step << " " << time << " " << totalMass;
       for( int i = 0; i < numberOfSubsets; i++ )
-         outfile <<  " " << massPerSet[ i ];
+         outfile << " " << massPerSet[ i ];
       outfile << std::endl;
    }
 
 protected:
-
    int numberOfSubsets;
    std::vector< RealType > particleMassPerSet;
    std::vector< RealType > massPerSet;
@@ -69,4 +68,3 @@ protected:
 };
 
 }  // namespace TNL::SPH
-

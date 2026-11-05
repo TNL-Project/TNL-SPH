@@ -17,7 +17,7 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    try {
       initialize< SimulationType >( argc, argv, this->cliParams, this->cliConfig, params, this->config );
    }
-   catch ( ... ) {
+   catch( ... ) {
       std::cerr << std::endl;
    }
 
@@ -37,35 +37,21 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    this->fluidSets.resize( this->numberOfSubsets );
    this->boundarySets.resize( this->numberOfSubsets );
 
-   this->fluidSets[ 0 ]->initialize( numberOfParticles,
-                                      numberOfAllocatedParticles,
-                                      searchRadius,
-                                      dimensions,
-                                      domainOrigin );
+   this->fluidSets[ 0 ]->initialize( numberOfParticles, numberOfAllocatedParticles, searchRadius, dimensions, domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluidSets[ 0 ]->getParticles()->setParticleSetLabel( 0 );
 
-   this->fluidSets[ 1 ]->initialize( 0,
-                                      numberOfAllocatedParticles,
-                                      searchRadius,
-                                      dimensions,
-                                      domainOrigin );
+   this->fluidSets[ 1 ]->initialize( 0, numberOfAllocatedParticles, searchRadius, dimensions, domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->fluidSets[ 1 ]->getParticles()->setParticleSetLabel( 0 );
 
-   this->boundarySets[ 0 ]->initialize( numberOfBoundaryParticles,
-                                         numberOfAllocatedBoundaryParticles,
-                                         searchRadius,
-                                         dimensions,
-                                         domainOrigin );
+   this->boundarySets[ 0 ]->initialize(
+      numberOfBoundaryParticles, numberOfAllocatedBoundaryParticles, searchRadius, dimensions, domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundarySets[ 0 ]->getParticles()->setParticleSetLabel( 1 );
 
-   this->boundarySets[ 1 ]->initialize( numberOfBoundaryParticles,
-                                         numberOfAllocatedBoundaryParticles,
-                                         searchRadius,
-                                         dimensions,
-                                         domainOrigin );
+   this->boundarySets[ 1 ]->initialize(
+      numberOfBoundaryParticles, numberOfAllocatedBoundaryParticles, searchRadius, dimensions, domainOrigin );
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundarySets[ 1 ]->getParticles()->setParticleSetLabel( 1 );
 

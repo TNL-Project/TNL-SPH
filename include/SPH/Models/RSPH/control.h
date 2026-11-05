@@ -19,7 +19,6 @@ template< typename SPHDefs >
 class RSPHConfig
 {
 public:
-
    using SPHConfig = typename SPHDefs::SPHConfig;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using RealType = typename SPHTraitsType::RealType;
@@ -125,7 +124,8 @@ public:
 };
 
 template< typename ModelParams >
-void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
+void
+writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 {
    logger.writeHeader( "TNL::SPH::RSPH model parameters" );
    logger.writeParameter( "Resolution parameters", "" );
@@ -134,27 +134,37 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
    logger.writeParameter( "Spatial resolution (h/dp):", modelParams.h / modelParams.dp, 1 );
    logger.writeParameter( "Particle mass (mass):", modelParams.mass, 1 );
    logger.writeParameter( "Model parameters", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::RiemannSolver, RiemannSolvers::RoeLinearized< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::RiemannSolver,
+                    RiemannSolvers::RoeLinearized< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Riemann solver:", "TNL::SPH::RoeLinearized", 1 );
       logger.writeParameter( "Roe scheme limiter constant:", modelParams.limiterEta, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v<
+                    typename ModelParams::EOS,
+                    EquationsOfState::TaitWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
+   {
       logger.writeParameter( "Equation of state:", "TNL::SPH::TaitWeaklyCompressibleEOS", 1 );
       logger.writeParameter( "Coefficient of EOS (coefB): ", modelParams.coefB );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::EOS, EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::EOS,
+                    EquationsOfState::TaitLinearizedWeaklyCompressibleEOS< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Equation of state:", "TNL::SPH::LinearizedTaitWeaklyCompressibleEOS", 1 );
    logger.writeParameter( "Speed of sound (speedOfSound):", modelParams.speedOfSound, 1 );
    logger.writeParameter( "Referentail density (rho0):", modelParams.rho0, 1 );
    logger.writeParameter( "Background pressure (p0):", modelParams.p0, 1 );
    logger.writeParameter( "Time integration", "" );
-   if constexpr ( std::is_same_v< typename ModelParams::IntegrationScheme, IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig> > )
+   if constexpr( std::is_same_v<
+                    typename ModelParams::IntegrationScheme,
+                    IntegrationSchemes::VerletScheme< typename ModelParams::SPHConfig > > )
       logger.writeParameter( "Integration scheme:", "TNL::SPH::RSPH::VerletScheme", 1 );
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, ConstantTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::ConstantTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
    }
-   if constexpr ( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig> > ){
+   if constexpr( std::is_same_v< typename ModelParams::TimeStepping, VariableTimeStep< typename ModelParams::SPHConfig > > ) {
       logger.writeParameter( "Time stepping:", "TNL::SPH::VariableTimeStep", 1 );
       logger.writeParameter( "Initial time step (dtInit):", modelParams.dtInit, 1 );
       logger.writeParameter( "Minimal time step (dtMin):", modelParams.dtMin, 1 );
@@ -164,4 +174,3 @@ void writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
 }
 
 }  // namespace TNL::SPH
-

@@ -12,12 +12,18 @@ namespace TNL::SPH {
 namespace Interpolation {
 
 // TODO: Pass this real type to ABFs directisimo!
-template< int Dim, int Order, typename RealType, template< int, int, typename > typename ABFsType, typename KernelFunction, typename SolverConfig >
+template<
+   int Dim,
+   int Order,
+   typename RealType,
+   template< int, int, typename > typename ABFsType,
+   typename KernelFunction,
+   typename SolverConfig >
 class MFD
 {
-   public:
+public:
    constexpr static int p = get_p< Dim, Order >();
-   using VectorType = Containers::StaticVector< Dim, RealType >; //FIXME: Should not be there
+   using VectorType = Containers::StaticVector< Dim, RealType >;  //FIXME: Should not be there
    using BaseVectorType = Containers::StaticVector< p, RealType >;
    using BaseMatrixType = Matrices::StaticMatrix< RealType, p, p >;
    using ABFs = ABFsType< Dim, Order, SolverConfig >;
@@ -29,7 +35,7 @@ class MFD
    {
       const BaseVectorType W_ji = ABFs::eval( r_ij, h );
       //const BaseVectorType W_ji = ABFs::eval( ( -1 ) * r_ij, h ); //TODO: Why it isnt like this?
-      const BaseVectorType X_ji = TaylorMonomials::eval(( -1 ) * r_ij, h );
+      const BaseVectorType X_ji = TaylorMonomials::eval( ( -1 ) * r_ij, h );
       //return Matrices::cross( X_ji, W_ji ); //TODO: Why it isnt like this?
       return Matrices::cross( W_ji, X_ji );
    }
@@ -39,10 +45,9 @@ class MFD
    getPairVariableAndDerivatives( VectorType r_ij, RealType h )
    {
       //return ABFs::eval( (-1 ) * r_ij, h ); //TODO: Why it isnt like this?
-      return ABFs::eval(  r_ij, h );
+      return ABFs::eval( r_ij, h );
    }
 };
 
-} //namespace Interpolation
+}  //namespace Interpolation
 }  // namespace TNL::SPH
-

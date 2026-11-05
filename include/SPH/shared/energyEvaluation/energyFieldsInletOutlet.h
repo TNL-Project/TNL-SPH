@@ -65,7 +65,7 @@ public:
       const IndexType currentSize = ekin_inlet.getSize();
       ekin_outlet.setSize( currentSize + patchSize );
       epot_outlet.setSize( currentSize + patchSize );
-      ecomp_outlet.setSize( currentSize +  patchSize );
+      ecomp_outlet.setSize( currentSize + patchSize );
       ekin_outlet = 0.;
       epot_outlet = 0.;
       ecomp_outlet = 0.;
@@ -82,16 +82,18 @@ public:
       EcompSum_outlet = TNL::sum( ecomp_outlet );
 
       std::ofstream outfile;
-      outfile.open(outputPath, std::ios_base::app );
-      outfile << step << " " << time << " " << EkinSum_inlet << " " << EpotSum_inlet << " " << EcompSum_inlet << " " << EkinSum_outlet << " " << EpotSum_outlet << " " << EcompSum_outlet << std::endl;
+      outfile.open( outputPath, std::ios_base::app );
+      outfile << step << " " << time << " " << EkinSum_inlet << " " << EpotSum_inlet << " " << EcompSum_inlet << " "
+              << EkinSum_outlet << " " << EpotSum_outlet << " " << EcompSum_outlet << std::endl;
    }
 
    template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams >
    void
-   computeInflowEnergyLevels( FluidPointer& fluid,
-                              OpenBoundaryPointer& openBoundary,
-                              ModelParams& modelParams,
-                              const RealType& dt )
+   computeInflowEnergyLevels(
+      FluidPointer& fluid,
+      OpenBoundaryPointer& openBoundary,
+      ModelParams& modelParams,
+      const RealType& dt )
    {
       using EOS = typename ModelParams::EOS;
       const RealType m = modelParams.mass;
@@ -126,7 +128,7 @@ public:
          const VectorType r_relative = r_new - bufferPosition;
 
          // if particle moves out of the buffer, compute its energy contribution
-         if( ( r_relative, inletOrientation ) > 0 ){
+         if( ( r_relative, inletOrientation ) > 0 ) {
             ekin_inlet_view[ i ] = 0.5 * m * ( v_i, v_i );
             epot_inlet_view[ i ] = ( -1.f ) * m * ( gravity, r_new );
             ecomp_inlet_view[ i ] = m * m * p_i / rho_i;
@@ -137,10 +139,11 @@ public:
 
    template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams >
    void
-   computeOutletEnergyLevels( FluidPointer& fluid,
-                              OpenBoundaryPointer& openBoundary,
-                              ModelParams& modelParams,
-                              const RealType& dt )
+   computeOutletEnergyLevels(
+      FluidPointer& fluid,
+      OpenBoundaryPointer& openBoundary,
+      ModelParams& modelParams,
+      const RealType& dt )
    {
       using EOS = typename ModelParams::EOS;
       const RealType m = modelParams.mass;
@@ -176,7 +179,7 @@ public:
          const VectorType r_relative = bufferPosition - r_i;
 
          // if particle entered the outlet buffer, compute its energy
-         if( ( r_relative, outletOrientation ) > 0 ){
+         if( ( r_relative, outletOrientation ) > 0 ) {
             ekin_outlet_view[ i ] = 0.5 * m * ( v_i, v_i );
             epot_outlet_view[ i ] = ( -1.f ) * m * ( gravity, r_i );
             ecomp_outlet_view[ i ] = m * m * p_i / rho_i;
@@ -187,4 +190,3 @@ public:
 };
 
 }  // namespace TNL::SPH
-

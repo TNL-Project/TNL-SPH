@@ -12,7 +12,7 @@ template< typename SPHConfig >
 class ExplicitEulerSchemeVariables
 {
    //TODO: Default types?
-   public:
+public:
    ExplicitEulerSchemeVariables() = default;
 
    template< typename IndexType >
@@ -30,7 +30,6 @@ template< typename SPHConfig >
 class ExplicitEulerScheme
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -62,7 +61,7 @@ public:
       auto view_A = fluid->getVariables()->A.getView();
       const auto view_dAdt = fluid->getVariables()->dAdt.getConstView();
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          view_rho[ i ] += view_drhodt[ i ] * dt;
          view_v[ i ] += view_dvdt[ i ] * dt;
@@ -91,28 +90,27 @@ public:
       //TODO: Asserts
       const RealType dt = timeStepping.getTimeStep();
 
-      if( stage == Stages::updateDensity ){
+      if( stage == Stages::updateDensity ) {
          fluid->getVariables()->rho += dt * fluid->getVariables()->drhodt;
       }
-      else if( stage == Stages::updateVelocity ){
+      else if( stage == Stages::updateVelocity ) {
          fluid->getVariables()->v += dt * fluid->getVariables()->dvdt;
       }
-      else if( stage == Stages::updateDistortion ){
+      else if( stage == Stages::updateDistortion ) {
          auto view_A = fluid->getVariables()->A.getView();
          const auto view_dAdt = fluid->getVariables()->dAdt.getConstView();
 
-         auto init = [=] __cuda_callable__ ( int i ) mutable
+         auto init = [ = ] __cuda_callable__( int i ) mutable
          {
             view_A[ i ] += view_dAdt[ i ] * dt;
          };
          fluid->getParticles()->forAll( init );
       }
-      else if( stage == Stages::moveParticles ){
+      else if( stage == Stages::moveParticles ) {
          moveParticles( timeStepping.getTimeStep(), fluid );
       }
    }
 };
 
-} // IntegrationSchemes
+}  //namespace IntegrationSchemes
 }  // namespace TNL::SPH
-

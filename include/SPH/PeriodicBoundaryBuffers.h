@@ -12,7 +12,7 @@ namespace TNL::SPH {
 template< typename ParticlesType, typename OpenBoundaryConfigType >
 class PeriodicBoundary
 {
-   public:
+public:
    using DeviceType = typename ParticlesType::DeviceType;
    using RealType = typename ParticlesType::RealType;
    using VectorType = typename ParticlesType::PointType;
@@ -22,10 +22,11 @@ class PeriodicBoundary
    using ParticleZone = TNL::Particles::ParticleZone< typename ParticlesType::Config, DeviceType >;
 
    void
-   initialize( RealType searchRadius,
-               CoordinatesType dimensions,
-               VectorType origin,
-               GlobalIndexType numberOfParticlesPerCell = 75 ) //TODO: Move this to config params.
+   initialize(
+      RealType searchRadius,
+      CoordinatesType dimensions,
+      VectorType origin,
+      GlobalIndexType numberOfParticlesPerCell = 75 )  //TODO: Move this to config params.
    {
       //initialize the zone
       particleZone.setNumberOfParticlesPerCell( numberOfParticlesPerCell );
@@ -65,4 +66,3 @@ class PeriodicBoundary
 };
 
 }  // namespace TNL::SPH
-

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <memory> //shared_ptr
+#include <memory>  //shared_ptr
 #include <filesystem>
 
 #include <TNL/Containers/Vector.h>
@@ -26,12 +26,12 @@ template< typename Model >
 class SPHMultiset_CFD
 {
 public:
-
    using SimulationType = SPHMultiset_CFD< Model >;
    using DeviceType = typename Model::DeviceType;
    using ModelType = Model;
    using ModelParams = typename ModelType::ModelParams;
-   using ParticlesType = typename ModelType::ParticlesType;;
+   using ParticlesType = typename ModelType::ParticlesType;
+   ;
    using IntegrationSchemeType = typename ModelType::IntegrationSchemeType;
    using IntegratorPointer = typename Pointers::SharedPointer< IntegrationSchemeType, DeviceType >;
    using IntegrationSchemeVariablesType = typename Model::IntegrationSchemeVariables;
@@ -51,8 +51,8 @@ public:
    using BoundaryPointer = Pointers::SharedPointer< Boundary, DeviceType >;
    using OpenBoundaryVariables = typename Model::OpenBoundaryVariables;
    using OpenBoundaryConfigType = typename Model::OpenBoundaryConfig;
-   using OpenBoundary = OpenBoundary<
-      ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
+   using OpenBoundary =
+      OpenBoundary< ParticlesType, SPHConfig, OpenBoundaryVariables, IntegrationSchemeVariablesType, OpenBoundaryConfigType >;
    using OpenBoundaryPointer = Pointers::SharedPointer< OpenBoundary, DeviceType >;
    using OpenBoundaryModel = typename Model::OpenBoundaryModel;
 
@@ -66,7 +66,9 @@ public:
 
    //SPHMultiset_CFD() : logger( 100, std::cout ) {};
 
-   SPHMultiset_CFD( std::ostream& out = std::cout ) : logger( 100, out ) {};
+   SPHMultiset_CFD( std::ostream& out = std::cout )
+   : logger( 100, out )
+   {}
 
    void
    init( int argc, char* argv[] );
@@ -90,26 +92,28 @@ public:
    void
    readOpenBoundaryFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger );
 
-
 #ifdef HAVE_MPI
    // protected
    void
-   initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
-                                TNL::Config::ParameterContainer& parametersDistributed,
-                                TNL::Logger& logger );
+   initDistributedParticleSets(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 
    // protected
    void
-   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
-                                 TNL::Config::ParameterContainer& parametersDistributed,
-                                 TNL::Logger& logger );
+   readParticleFilesDistributed(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 #endif
 
    // protected
    void
-   initOverlaps( TNL::Config::ParameterContainer& parameters,
-                 TNL::Config::ParameterContainer& parametersDistributed,
-                 TNL::Logger& logger );
+   initOverlaps(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 
    /**
     * Perform neighbors search and fill neighborsList in Particle system variable.
@@ -248,7 +252,6 @@ public:
    void
    midpointCorrector();
 
-
 #ifdef HAVE_MPI
 
    void
@@ -270,7 +273,6 @@ public:
    void
    balanceSubdomains();
 
-
 #endif
 
    /**
@@ -278,7 +280,7 @@ public:
     * available fileds.
     */
    void
-   save( bool writeParticleCellIndex = false  );
+   save( bool writeParticleCellIndex = false );
 
    void
    makeSnapshot();
@@ -287,7 +289,8 @@ public:
     * Read and parse user coded params
     */
    template< typename Func >
-   void initUserConfig( Func&& userConfigFunction );
+   void
+   initUserConfig( Func&& userConfigFunction );
 
    void
    writeProlog( bool writeSystemInformation = true ) noexcept;
@@ -302,7 +305,7 @@ public:
    void
    writeEpilog() noexcept;
 
-//protected:
+   //protected:
 
    FluidPointer fluid;
    BoundaryPointer boundary;
@@ -312,7 +315,7 @@ public:
    ModelParams modelParams;
    OpenBoundaryModel openBoundaryModel;
 
-   IntegratorPointer integrator; // I hate this.
+   IntegratorPointer integrator;  // I hate this.
 
    TimeStepping timeStepping;
    ComputationTimeMeasurement timeMeasurement;
@@ -356,7 +359,6 @@ public:
    // Configurations and parameters for user defined constants and variables
    TNL::Config::ParameterContainer userParams;
    TNL::Config::ConfigDescription userConfig;
-
 };
 
 }  // namespace TNL::SPH
@@ -373,4 +375,3 @@ operator<<( std::ostream& str, const TNL::SPH::SPHMultiset_CFD< Model >& sphSimu
 }
 
 #include <SPH/SPHMultiset_CFD.hpp>
-

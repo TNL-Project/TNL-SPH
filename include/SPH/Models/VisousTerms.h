@@ -11,14 +11,14 @@ namespace ViscousTerms {
 template< typename SPHCaseConfig >
 class None
 {
-   public:
+public:
    using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState ) {}
    };
 
    __cuda_callable__
@@ -32,21 +32,22 @@ class None
 template< typename SPHCaseConfig >
 class ArtificialViscosity
 {
-   public:
+public:
    using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : h( sphState.h ),
-       coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
-       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : h( sphState.h ),
+        coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const RealType h;
-     const RealType coefAV;
-     const RealType preventZero;
+      const RealType h;
+      const RealType coefAV;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -61,22 +62,23 @@ class ArtificialViscosity
 template< typename SPHCaseConfig >
 class PhysicalViscosity
 {
-   public:
+public:
    using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : h( sphState.h ),
-       viscoValue( sphState.dynamicViscosity ),
-       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : h( sphState.h ),
+        viscoValue( sphState.dynamicViscosity ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const RealType h;
-     const RealType viscoValue;
-     const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
-     const RealType preventZero;
+      const RealType h;
+      const RealType viscoValue;
+      const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -88,27 +90,27 @@ class PhysicalViscosity
    }
 };
 
-
 template< typename SPHCaseConfig >
 class CombinedViscosity
 {
-   public:
+public:
    using RealType = typename SPHCaseConfig::RealType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : h( sphState.h ),
-       coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
-       preventZero( sphState.h * sphState.h * sphState.eps ),
-       kinematicViscosity( sphState.dynamicViscosity / sphState.rho0 ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : h( sphState.h ),
+        coefAV( ( -2.f ) * sphState.alpha * sphState.speedOfSound ),
+        preventZero( sphState.h * sphState.h * sphState.eps ),
+        kinematicViscosity( sphState.dynamicViscosity / sphState.rho0 )
+      {}
 
-     const RealType h;
-     const RealType coefAV;
-     const RealType kinematicViscosity;
-     const RealType preventZero;
+      const RealType h;
+      const RealType coefAV;
+      const RealType kinematicViscosity;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -116,27 +118,28 @@ class CombinedViscosity
    Pi( const RealType& rhoI, const RealType& rhoJ, const RealType& drs, const RealType& drdv, const ParamsType& params )
    {
       const RealType mu = params.h * drdv / ( drs * drs + params.preventZero );
-      return ( drdv < 0.f ) ? ( params.coefAV * mu / ( rhoI + rhoJ ) + mu * params.kinematicViscosity) : ( params.kinematicViscosity * mu );
+      return ( drdv < 0.f ) ? ( params.coefAV * mu / ( rhoI + rhoJ ) + mu * params.kinematicViscosity )
+                            : ( params.kinematicViscosity * mu );
    }
 };
 
-} // ViscousTerms
+}  //namespace ViscousTerms
 
 namespace BIViscousTerms {
 
 template< typename SPHCaseConfig >
 class None
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState ) {}
    };
 
    __cuda_callable__
@@ -155,14 +158,15 @@ class None
 
    __cuda_callable__
    static VectorType
-   BI_Pi( const RealType& drs,
-          const VectorType& r_ik,
-          const VectorType v_ik,
-          const RealType& rho_i,
-          const RealType& rho_j,
-          const VectorType& n_k,
-          const RealType& WS_k,
-          const ParamsType& params )
+   BI_Pi(
+      const RealType& drs,
+      const VectorType& r_ik,
+      const VectorType v_ik,
+      const RealType& rho_i,
+      const RealType& rho_j,
+      const VectorType& n_k,
+      const RealType& WS_k,
+      const ParamsType& params )
    {
       const VectorType zeroVector = 0.f;
       return zeroVector;
@@ -172,23 +176,24 @@ class None
 template< typename SPHCaseConfig >
 class ArtificialViscosity
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : h( sphState.h ),
-       coefAV( ( 2.f ) * sphState.alpha * sphState.speedOfSound ),
-       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : h( sphState.h ),
+        coefAV( ( 2.f ) * sphState.alpha * sphState.speedOfSound ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const RealType h;
-     const RealType coefAV;
-     const RealType preventZero;
+      const RealType h;
+      const RealType coefAV;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -210,44 +215,44 @@ class ArtificialViscosity
 
    __cuda_callable__
    static VectorType
-   BI_Pi( const RealType& drs,
-          const VectorType& r_ik,
-          const VectorType v_ik,
-          const RealType& rho_i,
-          const RealType& rho_j,
-          const VectorType& n_k,
-          const RealType& WS_ik,
-          const ParamsType& params )
+   BI_Pi(
+      const RealType& drs,
+      const VectorType& r_ik,
+      const VectorType v_ik,
+      const RealType& rho_i,
+      const RealType& rho_j,
+      const VectorType& n_k,
+      const RealType& WS_ik,
+      const ParamsType& params )
    {
       const RealType drdv = ( r_ik, v_ik );
       const RealType mu = params.h * drdv / ( drs * drs + params.preventZero );
       const VectorType zeroVector = 0.f;
       return ( drdv < 0.f ) ? ( params.coefAV * mu / ( rho_i + rho_j ) * rho_j * n_k * WS_ik ) : ( zeroVector );
-
    }
-
 };
 
 template< typename SPHCaseConfig >
 class PhysicalViscosity_MVT
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : dp( sphState.dp ),
-       dynamicViscosity( sphState.dynamicViscosity ),
-       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : dp( sphState.dp ),
+        dynamicViscosity( sphState.dynamicViscosity ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const RealType dp;
-     const RealType dynamicViscosity;
-     const RealType preventZero;
+      const RealType dp;
+      const RealType dynamicViscosity;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -266,47 +271,49 @@ class PhysicalViscosity_MVT
 
    __cuda_callable__
    static VectorType
-   BI_Pi( const RealType& drs,
-          const VectorType& r_ik,
-          const VectorType v_ik,
-          const RealType& rho_i,
-          const RealType& rho_j,
-          const VectorType& n_k,
-          const RealType& WS_ik,
-          const ParamsType& params )
+   BI_Pi(
+      const RealType& drs,
+      const VectorType& r_ik,
+      const VectorType v_ik,
+      const RealType& rho_i,
+      const RealType& rho_j,
+      const VectorType& n_k,
+      const RealType& WS_ik,
+      const ParamsType& params )
    {
       const RealType viscoCoef = params.dynamicViscosity / rho_i;
 
       const RealType r_ik_n = std::max( std::abs( ( r_ik, n_k ) ), params.dp );
       const VectorType v_ik_t = v_ik - ( v_ik, n_k ) * n_k;
 
-      const VectorType lap_v_t = 2.f * v_ik_t / ( r_ik_n ) * WS_ik;
+      const VectorType lap_v_t = 2.f * v_ik_t / (r_ik_n) *WS_ik;
 
-      return  viscoCoef * lap_v_t;
+      return viscoCoef * lap_v_t;
    }
 };
 
 template< typename SPHCaseConfig >
 class PhysicalViscosity_MGVT
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHCaseConfig >;
    using RealType = typename SPHCaseConfig::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
    struct ParamsType
    {
-     template< typename SPHState >
-     __cuda_callable__
-     ParamsType( SPHState sphState )
-     : dp( sphState.dp ),
-       dynamicViscosity( sphState.dynamicViscosity ),
-       preventZero( sphState.h * sphState.h * sphState.eps ) {}
+      template< typename SPHState >
+      __cuda_callable__
+      ParamsType( SPHState sphState )
+      : dp( sphState.dp ),
+        dynamicViscosity( sphState.dynamicViscosity ),
+        preventZero( sphState.h * sphState.h * sphState.eps )
+      {}
 
-     const RealType dp;
-     const RealType dynamicViscosity;
-     const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
-     const RealType preventZero;
+      const RealType dp;
+      const RealType dynamicViscosity;
+      const RealType dimensionCoef = ( 2.f + SPHCaseConfig::spaceDimension ) * 2.f;
+      const RealType preventZero;
    };
 
    __cuda_callable__
@@ -327,14 +334,15 @@ class PhysicalViscosity_MGVT
 
    __cuda_callable__
    static VectorType
-   BI_Pi( const RealType& drs,
-          const VectorType& r_ik,
-          const VectorType v_ik,
-          const RealType& rho_i,
-          const RealType& rho_j,
-          const VectorType& n_k,
-          const RealType& WS_ik,
-          const ParamsType& params )
+   BI_Pi(
+      const RealType& drs,
+      const VectorType& r_ik,
+      const VectorType v_ik,
+      const RealType& rho_i,
+      const RealType& rho_j,
+      const VectorType& n_k,
+      const RealType& WS_ik,
+      const ParamsType& params )
    {
       const RealType viscoCoef = params.dimensionCoef * params.dynamicViscosity / rho_i;
 
@@ -343,13 +351,12 @@ class PhysicalViscosity_MGVT
       const VectorType v_ik_t = v_ik - ( v_ik, n_k ) * n_k;
 
       const VectorType lap_v_n = pi * rho_j * n_k * WS_ik;
-      const VectorType lap_v_t = 2.f * v_ik_t / ( r_ik_n ) * WS_ik;
+      const VectorType lap_v_t = 2.f * v_ik_t / (r_ik_n) *WS_ik;
 
       return viscoCoef * ( lap_v_n + lap_v_t );
    }
 };
 
-} // BIViscousTerms
+}  //namespace BIViscousTerms
 
 }  // namespace TNL::SPH
-

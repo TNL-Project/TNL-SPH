@@ -15,7 +15,7 @@ namespace IntegrationSchemes {
 template< typename SPHConfig >
 class RK4IntegrationSchemeVariables
 {
-   public:
+public:
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
    using RealType = typename SPHTraitsType::RealType;
@@ -103,7 +103,6 @@ template< typename SPHConfig >
 class RK4Scheme
 {
 public:
-
    using DeviceType = typename SPHConfig::DeviceType;
    using SPHTraitsType = SPHFluidTraits< SPHConfig >;
    using GlobalIndexType = typename SPHTraitsType::GlobalIndexType;
@@ -128,7 +127,7 @@ public:
       auto drhodt_view_in = fluid->getIntegratorVariables()->drhodt_in.getView();
       auto v_staged_view = fluid->getIntegratorVariables()->v_staged.getView();
 
-      auto step1 = [=] __cuda_callable__ ( int i ) mutable
+      auto step1 = [ = ] __cuda_callable__( int i ) mutable
       {
          //w^(1) = w^(0) + F(w^(0)) * dt/2
          r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
@@ -136,7 +135,7 @@ public:
          rho_view[ i ] = rho_in_view[ i ] + 0.5f * dt * drhodt_view[ i ];
       };
 
-      auto step2 = [=] __cuda_callable__ ( int i ) mutable
+      auto step2 = [ = ] __cuda_callable__( int i ) mutable
       {
          //w^(2) = w^(0) + F(w^(1)) * dt/2
          r_view[ i ] = r_in_view[ i ] + 0.5f * dt * v_view[ i ];
@@ -149,7 +148,7 @@ public:
          v_staged_view[ i ] += 2 * v_view[ i ];
       };
 
-      auto step3 = [=] __cuda_callable__ ( int i ) mutable
+      auto step3 = [ = ] __cuda_callable__( int i ) mutable
       {
          //w^(3) = w^(0) + F(w^(1)) * dt/2 + dt * F(w^(2))
          r_view[ i ] = r_in_view[ i ] + dt * v_view[ i ];
@@ -162,7 +161,7 @@ public:
          v_staged_view[ i ] += 2 * v_view[ i ];
       };
 
-      if( predictorStep == 0 ){
+      if( predictorStep == 0 ) {
          //w^(0) = w^n
          fluid->getIntegratorVariables()->dvdt_in = fluid->getVariables()->a;
          fluid->getIntegratorVariables()->drhodt_in = fluid->getVariables()->drho;
@@ -172,16 +171,15 @@ public:
 
          fluid->getIntegratorVariables()->v_staged = fluid->getVariables()->v;
       }
-      else if( predictorStep == 1 ){
+      else if( predictorStep == 1 ) {
          fluid->getParticles()->forAll( step1 );
       }
-      else if( predictorStep == 2 ){
+      else if( predictorStep == 2 ) {
          fluid->getParticles()->forAll( step2 );
       }
-      else if( predictorStep == 3 ){
+      else if( predictorStep == 3 ) {
          fluid->getParticles()->forAll( step3 );
       }
-
    }
 
    template< typename FluidPointer >
@@ -202,7 +200,7 @@ public:
 
       const RealType dtdt05 = 0.5f * dt * dt;
 
-      auto init = [=] __cuda_callable__ ( int i ) mutable
+      auto init = [ = ] __cuda_callable__( int i ) mutable
       {
          //w^(4) = w^(0) + (dt / 6) * [F(w^(0)) + 2 * F(w^(1)) + 2 * F(w^(2)) + F(w^(3))]
          r_view[ i ] = r_in_view[ i ] + ( dt / 6.f ) * ( v_staged_view[ i ] + v_view[ i ] );
@@ -211,9 +209,7 @@ public:
       };
       fluid->getParticles()->forAll( init );
    }
-
 };
 
-} // IntegrationSchemes
+}  //namespace IntegrationSchemes
 }  // namespace TNL::SPH
-

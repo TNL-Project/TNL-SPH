@@ -27,16 +27,14 @@ struct BIConservative_numeric
 struct None
 {};
 
-enum class OpenBoundaryConditionsType
-: std::uint8_t
+enum class OpenBoundaryConditionsType : std::uint8_t
 {
-    PeriodicBoundary = 0,
+   PeriodicBoundary = 0,
 
-    Inlet = 1,
+   Inlet = 1,
 
-    Outlet = 2
+   Outlet = 2
 };
 
-} // BCTypes
+}  //namespace WCSPH_BCTypes
 }  // namespace TNL::SPH
-

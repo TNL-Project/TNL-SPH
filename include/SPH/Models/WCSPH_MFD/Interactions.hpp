@@ -10,17 +10,13 @@
 
 namespace TNL::SPH {
 
-
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
 void
 WCSPH_MFD< Particles, ModelConfig >::computeMomentumMatrices( FluidPointer& fluid, BoudaryPointer& boundary )
 {
-
-   auto FluidFluid = [ = ] __cuda_callable__( LocalIndexType i,
-                                              LocalIndexType j,
-                                              VectorType & r_i,
-                                              MomentumMatrixType *M_i ) mutable
+   auto FluidFluid =
+      [ = ] __cuda_callable__( LocalIndexType i, LocalIndexType j, VectorType & r_i, MomentumMatrixType * M_i ) mutable
    {
       const BaseVectorType W_ji = ABFs::eval( r_ji );
       const BaseVectorType X_ji = TaylorMonomials::eval( r_ji );
@@ -41,13 +37,12 @@ WCSPH_MFD< Particles, ModelConfig >::computeMomentumMatrices( FluidPointer& flui
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
 void
-WCSPH_MFD< Particles, ModelConfig >::computeABFsCoefs( const BaseVectorType& W_ji
-                                                       const MomentumMatrixType& M_i,
-                                                       const BaseVectorType& Cd )
+WCSPH_MFD< Particles, ModelConfig >::computeABFsCoefs(
+   const BaseVectorType& W_ji const MomentumMatrixType& M_i,
+   const BaseVectorType& Cd )
 {
    return ( W_ji )
 }
-
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
@@ -87,15 +82,16 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
    const auto view_n_bound = boundary->getVariables()->n.getView();
    const auto view_elementSize_bound = boundary->getVariables()->elementSize.getConstView();
 
-   auto FluidFluid = [ = ] __cuda_callable__( LocalIndexType i,
-                                              LocalIndexType j,
-                                              VectorType & r_i,
-                                              VectorType & v_i,
-                                              RealType & rho_i,
-                                              RealType & p_i,
-                                              RealType * drho_i,
-                                              VectorType * a_i,
-                                              RealType * gamma_i ) mutable
+   auto FluidFluid = [ = ] __cuda_callable__(
+                        LocalIndexType i,
+                        LocalIndexType j,
+                        VectorType & r_i,
+                        VectorType & v_i,
+                        RealType & rho_i,
+                        RealType & p_i,
+                        RealType * drho_i,
+                        VectorType * a_i,
+                        RealType * gamma_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -111,12 +107,11 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType w_ji_grad = { ( W_ji, psi_i_d1x ), ( W_ji, psi_i_d1y ) };
          const RealType w_ji_lap = W_ji * psi_i_d2x + W_ji * psi_i_2y;
 
-
          const RealType V_j = m / rho_j;
 
          //const RealType psi = DiffusiveTerm::Psi( rho_i, rho_j, r_ij, drs, diffusiveTermsParams );
          //const RealType diffTerm = psi * ( r_ij, gradW ) * V_j;
-         *drho_i += rho_i * ( v_j - v_i, w_ji_grad ); // * V_j - diffTerm;
+         *drho_i += rho_i * ( v_j - v_i, w_ji_grad );  // * V_j - diffTerm;
 
          const VectorType grad_p = ( p_j - p_i ) * w_ji_grad;
          const VectorType visco_term = ( mu / rho_i ) * ( v_j - v_i ) * w_ji_lap;
@@ -127,14 +122,15 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
       }
    };
 
-   auto FluidBoundConsistent = [ = ] __cuda_callable__( LocalIndexType i,
-                                                        LocalIndexType j,
-                                                        VectorType & r_i,
-                                                        VectorType & v_i,
-                                                        RealType & rho_i,
-                                                        RealType & p_i,
-                                                        RealType * drho_i,
-                                                        VectorType * a_i ) mutable
+   auto FluidBoundConsistent = [ = ] __cuda_callable__(
+                                  LocalIndexType i,
+                                  LocalIndexType j,
+                                  VectorType & r_i,
+                                  VectorType & v_i,
+                                  RealType & rho_i,
+                                  RealType & p_i,
+                                  RealType * drho_i,
+                                  VectorType * a_i ) mutable
    {
       const VectorType r_j = view_points_bound[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -148,10 +144,9 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 
          const VectorType v_ij = v_i - v_j;
 
-         const BaseVectorType W_ji =
-         const VectorType
+         const BaseVectorType W_ji = const VectorType
 
-         *drho_i += ( -1.f ) * ( v_ij, n_j ) * W * rho_j * ds_j;
+            * drho_i += ( -1.f ) * ( v_ij, n_j ) * W * rho_j * ds_j;
 
          const VectorType grad_p = ( p_j - p_i ) * w_ji_grad;
 
@@ -159,7 +154,7 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
          const VectorType bvt = BoundaryViscousTerm::Xi( r_ij, v_ij, n_j, boundaryViscoParams );
          //FIXME: The signs are fucked, because I used inner normals.
          //       Correct is of course: -1/rho * grad + visco
-         *a_i += ( 1.f / rho_i ) * grad_p - visco_term  + bvt;
+         *a_i += ( 1.f / rho_i ) * grad_p - visco_term + bvt;
       }
    };
 
@@ -192,9 +187,10 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoudaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
-                                                         BoudaryPointer& boundary,
-                                                         ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
+   FluidPointer& fluid,
+   BoudaryPointer& boundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -213,12 +209,8 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
    auto view_rho_bound = boundary->getVariables()->rho.getView();
    auto view_gamma_bound = boundary->getVariables()->gamma.getView();
 
-   auto BoundFluid = [ = ] __cuda_callable__( LocalIndexType i,
-                                              LocalIndexType j,
-                                              VectorType& r_i,
-                                              RealType*
-                                              rho_i,
-                                              RealType* gamma_i ) mutable
+   auto BoundFluid = [ = ] __cuda_callable__(
+                        LocalIndexType i, LocalIndexType j, VectorType & r_i, RealType * rho_i, RealType * gamma_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -233,12 +225,9 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
       }
    };
 
-   auto BoundFluidConservative = [ = ] __cuda_callable__( LocalIndexType i,
-                                                          LocalIndexType j,
-                                                          VectorType& r_i,
-                                                          RealType*
-                                                          rho_i,
-                                                          RealType* gamma_i ) mutable
+   auto BoundFluidConservative =
+      [ = ] __cuda_callable__(
+         LocalIndexType i, LocalIndexType j, VectorType & r_i, RealType * rho_i, RealType * gamma_i ) mutable
    {
       const VectorType r_j = view_points[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -293,9 +282,10 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid,
 template< typename Particles, typename ModelConfig >
 template< typename OpenBoundaryPointer, typename BoudaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary,
-                                                                     OpenBoundaryPointer& openBoundary,
-                                                                     ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary(
+   BoudaryPointer& boundary,
+   OpenBoundaryPointer& openBoundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
@@ -349,8 +339,9 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary( BoudaryPoin
 template< typename Particles, typename ModelConfig >
 template< typename EquationOfState, typename PhysicalObjectPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPointer& physicalObject,
-                                                                ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity(
+   PhysicalObjectPointer& physicalObject,
+   ModelParams& modelParams )
 {
    auto view_rho = physicalObject->getVariables()->rho.getView();
    auto view_p = physicalObject->getVariables()->p.getView();
@@ -361,7 +352,7 @@ WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity( PhysicalObjectPo
    {
       view_p[ i ] = EquationOfState::DensityToPressure( view_rho[ i ], eosParams );
    };
-   physicalObject->getParticles()->forAll( evalPressure ); //TODO: forloop?
+   physicalObject->getParticles()->forAll( evalPressure );  //TODO: forloop?
 }
 
 template< typename Particles, typename ModelConfig >
@@ -377,9 +368,10 @@ WCSPH_BI< Particles, ModelConfig >::filterDensity( FluidPointer& fluid, ModelPar
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoudaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& fluid,
-                                                                 OpenBoudaryPointer& openBoundary,
-                                                                 ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary(
+   FluidPointer& fluid,
+   OpenBoudaryPointer& openBoundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInFluid( fluid->particles );
@@ -409,15 +401,16 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
    const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
 
-   auto FluidOpenBoundary = [ = ] __cuda_callable__( LocalIndexType i,
-                                                     LocalIndexType j,
-                                                     VectorType & r_i,
-                                                     VectorType & v_i,
-                                                     RealType & rho_i,
-                                                     RealType & p_i,
-                                                     RealType * drho_i,
-                                                     VectorType * a_i,
-                                                     RealType * gamma_i ) mutable
+   auto FluidOpenBoundary = [ = ] __cuda_callable__(
+                               LocalIndexType i,
+                               LocalIndexType j,
+                               VectorType & r_i,
+                               VectorType & v_i,
+                               RealType & rho_i,
+                               RealType & p_i,
+                               RealType * drho_i,
+                               VectorType * a_i,
+                               RealType * gamma_i ) mutable
    {
       const VectorType r_j = view_points_openBound[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -472,9 +465,10 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary( FluidPointer& f
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename OpenBoudaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches( FluidPointer& fluid,
-                                                                    OpenBoudaryPointer& openBoundary,
-                                                                    ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches(
+   FluidPointer& fluid,
+   OpenBoudaryPointer& openBoundary,
+   ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInOpenBoundary( openBoundary->particles );
@@ -504,14 +498,15 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches( FluidPointer
    const auto zoneParticleIndices_view = openBoundary->zone.getParticlesInZone().getConstView();
    const GlobalIndexType numberOfZoneParticles = openBoundary->zone.getNumberOfParticles();
 
-   auto FluidBound = [ = ] __cuda_callable__( LocalIndexType i,
-                                              LocalIndexType j,
-                                              VectorType & r_i,
-                                              VectorType & v_i,
-                                              RealType & rho_i,
-                                              RealType & p_i,
-                                              RealType * drho_i,
-                                              VectorType * a_i ) mutable
+   auto FluidBound = [ = ] __cuda_callable__(
+                        LocalIndexType i,
+                        LocalIndexType j,
+                        VectorType & r_i,
+                        VectorType & v_i,
+                        RealType & rho_i,
+                        RealType & p_i,
+                        RealType * drho_i,
+                        VectorType * a_i ) mutable
    {
       const VectorType r_j = view_points_openBound[ j ];
       const VectorType r_ij = r_i - r_j;
@@ -557,9 +552,10 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches( FluidPointer
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoundaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
-                                                         BoundaryPointer& boundary,
-                                                         ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::finalizeInteraction(
+   FluidPointer& fluid,
+   BoundaryPointer& boundary,
+   ModelParams& modelParams )
 {
    //finalize fluid-boundary interactions
    const VectorType gravity = modelParams.gravity;
@@ -586,18 +582,19 @@ WCSPH_BI< Particles, ModelConfig >::finalizeInteraction( FluidPointer& fluid,
       view_a[ i ] += gravity;
    };
 
-   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric> )
+   if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric > )
       fluid->getParticles()->forAll( finalizeInteractionConsistent );
-   else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric> )
+   else if constexpr( std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric > )
       fluid->getParticles()->forAll( finalizeInteractionConservative );
 }
 
 template< typename Particles, typename ModelConfig >
 template< typename FluidPointer, typename BoundaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction( FluidPointer& fluid,
-                                                                 BoundaryPointer& boundary,
-                                                                 ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction(
+   FluidPointer& fluid,
+   BoundaryPointer& boundary,
+   ModelParams& modelParams )
 {
    //finalize boundary-fluid interactions
    const RealType rho0 = modelParams.rho0;

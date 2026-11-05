@@ -66,34 +66,34 @@ public:
       configSetupPressureSensor( measuretoolConfig, parameters );
       this->numberOfWaterLevelSensors = parameters.getParameter< int >( "water-level-sensors-count" );
       configWaterLevelSensor( measuretoolConfig, parameters );
-       this->numberOfVolumetricFlowRatePlanes = parameters.getParameter< int >( "volumetric-flow-rate-planes-count" );
-       configSetupVolumetricFlowRate( measuretoolConfig, parameters );
+      this->numberOfVolumetricFlowRatePlanes = parameters.getParameter< int >( "volumetric-flow-rate-planes-count" );
+      configSetupVolumetricFlowRate( measuretoolConfig, parameters );
 
-       // parse parameters
-       TNL::Config::ParameterContainer measuretoolParameters;
-       const std::string configPath = parameters.getParameter< std::string >( "measuretool-config" );
-       if( ! configPath.empty() ) {
-          logger.writeParameter( "Reading measuretool config:", configPath );
-          parseMeasuretoolConfig( measuretoolConfig, measuretoolParameters, configPath );
-       }
-       else if( parameters.checkParameter( "measuretool" ) ) {
-          const std::string inlineConfig = parameters.getParameter< std::string >( "measuretool" );
-          if( ! inlineConfig.empty() ) {
-             logger.writeParameter( "Reading measuretool config:", "inline (config.jsonc subsection)" );
-             try {
-                measuretoolParameters = TNL::SPH::parseJSONConfigString( inlineConfig, "inline measuretool", measuretoolConfig );
-             }
-             catch( const std::exception& e ) {
-                std::cerr << "Failed to parse the inline measuretool configuration due to the following error:\n"
-                          << e.what() << std::endl;
-             }
-          }
-       }
-       initializeInterpolations( parameters, measuretoolParameters, timeStepping, logger );
-       initializePressureSensors( parameters, measuretoolParameters, timeStepping, logger );
-       initializeWaterLevelSensors( parameters, measuretoolParameters, timeStepping, logger );
-       initializeVolumetricFlowRatePlanes( parameters, measuretoolParameters, timeStepping, logger );
-    }
+      // parse parameters
+      TNL::Config::ParameterContainer measuretoolParameters;
+      const std::string configPath = parameters.getParameter< std::string >( "measuretool-config" );
+      if( ! configPath.empty() ) {
+         logger.writeParameter( "Reading measuretool config:", configPath );
+         parseMeasuretoolConfig( measuretoolConfig, measuretoolParameters, configPath );
+      }
+      else if( parameters.checkParameter( "measuretool" ) ) {
+         const std::string inlineConfig = parameters.getParameter< std::string >( "measuretool" );
+         if( ! inlineConfig.empty() ) {
+            logger.writeParameter( "Reading measuretool config:", "inline (config.jsonc subsection)" );
+            try {
+               measuretoolParameters = TNL::SPH::parseJSONConfigString( inlineConfig, "inline measuretool", measuretoolConfig );
+            }
+            catch( const std::exception& e ) {
+               std::cerr << "Failed to parse the inline measuretool configuration due to the following error:\n"
+                         << e.what() << std::endl;
+            }
+         }
+      }
+      initializeInterpolations( parameters, measuretoolParameters, timeStepping, logger );
+      initializePressureSensors( parameters, measuretoolParameters, timeStepping, logger );
+      initializeWaterLevelSensors( parameters, measuretoolParameters, timeStepping, logger );
+      initializeVolumetricFlowRatePlanes( parameters, measuretoolParameters, timeStepping, logger );
+   }
 
    void
    configSetupInterpolation( TNL::Config::ConfigDescription& measuretoolConfig, TNL::Config::ParameterContainer& parameters )
@@ -101,23 +101,24 @@ public:
       for( int i = 0; i < this->numberOfInterpolationPlanes; i++ ) {
          std::string prefix = "plane-" + std::to_string( i + 1 ) + "-";
          measuretoolConfig.addEntry< std::string >( prefix + "identifier", "Identifier of the interpolation plane.", prefix );
-         measuretoolConfig.addEntry< RealType >( prefix + "outputTime",
-                                                 "Define interval of pressure measurements. ",
-                                                 parameters.getParameter< RealType >( "snapshot-period" ) );
+         measuretoolConfig.addEntry< RealType >(
+            prefix + "outputTime",
+            "Define interval of pressure measurements. ",
+            parameters.getParameter< RealType >( "snapshot-period" ) );
 
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "gridOrigin-x",
-                                                         "Define interpolation plane origin x componenet." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "gridOrigin-y",
-                                                         "Define interpolation plane origin y componenet." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "gridOrigin-x", "Define interpolation plane origin x componenet." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "gridOrigin-y", "Define interpolation plane origin y componenet." );
          if constexpr( SPHConfig::spaceDimension == 3 )
-            measuretoolConfig.addRequiredEntry< RealType >( prefix + "gridOrigin-z",
-                                                            "Define interpolation plane origin z componenet." );
+            measuretoolConfig.addRequiredEntry< RealType >(
+               prefix + "gridOrigin-z", "Define interpolation plane origin z componenet." );
 
          measuretoolConfig.addRequiredEntry< int >( prefix + "gridSize-x", "Define interpolation plane size in x direction." );
          measuretoolConfig.addRequiredEntry< int >( prefix + "gridSize-y", "Define interpolation plane size in y direction." );
          if constexpr( SPHConfig::spaceDimension == 3 )
-            measuretoolConfig.addRequiredEntry< int >( prefix + "gridSize-z",
-                                                       "Define interpolation plane size in z direction." );
+            measuretoolConfig.addRequiredEntry< int >(
+               prefix + "gridSize-z", "Define interpolation plane size in z direction." );
 
          measuretoolConfig.addRequiredEntry< RealType >( prefix + "gridStep-x", "Define grid step size in x direction." );
          measuretoolConfig.addRequiredEntry< RealType >( prefix + "gridStep-y", "Define grid step size in y direction." );
@@ -129,9 +130,10 @@ public:
    void
    configSetupPressureSensor( TNL::Config::ConfigDescription& measuretoolConfig, TNL::Config::ParameterContainer& parameters )
    {
-      measuretoolConfig.addEntry< RealType >( "sensor-p-outputTime",
-                                              "Define interval of pressure measurements. ",
-                                              parameters.getParameter< RealType >( "snapshot-period" ) );
+      measuretoolConfig.addEntry< RealType >(
+         "sensor-p-outputTime",
+         "Define interval of pressure measurements. ",
+         parameters.getParameter< RealType >( "snapshot-period" ) );
       measuretoolConfig.addEntry< bool >( "sensor-p-includeBoundary", "Include boundary data to sensor measurement. ", false );
       for( int i = 0; i < this->numberOfPressureSensors; i++ ) {
          std::string prefix = "sensor-p-point-" + std::to_string( i + 1 );
@@ -148,15 +150,17 @@ public:
    void
    configWaterLevelSensor( TNL::Config::ConfigDescription& measuretoolConfig, TNL::Config::ParameterContainer& parameters )
    {
-      measuretoolConfig.addEntry< RealType >( "sensor-wl-outputTime",
-                                              "Define interval of pressure measurements. ",
-                                              parameters.getParameter< RealType >( "snapshot-period" ) );
+      measuretoolConfig.addEntry< RealType >(
+         "sensor-wl-outputTime",
+         "Define interval of pressure measurements. ",
+         parameters.getParameter< RealType >( "snapshot-period" ) );
       measuretoolConfig.addEntry< RealType >(
          "sensor-wl-start-level", "Define the starting point to measure water level. ", 0 );
       measuretoolConfig.addEntry< RealType >( "sensor-wl-end-level", "Define the end point to measure water level. ", 0 );
-      measuretoolConfig.addEntry< RealType >( "sensor-wl-level-increment",
-                                              "Define water level measurement increment. ",
-                                              parameters.getParameter< RealType >( "snapshot-period" ) );
+      measuretoolConfig.addEntry< RealType >(
+         "sensor-wl-level-increment",
+         "Define water level measurement increment. ",
+         parameters.getParameter< RealType >( "snapshot-period" ) );
       measuretoolConfig.addEntry< RealType >(
          "sensor-wl-direction-x", "Dirction in which the water level measurement is performed, x component. ", 0 );
       measuretoolConfig.addEntry< RealType >(
@@ -173,35 +177,49 @@ public:
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
                prefix + "-z", "Define water level sensor point " + std::to_string( i + 1 ) + " z component." );
-       }
-   }
-
-   void
-   configSetupVolumetricFlowRate( TNL::Config::ConfigDescription& measuretoolConfig, TNL::Config::ParameterContainer& parameters )
-   {
-      for( int i = 0; i < this->numberOfVolumetricFlowRatePlanes; i++ ) {
-         std::string prefix = "vfr-plane-" + std::to_string( i + 1 ) + "-";
-         measuretoolConfig.addEntry< std::string >( prefix + "identifier", "Identifier of the volumetric flow rate plane.", prefix );
-         measuretoolConfig.addEntry< RealType >( prefix + "averagingInterval", "Averaging interval for the volumetric flow rate.", 0.1 );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "pointMin-x", "Define the first point of the measurement plane, x component." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "pointMin-y", "Define the first point of the measurement plane, y component." );
-         if constexpr( SPHConfig::spaceDimension == 3 )
-            measuretoolConfig.addRequiredEntry< RealType >( prefix + "pointMin-z", "Define the first point of the measurement plane, z component." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "pointMax-x", "Define the second point of the measurement plane, x component." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "pointMax-y", "Define the second point of the measurement plane, y component." );
-         if constexpr( SPHConfig::spaceDimension == 3 )
-            measuretoolConfig.addRequiredEntry< RealType >( prefix + "pointMax-z", "Define the second point of the measurement plane, z component." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "orientation-x", "Define the orientation of the measurement plane, x component." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "orientation-y", "Define the orientation of the measurement plane, y component." );
-         if constexpr( SPHConfig::spaceDimension == 3 )
-            measuretoolConfig.addRequiredEntry< RealType >( prefix + "orientation-z", "Define the orientation of the measurement plane, z component." );
       }
    }
 
    void
-   parseMeasuretoolConfig( TNL::Config::ConfigDescription& measuretoolConfig,
-                           TNL::Config::ParameterContainer& measuretoolParameters,
-                           const std::string& configPath )
+   configSetupVolumetricFlowRate(
+      TNL::Config::ConfigDescription& measuretoolConfig,
+      TNL::Config::ParameterContainer& parameters )
+   {
+      for( int i = 0; i < this->numberOfVolumetricFlowRatePlanes; i++ ) {
+         std::string prefix = "vfr-plane-" + std::to_string( i + 1 ) + "-";
+         measuretoolConfig.addEntry< std::string >(
+            prefix + "identifier", "Identifier of the volumetric flow rate plane.", prefix );
+         measuretoolConfig.addEntry< RealType >(
+            prefix + "averagingInterval", "Averaging interval for the volumetric flow rate.", 0.1 );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "pointMin-x", "Define the first point of the measurement plane, x component." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "pointMin-y", "Define the first point of the measurement plane, y component." );
+         if constexpr( SPHConfig::spaceDimension == 3 )
+            measuretoolConfig.addRequiredEntry< RealType >(
+               prefix + "pointMin-z", "Define the first point of the measurement plane, z component." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "pointMax-x", "Define the second point of the measurement plane, x component." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "pointMax-y", "Define the second point of the measurement plane, y component." );
+         if constexpr( SPHConfig::spaceDimension == 3 )
+            measuretoolConfig.addRequiredEntry< RealType >(
+               prefix + "pointMax-z", "Define the second point of the measurement plane, z component." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "orientation-x", "Define the orientation of the measurement plane, x component." );
+         measuretoolConfig.addRequiredEntry< RealType >(
+            prefix + "orientation-y", "Define the orientation of the measurement plane, y component." );
+         if constexpr( SPHConfig::spaceDimension == 3 )
+            measuretoolConfig.addRequiredEntry< RealType >(
+               prefix + "orientation-z", "Define the orientation of the measurement plane, z component." );
+      }
+   }
+
+   void
+   parseMeasuretoolConfig(
+      TNL::Config::ConfigDescription& measuretoolConfig,
+      TNL::Config::ParameterContainer& measuretoolParameters,
+      const std::string& configPath )
    {
       try {
          measuretoolParameters = TNL::SPH::parseConfigFile( configPath, measuretoolConfig );
@@ -218,10 +236,11 @@ public:
    }
 
    void
-   initializeInterpolations( TNL::Config::ParameterContainer& parameters,
-                             TNL::Config::ParameterContainer& measuretoolParameters,
-                             TimeStepping& timeStepping,
-                             TNL::Logger& logger )
+   initializeInterpolations(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& measuretoolParameters,
+      TimeStepping& timeStepping,
+      TNL::Logger& logger )
    {
       const RealType simulationEndTime = parameters.getParameter< RealType >( "final-time" );
 
@@ -237,10 +256,11 @@ public:
    }
 
    void
-   initializePressureSensors( TNL::Config::ParameterContainer& parameters,
-                              TNL::Config::ParameterContainer& measuretoolParameters,
-                              TimeStepping& timeStepping,
-                              TNL::Logger& logger )
+   initializePressureSensors(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& measuretoolParameters,
+      TimeStepping& timeStepping,
+      TNL::Logger& logger )
    {
       const RealType simulationEndTime = parameters.getParameter< RealType >( "final-time" );
 
@@ -258,10 +278,11 @@ public:
    }
 
    void
-   initializeWaterLevelSensors( TNL::Config::ParameterContainer& parameters,
-                                TNL::Config::ParameterContainer& measuretoolParameters,
-                                TimeStepping& timeStepping,
-                                TNL::Logger& logger )
+   initializeWaterLevelSensors(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& measuretoolParameters,
+      TimeStepping& timeStepping,
+      TNL::Logger& logger )
    {
       const RealType simulationEndTime = parameters.getParameter< RealType >( "final-time" );
 
@@ -276,21 +297,23 @@ public:
          std::string prefix = "sensor-wl-point-" + std::to_string( i + 1 );
          waterLevelSensorPoints[ i ] = measuretoolParameters.getXyz< VectorType >( prefix );
       }
-      waterLevelSensors.init( waterLevelSensorPoints,
-                              numberOfSavedStepsWaterLevel,
-                              levelIncrement,
-                              measureInDirection,
-                              startWaterLevel,
-                              endWaterLevel );
+      waterLevelSensors.init(
+         waterLevelSensorPoints,
+         numberOfSavedStepsWaterLevel,
+         levelIncrement,
+         measureInDirection,
+         startWaterLevel,
+         endWaterLevel );
       timeStepping.addOutputTimer( "sensor_waterLevel", waterLevelSensorPeriod );
-       logger.writeParameter( "Number of initialized waterLevelSensors sensors:", this->numberOfWaterLevelSensors );
+      logger.writeParameter( "Number of initialized waterLevelSensors sensors:", this->numberOfWaterLevelSensors );
    }
 
    void
-   initializeVolumetricFlowRatePlanes( TNL::Config::ParameterContainer& parameters,
-                                       TNL::Config::ParameterContainer& measuretoolParameters,
-                                       TimeStepping& timeStepping,
-                                       TNL::Logger& logger )
+   initializeVolumetricFlowRatePlanes(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& measuretoolParameters,
+      TimeStepping& timeStepping,
+      TNL::Logger& logger )
    {
       for( int i = 0; i < this->numberOfVolumetricFlowRatePlanes; i++ ) {
          std::string prefix = "vfr-plane-" + std::to_string( i + 1 ) + "-";
@@ -347,12 +370,13 @@ public:
 
    template< typename KernelFunction, typename EOS >
    void
-   measure( FluidPointer& fluid,
-            BoundaryPointer& boundary,
-            ModelParams& modelParams,
-            TimeStepping& timeStepping,
-            TNL::Logger& logger,
-            const std::string& verbose )
+   measure(
+      FluidPointer& fluid,
+      BoundaryPointer& boundary,
+      ModelParams& modelParams,
+      TimeStepping& timeStepping,
+      TNL::Logger& logger,
+      const std::string& verbose )
    {
       if( timeStepping.checkOutputTimer( "interpolate" ) ) {
          for( auto& [ key, val ] : this->interpolations ) {
@@ -373,29 +397,29 @@ public:
          }
       }
 
-       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) ) {
-          if( this->numberOfWaterLevelSensors > 0 ) {
-             waterLevelSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
-             if( verbose == "full" )
-                logger.writeParameter( "Water level measurement:", "Done." );
-          }
-       }
-    }
+      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) ) {
+         if( this->numberOfWaterLevelSensors > 0 ) {
+            waterLevelSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
+            if( verbose == "full" )
+               logger.writeParameter( "Water level measurement:", "Done." );
+         }
+      }
+   }
 
-    void
-    save( TNL::Logger& logger )
-    {
-       if( this->numberOfPressureSensors > 0 ) {
-          const std::string sensorsOutputFilename = outputDirecotry + "/sensorsPressure.dat";
-          pressureSensors.save( sensorsOutputFilename );
-          logger.writeParameter( "Saved:", sensorsOutputFilename );
-       }
-       if( this->numberOfWaterLevelSensors > 0 ) {
-          const std::string sensorsOutputFilename = outputDirecotry + "/sensorsWaterLevel.dat";
-          waterLevelSensors.save( sensorsOutputFilename );
-          logger.writeParameter( "Saved:", sensorsOutputFilename );
-       }
-    }
+   void
+   save( TNL::Logger& logger )
+   {
+      if( this->numberOfPressureSensors > 0 ) {
+         const std::string sensorsOutputFilename = outputDirecotry + "/sensorsPressure.dat";
+         pressureSensors.save( sensorsOutputFilename );
+         logger.writeParameter( "Saved:", sensorsOutputFilename );
+      }
+      if( this->numberOfWaterLevelSensors > 0 ) {
+         const std::string sensorsOutputFilename = outputDirecotry + "/sensorsWaterLevel.dat";
+         waterLevelSensors.save( sensorsOutputFilename );
+         logger.writeParameter( "Saved:", sensorsOutputFilename );
+      }
+   }
 
    std::map< std::string, VolumetricFlowRateEntry > volumetricFlowRateMonitors;
 
@@ -422,4 +446,3 @@ protected:
 };
 
 }  // namespace TNL::SPH
-

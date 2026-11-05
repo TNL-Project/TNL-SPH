@@ -93,8 +93,7 @@ public:
       decompdt = 0.;
 
       energySnapshots = initEnergySnapshots;
-      if( energySnapshots )
-      {
+      if( energySnapshots ) {
          ekin.setSize( size );
          epot.setSize( size );
          ecomp.setSize( size );
@@ -116,14 +115,15 @@ public:
    output( const std::string& outputPath, const int step, const RealType time )
    {
       std::ofstream outfile;
-      outfile.open(outputPath, std::ios_base::app );
+      outfile.open( outputPath, std::ios_base::app );
       if( energySnapshots )
-         outfile << step << " " << time << " " << Ekin << " " << Epot << " " << Ecomp << " " << EkinSum << " " << EpotSum << " " << EcompSum << std::endl;
+         outfile << step << " " << time << " " << Ekin << " " << Epot << " " << Ecomp << " " << EkinSum << " " << EpotSum << " "
+                 << EcompSum << std::endl;
       else
          outfile << step << " " << time << " " << Ekin << " " << Epot << " " << Ecomp << std::endl;
    }
 
-   template< typename FluidPointer, typename ModelParams  >
+   template< typename FluidPointer, typename ModelParams >
    void
    computeEnergyDerivatives( FluidPointer& fluid, ModelParams& modelParams )
    {
@@ -167,7 +167,7 @@ public:
       dEcompdt = TNL::sum( decompdt );
    }
 
-   template< typename FluidPointer, typename ModelParams  >
+   template< typename FluidPointer, typename ModelParams >
    void
    computeEnergyLevels( FluidPointer& fluid, ModelParams& modelParams )
    {
@@ -245,8 +245,6 @@ public:
       fluid->getParticles()->forAll( particleLoop );
    }
    */
-
 };
 
 }  // namespace TNL::SPH
-

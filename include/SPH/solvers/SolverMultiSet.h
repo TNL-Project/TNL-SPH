@@ -11,27 +11,28 @@ template< typename Model >
 class SolverMultiSet : public SolverMultiSetBase< Model >
 {
 public:
-
    using BaseType = SolverMultiSetBase< Model >;
    using SimulationType = SolverMultiSet< Model >;
 
-   using typename BaseType::DeviceType;
-   using typename BaseType::ModelType;
-   using typename BaseType::ModelParams;
-   using typename BaseType::ParticlesType;
-   using typename BaseType::SPHConfig;
-   using typename BaseType::GlobalIndexType;
-   using typename BaseType::RealType;
    using typename BaseType::CoordinatesType;
+   using typename BaseType::DeviceType;
+   using typename BaseType::GlobalIndexType;
+   using typename BaseType::ModelParams;
+   using typename BaseType::ModelType;
+   using typename BaseType::ParticlesType;
+   using typename BaseType::RealType;
+   using typename BaseType::SPHConfig;
    using typename BaseType::VectorType;
 
-   using typename BaseType::FluidPointer;
    using typename BaseType::BoundaryPointer;
+   using typename BaseType::FluidPointer;
    using typename BaseType::OpenBoundaryPointer;
 
    using typename BaseType::SimulationMonitor;
 
-   SolverMultiSet( std::ostream& out = std::cout ) : BaseType( out ) {};
+   SolverMultiSet( std::ostream& out = std::cout )
+   : BaseType( out )
+   {}
 
    void
    init( int argc, char* argv[] );
@@ -44,19 +45,20 @@ public:
 
 #ifdef HAVE_MPI
    void
-   initDistributedParticleSets( TNL::Config::ParameterContainer& parameters,
-                                TNL::Config::ParameterContainer& parametersDistributed,
-                                TNL::Logger& logger );
+   initDistributedParticleSets(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 
    void
-   readParticleFilesDistributed( TNL::Config::ParameterContainer& parameters,
-                                 TNL::Config::ParameterContainer& parametersDistributed,
-                                 TNL::Logger& logger );
+   readParticleFilesDistributed(
+      TNL::Config::ParameterContainer& parameters,
+      TNL::Config::ParameterContainer& parametersDistributed,
+      TNL::Logger& logger );
 #endif
 
    void
    interact();
-
 };
 
 }  // namespace TNL::SPH
