@@ -3,11 +3,12 @@
 
 #pragma once
 
-#include <TNL/Containers/Array.h>
-#include <TNL/Devices/Host.h>
 #include <cmath>
 #include <algorithm>
 #include <utility>
+
+#include <TNL/Containers/Array.h>
+#include <TNL/Devices/Host.h>
 
 namespace TNL::SPH {
 

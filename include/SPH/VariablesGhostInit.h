@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "VariablesBase.h"
+#include <tuple>
+#include <utility>
 
 #include <TNL/Algorithms/parallelFor.h>
 
-#include <tuple>
-#include <utility>
+#include <SPH/VariablesBase.h>
 
 namespace TNL::SPH {
 namespace detail {

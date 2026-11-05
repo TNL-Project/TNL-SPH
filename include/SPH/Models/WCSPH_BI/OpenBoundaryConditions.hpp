@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include "OpenBoundaryConditions.h"
-#include "SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h"
 #include <cuda/std/tuple>
+
+#include <SPH/Models/WCSPH_BI/OpenBoundaryConditions.h>
+#include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
 
 namespace TNL::SPH {
 

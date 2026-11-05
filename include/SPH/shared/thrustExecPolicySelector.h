@@ -4,6 +4,7 @@
 #pragma once
 
 #include <thrust/execution_policy.h>
+
 #include <TNL/Devices/Cuda.h>
 #include <TNL/Devices/Host.h>
 

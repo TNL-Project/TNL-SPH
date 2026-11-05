@@ -3,23 +3,22 @@
 
 #pragma once
 
-#include "SPH/configSetup.h"
-#include "SolverMultiSet.h"
-#include "SPH/OpenBoundaryConfig.h"
-#include "SPH/TimeMeasurement.h"
-#include <TNL/Config/ConfigDelimiter.h>
-#include <TNL/Config/ConfigDescription.h>
-#include <TNL/Config/ParameterContainer.h>
-#include <TNL/Logger.h>
 #include <iterator>
 #include <ostream>
 #include <string>
 
-#include "distributedUtils.h"
+#include <TNL/Config/ConfigDelimiter.h>
+#include <TNL/Config/ConfigDescription.h>
+#include <TNL/Config/ParameterContainer.h>
+#include <TNL/Logger.h>
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
-#include "tempFunctionsToConfigMultiresolution.h"
-
+#include <SPH/configSetup.h>
+#include <SPH/SolverMultiSet.h>
+#include <SPH/OpenBoundaryConfig.h>
+#include <SPH/TimeMeasurement.h>
+#include <SPH/distributedUtils.h>
+#include <SPH/tempFunctionsToConfigMultiresolution.h>
 #include <SPH/configInit.h>
 
 namespace TNL::SPH {

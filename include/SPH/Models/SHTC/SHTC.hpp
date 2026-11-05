@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include "SHTC.h"
-#include "details.h"
 #include <TNL/Containers/StaticVector.h>
+
+#include <SPH/Models/SHTC/SHTC.h>
+#include <SPH/Models/SHTC/details.h>
 
 namespace TNL::SPH {
 

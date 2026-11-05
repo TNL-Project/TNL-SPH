@@ -8,12 +8,10 @@
 #include <SPH/Models/EquationOfState.h> //FIXME: Added due to complaining API.
 #include <SPH/Models/SHTC/stress.h>
 #include <SPH/Models/SHTC/IntegrationSchemes/ExplicitEulerScheme.h>
-
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
-
 //// FIXME: Not necessary
-//#include "../../OpenBoundaryConfig.h"
+//#include <SPH/OpenBoundaryConfig.h>
 
 namespace TNL::SPH {
 

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "../../SPHTraits.h"
-#include "details.h"
+#include <SPH/SPHTraits.h>
+#include <SPH/Models/SHTC/details.h>
 
 namespace TNL::SPH {
 namespace Stress {

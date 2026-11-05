@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../OpenBoundaryConfig.h"
+#include <SPH/OpenBoundaryConfig.h>
 
 namespace TNL::SPH {
 

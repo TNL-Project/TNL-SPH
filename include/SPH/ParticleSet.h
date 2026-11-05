@@ -3,19 +3,20 @@
 
 #pragma once
 
-#include "SPHTraits.h"
-#include "TNL/Logger.h"
 #include <memory>
+
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/gather.h>
 #include <nlohmann/json.hpp>
 
-#include "OpenBoundaryConfig.h"
-#include "PeriodicBoundaryBuffers.h"
-
+#include <TNL/Logger.h>
 #include <TNL/Particles/DistributedParticles.h>
 #include <TNL/Particles/DistributedParticlesSynchronizer.h>
+
+#include <SPH/SPHTraits.h>
+#include <SPH/OpenBoundaryConfig.h>
+#include <SPH/PeriodicBoundaryBuffers.h>
 
 namespace TNL::SPH {
 

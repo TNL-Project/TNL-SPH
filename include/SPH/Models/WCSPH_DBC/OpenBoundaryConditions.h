@@ -3,18 +3,17 @@
 
 #pragma once
 
+#include <thrust/sort.h>
+#include <thrust/gather.h>
+
 #include <TNL/Containers/Array.h>
 #include <TNL/Containers/ArrayView.h>
 #include <TNL/Pointers/SharedPointer.h>
 
 #include <SPH/shared/thrustExecPolicySelector.h>
-#include <thrust/sort.h>
-#include <thrust/gather.h>
-#include "BoundaryConditionsTypes.h"
-#include "OpenBoundaryConfig.h"
-
-#include "../../SPHTraits.h"
-
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
+#include <SPH/Models/WCSPH_DBC/OpenBoundaryConfig.h>
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 
@@ -101,5 +100,5 @@ public:
 
 }  // namespace TNL::SPH
 
-#include "OpenBoundaryConditions.hpp"
+#include <SPH/Models/WCSPH_DBC/OpenBoundaryConditions.hpp>
 

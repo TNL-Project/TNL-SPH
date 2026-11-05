@@ -4,9 +4,11 @@
 #pragma once
 
 #include <string>
-#include "ParticleSet.h"
+
 #include <TNL/Particles/GhostZone.h>
-#include "OpenBoundaryConfig.h"
+
+#include <SPH/ParticleSet.h>
+#include <SPH/OpenBoundaryConfig.h>
 
 namespace TNL::SPH {
 

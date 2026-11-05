@@ -5,7 +5,7 @@
 
 #include <TNL/Algorithms/parallelFor.h>
 
-#include "../SPHTraits.h"
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 

@@ -5,11 +5,11 @@
 
 #include <TNL/Meshes/Grid.h>
 
-#include "SolverMultiSetBase.h"
-#include "../BoundaryGhostParticles.h"
-#include "../DecompositionTopology.h"
-#include "../MultiresolutionRectangleBuffer.h"
-#include "../VariablesGhostInit.h"
+#include <SPH/solvers/SolverMultiSetBase.h>
+#include <SPH/BoundaryGhostParticles.h>
+#include <SPH/DecompositionTopology.h>
+#include <SPH/MultiresolutionRectangleBuffer.h>
+#include <SPH/VariablesGhostInit.h>
 
 namespace TNL::SPH {
 
@@ -127,5 +127,5 @@ operator<<( std::ostream& str, const TNL::SPH::SolverMultiSetBlockMultiresolutio
    return str;
 }
 
-#include "SolverMultiSetBlockMultiresolution.hpp"
+#include <SPH/solvers/SolverMultiSetBlockMultiresolution.hpp>
 

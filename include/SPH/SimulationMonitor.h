@@ -4,14 +4,14 @@
 #pragma once
 
 #include <TNL/Logger.h>
+#include <TNL/Config/ConfigDescription.h>
+#include <TNL/Config/ParameterContainer.h>
+#include <TNL/Functional.h>
 
-#include "SPHTraits.h"
-#include "TNL/Config/ConfigDescription.h"
-#include "TNL/Config/ParameterContainer.h"
-#include "TNL/Functional.h"
-#include "SPH/parseConfigFile.h"
-#include "shared/Measuretool.h"
-#include "shared/measureVolumetricFlowRate.h"
+#include <SPH/SPHTraits.h>
+#include <SPH/parseConfigFile.h>
+#include <SPH/shared/Measuretool.h>
+#include <SPH/shared/measureVolumetricFlowRate.h>
 
 namespace TNL::SPH {
 

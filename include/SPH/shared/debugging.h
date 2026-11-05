@@ -3,12 +3,13 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-#include <TNL/Algorithms/reduce.h>
 #include <exception>
 #include <iostream>
 #include <string>
 
+#include <cuda_runtime.h>
+
+#include <TNL/Algorithms/reduce.h>
 // Debug macros — centralized here so all translation units share one definition.
 // Use #ifndef guards so files that defined their own copy still compile.
 

@@ -64,4 +64,4 @@ writeInitReportFile( const nlohmann::json& doc, const std::string& outputDirecto
 
 }  // namespace TNL::SPH
 
-#include "InitReport.hpp"
+#include <SPH/InitReport.hpp>

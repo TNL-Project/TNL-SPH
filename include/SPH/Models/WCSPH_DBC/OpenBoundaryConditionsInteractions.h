@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Interactions.h"
+#include <SPH/Models/WCSPH_DBC/Interactions.h>
 
 namespace TNL::SPH {
 

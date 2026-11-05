@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "SolverMultiSetBlockMultiresolutionLocalTimestepping.h"
-#include "../tempFunctionsToConfigMultiresolution.h"
-
 #include <cmath>
+
+#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.h>
+#include <SPH/tempFunctionsToConfigMultiresolution.h>
 
 namespace TNL::SPH {
 

@@ -6,19 +6,20 @@
 #include <climits>
 #include <functional>
 #include <string>
-#include "ParticleSet.h"
-#include <TNL/Particles/GhostZone.h>
-#include "OpenBoundaryBuffers.h"
-#include "SPHTraits.h"
-#include "MultiresolutionBufferHelpers.h"
+
 #include <cuda/std/tuple>
 
-//FIXME: Include interpolatiion as a single module
-#include "shared/Interpolation.h"
-#include "shared/WendlandC2ABFs.h"
+#include <TNL/Particles/GhostZone.h>
 
+#include <SPH/ParticleSet.h>
+#include <SPH/OpenBoundaryBuffers.h>
+#include <SPH/SPHTraits.h>
+#include <SPH/MultiresolutionBufferHelpers.h>
+//FIXME: Include interpolatiion as a single module
+#include <SPH/shared/Interpolation.h>
+#include <SPH/shared/WendlandC2ABFs.h>
 // MassNodes are shared with the single-timestep variant
-#include "MultiresolutionRectangleBuffer.h"
+#include <SPH/MultiresolutionRectangleBuffer.h>
 
 namespace TNL::SPH {
 

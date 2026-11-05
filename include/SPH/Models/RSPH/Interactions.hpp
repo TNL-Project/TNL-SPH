@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Interactions.h"
+#include <SPH/Models/RSPH/Interactions.h>
 
 namespace TNL::SPH {
 

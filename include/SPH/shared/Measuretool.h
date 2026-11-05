@@ -6,10 +6,10 @@
 #include <TNL/Meshes/Writers/VTKWriter.h>
 #include <TNL/Containers/NDArray.h>
 #include <TNL/Pointers/SharedPointer.h>
-
-#include "../SPHTraits.h"
 #include <TNL/Config/ParameterContainer.h>
 #include <TNL/Particles/CellIndexer.h>
+
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 
@@ -270,5 +270,5 @@ protected:
 
 }  // namespace TNL::SPH
 
-#include "Measuretool.hpp"
+#include <SPH/shared/Measuretool.hpp>
 

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "SolverMultiSetRemeshed.h"
+#include <SPH/solvers/SolverMultiSetRemeshed.h>
 
 namespace TNL::SPH {
 

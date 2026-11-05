@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <TNL/Particles/GhostZone.h>
-
 #include <nlohmann/json.hpp>
+
+#include <TNL/Particles/GhostZone.h>
 
 namespace TNL::SPH {
 

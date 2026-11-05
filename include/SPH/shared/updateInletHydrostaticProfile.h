@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <SPH/shared/Measuretool.h>
 #include <cmath>
+
+#include <SPH/shared/Measuretool.h>
 
 namespace TNL::SPH {
 namespace features {

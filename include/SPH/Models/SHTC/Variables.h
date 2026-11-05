@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "../../SPHTraits.h"
+#include <SPH/SPHTraits.h>
 
 #ifdef HAVE_MPI
-   #include "../../shared/utils.h"
+   #include <SPH/shared/utils.h>
 #endif
 
 namespace TNL::SPH {

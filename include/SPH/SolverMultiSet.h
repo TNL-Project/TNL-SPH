@@ -3,23 +3,23 @@
 
 #pragma once
 
+#include <memory> //shared_ptr
+
 #include <TNL/Containers/Vector.h>
 #include <TNL/Algorithms/reduce.h>
-#include <memory> //shared_ptr
 #include <TNL/Meshes/Grid.h>
+#include <TNL/Functional.h>
+#include <TNL/Logger.h>
 
-#include "DecompositionTopology.h"
-#include "Fluid.h"
-#include "Boundary.h"
-#include "OpenBoundaryBuffers.h"
-#include "OpenBoundaryConfig.h"
-//#include "MultiresolutionBuffer.h"
-#include "MultiresolutionRectangleBuffer.h"
-#include "TNL/Functional.h"
-#include "TNL/Logger.h"
-#include "TimeMeasurement.h"
-
-#include "SimulationMonitor.h"
+#include <SPH/DecompositionTopology.h>
+#include <SPH/Fluid.h>
+#include <SPH/Boundary.h>
+#include <SPH/OpenBoundaryBuffers.h>
+#include <SPH/OpenBoundaryConfig.h>
+//#include <SPH/MultiresolutionBuffer.h>
+#include <SPH/MultiresolutionRectangleBuffer.h>
+#include <SPH/TimeMeasurement.h>
+#include <SPH/SimulationMonitor.h>
 
 namespace TNL::SPH {
 
@@ -344,5 +344,5 @@ operator<<( std::ostream& str, const TNL::SPH::SolverMultiSet< Model >& sphSimul
    return str;
 }
 
-#include "SolverMultiSet.hpp"
+#include <SPH/SolverMultiSet.hpp>
 

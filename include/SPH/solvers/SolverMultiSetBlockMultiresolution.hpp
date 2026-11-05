@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include "SolverMultiSetBlockMultiresolution.h"
-#include "../tempFunctionsToConfigMultiresolution.h"
-
+#include <SPH/solvers/SolverMultiSetBlockMultiresolution.h>
+#include <SPH/tempFunctionsToConfigMultiresolution.h>
 #include <SPH/InitReport.h>
 
 namespace TNL::SPH {

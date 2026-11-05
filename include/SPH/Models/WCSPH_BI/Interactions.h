@@ -3,20 +3,20 @@
 
 #pragma once
 
-#include "../../SPHTraits.h"
-#include "BoundaryConditionsTypes.h"
-#include "OpenBoundaryConfig.h"
-#include "SPH/Models/WCSPH_BI/OpenBoundaryConditions.h"
-#include "Variables.h"
 #include <TNL/Matrices/StaticMatrix.h>
 
+#include <SPH/SPHTraits.h>
+#include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
+#include <SPH/Models/WCSPH_BI/OpenBoundaryConfig.h>
+#include <SPH/Models/WCSPH_BI/OpenBoundaryConditions.h>
+#include <SPH/Models/WCSPH_BI/Variables.h>
 /**
  * Modules used as default.
  **/
-#include "../EquationOfState.h"
-#include "../DiffusiveTerms.h"
-#include "../VisousTerms.h"
-#include "control.h"
+#include <SPH/Models/EquationOfState.h>
+#include <SPH/Models/DiffusiveTerms.h>
+#include <SPH/Models/VisousTerms.h>
+#include <SPH/Models/WCSPH_BI/control.h>
 
 namespace TNL::SPH {
 
@@ -234,7 +234,7 @@ public:
 
 }  // namespace TNL::SPH
 
-#include "Interactions.hpp"
-#include "OpenBoundaryConditionsDataExtrapolation.h"
-#include "experimental/interpolatedBoundaryPressure.h"
+#include <SPH/Models/WCSPH_BI/Interactions.hpp>
+#include <SPH/Models/WCSPH_BI/OpenBoundaryConditionsDataExtrapolation.h>
+#include <SPH/Models/WCSPH_BI/experimental/interpolatedBoundaryPressure.h>
 

@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "SolverMultiSetBase.h"
+#include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
+#include <SPH/solvers/SolverMultiSetBase.h>
 #include <SPH/configInit.h>
 #include <SPH/configSetup.h>
 #include <SPH/InitReport.h>
-#include "../distributedUtils.h"
-#include "../shared/removeParticlesOutOfDensityLimits.h"
-#include <TNL/Particles/Writers/writeBackgroundGrid.h>
+#include <SPH/distributedUtils.h>
+#include <SPH/shared/removeParticlesOutOfDensityLimits.h>
 
 namespace TNL::SPH {
 

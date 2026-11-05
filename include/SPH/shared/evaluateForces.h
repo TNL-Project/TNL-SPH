@@ -5,7 +5,8 @@
 
 #include <cstdio>
 #include <fstream>
-#include "../SPHTraits.h"
+
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 

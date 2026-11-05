@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "ParticleField.h"
-
 #include <tuple>
+
+#include <SPH/ParticleField.h>
 
 namespace TNL::SPH {
 

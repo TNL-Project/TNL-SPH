@@ -5,8 +5,8 @@
 
 #include <TNL/Containers/StaticVector.h>
 
-#include "mfdConstants.h"
-#include "TaylorMonomials.h"
+#include <SPH/shared/mfdConstants.h>
+#include <SPH/shared/TaylorMonomials.h>
 
 namespace TNL::SPH {
 namespace Interpolation {

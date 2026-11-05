@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "ParticleSet.h"
+#include <SPH/ParticleSet.h>
 
 namespace TNL::SPH {
 

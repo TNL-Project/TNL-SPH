@@ -4,8 +4,7 @@
 #pragma once
 
 #include <TNL/Algorithms/scan.h>
-
-#include "ParticlesTraits.h"
+#include <TNL/Particles/ParticlesTraits.h>
 
 namespace TNL {
 namespace ParticleSystem {
@@ -185,5 +184,5 @@ protected:
 } // Particles
 } // TNL
 
-#include "GhostZone.hpp"
+#include <SPH/GhostZone.hpp>
 

@@ -8,11 +8,11 @@
 #include <string>
 
 #include <nlohmann/json.hpp>
-
 /*
    All grid-level parameters for one subdomain, extracted from config once
    and reused by both initParticleSets and initZones.
 */
+
 template< typename GridType >
 struct SubdomainDescriptor
 {

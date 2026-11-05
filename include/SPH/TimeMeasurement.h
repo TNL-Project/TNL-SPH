@@ -3,10 +3,11 @@
 
 #pragma once
 
-#include <TNL/Benchmarks/Benchmark.h>
-#include "TNL/Timer.h"
 #include <map>
 #include <string>
+
+#include <TNL/Benchmarks/Benchmark.h>
+#include <TNL/Timer.h>
 
 namespace TNL::SPH {
 

@@ -3,23 +3,22 @@
 
 #pragma once
 
-#include <TNL/Containers/Vector.h>
-#include <TNL/Algorithms/reduce.h>
 #include <memory> //shared_ptr
 #include <filesystem>
 
-#include "Fluid.h"
-#include "Boundary.h"
-#include "OpenBoundaryBuffers.h"
-#include "OpenBoundaryConfig.h"
-#include "TNL/Functional.h"
-#include "TNL/Logger.h"
-#include "TimeMeasurement.h"
+#include <TNL/Containers/Vector.h>
+#include <TNL/Algorithms/reduce.h>
+#include <TNL/Functional.h>
+#include <TNL/Logger.h>
 
-#include "SimulationMonitor.h"
-
+#include <SPH/Fluid.h>
+#include <SPH/Boundary.h>
+#include <SPH/OpenBoundaryBuffers.h>
+#include <SPH/OpenBoundaryConfig.h>
+#include <SPH/TimeMeasurement.h>
+#include <SPH/SimulationMonitor.h>
 // custom shared modules
-#include "shared/removeParticlesOutOfDensityLimits.h"
+#include <SPH/shared/removeParticlesOutOfDensityLimits.h>
 
 namespace TNL::SPH {
 
@@ -373,5 +372,5 @@ operator<<( std::ostream& str, const TNL::SPH::SPHMultiset_CFD< Model >& sphSimu
    return str;
 }
 
-#include "SPHMultiset_CFD.hpp"
+#include <SPH/SPHMultiset_CFD.hpp>
 

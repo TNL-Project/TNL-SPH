@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include "../../ParticleField.h"
-#include "../../VariablesBase.h"
-#include "../../SPHTraits.h"
-
 #include <tuple>
 
-#include "BoundaryConditionsTypes.h"
+#include <SPH/ParticleField.h>
+#include <SPH/VariablesBase.h>
+#include <SPH/SPHTraits.h>
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
 
 namespace TNL::SPH {
 

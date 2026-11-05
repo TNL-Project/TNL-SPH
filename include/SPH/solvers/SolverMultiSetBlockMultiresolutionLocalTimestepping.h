@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "SolverMultiSetBlockMultiresolution.h"
-#include "../MultiresolutionRectangleBufferLocalTimeStepping.h"
-#include "../MultiresolutionBufferHelpers.h"
-#include "../TimeStep.h"
+#include <SPH/solvers/SolverMultiSetBlockMultiresolution.h>
+#include <SPH/MultiresolutionRectangleBufferLocalTimeStepping.h>
+#include <SPH/MultiresolutionBufferHelpers.h>
+#include <SPH/TimeStep.h>
 
 namespace TNL::SPH {
 
@@ -166,5 +166,5 @@ public:
 
 }  // namespace TNL::SPH
 
-#include "SolverMultiSetBlockMultiresolutionLocalTimestepping.hpp"
+#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.hpp>
 

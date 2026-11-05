@@ -3,12 +3,13 @@
 
 #pragma once
 
-#include "BoundaryConditionsTypes.h"
-#include "Interactions.h"
-#include "../../shared/Interpolation.h"
-#include "../../shared/WendlandC2ABFs.h"
 #include <cmath>
 #include <type_traits>
+
+#include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
+#include <SPH/Models/WCSPH_BI/Interactions.h>
+#include <SPH/shared/Interpolation.h>
+#include <SPH/shared/WendlandC2ABFs.h>
 
 namespace TNL::SPH {
 

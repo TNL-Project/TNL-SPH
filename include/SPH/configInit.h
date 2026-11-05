@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #include <TNL/Config/parseCommandLine.h>
 #include <TNL/Config/parseINIConfigFile.h>
+
 #include <SPH/configSetup.h>
 #include <SPH/parseConfigFile.h>
-#include <cstdlib>
 
 namespace TNL::SPH {
 

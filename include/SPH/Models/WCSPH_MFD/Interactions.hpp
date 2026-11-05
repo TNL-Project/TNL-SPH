@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include "BoundaryConditionsTypes.h"
-#include "Interactions.h"
 #include <type_traits>
+
+#include <SPH/Models/WCSPH_MFD/BoundaryConditionsTypes.h>
+#include <SPH/Models/WCSPH_MFD/Interactions.h>
 
 namespace TNL::SPH {
 

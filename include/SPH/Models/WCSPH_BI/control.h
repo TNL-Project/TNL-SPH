@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <complex>
+#include <limits>
+
 #include <SPH/Models/EquationOfState.h>
 #include <SPH/Models/PressureGradient.h>
 #include <SPH/Models/DiffusiveTerms.h>
@@ -12,15 +15,10 @@
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/SymplecticVerletScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/MidpointScheme.h>
 #include <SPH/Models/WCSPH_BI/IntegrationSchemes/RK4Scheme.h>
-
 #include <SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h>
-
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
-#include <complex>
-#include <limits>
-
-#include "OpenBoundaryConfig.h"
+#include <SPH/Models/WCSPH_BI/OpenBoundaryConfig.h>
 
 namespace TNL::SPH {
 

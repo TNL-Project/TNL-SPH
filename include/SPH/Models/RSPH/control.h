@@ -7,7 +7,6 @@
 #include <SPH/Models/RiemannSolvers.h>
 #include <SPH/Kernels.h>
 #include <SPH/Models/RSPH/IntegrationSchemes/VerletScheme.h>
-
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
 

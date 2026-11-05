@@ -4,7 +4,8 @@
 #pragma once
 
 #include <vector>
-#include "../SPHTraits.h"
+
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 

@@ -5,15 +5,15 @@
 
 #include <climits>
 #include <string>
-#include "ParticleSet.h"
+
 #include <TNL/Particles/GhostZone.h>
-#include "OpenBoundaryBuffers.h"
-#include "SPHTraits.h"
 
+#include <SPH/ParticleSet.h>
+#include <SPH/OpenBoundaryBuffers.h>
+#include <SPH/SPHTraits.h>
 //FIXME: Include interpolatiion as a single module
-#include "shared/Interpolation.h"
-#include "shared/WendlandC2ABFs.h"
-
+#include <SPH/shared/Interpolation.h>
+#include <SPH/shared/WendlandC2ABFs.h>
 
 namespace TNL::SPH {
 

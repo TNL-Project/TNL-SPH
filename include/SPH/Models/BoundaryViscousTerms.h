@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../SPHTraits.h"
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 namespace BoundaryViscousTerms {

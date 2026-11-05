@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "SPHTraits.h"
-
 #include <exception>
 #include <iostream>
 #include <string>
 #include <type_traits>
 #include <utility>
+
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 

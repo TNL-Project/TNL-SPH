@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "SolverMultiSetBase.h"
+#include <SPH/solvers/SolverMultiSetBase.h>
 
 namespace TNL::SPH {
 
@@ -72,4 +72,4 @@ operator<<( std::ostream& str, const TNL::SPH::SolverMultiSet< Model >& sphSimul
    return str;
 }
 
-#include "SolverMultiSet.hpp"
+#include <SPH/solvers/SolverMultiSet.hpp>

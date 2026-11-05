@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: MIT
 
 #pragma once
-#include "../../OpenBoundaryConfig.h"
-#include "BoundaryConditionsTypes.h"
-#include "TNL/Containers/Expressions/ExpressionTemplates.h"
-#include "TNL/Containers/Vector.h"
-#include "TNL/Logger.h"
-#include <SPH/SPHTraits.h>
 #include <iterator>
+
+#include <TNL/Containers/Expressions/ExpressionTemplates.h>
+#include <TNL/Containers/Vector.h>
+#include <TNL/Logger.h>
+
+#include <SPH/OpenBoundaryConfig.h>
+#include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 

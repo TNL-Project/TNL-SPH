@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "SolverMultiSetBase.h"
-#include "../shared/remeshParticles.h"
+#include <SPH/solvers/SolverMultiSetBase.h>
+#include <SPH/shared/remeshParticles.h>
 
 namespace TNL::SPH {
 
@@ -56,5 +56,5 @@ operator<<( std::ostream& str, const TNL::SPH::SolverMultiSetRemeshed< Model >& 
    return str;
 }
 
-#include "SolverMultiSetRemeshed.hpp"
+#include <SPH/solvers/SolverMultiSetRemeshed.hpp>
 

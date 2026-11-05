@@ -3,18 +3,15 @@
 
 #pragma once
 
-#include "../../SPHTraits.h"
-#include "Variables.h"
-
+#include <SPH/SPHTraits.h>
+#include <SPH/Models/SHTC/Variables.h>
 /**
  * Modules used as default.
  **/
-#include "control.h"
-
+#include <SPH/Models/SHTC/control.h>
 // placeholder for empty open boundary conditions
-#include "../emptyOpenBCPlaceholder.h"
-#include "../SPHMultisetSolverTemplate.h"
-
+#include <SPH/Models/emptyOpenBCPlaceholder.h>
+#include <SPH/Models/SPHMultisetSolverTemplate.h>
 
 namespace TNL::SPH {
 
@@ -123,5 +120,5 @@ public:
 
 }  // namespace TNL::SPH
 
-#include "SHTC.hpp"
+#include <SPH/Models/SHTC/SHTC.hpp>
 

@@ -7,7 +7,7 @@
 #include <TNL/Containers/ArrayView.h>
 #include <TNL/Pointers/SharedPointer.h>
 
-#include "../../../SPHTraits.h"
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 namespace IntegrationSchemes {

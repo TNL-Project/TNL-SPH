@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "InitReport.h"
-
 #include <algorithm>
 #include <fstream>
 #include <stdexcept>
@@ -13,6 +11,8 @@
 
 #include <TNL/Containers/StaticVector.h>
 #include <TNL/MPI.h>
+
+#include <SPH/InitReport.h>
 
 namespace TNL::SPH {
 

@@ -4,7 +4,8 @@
 #pragma once
 
 #include <TNL/Containers/StaticVector.h>
-#include "./../Kernels.h"
+
+#include <SPH/Kernels.h>
 
 namespace TNL::SPH {
 namespace Interpolation {

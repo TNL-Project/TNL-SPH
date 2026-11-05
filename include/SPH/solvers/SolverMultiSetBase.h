@@ -17,12 +17,12 @@
 #include <TNL/Logger.h>
 #include <TNL/Timer.h>
 
-#include "../Fluid.h"
-#include "../Boundary.h"
-#include "../OpenBoundaryBuffers.h"
-#include "../OpenBoundaryConfig.h"
-#include "../TimeMeasurement.h"
-#include "../SimulationMonitor.h"
+#include <SPH/Fluid.h>
+#include <SPH/Boundary.h>
+#include <SPH/OpenBoundaryBuffers.h>
+#include <SPH/OpenBoundaryConfig.h>
+#include <SPH/TimeMeasurement.h>
+#include <SPH/SimulationMonitor.h>
 
 namespace TNL::SPH {
 
@@ -258,5 +258,5 @@ public:
 
 }  // namespace TNL::SPH
 
-#include "SolverMultiSetBase.hpp"
+#include <SPH/solvers/SolverMultiSetBase.hpp>
 

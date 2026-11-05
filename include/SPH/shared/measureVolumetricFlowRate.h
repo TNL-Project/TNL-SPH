@@ -4,8 +4,10 @@
 #pragma once
 
 #include <fstream>
-#include "../SPHTraits.h"
+
 #include <TNL/Particles/GhostZone.h>
+
+#include <SPH/SPHTraits.h>
 
 namespace TNL::SPH {
 
