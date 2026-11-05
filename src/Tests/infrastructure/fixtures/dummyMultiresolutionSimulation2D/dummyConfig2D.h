@@ -87,6 +87,6 @@ using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/SolverMultiSet.h>
-using Simulation = TNL::SPH::SolverMultiSet< Model >;
+#include <SPH/legacy/SolverMultiSet.h>
+using Simulation = TNL::SPH::LegacySolverMultiSet< Model >;
 

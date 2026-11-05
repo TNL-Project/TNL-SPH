@@ -16,7 +16,6 @@
 #include <SPH/Boundary.h>
 #include <SPH/OpenBoundaryBuffers.h>
 #include <SPH/OpenBoundaryConfig.h>
-//#include <SPH/MultiresolutionBuffer.h>
 #include <SPH/MultiresolutionRectangleBuffer.h>
 #include <SPH/TimeMeasurement.h>
 #include <SPH/SimulationMonitor.h>
@@ -24,10 +23,10 @@
 namespace TNL::SPH {
 
 template< typename Model >
-class SolverMultiSet
+class LegacySolverMultiSet
 {
 public:
-   using SimulationType = SolverMultiSet< Model >;
+   using SimulationType = LegacySolverMultiSet< Model >;
    using DeviceType = typename Model::DeviceType;
    using ModelType = Model;
    using ModelParams = typename ModelType::ModelParams;
@@ -73,11 +72,11 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
-   //SolverMultiSet() = default;
+   //LegacySolverMultiSet() = default;
 
-   //SolverMultiSet() : logger( 100, std::cout ) {};
+   //LegacySolverMultiSet() : logger( 100, std::cout ) {};
 
-   SolverMultiSet( std::ostream& out = std::cout )
+   LegacySolverMultiSet( std::ostream& out = std::cout )
    : logger( 100, out )
    {}
 
@@ -342,7 +341,7 @@ public:
 
 template< typename Model >
 std::ostream&
-operator<<( std::ostream& str, const TNL::SPH::SolverMultiSet< Model >& sphSimulation )
+operator<<( std::ostream& str, const TNL::SPH::LegacySolverMultiSet< Model >& sphSimulation )
 {
    TNL::Logger logger( 100, str );
 
@@ -351,4 +350,4 @@ operator<<( std::ostream& str, const TNL::SPH::SolverMultiSet< Model >& sphSimul
    return str;
 }
 
-#include <SPH/SolverMultiSet.hpp>
+#include <SPH/legacy/SolverMultiSet.hpp>

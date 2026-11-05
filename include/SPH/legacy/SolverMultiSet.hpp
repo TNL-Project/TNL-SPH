@@ -14,7 +14,7 @@
 #include <TNL/Particles/Writers/writeBackgroundGrid.h>
 
 #include <SPH/ConfigSetup.h>
-#include <SPH/SolverMultiSet.h>
+#include <SPH/legacy/SolverMultiSet.h>
 #include <SPH/OpenBoundaryConfig.h>
 #include <SPH/TimeMeasurement.h>
 #include <SPH/DistributedUtils.h>
@@ -25,7 +25,7 @@ namespace TNL::SPH {
 
 template< typename Model >
 void
-SolverMultiSet< Model >::init( int argc, char* argv[] )
+LegacySolverMultiSet< Model >::init( int argc, char* argv[] )
 {
    try {
       initialize< SimulationType >( argc, argv, cliParams, cliConfig, parameters, config );
@@ -149,7 +149,7 @@ SolverMultiSet< Model >::init( int argc, char* argv[] )
 
 template< typename Model >
 void
-SolverMultiSet< Model >::initParticleSets()
+LegacySolverMultiSet< Model >::initParticleSets()
 {
    const int numberOfSubsets = topology.getNumberOfSubdomains();
    fluidSets.resize( numberOfSubsets );
@@ -184,7 +184,7 @@ SolverMultiSet< Model >::initParticleSets()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::initMultiResolutionBundaryPatches()
+LegacySolverMultiSet< Model >::initMultiResolutionBundaryPatches()
 {
    const int mrbCount = topology.getNumberOfSubdomainInterfaces();
    multiresolutionBoundaryPatches.resize( mrbCount );
@@ -215,7 +215,7 @@ SolverMultiSet< Model >::initMultiResolutionBundaryPatches()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+LegacySolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
@@ -251,7 +251,7 @@ SolverMultiSet< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContaine
 
 template< typename Model >
 void
-SolverMultiSet< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
+LegacySolverMultiSet< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
    //FIXME: Update to multiset: logger.writeParameter( "Initialization of open boundary patches.", "" );
    //FIXME: Update to multiset: const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
@@ -273,7 +273,7 @@ SolverMultiSet< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterCont
 #ifdef HAVE_MPI
 template< typename Model >
 void
-SolverMultiSet< Model >::initDistributedParticleSets(
+LegacySolverMultiSet< Model >::initDistributedParticleSets(
    TNL::Config::ParameterContainer& parameters,
    TNL::Config::ParameterContainer& parametersDistributed,
    TNL::Logger& logger )
@@ -346,7 +346,7 @@ SolverMultiSet< Model >::initDistributedParticleSets(
 
 template< typename Model >
 void
-SolverMultiSet< Model >::readParticlesFiles()
+LegacySolverMultiSet< Model >::readParticlesFiles()
 {
    const int numberOfSubsets = parameters.getParameter< int >( "numberOfSubdomains" );
 
@@ -382,7 +382,7 @@ SolverMultiSet< Model >::readParticlesFiles()
 #ifdef HAVE_MPI
 template< typename Model >
 void
-SolverMultiSet< Model >::readParticleFilesDistributed(
+LegacySolverMultiSet< Model >::readParticleFilesDistributed(
    TNL::Config::ParameterContainer& parameters,
    TNL::Config::ParameterContainer& parametersDistributed,
    TNL::Logger& logger )
@@ -415,7 +415,7 @@ SolverMultiSet< Model >::readParticleFilesDistributed(
 
 template< typename Model >
 void
-SolverMultiSet< Model >::performNeighborSearch( bool performBoundarySearch )
+LegacySolverMultiSet< Model >::performNeighborSearch( bool performBoundarySearch )
 {
    timeMeasurement.start( "search" );
    for( int i = 0; i < numberOfSubsets; i++ ) {
@@ -452,7 +452,7 @@ SolverMultiSet< Model >::performNeighborSearch( bool performBoundarySearch )
 
 template< typename Model >
 void
-SolverMultiSet< Model >::removeParticlesOutOfDomain()
+LegacySolverMultiSet< Model >::removeParticlesOutOfDomain()
 {
    for( int i = 0; i < numberOfSubsets; i++ ) {
       const int numberOfParticlesToRemove = fluidSets[ i ]->getParticles()->getNumberOfParticlesToRemove();
@@ -474,7 +474,7 @@ SolverMultiSet< Model >::removeParticlesOutOfDomain()
 template< typename Model >
 template< typename ParticleSetPointer >
 void
-SolverMultiSet< Model >::performNeighborSearchForObject( ParticleSetPointer& objectPointer )
+LegacySolverMultiSet< Model >::performNeighborSearchForObject( ParticleSetPointer& objectPointer )
 {
    objectPointer->getParticles()->resetListWithIndices();
    objectPointer->getParticles()->computeParticleCellIndices();
@@ -484,7 +484,7 @@ SolverMultiSet< Model >::performNeighborSearchForObject( ParticleSetPointer& obj
 
 template< typename Model >
 void
-SolverMultiSet< Model >::extrapolateOpenBC()
+LegacySolverMultiSet< Model >::extrapolateOpenBC()
 {
    timeMeasurement.start( "extrapolate-openbc" );
    //FIXME: for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
@@ -498,7 +498,7 @@ SolverMultiSet< Model >::extrapolateOpenBC()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::applyOpenBC( const RealType timeStepFact )
+LegacySolverMultiSet< Model >::applyOpenBC( const RealType timeStepFact )
 {
    timeMeasurement.start( "apply-openbc" );
    //FIXME: for( long unsigned int i = 0; i < std::size( openBoundaryPatches ); i++ ) {
@@ -513,7 +513,7 @@ SolverMultiSet< Model >::applyOpenBC( const RealType timeStepFact )
 
 template< typename Model >
 void
-SolverMultiSet< Model >::applyPeriodicBCEnforce()
+LegacySolverMultiSet< Model >::applyPeriodicBCEnforce()
 {
    //FIXME: timeMeasurement.start( "periodicity-fluid-updateZone" );
    //FIXME: fluid->enforcePeriodicPatches();
@@ -525,7 +525,7 @@ SolverMultiSet< Model >::applyPeriodicBCEnforce()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::applyPeriodicBCTransfer()
+LegacySolverMultiSet< Model >::applyPeriodicBCTransfer()
 {
    //FIXME: const long unsigned int numberOfPeriodicPatches = std::size( fluid->periodicPatches );
    //FIXME: for( long unsigned int i = 0; i < numberOfPeriodicPatches; i++ ) {
@@ -535,7 +535,7 @@ SolverMultiSet< Model >::applyPeriodicBCTransfer()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::multiresolutionUpdate()
+LegacySolverMultiSet< Model >::multiresolutionUpdate()
 {
    //FIXME: Describe by loops
    timeMeasurement.start( "multiresolution-update" );
@@ -551,7 +551,7 @@ SolverMultiSet< Model >::multiresolutionUpdate()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::interact()
+LegacySolverMultiSet< Model >::interact()
 {
    timeMeasurement.start( "interact" );
 
@@ -588,7 +588,7 @@ SolverMultiSet< Model >::interact()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::computeTimeStep()
+LegacySolverMultiSet< Model >::computeTimeStep()
 {
    //FIXME: Individual time stepping in subdomains
    //FIXME: timeStepping.computeTimeStep( fluid, modelParams );
@@ -596,7 +596,7 @@ SolverMultiSet< Model >::computeTimeStep()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::updateTime()
+LegacySolverMultiSet< Model >::updateTime()
 {
    timeStepping.updateTimeStep();
 }
@@ -604,7 +604,7 @@ SolverMultiSet< Model >::updateTime()
 //FIXME: Need update for multiset scheme
 template< typename Model >
 void
-SolverMultiSet< Model >::measure()
+LegacySolverMultiSet< Model >::measure()
 {
    //for( int i = 0; i < numberOfSubsets; i++ )
    //   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
@@ -617,7 +617,7 @@ SolverMultiSet< Model >::measure()
 template< typename Model >
 template< typename Stage >
 void
-SolverMultiSet< Model >::integrate( const Stage integrationStage, const bool integrateBoundary )
+LegacySolverMultiSet< Model >::integrate( const Stage integrationStage, const bool integrateBoundary )
 {
    timeMeasurement.start( "integrate" );
    for( int i = 0; i < numberOfSubsets; i++ )
@@ -755,7 +755,7 @@ SPHMultiSet_CFD< Model >::balanceSubdomains()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::save( bool writeParticleCellIndex )
+LegacySolverMultiSet< Model >::save( bool writeParticleCellIndex )
 {
    if( ( verbose == "with-snapshot" ) || ( verbose == "full" ) )
       writeInfo();
@@ -826,7 +826,7 @@ SolverMultiSet< Model >::save( bool writeParticleCellIndex )
 
 template< typename Model >
 void
-SolverMultiSet< Model >::makeSnapshot()
+LegacySolverMultiSet< Model >::makeSnapshot()
 {
    const bool savePressure = true;
    if( timeStepping.checkOutputTimer( "save_results" ) ) {
@@ -843,7 +843,7 @@ SolverMultiSet< Model >::makeSnapshot()
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeProlog( bool writeSystemInformation ) noexcept
+LegacySolverMultiSet< Model >::writeProlog( bool writeSystemInformation ) noexcept
 {
    logger.writeHeader( "SPH simulation configuration." );
    logger.writeParameter( "Case name:", caseName );
@@ -914,7 +914,7 @@ SolverMultiSet< Model >::writeProlog( bool writeSystemInformation ) noexcept
 template< typename Model >
 template< typename ParameterType >
 void
-SolverMultiSet< Model >::writeLog( const std::string& label, const ParameterType& value, int parameterLevel )
+LegacySolverMultiSet< Model >::writeLog( const std::string& label, const ParameterType& value, int parameterLevel )
 {
    if( verbose == "full" )
       logger.writeParameter( label, value, parameterLevel );
@@ -922,7 +922,7 @@ SolverMultiSet< Model >::writeLog( const std::string& label, const ParameterType
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeInfo() noexcept
+LegacySolverMultiSet< Model >::writeInfo() noexcept
 {
    logger.writeSeparator();
    logger.writeParameter(
@@ -963,7 +963,7 @@ SolverMultiSet< Model >::writeInfo() noexcept
 
 template< typename Model >
 void
-SolverMultiSet< Model >::writeEpilog() noexcept
+LegacySolverMultiSet< Model >::writeEpilog() noexcept
 {
    logger.writeHeader( "SPH simulation successfully finished." );
    logger.writeCurrentTime( "Ended at:" );
