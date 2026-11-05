@@ -12,6 +12,8 @@
 #include <SPH/Models/WCSPH_DBC/BoundaryConditionsTypes.h>
 #include <SPH/SPHTraits.h>
 
+#include <SPH/parseConfigFile.h>
+
 namespace TNL::SPH {
 
 template< typename SPHConfig >
@@ -26,21 +28,21 @@ configSetupOpenBoundaryModelPatch( TNL::Config::ConfigDescription& config, std::
    conigSetupOpenBoundaryPatch< SPHConfig >( config, prefix );
 
    // parameters for model-dependent open boundary conditions
-   config.addEntry< std::string >( prefix + "type", "Type of open boundary patch.", "none" );
-   config.addEntry< std::string >( prefix + "rho_bc", "Define type of open boundary condition for density.", "undefine" );
+   config.addEntry< std::string >( prefix + "Type", "Type of open boundary patch.", "none" );
+   config.addEntry< std::string >( prefix + "Rho_bc", "Define type of open boundary condition for density.", "undefine" );
    config.addEntryEnum( "fixed" );
    config.addEntryEnum( "extrapolated" );
    config.addEntryEnum( "do-nothing" );
-   config.addEntry< RealType >( prefix + "density", "Open boundary value for density.", 0 );
-   config.addEntry< std::string >( prefix + "v_bc", "Define type of open boundary condition for velocity.", "undefine" );
+   config.addEntry< RealType >( prefix + "Density", "Open boundary value for density.", 0 );
+   config.addEntry< std::string >( prefix + "V_bc", "Define type of open boundary condition for velocity.", "undefine" );
    config.addEntryEnum( "fixed" );
    config.addEntryEnum( "extrapolated" );
    config.addEntryEnum( "do-nothing" );
-   config.addEntry< RealType >( prefix + "velocity-x", "Open boundary value for density.", 0 );
-   config.addEntry< RealType >( prefix + "velocity-y", "Open boundary value for density.", 0 );
-   config.addEntry< RealType >( prefix + "velocity-z", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( prefix + "VelocityX", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( prefix + "VelocityY", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( prefix + "VelocityZ", "Open boundary value for density.", 0 );
    config.addEntry< RealType >(
-      prefix + "extrapolationDetTreshold", "Velocity treshold required in case of extrapolation.", 0 );
+      prefix + "ExtrapolationDetTreshold", "Velocity treshold required in case of extrapolation.", 0 );
 }
 
 template< typename SPHConfig >
@@ -88,7 +90,7 @@ public:
       Base::init( parameters, parametersOpenBoundary, prefix );
 
       //identify buffer type
-      const std::string openBoundaryPatchType = parametersOpenBoundary.getParameter< std::string >( prefix + "type" );
+      const std::string openBoundaryPatchType = parametersOpenBoundary.getParameter< std::string >( prefix + "Type" );
       if( openBoundaryPatchType == "periodic" )
          type = WCSPH_BCTypes::OpenBoundaryConditionsType::PeriodicBoundary;
       else if( openBoundaryPatchType == "inlet" )
@@ -99,7 +101,7 @@ public:
          std::cerr << "Open boundary patch " << prefix << " has invalid type " << openBoundaryPatchType << "." << std::endl;
 
       //: //identify density boundary condition
-      //: const std::string densityBoundaryCondition = parameters.getParameter< std::string >( prefix + "rho_bc" );
+      //: const std::string densityBoundaryCondition = parameters.getParameter< std::string >( prefix + "Rho_bc" );
       //: if( densityBoundaryCondition == "fixed" )
       //:    rho_bc = densityBoundaryCondition;
       //: else if( densityBoundaryCondition == "extrapolated" ){
@@ -108,11 +110,11 @@ public:
       //: else
       //:    std::cerr << "Open boundary patch " << prefix << " has invalid type " << openBoundaryPatchType << "." << std::endl;
 
-      this->rho_bc = parametersOpenBoundary.getParameter< std::string >( prefix + "rho_bc" );
-      density = parametersOpenBoundary.getParameter< RealType >( prefix + "density" );
-      this->v_bc = parametersOpenBoundary.getParameter< std::string >( prefix + "v_bc" );
-      velocity = parametersOpenBoundary.getXyz< VectorType >( prefix + "velocity" );
-      this->extrapolationDetTreshold = parametersOpenBoundary.getParameter< RealType >( prefix + "extrapolationDetTreshold" );
+      this->rho_bc = parametersOpenBoundary.getParameter< std::string >( prefix + "Rho_bc" );
+      density = parametersOpenBoundary.getParameter< RealType >( prefix + "Density" );
+      this->v_bc = parametersOpenBoundary.getParameter< std::string >( prefix + "V_bc" );
+      velocity = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "Velocity" );
+      this->extrapolationDetTreshold = parametersOpenBoundary.getParameter< RealType >( prefix + "ExtrapolationDetTreshold" );
    }
 
    void

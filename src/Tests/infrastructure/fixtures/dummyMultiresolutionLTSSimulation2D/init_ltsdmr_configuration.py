@@ -70,13 +70,13 @@ def write_distributed_domain_params_rectangular(
     subdomains: dict = {}
     for i, g in enumerate(grids):
         sd: dict = {
-            "fluid-particles":      f"{output_dir}/subdomain-{i}-dambreak_fluid.vtk",
-            "boundary-particles":   f"{output_dir}/subdomain-{i}-dambreak_boundary.vtk",
+            "fluidParticles":      f"{output_dir}/subdomain-{i}-dambreak_fluid.vtk",
+            "boundaryParticles":   f"{output_dir}/subdomain-{i}-dambreak_boundary.vtk",
             "fluid_n":              g.fluid_n,
             "boundary_n":           g.boundary_n,
             "fluid_n_allocated":    fact * g.fluid_n if fact * g.fluid_n > 0 else setup["fluid_n"],
             "boundary_n_allocated": fact * g.boundary_n if fact * g.boundary_n > 0 else setup["boundary_n"],
-            "refinement-factor":    g.factor,
+            "refinementFactor":    g.factor,
         }
 
         for ax in axes:
@@ -85,12 +85,12 @@ def write_distributed_domain_params_rectangular(
             origin_phys = domain_origin[ax] + g.search_radius * origin_glob
             size_phys   = g.search_radius * dims
 
-            sd[f"origin-global-coords-{ax}"] = origin_glob
-            sd[f"grid-dimensions-{ax}"]      = dims
-            sd[f"origin-{ax}"]               = round(origin_phys, 7)
-            sd[f"size-{ax}"]                 = round(size_phys, 7)
+            sd[f"originGlobalCoords{ax.upper()}"] = origin_glob
+            sd[f"gridDimensions{ax.upper()}"]      = dims
+            sd[f"origin{ax.upper()}"]               = round(origin_phys, 7)
+            sd[f"size{ax.upper()}"]                 = round(size_phys, 7)
 
-        subdomains[f"subdomain-{i}"] = sd
+        subdomains[f"subdomain{i}"] = sd
 
     with open(f"{output_dir}/config-distributed-domain.jsonc", "w") as f:
         json.dump({"subdomains": subdomains}, f, indent=4)

@@ -116,7 +116,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid(
    OpenBoundaryConfig& openBoundaryParams,
    const GlobalIndexType numberOfRetyped )
 {
-   const GlobalIndexType numberOfParticle = fluid->getParticles()->getNumberOfParticles();
+   const GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
 
    auto view_r_buffer = openBoundary->getParticles()->getPoints().getView();
    auto view_v_buffer = openBoundary->getVariables()->v.getView();
@@ -136,14 +136,14 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid(
 
    auto createNewFluidParticles = [ = ] __cuda_callable__( int i ) mutable
    {
-      view_r_fluid[ numberOfParticle + i ] = view_r_buffer[ i ];
-      view_rho_fluid[ numberOfParticle + i ] = view_rho_buffer[ i ];
-      view_v_fluid[ numberOfParticle + i ] = view_v_buffer[ i ];
+      view_r_fluid[ numberOfParticles + i ] = view_r_buffer[ i ];
+      view_rho_fluid[ numberOfParticles + i ] = view_rho_buffer[ i ];
+      view_v_fluid[ numberOfParticles + i ] = view_v_buffer[ i ];
 
-      view_rho_old[ numberOfParticle + i ] = view_rho_buffer[ i ];
-      view_v_old[ numberOfParticle + i ] = view_v_buffer[ i ];
+      view_rho_old[ numberOfParticles + i ] = view_rho_buffer[ i ];
+      view_v_old[ numberOfParticles + i ] = view_v_buffer[ i ];
 
-      view_referentialIdx[ numberOfParticle + i ] = highestReferentialIdx + i;
+      view_referentialIdx[ numberOfParticles + i ] = highestReferentialIdx + i;
 
       //const VectorType r_relative = bufferPosition - view_r_buffer[ i ];
       //const VectorType newBufferParticle = view_r_buffer[ i ] - ( r_relative, inletOrientation ) * inletOrientation -
@@ -155,7 +155,7 @@ OpenBoundaryConditionsBuffers< SPHConfig, ModelConfig >::convertBufferToFluid(
    Algorithms::parallelFor< DeviceType >( 0, numberOfRetyped, createNewFluidParticles );
 
    //Update number of particles
-   fluid->getParticles()->setNumberOfParticles( numberOfParticle + numberOfRetyped );
+   fluid->getParticles()->setNumberOfParticles( numberOfParticles + numberOfRetyped );
    fluid->getVariables()->highestReferentialIdx += numberOfRetyped;
 }
 

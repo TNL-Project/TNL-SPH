@@ -10,6 +10,8 @@
 #include <SPH/Models/SHTC/IntegrationSchemes/ExplicitEulerScheme.h>
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
+
+#include <SPH/parseConfigFile.h>
 //// FIXME: Not necessary
 //#include <SPH/OpenBoundaryConfig.h>
 
@@ -41,12 +43,12 @@ public:
       config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
       config.addEntry< double >( "tau", "Relaxation time.", 0 );
       config.addEntry< double >( "antiClumpFactor", "Anti-clumping factor..", 1e-3 );
-      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "initialTimeStep", "Initial time step.", 0 );
       config.addEntry< double >( "CFL", "CFL number.", 0 );
-      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
-      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "minimalTimeStep", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "externalForceX", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceY", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceZ", "External bulk forces.", 0 );
       config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
    }
 
@@ -64,11 +66,11 @@ public:
       rho0 = parameters.getParameter< double >( "rho0" );
       tau = parameters.getParameter< double >( "tau" );
       antiClumpFactor = parameters.getParameter< double >( "antiClumpFactor" );
-      dtInit = parameters.getParameter< double >( "initial-time-step" );
+      dtInit = parameters.getParameter< double >( "initialTimeStep" );
       cfl = parameters.getParameter< double >( "CFL" );
-      dtMin = parameters.getParameter< double >( "minimal-time-step" );
+      dtMin = parameters.getParameter< double >( "minimalTimeStep" );
       eps = parameters.getParameter< double >( "eps" );
-      gravity = parameters.getXyz< VectorType >( "external-force" );
+      gravity = getXyzCamelCase< VectorType >( parameters, "externalForce" );
 
       dtMin = 0.05f * dtInit;
    }

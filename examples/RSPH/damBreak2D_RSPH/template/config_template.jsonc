@@ -2,15 +2,15 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "damBreak2D_RSPH",
-        "output-directory": "results",
-        "fluid-particles": "sources/dambreak_fluid.vtk",
-        "boundary-particles": "sources/dambreak_boundary.vtk",
+        "caseName": "damBreak2D_RSPH",
+        "outputDirectory": "results",
+        "fluidParticles": "sources/dambreak_fluid.vtk",
+        "boundaryParticles": "sources/dambreak_boundary.vtk",
 
         // Simulation end time, output interval, output intensity
-        "final-time": 1.75,
-        "snapshot-period": 0.05,
-        "verbose-intensity": "with-snapshot"
+        "finalTime": 1.75,
+        "snapshotPeriod": 0.05,
+        "verboseIntensity": "with-snapshot"
     },
 
     // === Particle system configuration ===
@@ -24,10 +24,10 @@
     // === Domain size and domain origin ===
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOrigin-x": placeholderDomainOrigin-x,
-        "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y
+        "domainOriginX": placeholderDomainOrigin-x,
+        "domainOriginY": placeholderDomainOrigin-y,
+        "domainSizeX": placeholderDomainSize-x,
+        "domainSizeY": placeholderDomainSize-y
     },
 
     // === SPH solver section - resolution parameters ===
@@ -49,19 +49,19 @@
         // prevent zero denominator constant
         "eps": 0.001,
         // external force [m/s^2]
-        "external-force-x": 0,
-        "external-force-y": -9.81
+        "externalForceX": 0,
+        "externalForceY": -9.81
     },
 
     // === SPH solver section - integration parameters ===
     "integration": {
         // initial time step [s]
-        "initial-time-step": placeholderTimeStep
+        "initialTimeStep": placeholderTimeStep
     },
 
     // === Measure tool initialization section ===
-    "interpolation-planes-count": 1,
-    "pressure-sensors-count": 4,
-    "water-level-sensors-count": 4,
-    "measuretool-config": "sources/config-measuretool.jsonc"
+    "interpolationPlanesCount": 1,
+    "pressureSensorsCount": 4,
+    "waterLevelSensorsCount": 4,
+    "measuretoolConfig": "sources/config-measuretool.jsonc"
 }

@@ -6,19 +6,19 @@ namespace userCodedFunctions {
 void
 userConfigSetup( TNL::Config::ConfigDescription& config )
 {
-   config.addEntry< int >( "filtering-steps-interval", "The initial number of fluid particles.", INT_MAX );
+   config.addEntry< int >( "filteringStepsInterval", "The initial number of fluid particles.", INT_MAX );
 }
 
 class CustomMotion
 {
-   public:
+public:
    static constexpr int movingBoundary = 1;
 
    // load file with prescribed motion
    CustomMotion( const std::string motionFileName )
    {
       std::ifstream file( motionFileName );
-      if ( !file.is_open() ) {
+      if( ! file.is_open() ) {
          std::cerr << "Cannot open file with body motion: " + motionFileName << std::endl;
          exit( 1 );
       }
@@ -27,18 +27,20 @@ class CustomMotion
       std::getline( file, line );
       std::getline( file, line );
 
-      while( std::getline( file, line ) ){
+      while( std::getline( file, line ) ) {
          // clean multiple spaces
          while( line.find( "  " ) != std::string::npos ) {
-             line.replace( line.find( "  " ), 2, " " );
+            line.replace( line.find( "  " ), 2, " " );
          }
          // trim leading whitespace
          line.erase( 0, line.find_first_not_of( " \t" ) );
-         if ( line.empty() ) continue;
+         if( line.empty() )
+            continue;
 
          std::istringstream iss( line );
          float t, dvdt, v, x;
-         if ( !( iss >> t >> dvdt >> v >> x ) ) continue;
+         if( ! ( iss >> t >> dvdt >> v >> x ) )
+            continue;
 
          time.push_back( t );
          acc.push_back( dvdt );
@@ -52,15 +54,20 @@ class CustomMotion
    float
    interpolate( float t, const std::vector< float >& times, const std::vector< float >& values )
    {
-      if ( times.empty() ) return 0.0f;
+      if( times.empty() )
+         return 0.0f;
       // clamp to range ( np.interp default behavior: extrapolate with boundary values )
-      if ( t <= times.front() ) return values.front();
-      if ( t >= times.back() ) return values.back();
+      if( t <= times.front() )
+         return values.front();
+      if( t >= times.back() )
+         return values.back();
 
       // Find the interval ( lower_bound returns first >= t )
       auto it = std::lower_bound( times.begin(), times.end(), t );
-      if ( it == times.end() ) return values.back();
-      if ( *it == t ) return values[ it - times.begin() ];
+      if( it == times.end() )
+         return values.back();
+      if( *it == t )
+         return values[ it - times.begin() ];
 
       size_t i = it - times.begin() - 1;
       float t0 = times[ i ];
@@ -76,7 +83,7 @@ class CustomMotion
    assignMotion( BoundaryPointer& boundary, TimeStepping& timeStepping )
    {
       using TraitsType = TNL::SPH::SPHFluidTraits< typename SPHDefs::SPHConfig >;
-      using RealType = typename  TraitsType::RealType;
+      using RealType = typename TraitsType::RealType;
       using VectorType = typename TraitsType::VectorType;
 
       RealType t = timeStepping.getTime();
@@ -94,8 +101,7 @@ class CustomMotion
 
       auto moveSquare = [ = ] __cuda_callable__( int i ) mutable
       {
-         if( marker_view[ i ] == movingBoundary )
-         {
+         if( marker_view[ i ] == movingBoundary ) {
             r_view[ i ] += dt * vel;
             v_view[ i ] = vel;
             dvdt_view[ i ] = acc;
@@ -108,8 +114,6 @@ class CustomMotion
    std::vector< float > pos;
    std::vector< float > vel;
    std::vector< float > acc;
-
 };
 
-} // namespace userCodedFunctions
-
+}  // namespace userCodedFunctions

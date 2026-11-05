@@ -4,6 +4,7 @@
 #pragma once
 
 #include <SPH/solvers/SolverMultiSetRemeshed.h>
+#include <SPH/parseConfigFile.h>
 
 namespace TNL::SPH {
 
@@ -23,8 +24,8 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
 
    log.writeHeader( "Remeshed SPH simulation initialization." );
 
-   const VectorType domainOrigin = params.template getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = params.template getXyz< VectorType >( "domainSize" );
+   const VectorType domainOrigin = getXyzCamelCase< VectorType >( params, "domainOrigin" );
+   const VectorType domainSize = getXyzCamelCase< VectorType >( params, "domainSize" );
    const RealType searchRadius = params.template getParameter< RealType >( "searchRadius" );
    const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
@@ -55,8 +56,8 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
    if constexpr( ParticlesType::specifySearchedSetExplicitly() == true )
       this->boundarySets[ 1 ]->getParticles()->setParticleSetLabel( 1 );
 
-   const std::string fluidFileName = params.template getParameter< std::string >( "fluid-particles" );
-   const std::string boundaryFileName = params.template getParameter< std::string >( "boundary-particles" );
+   const std::string fluidFileName = params.template getParameter< std::string >( "fluidParticles" );
+   const std::string boundaryFileName = params.template getParameter< std::string >( "boundaryParticles" );
    log.writeParameter( "Reading fluid particles:", fluidFileName );
    this->fluidSets[ 0 ]->template readParticlesAndVariables< typename BaseType::Reader >( fluidFileName );
    log.writeParameter( "Reading boundary particles:", boundaryFileName );
@@ -65,19 +66,19 @@ SolverMultiSetRemeshed< Model >::initRemeshedSimulation( int argc, char* argv[] 
 
    this->modelParams.init( params );
 
-   this->timeStepping.setTimeStep( params.template getParameter< RealType >( "initial-time-step" ) );
-   this->timeStepping.setEndTime( params.template getParameter< RealType >( "final-time" ) );
-   this->timeStepping.addOutputTimer( "save_results", params.template getParameter< RealType >( "snapshot-period" ) );
+   this->timeStepping.setTimeStep( params.template getParameter< RealType >( "initialTimeStep" ) );
+   this->timeStepping.setEndTime( params.template getParameter< RealType >( "finalTime" ) );
+   this->timeStepping.addOutputTimer( "save_results", params.template getParameter< RealType >( "snapshotPeriod" ) );
 
-   this->caseName = params.template getParameter< std::string >( "case-name" );
-   this->verbose = params.template getParameter< std::string >( "verbose-intensity" );
-   this->outputDirectory = params.template getParameter< std::string >( "output-directory" );
-   this->particlesFormat = params.template getParameter< std::string >( "particles-format" );
+   this->caseName = params.template getParameter< std::string >( "caseName" );
+   this->verbose = params.template getParameter< std::string >( "verboseIntensity" );
+   this->outputDirectory = params.template getParameter< std::string >( "outputDirectory" );
+   this->particlesFormat = params.template getParameter< std::string >( "particlesFormat" );
 
    this->timeMeasurement.addTimer( "remesh" );
 
    log.writeSeparator();
-   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolFile = params.template getParameter< std::string >( "measuretoolConfig" ) != "";
    const bool hasMeasuretoolInline = params.template getParameter< std::string >( "measuretool" ) != "";
    if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       log.writeParameter( "Simulation monitor initialization.", "" );

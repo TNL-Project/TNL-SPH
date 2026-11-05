@@ -22,7 +22,7 @@ getSubdomainKey( int rank, Containers::StaticVector< 2, int > numberOfSubdomains
       distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
    //NOTE: Only 2D decomposition is allowed
    std::string subdomainKey =
-      "subdomain-x-" + std::to_string( subdomainCoordinates[ 0 ] ) + "-y-" + std::to_string( subdomainCoordinates[ 1 ] ) + "-";
+      "subdomainX" + std::to_string( subdomainCoordinates[ 0 ] ) + "Y" + std::to_string( subdomainCoordinates[ 1 ] );
    return subdomainKey;
 }
 

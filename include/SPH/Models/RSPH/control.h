@@ -10,6 +10,8 @@
 #include <SPH/SPHTraits.h>
 #include <SPH/TimeStep.h>
 
+#include <SPH/parseConfigFile.h>
+
 namespace TNL::SPH {
 
 /**
@@ -40,12 +42,12 @@ public:
       config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
       config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
       config.addEntry< double >( "p0", "Background pressure.", 0. );
-      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "initialTimeStep", "Initial time step.", 0 );
       config.addEntry< double >( "CFL", "CFL number.", 0 );
-      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
-      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "minimalTimeStep", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "externalForceX", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceY", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceZ", "External bulk forces.", 0 );
       config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
    }
 
@@ -60,11 +62,11 @@ public:
       speedOfSound = parameters.getParameter< RealType >( "speedOfSound" );
       rho0 = parameters.getParameter< RealType >( "rho0" );
       p0 = parameters.getParameter< double >( "p0" );
-      dtInit = parameters.getParameter< RealType >( "initial-time-step" );
+      dtInit = parameters.getParameter< RealType >( "initialTimeStep" );
       cfl = parameters.getParameter< RealType >( "CFL" );
-      dtMin = parameters.getParameter< RealType >( "minimal-time-step" );
+      dtMin = parameters.getParameter< RealType >( "minimalTimeStep" );
       eps = parameters.getParameter< RealType >( "eps" );
-      gravity = parameters.getXyz< VectorType >( "external-force" );
+      gravity = getXyzCamelCase< VectorType >( parameters, "externalForce" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;
       dtMin = 0.05f * dtInit;

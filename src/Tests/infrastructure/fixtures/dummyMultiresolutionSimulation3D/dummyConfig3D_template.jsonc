@@ -2,11 +2,11 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "dummyMultiresolutionSimulation3D",
-        "output-directory": "results",
-        "final-time": 0,
-        "snapshot-period": 0,
-        "verbose-intensity": "with-snapshot"
+        "caseName": "dummyMultiresolutionSimulation3D",
+        "outputDirectory": "results",
+        "finalTime": 0,
+        "snapshotPeriod": 0,
+        "verboseIntensity": "with-snapshot"
     },
 
     // === Particle system configuration ===
@@ -20,12 +20,12 @@
     // === Domain size and domain origin ===
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOrigin-x": placeholderDomainOrigin-x,
-        "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainOrigin-z": placeholderDomainOrigin-z,
-        "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y,
-        "domainSize-z": placeholderDomainSize-z
+        "domainOriginX": placeholderDomainOrigin-x,
+        "domainOriginY": placeholderDomainOrigin-y,
+        "domainOriginZ": placeholderDomainOrigin-z,
+        "domainSizeX": placeholderDomainSize-x,
+        "domainSizeY": placeholderDomainSize-y,
+        "domainSizeZ": placeholderDomainSize-z
     },
 
     // === SPH solver section - resolution parameters ===
@@ -36,52 +36,52 @@
 
     // === Domain decomposition information ===
     "numberOfSubdomains": 2,
-    "subdomains-config": "placeholderSubdomainsConfigPath"
+    "subdomainsConfig": "placeholderSubdomainsConfigPath"
 
-    // Inline subdomains config (alternative to "subdomains-config" file path).
+    // Inline subdomains config (alternative to "subdomainsConfig" file path).
     // When uncommented, the solver reads this subsection directly.
     // "subdomains": {
-    //     "subdomain-0": {
-    //         "fluid-particles": "",
-    //         "boundary-particles": "",
+    //     "subdomain0": {
+    //         "fluidParticles": "",
+    //         "boundaryParticles": "",
     //         "fluid_n": 0,
     //         "boundary_n": 0,
     //         "fluid_n_allocated": 0,
     //         "boundary_n_allocated": 0,
-    //         "refinement-factor": 1,
-    //         "origin-global-coords-x": 0,
-    //         "origin-global-coords-y": 0,
-    //         "origin-global-coords-z": 0,
-    //         "grid-dimensions-x": 0,
-    //         "grid-dimensions-y": 0,
-    //         "grid-dimensions-z": 0,
-    //         "origin-x": 0,
-    //         "origin-y": 0,
-    //         "origin-z": 0,
-    //         "size-x": 0,
-    //         "size-y": 0,
-    //         "size-z": 0
+    //         "refinementFactor": 1,
+    //         "originGlobalCoordsX": 0,
+    //         "originGlobalCoordsY": 0,
+    //         "originGlobalCoordsZ": 0,
+    //         "gridDimensionsX": 0,
+    //         "gridDimensionsY": 0,
+    //         "gridDimensionsZ": 0,
+    //         "originX": 0,
+    //         "originY": 0,
+    //         "originZ": 0,
+    //         "sizeX": 0,
+    //         "sizeY": 0,
+    //         "sizeZ": 0
     //     },
-    //     "subdomain-1": {
-    //         "fluid-particles": "",
-    //         "boundary-particles": "",
+    //     "subdomain1": {
+    //         "fluidParticles": "",
+    //         "boundaryParticles": "",
     //         "fluid_n": 0,
     //         "boundary_n": 0,
     //         "fluid_n_allocated": 0,
     //         "boundary_n_allocated": 0,
-    //         "refinement-factor": 2,
-    //         "origin-global-coords-x": 0,
-    //         "origin-global-coords-y": 0,
-    //         "origin-global-coords-z": 0,
-    //         "grid-dimensions-x": 0,
-    //         "grid-dimensions-y": 0,
-    //         "grid-dimensions-z": 0,
-    //         "origin-x": 0,
-    //         "origin-y": 0,
-    //         "origin-z": 0,
-    //         "size-x": 0,
-    //         "size-y": 0,
-    //         "size-z": 0
+    //         "refinementFactor": 2,
+    //         "originGlobalCoordsX": 0,
+    //         "originGlobalCoordsY": 0,
+    //         "originGlobalCoordsZ": 0,
+    //         "gridDimensionsX": 0,
+    //         "gridDimensionsY": 0,
+    //         "gridDimensionsZ": 0,
+    //         "originX": 0,
+    //         "originY": 0,
+    //         "originZ": 0,
+    //         "sizeX": 0,
+    //         "sizeY": 0,
+    //         "sizeZ": 0
     //     }
     // }
 }

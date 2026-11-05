@@ -18,6 +18,8 @@
 #include <SPH/OpenBoundaryConfig.h>
 #include <SPH/PeriodicBoundaryBuffers.h>
 
+#include <SPH/parseConfigFile.h>
+
 namespace TNL::SPH {
 
 class ParticleSetMetada
@@ -182,17 +184,17 @@ public:
       std::cout << "Number of periodic patches: " << numberOfPeriodicPatches << std::endl;
 
       //TODO: I don't like the compute domain properties here, this class should not take parameters as arg.
-      const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-      const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+      const VectorType domainOrigin = getXyzCamelCase< VectorType >( parameters, "domainOrigin" );
+      const VectorType domainSize = getXyzCamelCase< VectorType >( parameters, "domainSize" );
       const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
       const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
       periodicPatches.resize( numberOfPeriodicPatches );
       for( int i = 0; i < numberOfPeriodicPatches; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+         std::string prefix = "buffer" + std::to_string( i + 1 );
          periodicPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
          periodicPatches[ i ]->initialize( searchRadius, dimensions, domainOrigin );
-         //parameters.getParameter< int >( prefix + "numberOfParticlesPerCell" ) );
+         //parameters.getParameter< int >( prefix + "NumberOfParticlesPerCell" ) );
       }
    }
 
@@ -369,7 +371,7 @@ public:
    synchronizeObject()
    {
       // communicate number of particles to synchronize
-      this->distributedParticles->collectParticlesInInnerOverlaps( particles );  //TODO: Merge ptcs and distPtcs
+      this->distributedParticles->collectParticlesInInnerOverlaps( particles );  //TODO: Merge particles and distParticles
       this->synchronizer.synchronizeOverlapSizes( distributedParticles, particles );
       //TODO: check numberOfParitlces, numberOfAllocatedParticles and numberOfRecvParticles
 

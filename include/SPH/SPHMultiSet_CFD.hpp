@@ -39,27 +39,27 @@ SPHMultiSet_CFD< Model >::init( int argc, char* argv[] )
    // build config for distributed domain
    logger.writeParameter( "Configuration of distributed simulation:", "" );
    Containers::StaticVector< 2, int > numberOfSubdomains =
-      parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+      getXyzCamelCase< Containers::StaticVector< 2, int > >( parameters, "subdomains" );
    logger.writeParameter( "Number of subdomains:", numberOfSubdomains );
    for( int x = 0; x < numberOfSubdomains[ 0 ]; x++ )
       for( int y = 0; y < numberOfSubdomains[ 1 ]; y++ )
          TNL::SPH::configSetupDistributedSubdomain( x, y, this->configDistributed );
    // load and parse config for distributed domain
-   std::string configDistributedPath = parameters.getParameter< std::string >( "distributed-config" );
-   const std::string distributedDomainInline = parameters.getParameter< std::string >( "distributed-domain" );
+   std::string configDistributedPath = parameters.getParameter< std::string >( "distributedConfig" );
+   const std::string distributedDomainInline = parameters.getParameter< std::string >( "distributedDomain" );
    parseDistributedConfig( configDistributedPath, parametersDistributed, configDistributed, logger, distributedDomainInline );
 
    // initialize distributed particle sets and overlaps
    initDistributedParticleSets( parameters, this->parametersDistributed, logger );
 
    // set balancing tresholds
-   loadBalancingMeasure = parameters.getParameter< std::string >( "load-balancing-measure" );
-   loadBalancingStepInterval = parameters.getParameter< int >( "load-balancing-step-inteval" );
+   loadBalancingMeasure = parameters.getParameter< std::string >( "loadBalancingMeasure" );
+   loadBalancingStepInterval = parameters.getParameter< int >( "loadBalancingStepInterval" );
    fluid->getDistributedParticles()->setParticlesCountResizeThreshold(
-      parameters.getParameter< float >( "number-of-particles-balancing-coef" ) );
+      parameters.getParameter< float >( "numberOfParticlesBalancingCoef" ) );
    fluid->getDistributedParticles()->setCompTimeResizePercentageThreshold(
-      parameters.getParameter< float >( "computational-time-balancing-coef" ) );
-   std::cout << "Printf: comp time balancing coef:" << parameters.getParameter< float >( "computational-time-balancing-coef" )
+      parameters.getParameter< float >( "computationalTimeBalancingCoef" ) );
+   std::cout << "Printf: comp time balancing coef:" << parameters.getParameter< float >( "computationalTimeBalancingCoef" )
              << std::endl;
 
    // add timers related to synchronization and load balancing
@@ -71,8 +71,8 @@ SPHMultiSet_CFD< Model >::init( int argc, char* argv[] )
 #endif
 
    // initialize open boundary conditions
-   const bool hasOpenBcFile = parameters.getParameter< std::string >( "open-boundary-config" ) != "";
-   const bool hasOpenBcInline = parameters.getParameter< std::string >( "open-boundary" ) != "";
+   const bool hasOpenBcFile = parameters.getParameter< std::string >( "openBoundaryConfig" ) != "";
+   const bool hasOpenBcInline = parameters.getParameter< std::string >( "openBoundary" ) != "";
    if( hasOpenBcFile || hasOpenBcInline ) {
       initOpenBoundaryPatches( parameters, logger );
 
@@ -82,8 +82,8 @@ SPHMultiSet_CFD< Model >::init( int argc, char* argv[] )
    }
 
    // init periodic boundary conditions
-   const bool hasPeriodicBcFile = parameters.getParameter< std::string >( "periodic-boundary-config" ) != "";
-   const bool hasPeriodicBcInline = parameters.getParameter< std::string >( "periodic-boundary" ) != "";
+   const bool hasPeriodicBcFile = parameters.getParameter< std::string >( "periodicBoundaryConfig" ) != "";
+   const bool hasPeriodicBcInline = parameters.getParameter< std::string >( "periodicBoundary" ) != "";
    if( hasPeriodicBcFile || hasPeriodicBcInline ) {
       initPeriodicBoundaryPatches( parameters, logger );
 
@@ -98,16 +98,16 @@ SPHMultiSet_CFD< Model >::init( int argc, char* argv[] )
    modelParams.init( parameters );
 
    // init time stepping
-   timeStepping.setTimeStep( parameters.getParameter< RealType >( "initial-time-step" ) );
-   timeStepping.setTime( parameters.getParameter< RealType >( "start-time" ) );
-   timeStepping.setEndTime( parameters.getParameter< RealType >( "final-time" ) );
-   timeStepping.addOutputTimer( "save_results", parameters.getParameter< RealType >( "snapshot-period" ) );
+   timeStepping.setTimeStep( parameters.getParameter< RealType >( "initialTimeStep" ) );
+   timeStepping.setTime( parameters.getParameter< RealType >( "startTime" ) );
+   timeStepping.setEndTime( parameters.getParameter< RealType >( "finalTime" ) );
+   timeStepping.addOutputTimer( "save_results", parameters.getParameter< RealType >( "snapshotPeriod" ) );
 
    // control
-   caseName = parameters.getParameter< std::string >( "case-name" );
-   verbose = parameters.getParameter< std::string >( "verbose-intensity" );
-   outputDirectory = parameters.getParameter< std::string >( "output-directory" );
-   particlesFormat = parameters.getParameter< std::string >( "particles-format" );
+   caseName = parameters.getParameter< std::string >( "caseName" );
+   verbose = parameters.getParameter< std::string >( "verboseIntensity" );
+   outputDirectory = parameters.getParameter< std::string >( "outputDirectory" );
+   particlesFormat = parameters.getParameter< std::string >( "particlesFormat" );
 
 #ifdef HAVE_MPI
    readParticleFilesDistributed( parameters, this->parametersDistributed, logger );
@@ -117,7 +117,7 @@ SPHMultiSet_CFD< Model >::init( int argc, char* argv[] )
 
    // initialize the measuretool
    logger.writeSeparator();
-   const bool hasMeasuretoolFile = parameters.getParameter< std::string >( "measuretool-config" ) != "";
+   const bool hasMeasuretoolFile = parameters.getParameter< std::string >( "measuretoolConfig" ) != "";
    const bool hasMeasuretoolInline = parameters.getParameter< std::string >( "measuretool" ) != "";
    if( hasMeasuretoolFile || hasMeasuretoolInline ) {
       logger.writeParameter( "Simulation monitor initialization.", "" );
@@ -138,8 +138,8 @@ void
 SPHMultiSet_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
    // get global domain properetis
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const VectorType domainOrigin = getXyzCamelCase< VectorType >( parameters, "domainOrigin" );
+   const VectorType domainSize = getXyzCamelCase< VectorType >( parameters, "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
@@ -175,10 +175,10 @@ SPHMultiSet_CFD< Model >::initParticleSets( TNL::Config::ParameterContainer& par
    //if( openBoundaryPatch.size() > 0 ) {
    //   openBoundaryPatches.resize( numberOfBoundaryPatches );
    //   for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-   //      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+   //      std::string prefix = "buffer" + std::to_string( i + 1 );
    //      openBoundaryPatches[ i ]->config.init( parameters, prefix );
-   //      openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "numberOfParticles" ),
-   //                                            parameters.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+   //      openBoundaryPatches[ i ]->initialize( parameters.getParameter< int >( prefix + "NumberOfParticles" ),
+   //                                            parameters.getParameter< int >( prefix + "NumberOfAllocatedParticles" ),
    //                                            searchRadius,
    //                                            dimensions,
    //                                            domainOrigin );
@@ -192,29 +192,29 @@ SPHMultiSet_CFD< Model >::initOpenBoundaryPatches( TNL::Config::ParameterContain
 {
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
-   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
-   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
+   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "openBoundaryConfig" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "openBoundary" );
 
    // setup and parse open boundary config
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      std::string prefix = "buffer" + std::to_string( i + 1 );
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
    parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
    // get global domain properetis
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const VectorType domainOrigin = getXyzCamelCase< VectorType >( parameters, "domainOrigin" );
+   const VectorType domainSize = getXyzCamelCase< VectorType >( parameters, "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    openBoundaryPatches.resize( numberOfBoundaryPatches );
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      std::string prefix = "buffer" + std::to_string( i + 1 );
       openBoundaryPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
       openBoundaryPatches[ i ]->initialize(
-         parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
-         parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+         parametersOpenBoundary.getParameter< int >( prefix + "NumberOfParticles" ),
+         parametersOpenBoundary.getParameter< int >( prefix + "NumberOfAllocatedParticles" ),
          searchRadius,
          dimensions,
          domainOrigin );
@@ -228,12 +228,12 @@ SPHMultiSet_CFD< Model >::initPeriodicBoundaryPatches( TNL::Config::ParameterCon
 {
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
-   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
-   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodic-boundary" );
+   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "periodicBoundaryConfig" );
+   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodicBoundary" );
 
    // setup and parse open boundary config
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      std::string prefix = "buffer" + std::to_string( i + 1 );
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
    parseOpenBoundaryConfig(
@@ -254,7 +254,7 @@ SPHMultiSet_CFD< Model >::initDistributedParticleSets(
    logger.writeHeader( "SPH simulation initialization." );
    int rank = TNL::MPI::GetRank();
    Containers::StaticVector< 2, int > numberOfSubdomains =
-      parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+      getXyzCamelCase< Containers::StaticVector< 2, int > >( parameters, "subdomains" );
    Containers::StaticVector< 2, int > subdomainCoordinates =
       distributed::restoreSubdomainCoordinatesFromRank( rank, numberOfSubdomains );
    const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
@@ -265,23 +265,23 @@ SPHMultiSet_CFD< Model >::initDistributedParticleSets(
 
    // global domain properties
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const VectorType domainOrigin = getXyzCamelCase< VectorType >( parameters, "domainOrigin" );
+   const VectorType domainSize = getXyzCamelCase< VectorType >( parameters, "domainSize" );
    const CoordinatesType domainGridDimension = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
    const int numberOfOverlapLayers = parameters.getParameter< int >( "overlapWidth" );
 
    // subdomain + ghost properties
-   const VectorType subdomainOrigin = parametersDistributed.getXyz< VectorType >( subdomainKey + "origin" );  //REMOVE
+   const VectorType subdomainOrigin = getXyzCamelCase< VectorType >( parametersDistributed, subdomainKey + "Origin" );  //REMOVE
    const CoordinatesType subdomainGridDimension =
-      parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "grid-dimensions" );
+      getXyzCamelCase< CoordinatesType >( parametersDistributed, subdomainKey + "GridDimensions" );
    const CoordinatesType subdomainGridOriginGlobalCoords =
-      parametersDistributed.getXyz< CoordinatesType >( subdomainKey + "origin-global-coords" );
+      getXyzCamelCase< CoordinatesType >( parametersDistributed, subdomainKey + "OriginGlobalCoords" );
 
    // init fluid
    logger.writeParameter( "initDistributed:", "fluid->initialize" );
    fluid->initializeAsDistributed(
-      parametersDistributed.getParameter< int >( subdomainKey + "fluid_n" ),
-      parametersDistributed.getParameter< int >( subdomainKey + "fluid_n_allocated" ),
+      parametersDistributed.getParameter< int >( subdomainKey + "Fluid_n" ),
+      parametersDistributed.getParameter< int >( subdomainKey + "Fluid_n_allocated" ),
       searchRadius,
       domainGridDimension,
       domainOrigin,
@@ -298,8 +298,8 @@ SPHMultiSet_CFD< Model >::initDistributedParticleSets(
    // init boundary
    logger.writeParameter( "initDistributed:", "boundary->initialize" );
    boundary->initializeAsDistributed(
-      parametersDistributed.getParameter< int >( subdomainKey + "boundary_n" ),
-      parametersDistributed.getParameter< int >( subdomainKey + "boundary_n_allocated" ),
+      parametersDistributed.getParameter< int >( subdomainKey + "Boundary_n" ),
+      parametersDistributed.getParameter< int >( subdomainKey + "Boundary_n_allocated" ),
       searchRadius,
       domainGridDimension,
       domainOrigin,
@@ -320,8 +320,8 @@ template< typename Func >
 void
 SPHMultiSet_CFD< Model >::initUserConfig( Func&& userConfigFunction )
 {
-   const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
-   const std::string userDefinedInline = parameters.getParameter< std::string >( "user-defined" );
+   const std::string userConfigPath = parameters.getParameter< std::string >( "userDefinedConfig" );
+   const std::string userDefinedInline = parameters.getParameter< std::string >( "userDefined" );
    if( userConfigPath == "" && userDefinedInline == "" )
       return;
 
@@ -334,16 +334,16 @@ void
 SPHMultiSet_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& parameters, TNL::Logger& logger )
 {
    if( parameters.getParameter< int >( "numberOfParticles" ) != 0 ) {
-      logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluid-particles" ) );
-      fluid->template readParticlesAndVariables< Reader >( parameters.getParameter< std::string >( "fluid-particles" ) );
+      logger.writeParameter( "Reading fluid particles:", parameters.getParameter< std::string >( "fluidParticles" ) );
+      fluid->template readParticlesAndVariables< Reader >( parameters.getParameter< std::string >( "fluidParticles" ) );
    }
    else {
       logger.writeParameter( "Reading fluid particles:", "NO PARTICLES TO READ" );
    }
 
    if( parameters.getParameter< int >( "numberOfBoundaryParticles" ) != 0 ) {
-      logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundary-particles" ) );
-      boundary->template readParticlesAndVariables< Reader >( parameters.getParameter< std::string >( "boundary-particles" ) );
+      logger.writeParameter( "Reading boundary particles:", parameters.getParameter< std::string >( "boundaryParticles" ) );
+      boundary->template readParticlesAndVariables< Reader >( parameters.getParameter< std::string >( "boundaryParticles" ) );
    }
    else {
       logger.writeParameter( "Reading boundary particles:", "NO PARTICLES TO READ" );
@@ -354,12 +354,12 @@ SPHMultiSet_CFD< Model >::readParticlesFiles( TNL::Config::ParameterContainer& p
    //TODO: I don't like that open boundary buffer are selected in compile time.
    if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-         std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
-         if( parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ) != 0 ) {
+         std::string prefix = "buffer" + std::to_string( i + 1 );
+         if( parametersOpenBoundary.getParameter< int >( prefix + "NumberOfParticles" ) != 0 ) {
             logger.writeParameter(
-               "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+               "Reading open boundary particles:", parametersOpenBoundary.getParameter< std::string >( prefix + "Particles" ) );
             openBoundaryPatches[ i ]->template readParticlesAndVariables< Reader >(
-               parametersOpenBoundary.getParameter< std::string >( prefix + "particles" ) );
+               parametersOpenBoundary.getParameter< std::string >( prefix + "Particles" ) );
          }
          else {
             logger.writeParameter( "Reading open boundary particles:", "NO PARTICLES TO READ" );
@@ -378,25 +378,25 @@ SPHMultiSet_CFD< Model >::readParticleFilesDistributed(
 {
    int rank = TNL::MPI::GetRank();
    Containers::StaticVector< 2, int > numberOfSubdomains =
-      parameters.getXyz< Containers::StaticVector< 2, int > >( "subdomains" );
+      getXyzCamelCase< Containers::StaticVector< 2, int > >( parameters, "subdomains" );
    const std::string subdomainKey = distributed::getSubdomainKey( rank, numberOfSubdomains );
 
    // read particle data
    logger.writeParameter(
-      "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
+      "Reading fluid particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "FluidParticles" ) );
    fluid->template readParticlesAndVariables< Reader >(
-      parametersDistributed.getParameter< std::string >( subdomainKey + "fluid-particles" ) );
+      parametersDistributed.getParameter< std::string >( subdomainKey + "FluidParticles" ) );
    logger.writeParameter(
-      "Reading boundary particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
+      "Reading boundary particles:", parametersDistributed.getParameter< std::string >( subdomainKey + "BoundaryParticles" ) );
    boundary->template readParticlesAndVariables< Reader >(
-      parametersDistributed.getParameter< std::string >( subdomainKey + "boundary-particles" ) );
+      parametersDistributed.getParameter< std::string >( subdomainKey + "BoundaryParticles" ) );
 
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
    if( openBoundaryPatches.size() > 0 ) {  //TODO: I dont like this.
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-         std::string prefix = subdomainKey + "buffer-" + std::to_string( i + 1 ) + "-";
+         std::string prefix = subdomainKey + "Buffer" + std::to_string( i + 1 );
          openBoundaryPatches[ i ]->template readParticlesAndVariables< Reader >(
-            parametersDistributed.getParameter< std::string >( prefix + "particles" ) );
+            parametersDistributed.getParameter< std::string >( prefix + "Particles" ) );
       }
    }
 }
@@ -748,7 +748,7 @@ SPHMultiSet_CFD< Model >::performLoadBalancing()
 {
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing(
-      fluid->getNumberOfParticles() );  //TODO: Remove ptcs duplicity
+      fluid->getNumberOfParticles() );  //TODO: Remove particles duplicity
    fluid->getDistributedParticles()->setCompTimeForLoadBalancing( timeMeasurement.getTotalTime() - subdomainCompTimeBackup );
    fluid->synchronizeBalancingMeasures();
 

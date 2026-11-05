@@ -8,6 +8,8 @@
 #include <string>
 
 #include <nlohmann/json.hpp>
+
+#include <SPH/parseConfigFile.h>
 /*
    All grid-level parameters for one subdomain, extracted from config once
    and reused by both initParticleSets and initZones.
@@ -63,8 +65,8 @@ public:
    loadFromConfig( TNL::Config::ParameterContainer& parameters, TNL::Config::ParameterContainer& parametersSubdomains )
    {
       const RealType radius = parameters.getParameter< RealType >( "searchRadius" );
-      const PointType origin = parameters.getXyz< PointType >( "domainOrigin" );
-      const PointType size = parameters.getXyz< PointType >( "domainSize" );
+      const PointType origin = TNL::SPH::getXyzCamelCase< PointType >( parameters, "domainOrigin" );
+      const PointType size = TNL::SPH::getXyzCamelCase< PointType >( parameters, "domainSize" );
 
       // Global domain as a TNL grid
       GridType global;
@@ -77,20 +79,21 @@ public:
       // Build local domains a s TNL grids
       const int n = parameters.getParameter< int >( "numberOfSubdomains" );
       for( int i = 0; i < n; i++ ) {
-         const std::string key = "subdomain-" + std::to_string( i ) + "-";
-         const float rf = parametersSubdomains.getParameter< float >( key + "refinement-factor" );
+         const std::string key = "subdomain" + std::to_string( i );
+         const float rf = parametersSubdomains.getParameter< float >( key + "RefinementFactor" );
          const RealType local_radius = rf * radius;
 
          GridType local;
-         local.setDimensions( parametersSubdomains.getXyz< CoordinatesType >( key + "grid-dimensions" ) );
-         local.setOrigin( parametersSubdomains.getXyz< PointType >( key + "origin" ) );  //TODO: Remove?
+         local.setDimensions( TNL::SPH::getXyzCamelCase< CoordinatesType >( parametersSubdomains, key + "GridDimensions" ) );
+         local.setOrigin( TNL::SPH::getXyzCamelCase< PointType >( parametersSubdomains, key + "Origin" ) );  //TODO: Remove?
          local.setSpaceSteps( PointType( local_radius ) );
 
          SubdomainDescriptor< GridType > sd;
          sd.index = i;
          sd.refinementFactor = rf;
          sd.grid = local;
-         sd.originCoordinates = parametersSubdomains.getXyz< CoordinatesType >( key + "origin-global-coords" );
+         sd.originCoordinates =
+            TNL::SPH::getXyzCamelCase< CoordinatesType >( parametersSubdomains, key + "OriginGlobalCoords" );
          subdomains.push_back( sd );
       }
    }

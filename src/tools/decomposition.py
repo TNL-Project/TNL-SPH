@@ -134,10 +134,10 @@ def compute_grid_splits(
    axis:              int,
    search_radius:     float,
 ) -> list:
-   ptcs_per_sub = int(math.ceil(fluid_n / n_subdomains))
+   particles_per_subdomain = int(math.ceil(fluid_n / n_subdomains))
    splits = []
    for i in range(n_subdomains_axis - 1):
-      idx = ptcs_per_sub * (i + 1)
+      idx = particles_per_subdomain * (i + 1)
       splits.append(math.ceil(fluid_r[idx, axis] / search_radius))
    return splits
 
@@ -313,13 +313,13 @@ def build_subdomain_data(
    bn_alloc = boundary_alloc * g.boundary_n if g.boundary_n > 0 else setup.get("boundary_n", 0)
 
    sd: dict = {
-      "fluid-particles":      fluid_path,
-      "boundary-particles":   boundary_path,
+      "fluidParticles":      fluid_path,
+      "boundaryParticles":   boundary_path,
       "fluid_n":              g.fluid_n,
       "boundary_n":           g.boundary_n,
       "fluid_n_allocated":    fn_alloc,
       "boundary_n_allocated": bn_alloc,
-      "refinement-factor":    g.factor,
+      "refinementFactor":    g.factor,
    }
 
    for ax in axes:
@@ -328,10 +328,10 @@ def build_subdomain_data(
       origin_phys = domain_origin[ax] + g.search_radius * (origin_glob - overlap)
       size_phys   = g.search_radius * dims
 
-      sd[f"origin-global-coords-{ax}"] = origin_glob
-      sd[f"grid-dimensions-{ax}"]      = dims
-      sd[f"origin-{ax}"]               = round(origin_phys, 7)
-      sd[f"size-{ax}"]                 = round(size_phys, 7)
+      sd[f"originGlobalCoords{ax.upper()}"] = origin_glob
+      sd[f"gridDimensions{ax.upper()}"]      = dims
+      sd[f"origin{ax.upper()}"]               = round(origin_phys, 7)
+      sd[f"size{ax.upper()}"]                 = round(size_phys, 7)
 
    return sd
 
@@ -341,15 +341,14 @@ def build_multiresolution_buffer_data(setup: dict) -> dict:
     describing each multiresolution buffer's particle file and count.
     Returns an empty dict if no buffers are present.
 
-    The child keys use the full schema prefix 'multiresolution-buffer-<N>' so
+    The child keys use the full schema prefix 'multiresolutionBuffer<N>' so
     that the solver's flattenJSON parser maps the nested entry
-        "multiresolution-buffers": { "multiresolution-buffer-0": { "particles": ..., "n": ... } }
+        "multiresolutionBuffers": { "multiresolutionBuffer0": { "particles": ..., "n": ... } }
     to the registered config keys
-        "multiresolution-buffer-0-particles", "multiresolution-buffer-0-n"
-    via the parentKey-childKey flattening rule.  The index <N> is 0-based to
-    match the solver's configMultiresolutionBuffer( bufferIdx, ... ) which
-    registers bufferIdx = 0..numberOfSubsets-1, consistent with subdomain
-    indexing (subdomain-0, subdomain-1, ...).
+        "multiresolutionBuffer0Particles", "multiresolutionBuffer0N"
+    via camelCase prefix concatenation.  The index <N> is 0-based to match
+    the solver's configMultiresolutionBuffer( bufferIdx, ... ), which registers
+    bufferIdx = 0..numberOfSubsets-1, consistent with subdomain indexing.
     """
     pattern = re.compile(r"^mrb_buffer_(\d+)_n$")
     buffer_indices = sorted(
@@ -363,7 +362,7 @@ def build_multiresolution_buffer_data(setup: dict) -> dict:
 
     buffers = {}
     for i in buffer_indices:
-        buffers[f"multiresolution-buffer-{i}"] = {
+        buffers[f"multiresolutionBuffer{i}"] = {
             "particles": f"sources/multiresolution_buffer_{i}.vtk",
             "n": setup[f"mrb_buffer_{i}_n"],
         }
@@ -376,9 +375,9 @@ def build_boundary_ghost_buffer_data(setup: dict) -> dict:
     and count.  Returns an empty dict if no ghost lattices were generated.
 
     Mirrors build_multiresolution_buffer_data: the nested entry
-        "boundary-ghost-buffers": { "boundary-ghost-buffer-<N>": { "particles": ..., "n": ... } }
+        "boundaryGhostBuffers": { "boundaryGhostBuffer<N>": { "particles": ..., "n": ... } }
     is flattened by the solver's config parser to the registered keys
-        "boundary-ghost-buffer-<N>-particles", "boundary-ghost-buffer-<N>-n"
+        "boundaryGhostBuffer<N>Particles", "boundaryGhostBuffer<N>N"
     where <N> follows the solver's own-major interface enumeration.
     """
     pattern = re.compile(r"^ghost_buffer_(\d+)_n$")
@@ -393,7 +392,7 @@ def build_boundary_ghost_buffer_data(setup: dict) -> dict:
 
     buffers = {}
     for i in buffer_indices:
-        buffers[f"boundary-ghost-buffer-{i}"] = {
+        buffers[f"boundaryGhostBuffer{i}"] = {
             "particles": f"sources/boundary_ghost_buffer_{i}.vtk",
             "n": setup[f"ghost_buffer_{i}_n"],
         }
@@ -411,7 +410,7 @@ def build_distributed_domain_data(
    if distributed:
       data = {}
       for g in grids:
-         key = f"subdomain-x-{g.ix}-y-{g.iy}"
+         key = f"subdomainX{g.ix}Y{g.iy}"
          fluid_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-fluid.vtk"
          boundary_path = f"sources/{particles_filename_pattern}subdomain-x-{g.ix}-y-{g.iy}-boundary.vtk"
          data[key] = build_subdomain_data(g, setup, fluid_path, boundary_path)
@@ -420,16 +419,16 @@ def build_distributed_domain_data(
       for i, g in enumerate(grids):
          fluid_path = f"sources/subdomain-{i}-{particles_filename_pattern}fluid.vtk"
          boundary_path = f"sources/subdomain-{i}-{particles_filename_pattern}boundary.vtk"
-         subdomains[f"subdomain-{i}"] = build_subdomain_data(g, setup, fluid_path, boundary_path)
+         subdomains[f"subdomain{i}"] = build_subdomain_data(g, setup, fluid_path, boundary_path)
       data = {"subdomains": subdomains}
 
    mrb_data = build_multiresolution_buffer_data(setup)
    if mrb_data:
-       data["multiresolution-buffers"] = mrb_data
+       data["multiresolutionBuffers"] = mrb_data
 
    ghost_data = build_boundary_ghost_buffer_data(setup)
    if ghost_data:
-       data["boundary-ghost-buffers"] = ghost_data
+       data["boundaryGhostBuffers"] = ghost_data
 
    return data
 

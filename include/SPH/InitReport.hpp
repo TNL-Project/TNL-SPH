@@ -13,6 +13,7 @@
 #include <TNL/MPI.h>
 
 #include <SPH/InitReport.h>
+#include <SPH/parseConfigFile.h>
 
 namespace TNL::SPH {
 
@@ -40,8 +41,8 @@ addConfigSection( nlohmann::json& doc, const Params& parameters )
    // Domain geometry - parameter access mirrors DecompositionTopology.h.
    // The vectors always have three components (z is 0 for 2D configurations).
    using PointType = Containers::StaticVector< 3, double >;
-   const PointType domainOrigin = parameters.template getXyz< PointType >( "domainOrigin" );
-   const PointType domainSize = parameters.template getXyz< PointType >( "domainSize" );
+   const PointType domainOrigin = getXyzCamelCase< PointType >( parameters, "domainOrigin" );
+   const PointType domainSize = getXyzCamelCase< PointType >( parameters, "domainSize" );
    config[ "domainOrigin" ] = { domainOrigin[ 0 ], domainOrigin[ 1 ], domainOrigin[ 2 ] };
    config[ "domainSize" ] = { domainSize[ 0 ], domainSize[ 1 ], domainSize[ 2 ] };
    config[ "searchRadius" ] = parameters.template getParameter< double >( "searchRadius" );

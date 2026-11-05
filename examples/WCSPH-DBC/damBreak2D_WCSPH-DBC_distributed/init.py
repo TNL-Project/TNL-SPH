@@ -106,14 +106,14 @@ def generate_subdomains_data( setup, fluid_rx, fluid_ry, box_rx, box_ry ):
     setup[ "referential_origin_x" ] = setup[ "domain_origin_x" ] - overlap_width * search_radius
     setup[ "referential_origin_y" ] = setup[ "domain_origin_y" ] - overlap_width * search_radius
 
-    ptcs_per_subdomain = ( int )( math.ceil( setup[ "fluid_n" ] + setup[ "boundary_n" ] ) / ( setup[ "number_of_subdomains" ] ) )
+    particles_per_subdomain = ( int )( math.ceil( setup[ "fluid_n" ] + setup[ "boundary_n" ] ) / ( setup[ "number_of_subdomains" ] ) )
     grid_splits_x = []
     grid_splits_y = []
 
     for subdomain_x in range( subdomains_x - 1 ):
-        grid_splits_x.append( math.ceil( fluid_rx[ ptcs_per_subdomain * ( subdomain_x + 1 ) ] / search_radius ) )
+        grid_splits_x.append( math.ceil( fluid_rx[ particles_per_subdomain * ( subdomain_x + 1 ) ] / search_radius ) )
     for subdomain_y in range( subdomains_y - 1 ):
-        grid_splits_y.append( math.ceil( fluid_ry[ ptcs_per_subdomain * ( subdomain_y + 1 ) ] / search_radius ) )
+        grid_splits_y.append( math.ceil( fluid_ry[ particles_per_subdomain * ( subdomain_y + 1 ) ] / search_radius ) )
 
     domain_sizes_x = []
     grid_sizes_x = []
@@ -379,33 +379,34 @@ def build_distributed_domain_json( setup ):
     for subdomain_x in range( subdomains_x ):
         for subdomain_y in range( subdomains_y ):
             key_prefix = f"subdomain-x-{subdomain_x}-y-{subdomain_y}-"
+            config_key_prefix = f"subdomainX{subdomain_x}Y{subdomain_y}"
             entry = {}
-            entry[ f"{key_prefix}fluid-particles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-fluid.vtk"
-            entry[ f"{key_prefix}boundary-particles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-boundary.vtk"
-            entry[ f"{key_prefix}fluid_n" ] = int( setup[ f"{key_prefix}fluid_n" ] )
-            entry[ f"{key_prefix}boundary_n" ] = int( setup[ f"{key_prefix}box_n" ] )
-            entry[ f"{key_prefix}fluid_n_allocated" ] = 2 * int( setup[ f"{key_prefix}fluid_n" ] )
-            entry[ f"{key_prefix}boundary_n_allocated" ] = 3 * int( setup[ f"{key_prefix}box_n" ] )
+            entry[ f"{config_key_prefix}FluidParticles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-fluid.vtk"
+            entry[ f"{config_key_prefix}BoundaryParticles" ] = f"sources/dambreak_subdomain-x-{subdomain_x}-y-{subdomain_y}-boundary.vtk"
+            entry[ f"{config_key_prefix}Fluid_n" ] = int( setup[ f"{key_prefix}fluid_n" ] )
+            entry[ f"{config_key_prefix}Boundary_n" ] = int( setup[ f"{key_prefix}box_n" ] )
+            entry[ f"{config_key_prefix}Fluid_n_allocated" ] = 2 * int( setup[ f"{key_prefix}fluid_n" ] )
+            entry[ f"{config_key_prefix}Boundary_n_allocated" ] = 3 * int( setup[ f"{key_prefix}box_n" ] )
 
             subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
             subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}origin-x" ] = float( round( subdomain_grid_origin_x, 7 ) )
-            entry[ f"{key_prefix}origin-y" ] = float( round( subdomain_grid_origin_y, 7 ) )
+            entry[ f"{config_key_prefix}OriginX" ] = float( round( subdomain_grid_origin_x, 7 ) )
+            entry[ f"{config_key_prefix}OriginY" ] = float( round( subdomain_grid_origin_y, 7 ) )
 
             subdomain_grid_origin_glob_coords_x = setup[ f"grid_index_origins_x" ][ subdomain_x ]
             subdomain_grid_origin_glob_coords_y = setup[ f"grid_index_origins_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}origin-global-coords-x" ] = int( subdomain_grid_origin_glob_coords_x )
-            entry[ f"{key_prefix}origin-global-coords-y" ] = int( subdomain_grid_origin_glob_coords_y )
+            entry[ f"{config_key_prefix}OriginGlobalCoordsX" ] = int( subdomain_grid_origin_glob_coords_x )
+            entry[ f"{config_key_prefix}OriginGlobalCoordsY" ] = int( subdomain_grid_origin_glob_coords_y )
 
             subdomain_size_x = setup[ f"domain_sizes_x" ][ subdomain_x ]
             subdomain_size_y = setup[ f"domain_sizes_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}size-x" ] = float( round( subdomain_size_x, 7 ) )
-            entry[ f"{key_prefix}size-y" ] = float( round( subdomain_size_y, 7 ) )
+            entry[ f"{config_key_prefix}SizeX" ] = float( round( subdomain_size_x, 7 ) )
+            entry[ f"{config_key_prefix}SizeY" ] = float( round( subdomain_size_y, 7 ) )
 
             subdomain_grid_dims_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
             subdomain_grid_dims_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
-            entry[ f"{key_prefix}grid-dimensions-x" ] = int( subdomain_grid_dims_x )
-            entry[ f"{key_prefix}grid-dimensions-y" ] = int( subdomain_grid_dims_y )
+            entry[ f"{config_key_prefix}GridDimensionsX" ] = int( subdomain_grid_dims_x )
+            entry[ f"{config_key_prefix}GridDimensionsY" ] = int( subdomain_grid_dims_y )
 
             data.update( entry )
     return data

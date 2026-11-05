@@ -106,7 +106,7 @@ def write_simulation_params(setup: dict) -> None:
    if "placeholderNumberOfOpenBoundaryPatches" in cfg:
       patches = cfg_setup.get("open_boundary_patches", [])
       if len(patches) > 0:
-         obc_block = f'{len(patches)},\n    "open-boundary-config": "sources/config-open-boundary.jsonc"'
+         obc_block = f'{len(patches)},\n    "openBoundaryConfig": "sources/config-open-boundary.jsonc"'
       else:
          obc_block = "0"
       cfg = cfg.replace("placeholderNumberOfOpenBoundaryPatches", obc_block)
@@ -200,26 +200,26 @@ def write_open_boundary_params_inline(
       v_bc = setup.get(f"{patch}_v_bc", default_v_bc)
 
       lines.append(f"    // Buffer {i} - {patch}")
-      lines.append(f'    "buffer-{i}-particles": "{particles_filename_pattern.format(patch=patch)}",')
-      lines.append(f'    "buffer-{i}-numberOfParticles": {n},')
-      lines.append(f'    "buffer-{i}-numberOfAllocatedParticles": {allocated_n},')
-      lines.append(f'    "buffer-{i}-type": "{patch}",')
-      lines.append(f'    "buffer-{i}-identifier": "{patch}",')
+      lines.append(f'    "buffer{i}Particles": "{particles_filename_pattern.format(patch=patch)}",')
+      lines.append(f'    "buffer{i}NumberOfParticles": {n},')
+      lines.append(f'    "buffer{i}NumberOfAllocatedParticles": {allocated_n},')
+      lines.append(f'    "buffer{i}Type": "{patch}",')
+      lines.append(f'    "buffer{i}Identifier": "{patch}",')
       for ax in "xyz":
-         lines.append(f'    "buffer-{i}-orientation-{ax}": {orientation[ax]:.7f},')
+         lines.append(f'    "buffer{i}Orientation{ax.upper()}": {orientation[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer-{i}-position-1-{ax}": {position[ax]:.7f},')
+         lines.append(f'    "buffer{i}Position1{ax.upper()}": {position[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer-{i}-position-2-{ax}": {position[ax] + size[ax]:.7f},')
+         lines.append(f'    "buffer{i}Position2{ax.upper()}": {position[ax] + size[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer-{i}-bufferWidth-{ax}": {buffer_width[ax]:.7f},')
-      lines.append(f'    "buffer-{i}-rho_bc": "{rho_bc}",')
-      lines.append(f'    "buffer-{i}-density": {density:.7f},')
-      lines.append(f'    "buffer-{i}-v_bc": "{v_bc}",')
+         lines.append(f'    "buffer{i}BufferWidth{ax.upper()}": {buffer_width[ax]:.7f},')
+      lines.append(f'    "buffer{i}Rho_bc": "{rho_bc}",')
+      lines.append(f'    "buffer{i}Density": {density:.7f},')
+      lines.append(f'    "buffer{i}V_bc": "{v_bc}",')
       for ax in "xyz":
-         lines.append(f'    "buffer-{i}-velocity-{ax}": {velocity[ax]:.7f},')
+         lines.append(f'    "buffer{i}Velocity{ax.upper()}": {velocity[ax]:.7f},')
       if patch == "outlet":
-         lines.append(f'    "buffer-{i}-extrapolationDetTreshold": 1e3,')
+         lines.append(f'    "buffer{i}ExtrapolationDetTreshold": 1e3,')
 
    if lines[-1].endswith(","):
       lines[-1] = lines[-1][:-1]

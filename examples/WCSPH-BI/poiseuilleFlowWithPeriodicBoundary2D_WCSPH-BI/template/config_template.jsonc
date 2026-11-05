@@ -1,12 +1,12 @@
 {
     // === Control section ===
-    "case-name": "poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
-    "output-directory": "results",
-    "fluid-particles": "sources/openchannel_fluid.vtk",
-    "boundary-particles": "sources/openchannel_boundary.vtk",
-    "final-time": 2.5,
-    "snapshot-period": 0.05,
-    "verbose-intensity": "with-snapshot",
+    "caseName": "poiseuilleFlowWithPeriodicBoundary2D_WCSPH-BI",
+    "outputDirectory": "results",
+    "fluidParticles": "sources/openchannel_fluid.vtk",
+    "boundaryParticles": "sources/openchannel_boundary.vtk",
+    "finalTime": 2.5,
+    "snapshotPeriod": 0.05,
+    "verboseIntensity": "with-snapshot",
 
     // === Particle system configuration ===
     "numberOfParticles": placeholderFluidParticles,
@@ -16,10 +16,10 @@
 
     // === Domain ===
     "searchRadius": placeholderSearchRadius,
-    "domainOrigin-x": placeholderDomainOrigin-x,
-    "domainOrigin-y": placeholderDomainOrigin-y,
-    "domainSize-x": placeholderDomainSize-x,
-    "domainSize-y": placeholderDomainSize-y,
+    "domainOriginX": placeholderDomainOrigin-x,
+    "domainOriginY": placeholderDomainOrigin-y,
+    "domainSizeX": placeholderDomainSize-x,
+    "domainSizeY": placeholderDomainSize-y,
 
     // === Model parameters ===
     "dp": placeholderInitParticleDistance,
@@ -31,51 +31,51 @@
     "dynamicViscosity": 0.001,
     "speedOfSound": placeholderSpeedOfSound,
     "eps": 0.001,
-    "external-force-x": 0.1,
-    "external-force-y": 0,
+    "externalForceX": 0.1,
+    "externalForceY": 0,
 
     // === Integration ===
-    "initial-time-step": placeholderTimeStep,
+    "initialTimeStep": placeholderTimeStep,
 
     // === Periodic boundary patches ===
     "periodicBoundaryPatches": 2,
 
-    // Inline periodic boundary config (alternative to "periodic-boundary-config" file path).
-    "periodic-boundary": {
+    // Inline periodic boundary config (alternative to "periodicBoundaryConfig" file path).
+    "periodicBoundary": {
         // === Buffer 1 - left periodic boundary ===
-        "buffer-1-type": "periodic",
-        "buffer-1-paired-periodic-buffer": 2,
-        "buffer-1-particles": "sources/openchannel_periodicityLeft.vtk",
-        "buffer-1-numberOfParticles": placeholderPeriodicityLeftParticles,
-        "buffer-1-numberOfAllocatedParticles": placeholderPeriodicityLeftAllocatedParticles,
-        "buffer-1-identifier": "periodicityLeft",
-        "buffer-1-orientation-x": 1.0,
-        "buffer-1-orientation-y": 0.0,
-        "buffer-1-position-1-x": placeholderInletPosition1_x,
-        "buffer-1-position-1-y": placeholderInletPosition1_y,
-        "buffer-1-position-2-x": placeholderInletPosition2_x,
-        "buffer-1-position-2-y": placeholderInletPosition2_y,
-        "buffer-1-bufferWidth-x": placeholderInletWidth_x,
-        "buffer-1-bufferWidth-y": 0.0,
-        "buffer-1-shiftVector-x": placeholderInletShiftVector_x,
-        "buffer-1-shiftVector-y": 0.0,
+        "buffer1Type": "periodic",
+        "buffer1PairedPeriodicBuffer": 2,
+        "buffer1Particles": "sources/openchannel_periodicityLeft.vtk",
+        "buffer1NumberOfParticles": placeholderPeriodicityLeftParticles,
+        "buffer1NumberOfAllocatedParticles": placeholderPeriodicityLeftAllocatedParticles,
+        "buffer1Identifier": "periodicityLeft",
+        "buffer1OrientationX": 1.0,
+        "buffer1OrientationY": 0.0,
+        "buffer1Position1X": placeholderInletPosition1_x,
+        "buffer1Position1Y": placeholderInletPosition1_y,
+        "buffer1Position2X": placeholderInletPosition2_x,
+        "buffer1Position2Y": placeholderInletPosition2_y,
+        "buffer1BufferWidthX": placeholderInletWidth_x,
+        "buffer1BufferWidthY": 0.0,
+        "buffer1ShiftVectorX": placeholderInletShiftVector_x,
+        "buffer1ShiftVectorY": 0.0,
 
         // === Buffer 2 - right periodic boundary ===
-        "buffer-2-type": "periodic",
-        "buffer-2-paired-periodic-buffer": 1,
-        "buffer-2-particles": "sources/openchannel_periodicityRight.vtk",
-        "buffer-2-numberOfParticles": placeholderPeriodicityRightParticles,
-        "buffer-2-numberOfAllocatedParticles": placeholderPeriodicityRightAllocatedParticles,
-        "buffer-2-identifier": "periodicityRight",
-        "buffer-2-orientation-x": -1.0,
-        "buffer-2-orientation-y": 0.0,
-        "buffer-2-position-1-x": placeholderOutletPosition1_x,
-        "buffer-2-position-1-y": placeholderOutletPosition1_y,
-        "buffer-2-position-2-x": placeholderOutletPosition2_x,
-        "buffer-2-position-2-y": placeholderOutletPosition2_y,
-        "buffer-2-bufferWidth-x": placeholderOutletWidth_x,
-        "buffer-2-bufferWidth-y": 0.0,
-        "buffer-2-shiftVector-x": placeholderOutletShiftVector_x,
-        "buffer-2-shiftVector-y": 0.0
+        "buffer2Type": "periodic",
+        "buffer2PairedPeriodicBuffer": 1,
+        "buffer2Particles": "sources/openchannel_periodicityRight.vtk",
+        "buffer2NumberOfParticles": placeholderPeriodicityRightParticles,
+        "buffer2NumberOfAllocatedParticles": placeholderPeriodicityRightAllocatedParticles,
+        "buffer2Identifier": "periodicityRight",
+        "buffer2OrientationX": -1.0,
+        "buffer2OrientationY": 0.0,
+        "buffer2Position1X": placeholderOutletPosition1_x,
+        "buffer2Position1Y": placeholderOutletPosition1_y,
+        "buffer2Position2X": placeholderOutletPosition2_x,
+        "buffer2Position2Y": placeholderOutletPosition2_y,
+        "buffer2BufferWidthX": placeholderOutletWidth_x,
+        "buffer2BufferWidthY": 0.0,
+        "buffer2ShiftVectorX": placeholderOutletShiftVector_x,
+        "buffer2ShiftVectorY": 0.0
     }
 }

@@ -104,7 +104,7 @@ public:
       const ParticleSetPointer& ownParticles,
       const ParticleSetPointer& nbParticles,
       const RealType refinementFraction,
-      const int maxPtcsPerCell = 175 )
+      const int maxParticlesPerCell = 175 )
    {
       //const VectorType globalOrig = ownParticles->getReferentialOrigin();
       const VectorType ownOrig = ownParticles->getOrigin();
@@ -148,10 +148,10 @@ public:
          assert( false && "initZones: Invalid overlap state: neither inner_overlap nor outer_overlap is true!" );
       }
 
-      zone.setNumberOfParticlesPerCell( maxPtcsPerCell );
+      zone.setNumberOfParticlesPerCell( maxParticlesPerCell );
 
       CoordinatesType zoneOrigin = 0;
-      //TODO: I dont like the "over-offset"
+      //TODO: I dont like the "overOffset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
          // with-overlap shift (own fluid overlap width) + one-cell inset into the frame,
@@ -945,7 +945,7 @@ public:
          }
          return 0;
       };
-      numberOfPtcsToRetype = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRetype );
+      numberOfParticlesToRetype = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRetype );
 
       // Remove invalid buffe particles
       // - outer zone - is outside the ( subdomain box + zone width )
@@ -966,13 +966,13 @@ public:
          }
          return 0;
       };
-      numberOfPtcsToRemove = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRemove );
+      numberOfParticlesToRemove = Algorithms::reduce< DeviceType >( 0, n_buffer, identifyRemove );
    }
 
    void
    sortBufferParticles()
    {
-      const IndexType numberOfBufferPtcs = this->getNumberOfParticles();
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
       auto r_view = this->getParticles()->getPoints().getView();
       auto v_view = this->getVariables()->v.getView();
       auto rho_view = this->getVariables()->rho.getView();
@@ -984,7 +984,7 @@ public:
       thrust::sort_by_key(
          thrustDevice,
          retypeMarker_view.getArrayData(),
-         retypeMarker_view.getArrayData() + numberOfBufferPtcs,
+         retypeMarker_view.getArrayData() + numberOfBufferParticles,
          thrust::make_zip_iterator(
             cuda::std::make_tuple( r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
    }
@@ -993,7 +993,7 @@ public:
    void
    convertBufferToFluid( FluidPointer& fluid, ModelParams& modelParams )
    {
-      const IndexType numberOfFluidPtcs = fluid->getParticles()->getNumberOfParticles();
+      const IndexType numberOfFluidParticles = fluid->getParticles()->getNumberOfParticles();
 
       auto view_r_fluid = fluid->getParticles()->getPoints().getView();
       auto view_v_fluid = fluid->getVariables()->v.getView();
@@ -1006,7 +1006,7 @@ public:
       auto view_rho_buffer = this->getVariables()->rho.getView();
 
       const IndexType numberOfBufferParticles = this->getNumberOfParticles();
-      const IndexType toFluidOffset = numberOfBufferParticles - this->numberOfPtcsToRetype;
+      const IndexType toFluidOffset = numberOfBufferParticles - this->numberOfParticlesToRetype;
 
       auto createNewFluidParticles = [ = ] __cuda_callable__( int i ) mutable
       {
@@ -1024,26 +1024,26 @@ public:
             v = 0.f;
          }
 
-         view_r_fluid[ numberOfFluidPtcs + i ] = view_r_buffer[ toFluidOffset + i ];
-         view_rho_fluid[ numberOfFluidPtcs + i ] = rho;
-         view_v_fluid[ numberOfFluidPtcs + i ] = v;
+         view_r_fluid[ numberOfFluidParticles + i ] = view_r_buffer[ toFluidOffset + i ];
+         view_rho_fluid[ numberOfFluidParticles + i ] = rho;
+         view_v_fluid[ numberOfFluidParticles + i ] = v;
 
-         view_rho_old[ numberOfFluidPtcs + i ] = rho;
-         view_v_old[ numberOfFluidPtcs + i ] = v;
+         view_rho_old[ numberOfFluidParticles + i ] = rho;
+         view_v_old[ numberOfFluidParticles + i ] = v;
 
          //TODO: I need to remove the used particles, not sure if this is the right way
          view_r_buffer[ toFluidOffset + i ] = FLT_MAX;
       };
-      Algorithms::parallelFor< DeviceType >( 0, this->numberOfPtcsToRetype, createNewFluidParticles );
-      fluid->getParticles()->setNumberOfParticles( numberOfFluidPtcs + this->numberOfPtcsToRetype );
-      this->getParticles()->setNumberOfParticles( numberOfBufferParticles - this->numberOfPtcsToRetype );
+      Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticlesToRetype, createNewFluidParticles );
+      fluid->getParticles()->setNumberOfParticles( numberOfFluidParticles + this->numberOfParticlesToRetype );
+      this->getParticles()->setNumberOfParticles( numberOfBufferParticles - this->numberOfParticlesToRetype );
    }
 
    void
    removeBufferParticles()
    {
-      const IndexType numberOfBufferPtcs = this->getNumberOfParticles();
-      this->getParticles()->setNumberOfParticles( numberOfBufferPtcs - this->numberOfPtcsToRemove );
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+      this->getParticles()->setNumberOfParticles( numberOfBufferParticles - this->numberOfParticlesToRemove );
    }
 
    template< typename ModelParams >
@@ -1075,7 +1075,7 @@ public:
          else
             return 0;
       };
-      this->numberOfPtcsToCreate = Algorithms::reduce< DeviceType >( 0, numberOfMassNodes, identifyParticlesToCreate );
+      this->numberOfParticlesToCreate = Algorithms::reduce< DeviceType >( 0, numberOfMassNodes, identifyParticlesToCreate );
    }
 
    template< typename ModelParams >
@@ -1088,7 +1088,7 @@ public:
       const auto r_massNodes_view = this->massNodes.points.getConstView();
       const auto normal_massNodes_view = this->massNodes.normal.getConstView();
 
-      const IndexType numberOfBufferPtcs = this->getParticles()->getNumberOfParticles();
+      const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
       const RealType refinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
       const RealType dp = refinementFactor * modelParams.dp;
       const RealType rho0 = modelParams.rho0;
@@ -1096,14 +1096,14 @@ public:
       auto createNewBufferParticles = [ = ] __cuda_callable__( int i ) mutable
       {
          const VectorType r_new = r_massNodes_view[ i ] + ( 0.5f * dp ) * normal_massNodes_view[ i ];
-         r_buffer_view[ numberOfBufferPtcs + i ] = r_new;
+         r_buffer_view[ numberOfBufferParticles + i ] = r_new;
          // initialize values so a failed first interpolation keeps sane
          // last values instead of uninitialized memory
-         rho_buffer_view[ numberOfBufferPtcs + i ] = rho0;
-         v_buffer_view[ numberOfBufferPtcs + i ] = 0.f;
+         rho_buffer_view[ numberOfBufferParticles + i ] = rho0;
+         v_buffer_view[ numberOfBufferParticles + i ] = 0.f;
       };
-      Algorithms::parallelFor< DeviceType >( 0, this->numberOfPtcsToCreate, createNewBufferParticles );
-      this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + this->numberOfPtcsToCreate );
+      Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticlesToCreate, createNewBufferParticles );
+      this->getParticles()->setNumberOfParticles( numberOfBufferParticles + this->numberOfParticlesToCreate );
    }
 
    template< typename FluidPointer >
@@ -1161,7 +1161,7 @@ public:
          }
          return 0;
       };
-      this->numberOfPtcsToBuffer =
+      this->numberOfParticlesToBuffer =
          Algorithms::reduce< DeviceType >( 0, numberOfZoneParticles, checkFluidParticles, TNL::Plus() );
 
       // sort the indices
@@ -1177,7 +1177,7 @@ public:
    void
    convertFluidToBuffer( FluidPointer& fluid, ModelParams& modelParams )
    {
-      const IndexType numberOfBufferPtcs = this->getParticles()->getNumberOfParticles();
+      const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
 
       //TODO: I'm sure that it is enough to copy the positioin.
       auto r_fluid_view = fluid->getParticles()->getPoints().getView();
@@ -1195,7 +1195,7 @@ public:
       {
          const IndexType p = particlesToBuffer_view[ i ];
 
-         r_buffer_view[ numberOfBufferPtcs + i ] = r_fluid_view[ p ];
+         r_buffer_view[ numberOfBufferParticles + i ] = r_fluid_view[ p ];
 
          // captured fluid must not seed the band with degenerate state
          RealType rho = rho_fluid_view[ p ];
@@ -1210,15 +1210,15 @@ public:
             v = 0.f;
          }
 
-         v_buffer_view[ numberOfBufferPtcs + i ] = v;
-         rho_buffer_view[ numberOfBufferPtcs + i ] = rho;
+         v_buffer_view[ numberOfBufferParticles + i ] = v;
+         rho_buffer_view[ numberOfBufferParticles + i ] = rho;
 
          r_fluid_view[ p ] = FLT_MAX;
       };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfPtcsToBuffer, retypeFluidToBuffer );
-      this->getParticles()->setNumberOfParticles( numberOfBufferPtcs + numberOfPtcsToBuffer );
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToBuffer, retypeFluidToBuffer );
+      this->getParticles()->setNumberOfParticles( numberOfBufferParticles + numberOfParticlesToBuffer );
       fluid->getParticles()->setNumberOfParticlesToRemove(
-         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfPtcsToBuffer );
+         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToBuffer );
    }
 
    // Marks particles whose cell lies outside the own grid including overlap, so the
@@ -1310,10 +1310,10 @@ public:
       this->searchForNeighbors();
       initializeIntegratorVariables();
 
-      numberOfPtcsToRemove = 0;
-      numberOfPtcsToRetype = 0;
-      numberOfPtcsToCreate = 0;
-      numberOfPtcsToBuffer = 0;
+      numberOfParticlesToRemove = 0;
+      numberOfParticlesToRetype = 0;
+      numberOfParticlesToCreate = 0;
+      numberOfParticlesToBuffer = 0;
    }
 
    [[nodiscard]] nlohmann::json
@@ -1457,10 +1457,10 @@ protected:
    MassNodes massNodes;
 
    // temporary constants //TODO: Use names such as fluidToBufferCount
-   IndexType numberOfPtcsToRemove = 0;
-   IndexType numberOfPtcsToRetype = 0;  //TODO: Rename to "moveToFluid"
-   IndexType numberOfPtcsToCreate = 0;
-   IndexType numberOfPtcsToBuffer = 0;
+   IndexType numberOfParticlesToRemove = 0;
+   IndexType numberOfParticlesToRetype = 0;  //TODO: Rename to "moveToFluid"
+   IndexType numberOfParticlesToCreate = 0;
+   IndexType numberOfParticlesToBuffer = 0;
 
    // temporary arrays
    IndexArrayType retypeMarker;  //TODO: rename

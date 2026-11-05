@@ -2,18 +2,17 @@
 #include "template/userCodedFunctions.h"
 
 template< typename Simulation >
-requires std::is_same_v<
-    typename Simulation::ModelParams::IntegrationScheme,
-    TNL::SPH::IntegrationSchemes::VerletScheme< typename SPHDefs::SPHConfig >
->
-void exec( Simulation& sph )
+   requires std::is_same_v<
+      typename Simulation::ModelParams::IntegrationScheme,
+      TNL::SPH::IntegrationSchemes::VerletScheme< typename SPHDefs::SPHConfig > >
+void
+exec( Simulation& sph )
 {
    userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
-   EnergyMonitor energyMonitor( sph.fluid, true  );
+   EnergyMonitor energyMonitor( sph.fluid, true );
    ForceMonitor forceMonitor( sph.boundary );
 
-   while( sph.timeStepping.runTheSimulation() )
-   {
+   while( sph.timeStepping.runTheSimulation() ) {
       // search for neighbros
       sph.performNeighborSearch( true );
 
@@ -37,7 +36,7 @@ void exec( Simulation& sph )
       // FEATURE: shift particles
       PST::shift( sph.fluid, sph.boundary, sph.modelParams, sph.timeStepping.getTimeStep() );
       // FEATURE: filter density
-      const int filteringFrequency = sph.userParams.template getParameter< int >( "filtering-steps-interval" );
+      const int filteringFrequency = sph.userParams.template getParameter< int >( "filteringStepsInterval" );
       if( sph.timeStepping.getStep() % filteringFrequency == 0 )
          DensityFilter::filterDensity( sph.fluid, sph.modelParams );
 
@@ -55,18 +54,17 @@ void exec( Simulation& sph )
 }
 
 template< typename Simulation >
-requires std::is_same_v<
-    typename Simulation::ModelParams::IntegrationScheme,
-    TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename SPHDefs::SPHConfig >
->
-void exec( Simulation& sph )
+   requires std::is_same_v<
+      typename Simulation::ModelParams::IntegrationScheme,
+      TNL::SPH::IntegrationSchemes::SymplecticVerletScheme< typename SPHDefs::SPHConfig > >
+void
+exec( Simulation& sph )
 {
    userCodedFunctions::CustomMotion motion( "template/Motion_Body.dat" );
-   EnergyMonitor energyMonitor( sph.fluid, true  );
+   EnergyMonitor energyMonitor( sph.fluid, true );
    ForceMonitor forceMonitor( sph.boundary );
 
-   while( sph.timeStepping.runTheSimulation() )
-   {
+   while( sph.timeStepping.runTheSimulation() ) {
       // search for neighbros
       sph.performNeighborSearch( true );
 
@@ -118,7 +116,8 @@ void exec( Simulation& sph )
    }
 }
 
-int main( int argc, char* argv[] )
+int
+main( int argc, char* argv[] )
 {
    Simulation sph;
    sph.init( argc, argv );
@@ -128,4 +127,3 @@ int main( int argc, char* argv[] )
    exec( sph );
    sph.writeEpilog();
 }
-

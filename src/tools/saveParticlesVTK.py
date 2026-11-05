@@ -148,8 +148,8 @@ if __name__ == '__main__':
     with open( inputFileName, "r" ) as f:
         LINES =  f.readlines()
 
-    ptcs = LINES[ 1: ]
-    DATA = np.genfromtxt(ptcs, delimiter=" ")
+    particleLines = LINES[ 1: ]
+    DATA = np.genfromtxt(particleLines, delimiter=" ")
 
     r = DATA[ : , :3 ]
     v = DATA[ : , 3:6 ]

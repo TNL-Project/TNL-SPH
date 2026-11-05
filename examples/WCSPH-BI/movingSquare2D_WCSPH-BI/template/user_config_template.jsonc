@@ -1,4 +1,4 @@
 {
     // Density filtering interval
-    "filtering-steps-interval": placeholderFilteringInterval
+    "filteringStepsInterval": placeholderFilteringInterval
 }

@@ -310,41 +310,41 @@ def check_open_boundary_inline_math(ctx):
 
     parsed = json.loads(_strip_jsonc_comments(emitted))
 
-    if parsed["buffer-1-type"] != "inlet":
-        return f"buffer-1-type: expected 'inlet', got {parsed['buffer-1-type']!r}"
-    if parsed["buffer-2-type"] != "outlet":
-        return f"buffer-2-type: expected 'outlet', got {parsed['buffer-2-type']!r}"
+    if parsed["buffer1Type"] != "inlet":
+        return f"buffer1Type: expected 'inlet', got {parsed['buffer1Type']!r}"
+    if parsed["buffer2Type"] != "outlet":
+        return f"buffer2Type: expected 'outlet', got {parsed['buffer2Type']!r}"
 
     for i, patch in enumerate(_OB_SETUP["open_boundary_patches"], start=1):
         for ax in "xyz":
             want = _OB_SETUP[f"{patch}_position_{ax}"] + _OB_SETUP[f"{patch}_size_{ax}"]
-            got = parsed[f"buffer-{i}-position-2-{ax}"]
+            got = parsed[f"buffer{i}Position2{ax.upper()}"]
             if abs(got - want) > 1e-6:
                 return (
-                    f"buffer-{i}-position-2-{ax}: expected position+size = {want}, "
+                    f"buffer{i}Position2{ax.upper()}: expected position+size = {want}, "
                     f"got {got}"
                 )
             want1 = _OB_SETUP[f"{patch}_position_{ax}"]
-            got1 = parsed[f"buffer-{i}-position-1-{ax}"]
+            got1 = parsed[f"buffer{i}Position1{ax.upper()}"]
             if abs(got1 - want1) > 1e-6:
                 return (
-                    f"buffer-{i}-position-1-{ax}: expected position = {want1}, "
+                    f"buffer{i}Position1{ax.upper()}: expected position = {want1}, "
                     f"got {got1}"
                 )
 
         for ax in "xyz":
             want = _OB_SETUP[f"{patch}_width"] if ax == "x" else 0.0
-            got = parsed[f"buffer-{i}-bufferWidth-{ax}"]
+            got = parsed[f"buffer{i}BufferWidth{ax.upper()}"]
             if abs(got - want) > 1e-6:
                 return (
-                    f"buffer-{i}-bufferWidth-{ax}: dominant orientation axis is x; "
+                    f"buffer{i}BufferWidth{ax.upper()}: dominant orientation axis is x; "
                     f"expected {want}, got {got}"
                 )
 
-        got_density = parsed[f"buffer-{i}-density"]
+        got_density = parsed[f"buffer{i}Density"]
         if abs(got_density - _OB_SETUP["density"]) > 1e-6:
             return (
-                f"buffer-{i}-density: expected setup['density'] = "
+                f"buffer{i}Density: expected setup['density'] = "
                 f"{_OB_SETUP['density']}, got {got_density}"
             )
     return None

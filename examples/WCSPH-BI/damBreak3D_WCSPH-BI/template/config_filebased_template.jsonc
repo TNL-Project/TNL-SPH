@@ -2,15 +2,15 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "damBreak3D_WCSPH-DBC",
-        "output-directory": "results",
-        "fluid-particles": "sources/dambreak_fluid.vtk",
-        "boundary-particles": "sources/dambreak_boundary.vtk",
+        "caseName": "damBreak3D_WCSPH-DBC",
+        "outputDirectory": "results",
+        "fluidParticles": "sources/dambreak_fluid.vtk",
+        "boundaryParticles": "sources/dambreak_boundary.vtk",
 
         // Simulation end time, output interval, output intensity
-        "final-time": 7.0,
-        "snapshot-period": 0.1,
-        "verbose-intensity": "with-snapshot"
+        "finalTime": 7.0,
+        "snapshotPeriod": 0.1,
+        "verboseIntensity": "with-snapshot"
     },
 
     // === Particle system configuration ===
@@ -24,12 +24,12 @@
     // === Domain size and domain origin ===
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOrigin-x": placeholderDomainOrigin-x,
-        "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainOrigin-z": placeholderDomainOrigin-z,
-        "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y,
-        "domainSize-z": placeholderDomainSize-z
+        "domainOriginX": placeholderDomainOrigin-x,
+        "domainOriginY": placeholderDomainOrigin-y,
+        "domainOriginZ": placeholderDomainOrigin-z,
+        "domainSizeX": placeholderDomainSize-x,
+        "domainSizeY": placeholderDomainSize-y,
+        "domainSizeZ": placeholderDomainSize-z
     },
 
     // === SPH solver section - resolution parameters ===
@@ -68,15 +68,15 @@
         // prevent zero denominator constant
         "eps": 0.001,
         // external force [m/s^2]
-        "external-force-x": 0,
-        "external-force-y": 0,
-        "external-force-z": -9.81
+        "externalForceX": 0,
+        "externalForceY": 0,
+        "externalForceZ": -9.81
     },
 
     // === SPH solver section - integration parameters ===
     "integration": {
         // initial time step [s]
-        "initial-time-step": placeholderTimeStep,
+        "initialTimeStep": placeholderTimeStep,
         "CFL": placeholderCFL,
 
         // === Midpoint integration scheme parameters ===
@@ -95,11 +95,11 @@
     },
 
     // === Measure tool initialization section ===
-    "interpolation-planes-count": 1,
-    "pressure-sensors-count": 8,
-    "water-level-sensors-count": 4,
+    "interpolationPlanesCount": 1,
+    "pressureSensorsCount": 8,
+    "waterLevelSensorsCount": 4,
 
     // External file-based measuretool config (alternative to inline "measuretool" subsection).
     // The solver reads this file when "measuretool" is empty.
-    "measuretool-config": "sources/config-measuretool.jsonc"
+    "measuretoolConfig": "sources/config-measuretool.jsonc"
 }

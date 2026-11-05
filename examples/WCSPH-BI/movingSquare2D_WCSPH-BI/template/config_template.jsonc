@@ -2,15 +2,15 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "damBreak2D_WCSPH-BI",
-        "output-directory": "results",
-        "fluid-particles": "sources/moving_square_fluid.vtk",
-        "boundary-particles": "sources/moving_square_boundary.vtk",
+        "caseName": "damBreak2D_WCSPH-BI",
+        "outputDirectory": "results",
+        "fluidParticles": "sources/moving_square_fluid.vtk",
+        "boundaryParticles": "sources/moving_square_boundary.vtk",
 
         // Simulation end time, output interval, output intensity
-        "final-time": 8.1,
-        "snapshot-period": 0.5,
-        "verbose-intensity": "with-snapshot"
+        "finalTime": 8.1,
+        "snapshotPeriod": 0.5,
+        "verboseIntensity": "with-snapshot"
     },
 
     // Particle system configuration
@@ -24,10 +24,10 @@
     // Domain size and domain origin
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOrigin-x": placeholderDomainOrigin-x,
-        "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y
+        "domainOriginX": placeholderDomainOrigin-x,
+        "domainOriginY": placeholderDomainOrigin-y,
+        "domainSizeX": placeholderDomainSize-x,
+        "domainSizeY": placeholderDomainSize-y
     },
 
     // === SPH solver section - resolution parameters ===
@@ -64,14 +64,14 @@
         // prevent zero denominator constant
         "eps": 0.001,
         // external force [m/s^2]
-        "external-force-x": 0,
-        "external-force-y": 0
+        "externalForceX": 0,
+        "externalForceY": 0
     },
 
     // === SPH solver section - integration parameters ===
     "integration": {
         // initial time step [s]
-        "initial-time-step": placeholderTimeStep,
+        "initialTimeStep": placeholderTimeStep,
         "CFL": placeholderCFL,
 
         // Midpoint integration scheme parameters
@@ -89,10 +89,10 @@
         "midpointRelaxCoefIncrement": 0.25
     },
 
-    // Inline user-defined config (alternative to "user-defined-config" file path).
-    // When "user-defined-config" is empty, the solver reads this subsection instead.
-    "user-defined": {
+    // Inline user-defined config (alternative to "userDefinedConfig" file path).
+    // When "userDefinedConfig" is empty, the solver reads this subsection instead.
+    "userDefined": {
         // Density filtering interval
-        "filtering-steps-interval": placeholderFilteringInterval
+        "filteringStepsInterval": placeholderFilteringInterval
     }
 }

@@ -20,6 +20,8 @@
 #include <SPH/TimeStep.h>
 #include <SPH/Models/WCSPH_BI/OpenBoundaryConfig.h>
 
+#include <SPH/parseConfigFile.h>
+
 namespace TNL::SPH {
 
 /**
@@ -50,12 +52,12 @@ public:
       config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
       config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
       config.addEntry< double >( "p0", "Background pressure.", 0. );
-      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "initialTimeStep", "Initial time step.", 0 );
       config.addEntry< double >( "CFL", "CFL number.", 0 );
-      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
-      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "minimalTimeStep", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "externalForceX", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceY", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceZ", "External bulk forces.", 0 );
       config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
       // parameters of elastic bounce boundary correction
       config.addEntry< bool >( "enableElasticBounce", "Enable elastic-bounce no-pen. boundary", true );
@@ -64,7 +66,7 @@ public:
       config.addEntry< double >( "minimalDistanceFactor", "Factor of minimal distance for elastic bounce.", 0.5f );
       // parameters of local-timestepping multiresolution band refresh
       config.addEntry< double >(
-         "lts-theta",
+         "ltsTheta",
          "LTS band blend factor for the midpoint state refresh: 0 = keep the sync-time anchor state, 1 = fully current "
          "neighbor state.",
          0.5 );
@@ -95,17 +97,17 @@ public:
       speedOfSound = parameters.getParameter< double >( "speedOfSound" );
       rho0 = parameters.getParameter< double >( "rho0" );
       p0 = parameters.getParameter< double >( "p0" );
-      dtInit = parameters.getParameter< double >( "initial-time-step" );
+      dtInit = parameters.getParameter< double >( "initialTimeStep" );
       cfl = parameters.getParameter< double >( "CFL" );
-      dtMin = parameters.getParameter< double >( "minimal-time-step" );
+      dtMin = parameters.getParameter< double >( "minimalTimeStep" );
       eps = parameters.getParameter< double >( "eps" );
-      gravity = parameters.getXyz< VectorType >( "external-force" );
+      gravity = getXyzCamelCase< VectorType >( parameters, "externalForce" );
       // parameters of elastic bounce boundary correction
       enableElasticBounce = parameters.getParameter< bool >( "enableElasticBounce" );
       elasticFactor = parameters.getParameter< double >( "elasticFactor" );
       r_boxFactor = parameters.getParameter< double >( "r_boxFactor" );
       minimalDistanceFactor = parameters.getParameter< double >( "minimalDistanceFactor" );
-      ltsTheta = parameters.getParameter< double >( "lts-theta" );
+      ltsTheta = parameters.getParameter< double >( "ltsTheta" );
       // parameters of midpoint integration scheme
       midpointMaxInterations = parameters.getParameter< int >( "midpointMaxInterations" );
       midpointResidualTolerance = parameters.getParameter< double >( "midpointResidualTolerance" );
@@ -332,7 +334,7 @@ writePrologModel( TNL::Logger& logger, ModelParams& modelParams )
       logger.writeParameter( "Bounce efect area fact. (r_boxFactor):", modelParams.r_boxFactor, 1 );
       logger.writeParameter( "Bounce min. dist. fact. (minimalDistanceFactor):", modelParams.minimalDistanceFactor, 1 );
    }
-   logger.writeParameter( "LTS band blend factor (lts-theta):", modelParams.ltsTheta, 1 );
+   logger.writeParameter( "LTS band blend factor (ltsTheta):", modelParams.ltsTheta, 1 );
    logger.writeParameter( "Time integration", "" );
    if constexpr( std::is_same_v<
                     typename ModelParams::IntegrationScheme,

@@ -11,15 +11,15 @@ Sources
   verified against the generated
   ``examples/WCSPH-DBC/damBreak2D_WCSPH-DBC/sources/config.jsonc``:
   ``particles.numberOfParticles`` / ``particles.numberOfBoundaryParticles``
-  (NOT ``numberOfFluidParticles``), ``domain.domainOrigin-x/-y``,
-  ``domain.domainSize-x/-y``, ``domain.searchRadius``, ``model.dp``,
+  (NOT ``numberOfFluidParticles``), ``domain.domainOriginX/Y``,
+  ``domain.domainSizeX/Y``, ``domain.searchRadius``, ``model.dp``,
   ``model.h``, top-level ``numberOfSubdomains``.
 * The open/periodic boundary loader files referenced by the main config
-  (``open-boundary-config`` / inline ``open-boundary``,
-  ``periodic-boundary-config`` / inline ``periodic-boundary``) with
-  ``buffer-N-...`` flat key spellings.
-* The subdomains loader (``subdomains-config`` / inline ``subdomains``),
-  nested ``{"subdomains": {"subdomain-N": {...}}}`` shape.
+  (``openBoundaryConfig`` / inline ``openBoundary``,
+  ``periodicBoundaryConfig`` / inline ``periodicBoundary``) with
+  ``bufferN...`` flat key spellings.
+* The subdomains loader (``subdomainsConfig`` / inline ``subdomains``),
+  nested ``{"subdomains": {"subdomainN": {...}}}`` shape.
 
 ``domainSize`` semantics follow ``include/SPH/DecompositionTopology.h:60-67``:
 it is the domain's MAX CORNER (end point), so grid dimensions per axis are
@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -135,11 +136,11 @@ def _i(value: Any, default: int = 0) -> int:
 
 
 def _vec3(mapping: dict, stem: str, cast=float) -> list:
-    """Read a ``<stem>-x/-y(/-z)`` triple; z defaults to 0 (2D configs)."""
+    """Read a ``<stem>X/Y(/Z)`` triple; z defaults to 0 (2D configs)."""
     return [
-        cast(mapping.get(f"{stem}-x", 0)),
-        cast(mapping.get(f"{stem}-y", 0)),
-        cast(mapping.get(f"{stem}-z", 0)),
+        cast(mapping.get(f"{stem}X", 0)),
+        cast(mapping.get(f"{stem}Y", 0)),
+        cast(mapping.get(f"{stem}Z", 0)),
     ]
 
 
@@ -164,30 +165,30 @@ def expected_grid_dims(origin, size, search_radius) -> list[int]:
 
 def parse_buffer_entries(obj: dict) -> list[dict]:
     """
-    Normalize flat ``buffer-N-...`` entries of a boundary loader file into a
+    Normalize flat ``bufferN...`` entries of a boundary loader file into a
     per-patch list ordered by N.  Vector components default to 0 when the
-    axis key is absent (2D templates carry only x/y).
+    axis key is absent (2D templates carry only X/Y).
     """
     indices = sorted({
-        int(key.split("-")[1]) for key in obj
-        if key.startswith("buffer-") and len(key.split("-")) > 2
-        and key.split("-")[1].isdigit()
+        int(match.group(1))
+        for key in obj
+        if (match := re.match(r"buffer(\d+)[A-Z]", key)) is not None
     })
     patches = []
     for n in indices:
-        prefix = f"buffer-{n}-"
+        prefix = f"buffer{n}"
         patch = {
             "index": n,
-            "type": obj.get(prefix + "type"),
-            "identifier": obj.get(prefix + "identifier"),
-            "particles": obj.get(prefix + "particles"),
-            "number_of_particles": obj.get(prefix + "numberOfParticles"),
-            "orientation": _vec3(obj, prefix + "orientation", float),
-            "position_1": _vec3(obj, prefix + "position-1", float),
-            "position_2": _vec3(obj, prefix + "position-2", float),
-            "buffer_width": _vec3(obj, prefix + "bufferWidth", float),
-            "paired_periodic_buffer": _i(obj.get(prefix + "paired-periodic-buffer"), -1),
-            "shift_vector": _vec3(obj, prefix + "shiftVector", float),
+            "type": obj.get(prefix + "Type"),
+            "identifier": obj.get(prefix + "Identifier"),
+            "particles": obj.get(prefix + "Particles"),
+            "number_of_particles": obj.get(prefix + "NumberOfParticles"),
+            "orientation": _vec3(obj, prefix + "Orientation", float),
+            "position_1": _vec3(obj, prefix + "Position1", float),
+            "position_2": _vec3(obj, prefix + "Position2", float),
+            "buffer_width": _vec3(obj, prefix + "BufferWidth", float),
+            "paired_periodic_buffer": _i(obj.get(prefix + "PairedPeriodicBuffer"), -1),
+            "shift_vector": _vec3(obj, prefix + "ShiftVector", float),
         }
         patches.append(patch)
     return patches
@@ -225,24 +226,25 @@ def _subdomain_expectations(subdomains_obj: Optional[dict]) -> Optional[list[dic
     Normalize a subdomains loader object to a list with per-subdomain
     ``origin_global_coordinates`` / ``region_dimensions`` (= refinement
     factor * grid dimensions, the way DecompositionTopology.h reports it).
-    Accepts the nested ``{"subdomains": {"subdomain-N": {...}}}`` shape.
+    Accepts the nested ``{"subdomains": {"subdomainN": {...}}}`` shape.
     """
     if not subdomains_obj:
         return None
     entries = subdomains_obj.get("subdomains", subdomains_obj)
     result = []
     for key in sorted(entries):
-        if not key.startswith("subdomain-"):
+        match = re.fullmatch(r"subdomain(\d+)", key)
+        if match is None:
             continue
         body = entries[key]
         if not isinstance(body, dict):
             continue
-        rf = _f(body.get("refinement-factor"), 1.0)
-        dims = _vec3(body, "grid-dimensions", int)
+        rf = _f(body.get("refinementFactor"), 1.0)
+        dims = _vec3(body, "gridDimensions", int)
         result.append({
-            "index": _i(key.split("-", 1)[1]),
+            "index": _i(match.group(1)),
             "refinement_factor": rf,
-            "origin_global_coordinates": _vec3(body, "origin-global-coords", int),
+            "origin_global_coordinates": _vec3(body, "originGlobalCoords", int),
             "grid_dimensions": dims,
             "region_dimensions": [rf * dims[0], rf * dims[1], rf * dims[2]],
             "origin": _vec3(body, "origin", float),
@@ -282,13 +284,13 @@ def from_config(config_jsonc: Path, *, init_overrides: dict | None = None) -> di
     number_of_subdomains = max(1, _i(n_sub_raw, 1)) if n_sub_raw is not None else 1
 
     open_obj, open_declared, open_error = _load_loader_config(
-        case_dir, cfg.get("open-boundary-config", "") or "",
-        cfg.get("open-boundary", "") or "")
+        case_dir, cfg.get("openBoundaryConfig", "") or "",
+        cfg.get("openBoundary", "") or "")
     periodic_obj, periodic_declared, periodic_error = _load_loader_config(
-        case_dir, cfg.get("periodic-boundary-config", "") or "",
-        cfg.get("periodic-boundary", "") or "")
+        case_dir, cfg.get("periodicBoundaryConfig", "") or "",
+        cfg.get("periodicBoundary", "") or "")
     subdomains_obj, subdomains_declared, subdomains_error = _load_loader_config(
-        case_dir, cfg.get("subdomains-config", "") or "",
+        case_dir, cfg.get("subdomainsConfig", "") or "",
         cfg.get("subdomains", "") or "")
 
     open_patches = parse_buffer_entries(open_obj) if open_obj else None
@@ -309,9 +311,9 @@ def from_config(config_jsonc: Path, *, init_overrides: dict | None = None) -> di
         "number_of_subdomains": number_of_subdomains,
         "fluid_n": particles.get("numberOfParticles"),
         "boundary_n": particles.get("numberOfBoundaryParticles"),
-        "fluid_vtk": control.get("fluid-particles"),
-        "boundary_vtk": control.get("boundary-particles"),
-        "output_directory": control.get("output-directory", "results"),
+        "fluid_vtk": control.get("fluidParticles"),
+        "boundary_vtk": control.get("boundaryParticles"),
+        "output_directory": control.get("outputDirectory", "results"),
         "expected_grid_dims": expected_grid_dims(domain_origin, domain_size,
                                                  search_radius),
         "open_boundary": open_patches,
@@ -373,8 +375,8 @@ def vtk_counts(sources_dir: Path, *, fluid_vtk: Optional[str] = None,
     """
     Count points in the case's fluid/boundary particle VTKs.
 
-    File resolution order: the ``control.fluid-particles`` /
-    ``control.boundary-particles`` paths from the main config, then a
+    File resolution order: the ``control.fluidParticles`` /
+    ``control.boundaryParticles`` paths from the main config, then a
     ``*fluid*.vtk`` / ``*boundary*.vtk`` glob inside ``sources_dir``.
     """
     sources_dir = Path(sources_dir)

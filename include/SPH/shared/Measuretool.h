@@ -66,9 +66,9 @@ public:
       //TODO: test: interpolateGridEntity can be 0 i.e point or spaceDimension, i.e. cell
       this->interpolatedGridEntity = interpolatedGridEntity;
 
-      interpolationGrid.setOrigin( parameters.getXyz< VectorType >( prefix + "gridOrigin" ) );
-      interpolationGrid.setDimensions( parameters.getXyz< CoordinatesType >( prefix + "gridSize" ) );
-      interpolationGrid.setSpaceSteps( parameters.getXyz< VectorType >( prefix + "gridStep" ) );
+      interpolationGrid.setOrigin( getXyzCamelCase< VectorType >( parameters, prefix + "GridOrigin" ) );
+      interpolationGrid.setDimensions( getXyzCamelCase< CoordinatesType >( parameters, prefix + "GridSize" ) );
+      interpolationGrid.setSpaceSteps( getXyzCamelCase< VectorType >( parameters, prefix + "GridStep" ) );
 
       variables->setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
       gamma.setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
@@ -286,3 +286,5 @@ protected:
 }  // namespace TNL::SPH
 
 #include <SPH/shared/Measuretool.hpp>
+
+#include <SPH/parseConfigFile.h>

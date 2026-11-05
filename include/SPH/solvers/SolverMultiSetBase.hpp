@@ -20,27 +20,27 @@ SolverMultiSetBase< Model >::initOpenBoundaryPatches( TNL::Config::ParameterCont
 {
    logger.writeParameter( "Initialization of open boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "openBoundaryPatches" );
-   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "open-boundary-config" );
-   const std::string openBoundaryInline = parameters.getParameter< std::string >( "open-boundary" );
+   const std::string openBoundaryConfigPath = parameters.getParameter< std::string >( "openBoundaryConfig" );
+   const std::string openBoundaryInline = parameters.getParameter< std::string >( "openBoundary" );
 
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      std::string prefix = "buffer" + std::to_string( i + 1 );
       configSetupOpenBoundaryModelPatch< SPHConfig >( configOpenBoundary, prefix );
    }
    parseOpenBoundaryConfig( openBoundaryConfigPath, parametersOpenBoundary, configOpenBoundary, logger, openBoundaryInline );
 
-   const VectorType domainOrigin = parameters.getXyz< VectorType >( "domainOrigin" );
-   const VectorType domainSize = parameters.getXyz< VectorType >( "domainSize" );
+   const VectorType domainOrigin = getXyzCamelCase< VectorType >( parameters, "domainOrigin" );
+   const VectorType domainSize = getXyzCamelCase< VectorType >( parameters, "domainSize" );
    const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
    const CoordinatesType dimensions = TNL::ceil( ( domainSize - domainOrigin ) / searchRadius );
 
    openBoundaryPatches.resize( numberOfBoundaryPatches );
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      std::string prefix = "buffer" + std::to_string( i + 1 );
       openBoundaryPatches[ i ]->config.init( parameters, parametersOpenBoundary, prefix );
       openBoundaryPatches[ i ]->initialize(
-         parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticles" ),
-         parametersOpenBoundary.getParameter< int >( prefix + "numberOfAllocatedParticles" ),
+         parametersOpenBoundary.getParameter< int >( prefix + "NumberOfParticles" ),
+         parametersOpenBoundary.getParameter< int >( prefix + "NumberOfAllocatedParticles" ),
          searchRadius,
          dimensions,
          domainOrigin );
@@ -54,14 +54,14 @@ SolverMultiSetBase< Model >::initPeriodicBoundaryPatches( TNL::Config::Parameter
 {
    logger.writeParameter( "Initialization of periodic boundary patches.", "" );
    const int numberOfBoundaryPatches = parameters.getParameter< int >( "periodicBoundaryPatches" );
-   const std::string periodicBoundaryConfigPath = parameters.getParameter< std::string >( "periodic-boundary-config" );
-   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodic-boundary" );
+   const std::string periodicBoundaryConfigPath = parameters.getParameter< std::string >( "periodicBoundaryConfig" );
+   const std::string periodicBoundaryInline = parameters.getParameter< std::string >( "periodicBoundary" );
 
    TNL::Config::ConfigDescription configPeriodicBoundary;
    TNL::Config::ParameterContainer parametersPeriodicBoundary;
 
    for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
-      std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      std::string prefix = "buffer" + std::to_string( i + 1 );
       configSetupOpenBoundaryModelPatch< SPHConfig >( configPeriodicBoundary, prefix );
    }
    parseOpenBoundaryConfig(
@@ -475,8 +475,8 @@ template< typename Func >
 void
 SolverMultiSetBase< Model >::initUserConfig( Func&& userConfigFunction )
 {
-   const std::string userConfigPath = parameters.getParameter< std::string >( "user-defined-config" );
-   const std::string userDefinedInline = parameters.getParameter< std::string >( "user-defined" );
+   const std::string userConfigPath = parameters.getParameter< std::string >( "userDefinedConfig" );
+   const std::string userDefinedInline = parameters.getParameter< std::string >( "userDefined" );
    if( userConfigPath == "" && userDefinedInline == "" )
       return;
 

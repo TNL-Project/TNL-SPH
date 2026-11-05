@@ -2,19 +2,19 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "damBreak2D_WCSPH-DBC",
-        "output-directory": "results",
-        "fluid-particles": "sources/dambreak_fluid.vtk",
-        "boundary-particles": "sources/dambreak_boundary.vtk",
+        "caseName": "damBreak2D_WCSPH-DBC",
+        "outputDirectory": "results",
+        "fluidParticles": "sources/dambreak_fluid.vtk",
+        "boundaryParticles": "sources/dambreak_boundary.vtk",
 
         // Simulation end time, output interval, output intensity
-        "final-time": 0.75,
-        "snapshot-period": 0.05,
-        "verbose-intensity": "with-snapshot",
+        "finalTime": 0.75,
+        "snapshotPeriod": 0.05,
+        "verboseIntensity": "with-snapshot",
 
         // Domain decomposition
-        "subdomains-x": placeholderSubdomains-x,
-        "subdomains-y": placeholderSubdomains-y
+        "subdomainsX": placeholderSubdomains-x,
+        "subdomainsY": placeholderSubdomains-y
     },
 
     // === Particle system configuration ===
@@ -28,10 +28,10 @@
     // === Domain size and domain origin ===
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOrigin-x": placeholderDomainOrigin-x,
-        "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y
+        "domainOriginX": placeholderDomainOrigin-x,
+        "domainOriginY": placeholderDomainOrigin-y,
+        "domainSizeX": placeholderDomainSize-x,
+        "domainSizeY": placeholderDomainSize-y
     },
 
     // === SPH solver section - resolution parameters ===
@@ -55,30 +55,30 @@
         // prevent zero denominator constant
         "eps": 0.001,
         // external force [m/s^2]
-        "external-force-x": 0,
-        "external-force-y": -9.81
+        "externalForceX": 0,
+        "externalForceY": -9.81
     },
 
     // === SPH solver section - integration parameters ===
     "integration": {
         // initial time step [s]
-        "initial-time-step": placeholderTimeStep
+        "initialTimeStep": placeholderTimeStep
     },
 
     // Distributed coupling - number of particles per cell
     "numberOfParticlesPerCell": 15,
 
-    // Inline distributed-domain config (alternative to "distributed-config" file path).
-    // When "distributed-config" is empty, the solver reads this subsection instead.
-    "distributed-domain": {
+    // Inline distributed-domain config (alternative to "distributedConfig" file path).
+    // When "distributedConfig" is empty, the solver reads this subsection instead.
+    "distributedDomain": {
         // Subdomains informations
         placeholderDistributedDomainContent
     },
 
     // === Measure tool initialization section ===
     // "measuretool": {
-    //     "interpolation-planes-count": 1,
-    //     "pressure-sensors-count": 4,
-    //     "water-level-sensors-count": 4
+    //     "interpolationPlanesCount": 1,
+    //     "pressureSensorsCount": 4,
+    //     "waterLevelSensorsCount": 4
     // }
 }

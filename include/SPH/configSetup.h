@@ -14,32 +14,32 @@ namespace TNL::SPH {
 void
 configSetup( TNL::Config::ConfigDescription& config, std::string sectionPrefix = "SPH" )
 {
-   config.addEntry< std::string >( "case-name", "Name of solved case." );
-   config.addEntry< std::string >( "output-directory", "Path to the output directory." );
+   config.addEntry< std::string >( "caseName", "Name of solved case." );
+   config.addEntry< std::string >( "outputDirectory", "Path to the output directory." );
 
    config.addDelimiter( sectionPrefix + " space discretisation" );
-   config.addRequiredEntry< std::string >( "fluid-particles", "Input fluid particles file path." );
-   config.addRequiredEntry< std::string >( "boundary-particles", "Input boundary particles file path." );
+   config.addRequiredEntry< std::string >( "fluidParticles", "Input fluid particles file path." );
+   config.addRequiredEntry< std::string >( "boundaryParticles", "Input boundary particles file path." );
 
-   config.addEntry< std::string >( "particles-format", "Input pa file format.", "auto" );
+   config.addEntry< std::string >( "particlesFormat", "Input pa file format.", "auto" );
    config.addEntryEnum( "auto" );
    config.addEntryEnum( "vtk" );
    config.addEntryEnum( "vtu" );
-   config.addEntry< std::string >( "boundary-conditions-file", "Path to the boundary conditions file." );
-   config.addEntry< std::string >( "verbose-intensity", "Information write during simulation runtime.", "with-snapshot" );
+   config.addEntry< std::string >( "boundaryConditionsFile", "Path to the boundary conditions file." );
+   config.addEntry< std::string >( "verboseIntensity", "Information write during simulation runtime.", "with-snapshot" );
    config.addEntryEnum( "full" );
    config.addEntryEnum( "with-snapshot" );
    config.addEntryEnum( "none" );
-   config.addEntry< bool >( "save-fluid-particles", "Save fluid particles (bool).", true );
-   config.addEntry< bool >( "save-boundary-particles", "Save fluid particles (bool).", true );
+   config.addEntry< bool >( "saveFluidParticles", "Save fluid particles (bool).", true );
+   config.addEntry< bool >( "saveBoundaryParticles", "Save fluid particles (bool).", true );
 
    config.addDelimiter( sectionPrefix + " time discretisation" );
-   config.addEntry< std::string >( "initial-condition", "File name with the initial condition." );
-   config.addRequiredEntry< double >( "final-time", "Stop time of the time dependent problem." );
-   config.addEntry< double >( "initial-time-step", "Initial time of the time dependent problem.", 0 );
-   config.addEntry< double >( "start-time", "Initial simulation time for restart (0 = classical mode).", 0. );
-   config.addRequiredEntry< double >( "snapshot-period", "Time period for writing the problem status." );
-   config.addEntry< double >( "time-step", "The time step for the time discretisation.", 1.0 );
+   config.addEntry< std::string >( "initialCondition", "File name with the initial condition." );
+   config.addRequiredEntry< double >( "finalTime", "Stop time of the time dependent problem." );
+   config.addEntry< double >( "initialTimeStep", "Initial time of the time dependent problem.", 0 );
+   config.addEntry< double >( "startTime", "Initial simulation time for restart (0 = classical mode).", 0. );
+   config.addRequiredEntry< double >( "snapshotPeriod", "Time period for writing the problem status." );
+   config.addEntry< double >( "timeStep", "The time step for the time discretisation.", 1.0 );
 
    config.addEntry< double >( "searchRadius", "The cut of radius of particle interactions.", 0. );
    config.addEntry< int >( "numberOfParticles", "The initial number of fluid particles.", 0. );
@@ -47,94 +47,92 @@ configSetup( TNL::Config::ConfigDescription& config, std::string sectionPrefix =
    config.addEntry< int >( "numberOfBoundaryParticles", "The initial number of fluid particles.", 0. );
    config.addEntry< int >( "numberOfAllocatedBoundaryParticles", "The allocated number of fluid particles.", 0. );
 
-   config.addEntry< double >( "domainOrigin-x", "The origin of domain in x direction.", 0. );
-   config.addEntry< double >( "domainOrigin-y", "The origin of domain in y direction.", 0. );
-   config.addEntry< double >( "domainOrigin-z", "The origin of domain in z direction.", 0. );
-   config.addEntry< double >( "domainSize-x", "The size of domain in x direction.", 0. );
-   config.addEntry< double >( "domainSize-y", "The size of domain in y direction.", 0. );
-   config.addEntry< double >( "domainSize-z", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( "domainOriginX", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( "domainOriginY", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( "domainOriginZ", "The origin of domain in z direction.", 0. );
+   config.addEntry< double >( "domainSizeX", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( "domainSizeY", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( "domainSizeZ", "The size of domain in y direction.", 0. );
 
    config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
-   config.addEntry< std::string >( "open-boundary-config", "Configuration file for open boundary.", "" );
+   config.addEntry< std::string >( "openBoundaryConfig", "Configuration file for open boundary.", "" );
    config.addEntry< std::string >(
-      "open-boundary", "Inline open boundary config as a JSON object. Used when open-boundary-config is empty.", "" );
+      "openBoundary", "Inline open boundary config as a JSON object. Used when openBoundaryConfig is empty.", "" );
    config.addEntry< int >( "periodicBoundaryPatches", "Number of periodic boundary patces.", 0 );
-   config.addEntry< std::string >( "periodic-boundary-config", "Configuration file for periodic boundary.", "" );
+   config.addEntry< std::string >( "periodicBoundaryConfig", "Configuration file for periodic boundary.", "" );
    config.addEntry< std::string >(
-      "periodic-boundary",
-      "Inline periodic boundary config as a JSON object. Used when periodic-boundary-config is empty.",
-      "" );
+      "periodicBoundary", "Inline periodic boundary config as a JSON object. Used when periodicBoundaryConfig is empty.", "" );
 
    config.addEntry< int >( "numberOfSubdomains", "Number of particles subdomains.", 0 );
-   config.addEntry< std::string >( "subdomains-config", "Configuration file for subdomains setup.", "" );
+   config.addEntry< std::string >( "subdomainsConfig", "Configuration file for subdomains setup.", "" );
    config.addEntry< std::string >(
-      "subdomains", "Inline subdomains config as a JSON object. Used when subdomains-config is empty.", "" );
+      "subdomains", "Inline subdomains config as a JSON object. Used when subdomainsConfig is empty.", "" );
    config.addEntry< std::string >(
-      "boundary-ghost-method", "Update method for boundary ghost particles at multiresolution interfaces.", "interpolation" );
+      "boundaryGhostMethod", "Update method for boundary ghost particles at multiresolution interfaces.", "interpolation" );
    config.addEntryEnum( "interpolation" );
    config.addEntryEnum( "direct-from-source" );
 
    // distributed simulation parameters
-   config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
-   config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
-   config.addEntry< std::string >( "distributed-config", "Path to the config with distributed simulation data.", "" );
+   config.addEntry< int >( "subdomainsX", "Number of subdomains in the x direstion.", 0 );
+   config.addEntry< int >( "subdomainsY", "Number of subdomains in the y direstion.", 0 );
+   config.addEntry< std::string >( "distributedConfig", "Path to the config with distributed simulation data.", "" );
    config.addEntry< std::string >(
-      "distributed-domain", "Inline distributed domain config as a JSON object. Used when distributed-config is empty.", "" );
+      "distributedDomain", "Inline distributed domain config as a JSON object. Used when distributed-config is empty.", "" );
    config.addEntry< int >( "overlapWidth", "Width in cells around every domain", 1 );
-   config.addEntry< std::string >( "load-balancing-measure", "Measure for subdomains sizes rebalancing.", "computationalTime" );
+   config.addEntry< std::string >( "loadBalancingMeasure", "Measure for subdomains sizes rebalancing.", "computationalTime" );
    config.addEntryEnum( "numberOfParticles" );
    config.addEntryEnum( "computationalTime" );
-   config.addEntry< float >( "number-of-particles-balancing-coef", "Particles count treshold for rebalancing [%].", 0.05 );
-   config.addEntry< float >( "computational-time-balancing-coef", "Comp. time treshold for rebalancing.", 0.001 );
-   config.addEntry< int >( "load-balancing-step-inteval", "Number of steps after load balancing is performed", 100 );
+   config.addEntry< float >( "numberOfParticlesBalancingCoef", "Particles count treshold for rebalancing [%].", 0.05 );
+   config.addEntry< float >( "computationalTimeBalancingCoef", "Comp. time treshold for rebalancing.", 0.001 );
+   config.addEntry< int >( "loadBalancingStepInterval", "Number of steps after load balancing is performed", 100 );
 
    // simulation monitor parameters
-   config.addEntry< std::string >( "measuretool-config", "Configuration file for the measuretool config.", "" );
+   config.addEntry< std::string >( "measuretoolConfig", "Configuration file for the measuretool config.", "" );
    config.addEntry< std::string >(
-      "measuretool", "Inline measuretool config as a JSON object. Used when measuretool-config is empty.", "" );
-   config.addEntry< int >( "interpolation-planes-count", "Number of interpolation planes.", 0 );
-   config.addEntry< int >( "pressure-sensors-count", "Number of pressure evalutaion sensors.", 0 );
-   config.addEntry< int >( "water-level-sensors-count", "Number of water level evaluation sensors.", 0 );
-   config.addEntry< int >( "volumetric-flow-rate-planes-count", "Number of volumetric flow rate evaluation planes", 0 );
+      "measuretool", "Inline measuretool config as a JSON object. Used when measuretoolConfig is empty.", "" );
+   config.addEntry< int >( "interpolationPlanesCount", "Number of interpolation planes.", 0 );
+   config.addEntry< int >( "pressureSensorsCount", "Number of pressure evalutaion sensors.", 0 );
+   config.addEntry< int >( "waterLevelSensorsCount", "Number of water level evaluation sensors.", 0 );
+   config.addEntry< int >( "volumetricFlowRatePlanesCount", "Number of volumetric flow rate evaluation planes", 0 );
 
    //TODO: Move this to suiteble place, it is used also for open zones
    config.addEntry< int >( "numberOfParticlesPerCell", "Max allowed number of particles per cell", 15 );
 
    // user defined parameters
-   config.addEntry< std::string >( "user-defined-config", "Configuration file for user's custom parameters.", "" );
+   config.addEntry< std::string >( "userDefinedConfig", "Configuration file for user's custom parameters.", "" );
    config.addEntry< std::string >(
-      "user-defined", "Inline user-defined config as a JSON object. Used when user-defined-config is empty.", "" );
+      "userDefined", "Inline user-defined config as a JSON object. Used when user-defined-config is empty.", "" );
 }
 
 void
 configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::ConfigDescription& config )
 {
-   std::string subdomainKey = "subdomain-x-" + std::to_string( subdomain_x ) + "-y-" + std::to_string( subdomain_y ) + "-";
-   config.addRequiredEntry< std::string >( subdomainKey + "fluid-particles", "Input fluid particles file path." );
-   config.addRequiredEntry< std::string >( subdomainKey + "boundary-particles", "Input boundary particles file path." );
-   config.addEntry< int >( subdomainKey + "fluid_n", "The initial number of fluid particles.", 0 );
-   config.addEntry< int >( subdomainKey + "fluid_n_allocated", "The allocated number of fluid particles.", 0 );
-   config.addEntry< int >( subdomainKey + "boundary_n", "The initial number of fluid particles.", 0 );
-   config.addEntry< int >( subdomainKey + "boundary_n_allocated", "The allocated number of fluid particles.", 0 );
+   std::string subdomainKey = "subdomainX" + std::to_string( subdomain_x ) + "Y" + std::to_string( subdomain_y );
+   config.addRequiredEntry< std::string >( subdomainKey + "FluidParticles", "Input fluid particles file path." );
+   config.addRequiredEntry< std::string >( subdomainKey + "BoundaryParticles", "Input boundary particles file path." );
+   config.addEntry< int >( subdomainKey + "Fluid_n", "The initial number of fluid particles.", 0 );
+   config.addEntry< int >( subdomainKey + "Fluid_n_allocated", "The allocated number of fluid particles.", 0 );
+   config.addEntry< int >( subdomainKey + "Boundary_n", "The initial number of fluid particles.", 0 );
+   config.addEntry< int >( subdomainKey + "Boundary_n_allocated", "The allocated number of fluid particles.", 0 );
 
-   config.addEntry< double >( subdomainKey + "refinement-factor", "Refinement factor of current subdomain.", 0. );
+   config.addEntry< double >( subdomainKey + "RefinementFactor", "Refinement factor of current subdomain.", 0. );
 
-   config.addEntry< double >( subdomainKey + "origin-x", "The origin of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "origin-y", "The origin of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "origin-z", "The origin of domain in z direction.", 0. );
+   config.addEntry< double >( subdomainKey + "OriginX", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "OriginY", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "OriginZ", "The origin of domain in z direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "origin-global-coords-x", "The origin of domain in global cell coords. in x direction.", 0. );
+      subdomainKey + "OriginGlobalCoordsX", "The origin of domain in global cell coords. in x direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "origin-global-coords-y", "The origin of domain in global cell coords. in y direction.", 0. );
+      subdomainKey + "OriginGlobalCoordsY", "The origin of domain in global cell coords. in y direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "origin-global-coords-z", "The origin of domain in global cell coords. in z direction.", 0. );
+      subdomainKey + "OriginGlobalCoordsZ", "The origin of domain in global cell coords. in z direction.", 0. );
 
-   config.addEntry< double >( subdomainKey + "size-x", "The size of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "size-y", "The size of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "size-z", "The size of domain in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "grid-dimensions-x", "The size of domain in cells in x direction.", 0. );
-   config.addEntry< int >( subdomainKey + "grid-dimensions-y", "The size of domain in cells in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "grid-dimensions-z", "The size of domain in cells in z direction.", 0. );
+   config.addEntry< double >( subdomainKey + "SizeX", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "SizeY", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "SizeZ", "The size of domain in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensionsX", "The size of domain in cells in x direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensionsY", "The size of domain in cells in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensionsZ", "The size of domain in cells in z direction.", 0. );
 }
 
 /**
@@ -150,9 +148,9 @@ configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::
 void
 configMultiresolutionBuffer( int bufferIdx, TNL::Config::ConfigDescription& config )
 {
-   std::string key = "multiresolution-buffer-" + std::to_string( bufferIdx ) + "-";
-   config.addEntry< std::string >( key + "particles", "Input multiresolution buffer particles file path.", "" );
-   config.addEntry< int >( key + "n", "The initial number of multiresolution buffer particles.", 0 );
+   std::string key = "multiresolutionBuffer" + std::to_string( bufferIdx );
+   config.addEntry< std::string >( key + "Particles", "Input multiresolution buffer particles file path.", "" );
+   config.addEntry< int >( key + "N", "The initial number of multiresolution buffer particles.", 0 );
 }
 
 /**
@@ -168,9 +166,9 @@ configMultiresolutionBuffer( int bufferIdx, TNL::Config::ConfigDescription& conf
 void
 configBoundaryGhostBuffer( int bufferIdx, TNL::Config::ConfigDescription& config )
 {
-   std::string key = "boundary-ghost-buffer-" + std::to_string( bufferIdx ) + "-";
-   config.addEntry< std::string >( key + "particles", "Input boundary ghost particles file path.", "" );
-   config.addEntry< int >( key + "n", "The initial number of boundary ghost particles.", 0 );
+   std::string key = "boundaryGhostBuffer" + std::to_string( bufferIdx );
+   config.addEntry< std::string >( key + "Particles", "Input boundary ghost particles file path.", "" );
+   config.addEntry< int >( key + "N", "The initial number of boundary ghost particles.", 0 );
 }
 
 template< typename Simulation >

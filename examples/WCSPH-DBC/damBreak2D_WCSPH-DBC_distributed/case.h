@@ -8,9 +8,9 @@
 #include <SPH/Models/WCSPH_DBC/control.h>
 #include <string>
 
-int main( int argc, char* argv[] )
+int
+main( int argc, char* argv[] )
 {
-
    TNL::MPI::ScopedInitializer mpi( argc, argv );
 
 //test;
@@ -24,18 +24,21 @@ int main( int argc, char* argv[] )
 
    cliConfig.addRequiredEntry< std::string >( "config", "Path to the configuration file." );
    cliConfig.addEntry< bool >( "config-help", "Print the configuration file description and exit.", false );
-   cliConfig.addEntry< bool >( "print-static-configuration", "Print the static configuration (e.g. solver and model types) and exit.", false );
-   cliConfig.addEntry< std::string >( "output-directory", "Path to the output directory (overrides the corresponding option in the configuration file)." );
+   cliConfig.addEntry< bool >(
+      "print-static-configuration", "Print the static configuration (e.g. solver and model types) and exit.", false );
+   cliConfig.addEntry< std::string >(
+      "output-directory", "Path to the output directory (overrides the corresponding option in the configuration file)." );
    cliConfig.addEntry< int >( "verbose", "Set the verbose mode. The higher number the more messages are generated.", 2 );
    cliConfig.addEntry< std::string >( "log-file", "Log file for the computation.", "log.txt" );
    cliConfig.addEntry< int >( "log-width", "Number of columns of the log table.", 80 );
-   cliConfig.addEntry< bool >( "catch-exceptions",
-                               "Catch C++ exceptions. Disabling it allows the program to drop into the debugger "
-                               "and track the origin of the exception.",
-                               true );
+   cliConfig.addEntry< bool >(
+      "catch-exceptions",
+      "Catch C++ exceptions. Disabling it allows the program to drop into the debugger "
+      "and track the origin of the exception.",
+      true );
 
    if( ! TNL::Config::parseCommandLine( argc, argv, cliConfig, cliParams ) )
-       return EXIT_FAILURE;
+      return EXIT_FAILURE;
 
    // get config parameters
    TNL::Config::ParameterContainer parameters;
@@ -50,39 +53,41 @@ int main( int argc, char* argv[] )
    //TNL::SPH::configSetupModel( config );
 
    if( cliParams.getParameter< bool >( "config-help" ) ) {
-       // TODO: re-format the message for the config (drop the program name and "--")
-       std::cout << "Priting usage." << std::endl;
-       TNL::Config::printUsage( config, argv[0] );
-       return EXIT_SUCCESS;
+      // TODO: re-format the message for the config (drop the program name and "--")
+      std::cout << "Priting usage." << std::endl;
+      TNL::Config::printUsage( config, argv[ 0 ] );
+      return EXIT_SUCCESS;
    }
    if( cliParams.getParameter< bool >( "print-static-configuration" ) ) {
-       const int logWidth = cliParams.getParameter< int >( "log-width" );
-       TNL::Logger consoleLogger( logWidth, std::cout );
-       //TNL::MHFEM::writeProlog< Problem >( consoleLogger, false );
-       TNL::SPH::writeProlog< Simulation>( consoleLogger, false );
-       return EXIT_SUCCESS;
+      const int logWidth = cliParams.getParameter< int >( "log-width" );
+      TNL::Logger consoleLogger( logWidth, std::cout );
+      //TNL::MHFEM::writeProlog< Problem >( consoleLogger, false );
+      TNL::SPH::writeProlog< Simulation >( consoleLogger, false );
+      return EXIT_SUCCESS;
    }
 
    const std::string configPath = cliParams.getParameter< std::string >( "config" );
    try {
-       parameters = TNL::Config::parseINIConfigFile( configPath, config );
+      parameters = TNL::Config::parseINIConfigFile( configPath, config );
    }
-   catch ( const std::exception& e ) {
-       std::cerr << "Failed to parse the configuration file " << configPath << " due to the following error:\n" << e.what() << std::endl;
-       return EXIT_FAILURE;
+   catch( const std::exception& e ) {
+      std::cerr << "Failed to parse the configuration file " << configPath << " due to the following error:\n"
+                << e.what() << std::endl;
+      return EXIT_FAILURE;
    }
-   catch (...) {
-       std::cerr << "Failed to parse the configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
-       throw;
+   catch( ... ) {
+      std::cerr << "Failed to parse the configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
+      throw;
    }
 
-   // --output-directory from the CLI overrides output-directory from the config
+   // --output-directory from the CLI overrides outputDirectory from the config
    if( cliParams.checkParameter( "output-directory" ) )
-       parameters.setParameter< std::string >( "output-directory", cliParams.getParameter< std::string >( "output-directory" ) );
-   if( ! parameters.checkParameter("output-directory")) {
-       std::cerr << "The output-directory parameter was not found in the config and "
-                    "--output-directory was not given on the command line." << std::endl;
-       return EXIT_FAILURE;
+      parameters.setParameter< std::string >( "outputDirectory", cliParams.getParameter< std::string >( "output-directory" ) );
+   if( ! parameters.checkParameter( "outputDirectory" ) ) {
+      std::cerr << "The outputDirectory parameter was not found in the config and "
+                   "--output-directory was not given on the command line."
+                << std::endl;
+      return EXIT_FAILURE;
    }
 
    //TNL::Logger log( 100, std::cout );
@@ -100,17 +105,17 @@ int main( int argc, char* argv[] )
    TNL::Logger log( 100, logFile );
 
    Simulation sph;
-   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
    if( TNL::MPI::GetRank() == 0 )
       sph.init( parameters, log );
-   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   TNL::MPI::Barrier( sph.communicator );  //To have clear output
    if( TNL::MPI::GetRank() == 1 )
       sph.init( parameters, log );
-   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   TNL::MPI::Barrier( sph.communicator );  //To have clear output
    if( TNL::MPI::GetRank() == 2 )
       sph.init( parameters, log );
-   TNL::MPI::Barrier( sph.communicator ); //To have clear output
+   TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
    sph.writeProlog( log );
 
@@ -133,24 +138,23 @@ int main( int argc, char* argv[] )
       //sph.resetOverlaps();
       //sph.writeLog( log, "Reset overlaps...", "Done." );
 
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
       // search for neighbros
       sph.timeMeasurement.start( "search" );
-      sph.performNeighborSearch( log , true );
+      sph.performNeighborSearch( log, true );
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search...", "Done." );
 
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
       sph.writeLog( log, "Starting synchronization.", "" );
       sph.synchronizeDistributedSimulation( log );
       sph.writeLog( log, "Synchronize...", "Done." );
 
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
-      if( ( sph.timeStepping.getStep() % 200  == 0 ) && ( sph.timeStepping.getStep() > 1 ) ){
-
+      if( ( sph.timeStepping.getStep() % 200 == 0 ) && ( sph.timeStepping.getStep() > 1 ) ) {
          sph.timeMeasurement.start( "search" );
          sph.performNeighborSearch( log, true );
          sph.timeMeasurement.stop( "search" );
@@ -164,26 +168,25 @@ int main( int argc, char* argv[] )
          sph.writeLog( log, "Load balancing...", "Done." );
          log.writeSeparator();
 
-         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+         TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
          // SingleSet: forgot overlaps
          sph.resetOverlaps();
          sph.writeLog( log, "Reset overlaps...", "Done." );
 
-         TNL::MPI::Barrier( sph.communicator ); //To have clear output
-
+         TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
          sph.timeMeasurement.start( "search" );
          sph.performNeighborSearch( log, true );
          sph.timeMeasurement.stop( "search" );
          sph.writeLog( log, "Search second...", "Done." );
 
-         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+         TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
          sph.writeLog( log, "Starting synchronization.", "" );
          sph.synchronizeDistributedSimulation( log );
          sph.writeLog( log, "Synchronize...", "Done." );
-         TNL::MPI::Barrier( sph.communicator ); //To have clear output
+         TNL::MPI::Barrier( sph.communicator );  //To have clear output
       }
 
       // SingleSet: perform second search to assign received particles
@@ -192,11 +195,10 @@ int main( int argc, char* argv[] )
       sph.timeMeasurement.stop( "search" );
       sph.writeLog( log, "Search second...", "Done." );
 
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
       // output particle data
-      if( sph.timeStepping.checkOutputTimer( "save_results" ) )
-      {
+      if( sph.timeStepping.checkOutputTimer( "save_results" ) ) {
          /**
           * Compute pressure from density.
           * This is not necessary since we do this localy, if pressure is needed.
@@ -208,7 +210,7 @@ int main( int argc, char* argv[] )
          sph.save( log, true );
       }
 
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      TNL::MPI::Barrier( sph.communicator );  //To have clear output
 
       // perform interaction with given model
       sph.timeMeasurement.start( "interact" );
@@ -248,9 +250,8 @@ int main( int argc, char* argv[] )
       // update time step
       sph.timeStepping.updateTimeStep();
 
-      TNL::MPI::Barrier( sph.communicator ); //To have clear output
+      TNL::MPI::Barrier( sph.communicator );  //To have clear output
    }
 
    sph.writeEpilog( log );
 }
-

@@ -2,15 +2,15 @@
     // === Control section ===
     // Simulation name, path to store results and path to read initial conditions
     "control": {
-        "case-name": "movingSquare2D_WCSPH-DBC",
-        "output-directory": "results",
-        "fluid-particles": "sources/moving_square_fluid.vtk",
-        "boundary-particles": "sources/moving_square_boundary.vtk",
+        "caseName": "movingSquare2D_WCSPH-DBC",
+        "outputDirectory": "results",
+        "fluidParticles": "sources/moving_square_fluid.vtk",
+        "boundaryParticles": "sources/moving_square_boundary.vtk",
 
         // Simulation end time, output interval, output intensity
-        "final-time": 1.75,
-        "snapshot-period": 0.05,
-        "verbose-intensity": "with-snapshot"
+        "finalTime": 1.75,
+        "snapshotPeriod": 0.05,
+        "verboseIntensity": "with-snapshot"
     },
 
     // === Particle system configuration ===
@@ -24,10 +24,10 @@
     // === Domain size and domain origin ===
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOrigin-x": placeholderDomainOrigin-x,
-        "domainOrigin-y": placeholderDomainOrigin-y,
-        "domainSize-x": placeholderDomainSize-x,
-        "domainSize-y": placeholderDomainSize-y
+        "domainOriginX": placeholderDomainOrigin-x,
+        "domainOriginY": placeholderDomainOrigin-y,
+        "domainSizeX": placeholderDomainSize-x,
+        "domainSizeY": placeholderDomainSize-y
     },
 
     // === SPH solver section - resolution parameters ===
@@ -56,14 +56,14 @@
         // prevent zero denominator constant
         "eps": 0.001,
         // external force [m/s^2]
-        "external-force-x": 0,
-        "external-force-y": 0
+        "externalForceX": 0,
+        "externalForceY": 0
     },
 
     // === SPH solver section - integration parameters ===
     "integration": {
         // initial time step [s]
-        "initial-time-step": placeholderTimeStep,
+        "initialTimeStep": placeholderTimeStep,
         "CFL": placeholderCFL
     }
 }

@@ -27,10 +27,9 @@ extend-ignore-re = [
    "(?s)(#|//)\\s*spellchecker:disable-next-line[^\\n]*\\n[^\\n]*",
 ]
 
-# Word-level exceptions (match inside compound identifiers, e.g. numberOfPtcs).
+# Word-level exceptions (match inside compound identifiers).
 [default.extend-words]
-setp = "setp"         # from TNL: also here, "integration setp" doc comments in SPHMultiset_CFD.h
-Ptcs = "Ptcs"         # TEMPORARY: legacy particles abbreviation (numberOfPtcs etc.); renamed by W2-T10
+setp = "setp"         # from TNL: also here, "integration setp" doc comments in SPHMultiSet_CFD.h
 
 # Exact-identifier exceptions (case-sensitive; SPH physics idioms and acronyms).
 [default.extend-identifiers]

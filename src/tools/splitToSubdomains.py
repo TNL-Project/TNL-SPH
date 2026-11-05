@@ -45,9 +45,9 @@ class Subdomains:
         self.gridSize_x = gridSize[ 0 ]; self.gridSize_y = gridSize[ 1 ]; self.gridSize_z = gridSize[ 2 ]
         self.gridBegin_x = gridBegin[ 0 ]; self.gridBegin_y = gridBegin[ 1 ]; self.gridBegin_z = gridBegin[ 2 ]
         self.searchRadius = searchRadius
-        numberOfPtcsTotal = len( points_fluid )
+        numberOfParticlesTotal = len( points_fluid )
 
-        self.numberOfFluidParticlesPerSubdomain = ( int )( numberOfPtcsTotal / self.numberOfSubdomains )
+        self.numberOfFluidParticlesPerSubdomain = ( int )( numberOfParticlesTotal / self.numberOfSubdomains )
         for subdomain in range( self.numberOfSubdomains - 1 ):
             self.gridSplits.append( math.ceil(
                 points_fluid[ self.numberOfFluidParticlesPerSubdomain * ( subdomain + 1 ) ][ 0 ] / searchRadius ) )
@@ -99,8 +99,8 @@ class Subdomains:
         subdomain_box_r = []
         subdomain_box_ptype = []
 
-        subdomain_counter_nptcs = 0
-        subdomain_counter_nptcsReal = 0
+        subdomain_counter_particles = 0
+        subdomain_counter_real_particles = 0
 
         subdomain_gridSector = []
 
@@ -136,13 +136,13 @@ class Subdomains:
             if points_fluid[ i ][ 0 ] > lowerPositionLimit and points_fluid[ i ][ 0 ] <= upperPositionLimit:
                 subdomain_fluid_r.append( points_fluid[ i ] )
                 subdomain_fluid_ptype.append( 0 )
-                subdomain_counter_nptcs += 1
-                subdomain_counter_nptcsReal += 1
+                subdomain_counter_particles += 1
+                subdomain_counter_real_particles += 1
 
             if points_fluid[ i ][ 0 ] > upperPositionLimit and points_fluid[ i ][ 0 ] <= upperPositionLimit + self.searchRadius:
                 subdomain_fluid_r.append( points_fluid[ i ] )
                 subdomain_fluid_ptype.append( 1 )
-                subdomain_counter_nptcsReal += 1
+                subdomain_counter_real_particles += 1
 
         #Prepare particle fields for given subdomain - boundary
         for i in range ( len( points_box ) ):
@@ -203,8 +203,8 @@ class Subdomains:
 
         infoString = infoString.replace( '#placeholderParticleIdxStart', str( 0 ) )
         infoString = infoString.replace( '#placeholderParticleIdxRealStart', str( 0 ) )
-        infoString = infoString.replace( '#placeholderParticleIdxEnd', str( subdomain_counter_nptcs - 1  ) )
-        infoString = infoString.replace( '#placeholderParticleIdxRealEnd', str( subdomain_counter_nptcsReal - 1) )
+        infoString = infoString.replace( '#placeholderParticleIdxEnd', str( subdomain_counter_particles - 1  ) )
+        infoString = infoString.replace( '#placeholderParticleIdxRealEnd', str( subdomain_counter_real_particles - 1) )
 
         infoString = infoString.replace( '#placeholderGridIdxOverlapStart', str( gridIdxOverlapStart ) )
         infoString = infoString.replace( '#placeholderGridIdxStart', str( gridIdxStart ) )

@@ -16,6 +16,8 @@
 #include <SPH/TimeStep.h>
 #include <SPH/Models/WCSPH_DBC/OpenBoundaryConfig.h>
 
+#include <SPH/parseConfigFile.h>
+
 namespace TNL::SPH {
 
 /**
@@ -43,21 +45,21 @@ public:
       config.addEntry< double >( "speedOfSound", "Numerical speed of sound.", 0 );
       config.addEntry< double >( "rho0", "Referential density of the medium.", 0 );
       config.addEntry< double >( "p0", "Background pressure.", 0 );
-      config.addEntry< double >( "initial-time-step", "Initial time step.", 0 );
+      config.addEntry< double >( "initialTimeStep", "Initial time step.", 0 );
       config.addEntry< double >( "CFL", "CFL number.", 0 );
-      config.addEntry< double >( "minimal-time-step", "Minimal allowed time step.", 0 );
-      config.addEntry< double >( "external-force-x", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-y", "External bulk forces.", 0 );
-      config.addEntry< double >( "external-force-z", "External bulk forces.", 0 );
+      config.addEntry< double >( "minimalTimeStep", "Minimal allowed time step.", 0 );
+      config.addEntry< double >( "externalForceX", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceY", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForceZ", "External bulk forces.", 0 );
       config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
       config.addEntry< double >( "mdbcExtrapolationDetTreshold", "Coefficient to set trashold of MDBC determinant.", 1e-3 );
 
       //for( int i = 0; i < SPHConfig::numberOfBoundaryBuffers; i++ ) {
-      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      //   std::string prefix = "buffer" + std::to_string( i + 1 );
       //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
       //}
       //for( int i = 0; i < SPHConfig::numberOfPeriodicBuffers; i++ ) {
-      //   std::string prefix = "buffer-" + std::to_string( i + 1 ) + "-";
+      //   std::string prefix = "buffer" + std::to_string( i + 1 );
       //   configSetupOpenBoundaryModelPatch< SPHConfig >( config, prefix );
       //}
    }
@@ -74,11 +76,11 @@ public:
       speedOfSound = parameters.getParameter< double >( "speedOfSound" );
       rho0 = parameters.getParameter< double >( "rho0" );
       p0 = parameters.getParameter< double >( "p0" );
-      dtInit = parameters.getParameter< double >( "initial-time-step" );
+      dtInit = parameters.getParameter< double >( "initialTimeStep" );
       cfl = parameters.getParameter< double >( "CFL" );
-      dtMin = parameters.getParameter< double >( "minimal-time-step" );
+      dtMin = parameters.getParameter< double >( "minimalTimeStep" );
       eps = parameters.getParameter< double >( "eps" );
-      gravity = parameters.getXyz< VectorType >( "external-force" );
+      gravity = getXyzCamelCase< VectorType >( parameters, "externalForce" );
       mdbcExtrapolationDetTreshold = parameters.getParameter< double >( "mdbcExtrapolationDetTreshold" );
 
       coefB = speedOfSound * speedOfSound * rho0 / 7.f;

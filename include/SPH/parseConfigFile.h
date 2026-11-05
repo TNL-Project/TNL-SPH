@@ -21,6 +21,19 @@
 
 namespace TNL::SPH {
 
+template< class StaticArray >
+[[nodiscard]] StaticArray
+getXyzCamelCase( const TNL::Config::ParameterContainer& parameters, const std::string& prefix )
+{
+   StaticArray result;
+   result[ 0 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "X" );
+   if( StaticArray::getSize() >= 2 )
+      result[ 1 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "Y" );
+   if( StaticArray::getSize() >= 3 )
+      result[ 2 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "Z" );
+   return result;
+}
+
 /**
  * \brief Recursively flattens nested JSON objects into a flat key-value structure.
  *
@@ -55,10 +68,10 @@ flattenJSON( nlohmann::json& data, const TNL::Config::ConfigDescription& descrip
       // If the key is NOT in the schema and the value is an object, treat it
       // as an organizational grouping and recurse into its children.  After
       // recursion, each child key is promoted to the parent level.  If the
-      // child key itself is not in the schema, we try "parentKey-childKey"
+      // child key itself is not in the schema, we try "parentKeyChildKey"
       // as a fallback — this enables nested subsections like
-      //   "subdomain-0": { "fluid-particles": "..." }
-      // to be flattened to the schema key "subdomain-0-fluid-particles".
+      //   "subdomain0": { "fluidParticles": "..." }
+      // to be flattened to the schema key "subdomain0FluidParticles".
       if( it.value().is_object() ) {
          flattenJSON( it.value(), description );
          for( auto sub = it.value().begin(); sub != it.value().end(); ++sub ) {
@@ -67,7 +80,9 @@ flattenJSON( nlohmann::json& data, const TNL::Config::ConfigDescription& descrip
                flattened[ childKey ] = std::move( sub.value() );
             }
             else {
-               const std::string prefixedKey = key + "-" + childKey;
+               const std::string prefixedKey =
+                  key + static_cast< char >( std::toupper( static_cast< unsigned char >( childKey[ 0 ] ) ) )
+                  + childKey.substr( 1 );
                if( description.getEntry( prefixedKey ) != nullptr )
                   flattened[ prefixedKey ] = std::move( sub.value() );
                else

@@ -5,6 +5,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <SPH/parseConfigFile.h>
+
 namespace TNL::SPH {
 
 template< typename SPHConfig >
@@ -16,32 +18,32 @@ conigSetupOpenBoundaryPatch( TNL::Config::ConfigDescription& config, std::string
    using VectorType = typename SPHTraitsType::VectorType;
 
    config.addDelimiter( "Open boundary patch delimiter." );
-   config.addEntry< int >( prefix + "numberOfParticles", "The initial number of fluid particles.", 0. );
-   config.addEntry< int >( prefix + "numberOfAllocatedParticles", "The allocated number of fluid particles.", 0. );
-   config.addEntry< std::string >( prefix + "particles", "Input fluid particles file path." );
-   config.addEntry< std::string >( prefix + "identifier", "Identifier of the open boundary patch.", "empty" );
-   config.addEntry< RealType >( prefix + "orientation-x", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "orientation-y", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "orientation-z", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-1-x", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-1-y", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-1-z", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-2-x", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-2-y", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "position-2-z", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferWidth-x", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferWidth-y", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferWidth-z", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferHeight-x", "Height of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferHeight-y", "Height of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "bufferHeight-z", "Height of the open boundary buffer.", 0 );
-   config.addEntry< int >( prefix + "numberOfParticlesPerCell", "Maximum allowed number of particles per grid cell.", 0 );
+   config.addEntry< int >( prefix + "NumberOfParticles", "The initial number of fluid particles.", 0. );
+   config.addEntry< int >( prefix + "NumberOfAllocatedParticles", "The allocated number of fluid particles.", 0. );
+   config.addEntry< std::string >( prefix + "Particles", "Input fluid particles file path." );
+   config.addEntry< std::string >( prefix + "Identifier", "Identifier of the open boundary patch.", "empty" );
+   config.addEntry< RealType >( prefix + "OrientationX", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "OrientationY", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "OrientationZ", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position1X", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position1Y", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position1Z", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position2X", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position2Y", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position2Z", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferWidthX", "Width of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferWidthY", "Width of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferWidthZ", "Width of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferHeightX", "Height of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferHeightY", "Height of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferHeightZ", "Height of the open boundary buffer.", 0 );
+   config.addEntry< int >( prefix + "NumberOfParticlesPerCell", "Maximum allowed number of particles per grid cell.", 0 );
 
    // parameters for periodic boundary conditions
-   config.addEntry< int >( prefix + "paired-periodic-buffer", "Index of paired periodic boundary buffer.", -1 );
-   config.addEntry< RealType >( prefix + "shiftVector-x", "Shift vector within the periodic boundary conditions.", 0 );
-   config.addEntry< RealType >( prefix + "shiftVector-y", "Shift vector within the periodic boundary conditions.", 0 );
-   config.addEntry< RealType >( prefix + "shiftVector-z", "Shift vector within the periodic boundary conditions.", 0 );
+   config.addEntry< int >( prefix + "PairedPeriodicBuffer", "Index of paired periodic boundary buffer.", -1 );
+   config.addEntry< RealType >( prefix + "ShiftVectorX", "Shift vector within the periodic boundary conditions.", 0 );
+   config.addEntry< RealType >( prefix + "ShiftVectorY", "Shift vector within the periodic boundary conditions.", 0 );
+   config.addEntry< RealType >( prefix + "ShiftVectorZ", "Shift vector within the periodic boundary conditions.", 0 );
 }
 
 template< typename SPHConfig >
@@ -101,15 +103,15 @@ public:
       TNL::Config::ParameterContainer& parametersOpenBoundary,
       std::string prefix )
    {
-      identifier = parametersOpenBoundary.getParameter< std::string >( prefix + "identifier" );
-      orientation = parametersOpenBoundary.getXyz< VectorType >( prefix + "orientation" );
-      position = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-1" );
-      position2 = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-2" );
-      bufferWidth = parametersOpenBoundary.getXyz< VectorType >( prefix + "bufferWidth" );
+      identifier = parametersOpenBoundary.getParameter< std::string >( prefix + "Identifier" );
+      orientation = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "Orientation" );
+      position = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "Position1" );
+      position2 = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "Position2" );
+      bufferWidth = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "BufferWidth" );
       //bufferHeight =
-      pairedPeriodicBuffer = parametersOpenBoundary.getParameter< int >( prefix + "paired-periodic-buffer" );
-      shift = parametersOpenBoundary.getXyz< VectorType >( prefix + "shiftVector" );
-      numberOfParticlesPerCell = parametersOpenBoundary.getParameter< int >( prefix + "numberOfParticlesPerCell" );
+      pairedPeriodicBuffer = parametersOpenBoundary.getParameter< int >( prefix + "PairedPeriodicBuffer" );
+      shift = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "ShiftVector" );
+      numberOfParticlesPerCell = parametersOpenBoundary.getParameter< int >( prefix + "NumberOfParticlesPerCell" );
 
       //TODO: Check what is the shape of the buffer, following lines are valid for planar buffer
       computeZonePoints( parameters, parametersOpenBoundary, prefix );
@@ -187,8 +189,8 @@ private:
       std::string prefix )
    {
       const RealType searchRadius = parameters.getParameter< RealType >( "searchRadius" );
-      const VectorType firstPointOfBufferArea = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-1" );
-      const VectorType secondPointOfBufferArea = parametersOpenBoundary.getXyz< VectorType >( prefix + "position-2" );
+      const VectorType firstPointOfBufferArea = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "Position1" );
+      const VectorType secondPointOfBufferArea = getXyzCamelCase< VectorType >( parametersOpenBoundary, prefix + "Position2" );
       const VectorType bufferAreaDiagonal = secondPointOfBufferArea - firstPointOfBufferArea;
       const VectorType bufferUnitDiagonal = bufferAreaDiagonal / l2Norm( bufferAreaDiagonal );
       //TODO: Ugly, ugly code:
