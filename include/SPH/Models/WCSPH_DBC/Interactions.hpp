@@ -9,9 +9,9 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
-WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    // searchable objects
    //typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -153,11 +153,11 @@ WCSPH_DBC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPo
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
    // searchable object

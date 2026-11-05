@@ -123,7 +123,7 @@ public:
       logger.writeParameter( "Max. particle count per zone cell:", numberOfParticlesPerCell );
       logger.writeParameter( "Zone first point:", zoneFirstPoint );
       logger.writeParameter( "Zone second point:", zoneSecondPoint );
-      //temp: Logs to periodic bounday buffers
+      //temp: Logs to periodic boundary buffers
       logger.writeParameter( "Paired periodic boundary patch index: ", pairedPeriodicBuffer );
       logger.writeParameter( "Periodic boundary shift vector: ", shift );
    }

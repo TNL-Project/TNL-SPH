@@ -8,12 +8,12 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoundaryPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer, typename OpenBoundaryPointer >
 void
 WCSPH_DBC< Particles, ModelConfig >::interactionWithOpenBoundary(
    FluidPointer& fluid,
    BoundaryPointer& boundary,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */

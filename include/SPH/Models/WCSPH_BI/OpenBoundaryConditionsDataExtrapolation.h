@@ -9,11 +9,11 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryData(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {
@@ -37,11 +37,11 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryData(
 }
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryData2D(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {
@@ -147,12 +147,12 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryData2D(
 }
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryDensity2D(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {
@@ -233,12 +233,12 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryDensity2D(
 }
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryVelocity2D(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {
@@ -333,11 +333,11 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryVelocity2D(
 }
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryData3D(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {
@@ -465,11 +465,11 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryData3D(
 }
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryDensity3D(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {
@@ -551,11 +551,11 @@ WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryDensity3D(
 }
 
 template< typename Particles, typename SPHState >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, SPHState >::extrapolateOpenBoundaryVelocity3D(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams,
    OpenBoundaryConfig& openBoundaryParams )
 {

@@ -8,12 +8,12 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
    requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric_interpolated >
 void
 WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
    FluidPointer& fluid,
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */

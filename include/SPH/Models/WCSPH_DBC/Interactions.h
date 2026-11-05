@@ -79,9 +79,9 @@ public:
    /**
     * Function to realize fluid-fluid and fluid-boundary interaction.
     */
-   template< typename FluidPointer, typename BoudaryPointer >
+   template< typename FluidPointer, typename BoundaryPointer >
    void
-   interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    /**
     * Function to realize boundary conditions for solid wall.
@@ -89,19 +89,19 @@ public:
     */
    template<
       typename FluidPointer,
-      typename BoudaryPointer,
+      typename BoundaryPointer,
       typename BCType = typename ModelConfig::BCType,
       std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
-   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    template<
       typename OpenBoundaryPointer,
-      typename BoudaryPointer,
+      typename BoundaryPointer,
       typename BCType = typename ModelConfig::BCType,
       typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled = true >
    void
-   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
+   updateSolidBoundaryOpenBoundary( BoundaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
 
    /**
     * Function to realize boundary conditions for solid wall.
@@ -109,19 +109,19 @@ public:
     */
    template<
       typename FluidPointer,
-      typename BoudaryPointer,
+      typename BoundaryPointer,
       typename BCType = typename ModelConfig::BCType,
       typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
-   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    template<
       typename OpenBoundaryPointer,
-      typename BoudaryPointer,
+      typename BoundaryPointer,
       typename BCType = typename ModelConfig::BCType,
       typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::MDBC >, bool > Enabled = true >
    void
-   updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
+   updateSolidBoundaryOpenBoundary( BoundaryPointer& boundary, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
 
    /**
     * Function to realize boundary conditions for solid wall.
@@ -131,21 +131,21 @@ public:
     */
    template<
       typename FluidPointer,
-      typename BoudaryPointer,
+      typename BoundaryPointer,
       typename BCType = typename ModelConfig::BCType,
       typename std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::GWBC >, bool > Enabled = true >
    void
-   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    //TODO: Where should be this placed
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams );
+   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoundaryPointer& openBoundary, ModelParams& modelParams );
 
    //TODO: Experiment:
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
-   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& boundaryPatch, ModelParams& modelParams );
+   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoundaryPointer& boundaryPatch, ModelParams& modelParams );
 
    /**
     * Functions to extrapolate data on open boundary buffers in 2D.
@@ -153,27 +153,27 @@ public:
     * or extrapolating both together.
     * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
     */
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryDensity2D(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryVelocity2D(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryData2D(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 
@@ -183,38 +183,38 @@ public:
     * or extrapolating both together.
     * By default, all variables are extrapolated using corrected interpolation - Liu et. al. 2006
     */
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryDensity3D(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryVelocity3D(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryData3D(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 
    /**
     * General function to perform extrapolation of open boundary conditions.
     */
-   template< typename FluidPointer, typename OpenBoudaryPointer >
+   template< typename FluidPointer, typename OpenBoundaryPointer >
    void
    extrapolateOpenBoundaryData(
       FluidPointer& fluid,
-      OpenBoudaryPointer& openBoundary,
+      OpenBoundaryPointer& openBoundary,
       ModelParams& modelParams,
       OpenBoundaryConfig& openBoundaryParams );
 

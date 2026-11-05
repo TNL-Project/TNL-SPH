@@ -28,8 +28,8 @@ public:
 
    EvaluateForces() = default;
 
-   template< typename BoudaryPointer >
-   EvaluateForces( BoudaryPointer& boundary )
+   template< typename BoundaryPointer >
+   EvaluateForces( BoundaryPointer& boundary )
    {
       init( boundary );
    }
@@ -67,7 +67,7 @@ public:
       auto view_F_pressure = F_pressure.getView();
       auto view_F_visco = F_visco.getView();
 
-      auto comptueForce = [ = ] __cuda_callable__(
+      auto computeForce = [ = ] __cuda_callable__(
                              IndexType i,
                              IndexType j,
                              VectorType & r_i,
@@ -106,7 +106,7 @@ public:
          VectorType F_pressure_i = 0.f;
          VectorType F_visco_i = 0.f;
 
-         ParticlesType::NeighborsLoop::exec( i, r_i, searchInFluid, comptueForce, v_i, rho_i, p_i, &F_pressure_i, &F_visco_i );
+         ParticlesType::NeighborsLoop::exec( i, r_i, searchInFluid, computeForce, v_i, rho_i, p_i, &F_pressure_i, &F_visco_i );
 
          F_pressure_i *= m / rho_i;
          F_visco_i *= m / rho_i;
@@ -159,8 +159,8 @@ public:
 
    EvaluateForces_BoundaryIntegrals() = default;
 
-   template< typename BoudaryPointer >
-   EvaluateForces_BoundaryIntegrals( BoudaryPointer& boundary )
+   template< typename BoundaryPointer >
+   EvaluateForces_BoundaryIntegrals( BoundaryPointer& boundary )
    {
       init( boundary );
    }
@@ -205,7 +205,7 @@ public:
       auto view_F_pressure = F_pressure.getView();
       auto view_F_visco = F_visco.getView();
 
-      auto comptueViscousForce = [ = ] __cuda_callable__(
+      auto computeViscousForce = [ = ] __cuda_callable__(
                                     IndexType i,
                                     IndexType j,
                                     VectorType & r_i,
@@ -251,7 +251,7 @@ public:
 
          VectorType F_visco_i = 0.f;
          ParticlesType::NeighborsLoop::exec(
-            i, r_i, searchInFluid, comptueViscousForce, v_i, rho_i, p_i, n_i, S_i, &F_visco_i );
+            i, r_i, searchInFluid, computeViscousForce, v_i, rho_i, p_i, n_i, S_i, &F_visco_i );
 
          if( maker_i == markerValueToProcess ) {
             view_F_pressure[ i ] = p_i * n_i * S_i;

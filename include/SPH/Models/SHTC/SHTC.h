@@ -64,16 +64,16 @@ public:
    /**
     * Function to realize fluid-fluid and fluid-boundary interaction.
     */
-   template< typename FluidPointer, typename BoudaryPointer >
+   template< typename FluidPointer, typename BoundaryPointer >
    void
-   interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    /**
     * Function to realize boundary conditions for solid wall.
     */
-   template< typename FluidPointer, typename BoudaryPointer >
+   template< typename FluidPointer, typename BoundaryPointer >
    void
-   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    template< typename FluidPointer, typename TimeStepping >
    void
@@ -105,16 +105,16 @@ public:
 
    // Empty functions to match the solver interface
 
-   //template< typename OpenBoundaryPointer, typename BoudaryPointer >
+   //template< typename OpenBoundaryPointer, typename BoundaryPointer >
    //void
-   //updateSolidBoundaryOpenBoundary( BoudaryPointer& boundary,
+   //updateSolidBoundaryOpenBoundary( BoundaryPointer& boundary,
    //                                 OpenBoundaryPointer& openBoundaryPointer,
    //                                 ModelParams& modelParams )
    //{};
 
-   //template< typename FluidPointer, typename OpenBoudaryPointer >
+   //template< typename FluidPointer, typename OpenBoundaryPointer >
    //void
-   //interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams )
+   //interactionWithOpenBoundary( FluidPointer& fluid, OpenBoundaryPointer& openBoundary, ModelParams& modelParams )
    //{}
 };
 

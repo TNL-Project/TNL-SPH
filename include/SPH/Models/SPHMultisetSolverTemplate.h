@@ -26,40 +26,40 @@ public:
    /**
     * Function to realize fluid-fluid and fluid-boundary interaction.
     */
-   template< typename FluidPointer, typename BoudaryPointer, typename ModelParams >
+   template< typename FluidPointer, typename BoundaryPointer, typename ModelParams >
    void
-   interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+   interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
    {}
 
-   template< typename FluidPointer, typename BoudaryPointer, typename ModelParams >
+   template< typename FluidPointer, typename BoundaryPointer, typename ModelParams >
    void
-   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+   updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
    {}
 
-   template< typename OpenBoundaryPointer, typename BoudaryPointer, typename ModelParams >
+   template< typename OpenBoundaryPointer, typename BoundaryPointer, typename ModelParams >
    void
    updateSolidBoundaryOpenBoundary(
-      BoudaryPointer& boundary,
+      BoundaryPointer& boundary,
       OpenBoundaryPointer& openBoundaryPointer,
       ModelParams& modelParams )
    {}
 
-   template< typename FluidPointer, typename OpenBoudaryPointer, typename ModelParams >
+   template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams >
    void
-   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams )
+   interactionWithOpenBoundary( FluidPointer& fluid, OpenBoundaryPointer& openBoundary, ModelParams& modelParams )
    {}
 
-   template< typename FluidPointer, typename OpenBoudaryPointer, typename ModelParams >
+   template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams >
    void
-   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams )
+   interactionWithBoundaryPatches( FluidPointer& fluid, OpenBoundaryPointer& openBoundary, ModelParams& modelParams )
    {}
 
    ///**
    // * General function to perform extrapolation of open boundary conditions.
    // */
-   //template< typename FluidPointer, typename OpenBoudaryPointer, typename ModelParams, typename OpenBoundaryConfig  >
+   //template< typename FluidPointer, typename OpenBoundaryPointer, typename ModelParams, typename OpenBoundaryConfig  >
    //void
-   //extrapolateOpenBoundaryData( FluidPointer& fluid, OpenBoudaryPointer& openBoundary, ModelParams& modelParams,
+   //extrapolateOpenBoundaryData( FluidPointer& fluid, OpenBoundaryPointer& openBoundary, ModelParams& modelParams,
    //OpenBoundaryConfig& openBoundaryParams )
    //{}
 

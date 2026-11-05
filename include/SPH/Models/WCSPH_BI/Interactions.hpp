@@ -14,9 +14,9 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    const RealType searchRadius = fluid->getParticles()->getSearchRadius();
@@ -236,13 +236,13 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
    requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric >
          || std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
 void
 WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
    FluidPointer& fluid,
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -353,10 +353,10 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename OpenBoundaryPointer, typename BoudaryPointer >
+template< typename OpenBoundaryPointer, typename BoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary(
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
@@ -429,11 +429,11 @@ WCSPH_BI< Particles, ModelConfig >::computePressureFromDensity(
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -530,11 +530,11 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary(
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -704,11 +704,11 @@ WCSPH_BI< Particles, ModelConfig >::finalizeBoundaryInteraction(
 {}
 
 template< typename Particles, typename ModelConfig >
-template< typename BoudaryPointer, typename IndexArray >
+template< typename BoundaryPointer, typename IndexArray >
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated(
-   BoudaryPointer& ownBoundary,
-   BoudaryPointer& srcBoundary,
+   BoundaryPointer& ownBoundary,
+   BoundaryPointer& srcBoundary,
    const IndexArray& ghostIndices,
    ModelParams& modelParams )
 {
@@ -782,12 +782,12 @@ WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryInterpolated(
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename BoudaryPointer, typename FluidPointer, typename IndexArray >
+template< typename BoundaryPointer, typename FluidPointer, typename IndexArray >
    requires std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConsistent_numeric >
          || std::is_same_v< typename ModelConfig::BCType, WCSPH_BCTypes::BIConservative_numeric >
 void
 WCSPH_BI< Particles, ModelConfig >::updateGhostBoundaryDirectFromSource(
-   BoudaryPointer& ownBoundary,
+   BoundaryPointer& ownBoundary,
    FluidPointer& srcFluid,
    const IndexArray& ghostIndices,
    ModelParams& modelParams )

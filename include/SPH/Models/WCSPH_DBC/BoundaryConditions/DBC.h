@@ -10,13 +10,13 @@ namespace TNL::SPH {
 template< typename Particles, typename ModelConfig >
 template<
    typename FluidPointer,
-   typename BoudaryPointer,
+   typename BoundaryPointer,
    typename BCType,
    std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
 void
 WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary(
    FluidPointer& fluid,
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -109,12 +109,12 @@ WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundary(
 template< typename Particles, typename ModelConfig >
 template<
    typename OpenBoundaryPointer,
-   typename BoudaryPointer,
+   typename BoundaryPointer,
    typename BCType,
    std::enable_if_t< std::is_same_v< BCType, WCSPH_BCTypes::DBC >, bool > Enabled >
 void
 WCSPH_DBC< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary(
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {

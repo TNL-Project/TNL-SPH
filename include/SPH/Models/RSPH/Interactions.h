@@ -71,16 +71,16 @@ public:
    /**
     * Function to realize fluid-fluid and fluid-boundary interaction.
     */
-   template< typename FluidPointer, typename BoudaryPointer >
+   template< typename FluidPointer, typename BoundaryPointer >
    void
-   interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    /**
     * Function to realize boundary conditions for solid wall.
     */
-   template< typename FluidPointer, typename BoudaryPointer >
+   template< typename FluidPointer, typename BoundaryPointer >
    void
-   updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams );
+   updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams );
 
    /**
     * Perform preinteraction procedures.

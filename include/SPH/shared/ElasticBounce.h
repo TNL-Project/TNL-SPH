@@ -20,9 +20,9 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
+   template< typename FluidPointer, typename BoundaryPointer, typename SPHState >
    static void
-   boundaryCorrection( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
+   boundaryCorrection( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
       GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
@@ -99,9 +99,9 @@ public:
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
    }
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
+   template< typename FluidPointer, typename BoundaryPointer, typename SPHState >
    static void
-   boundaryCorrectionPST( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
+   boundaryCorrectionPST( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       // do nothing
    }
@@ -119,9 +119,9 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
+   template< typename FluidPointer, typename BoundaryPointer, typename SPHState >
    static void
-   boundaryCorrection( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
+   boundaryCorrection( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
       GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
@@ -207,9 +207,9 @@ public:
       Algorithms::parallelFor< DeviceType >( 0, numberOfParticles, particleLoop );
    }
 
-   template< typename FluidPointer, typename BoudaryPointer, typename SPHState >
+   template< typename FluidPointer, typename BoundaryPointer, typename SPHState >
    static void
-   boundaryCorrectionPST( FluidPointer& fluid, BoudaryPointer& boundary, SPHState& sphState, const RealType& dt )
+   boundaryCorrectionPST( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState, const RealType& dt )
    {
       GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
       const RealType searchRadius = fluid->getParticles()->getSearchRadius();

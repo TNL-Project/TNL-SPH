@@ -11,9 +11,9 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
-SHTC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+SHTC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );
@@ -144,9 +144,9 @@ SHTC< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
-SHTC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+SHTC< Particles, ModelConfig >::updateSolidBoundary( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    // neighborhood search tokens
    typename Particles::NeighborsLoopParams searchInFluid( fluid->getParticles() );

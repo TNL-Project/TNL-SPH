@@ -11,9 +11,9 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
-WCSPH_MFD< Particles, ModelConfig >::computeMomentumMatrices( FluidPointer& fluid, BoudaryPointer& boundary )
+WCSPH_MFD< Particles, ModelConfig >::computeMomentumMatrices( FluidPointer& fluid, BoundaryPointer& boundary )
 {
    auto FluidFluid =
       [ = ] __cuda_callable__( LocalIndexType i, LocalIndexType j, VectorType & r_i, MomentumMatrixType * M_i ) mutable
@@ -35,7 +35,7 @@ WCSPH_MFD< Particles, ModelConfig >::computeMomentumMatrices( FluidPointer& flui
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
 WCSPH_MFD< Particles, ModelConfig >::computeABFsCoefs(
    const BaseVectorType& W_ji const MomentumMatrixType& M_i,
@@ -45,9 +45,9 @@ WCSPH_MFD< Particles, ModelConfig >::computeABFsCoefs(
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
-WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPointer& boundary, ModelParams& modelParams )
+WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoundaryPointer& boundary, ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
    GlobalIndexType numberOfParticles = fluid->getParticles()->getNumberOfParticles();
@@ -185,11 +185,11 @@ WCSPH_BI< Particles, ModelConfig >::interaction( FluidPointer& fluid, BoudaryPoi
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename BoudaryPointer >
+template< typename FluidPointer, typename BoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
    FluidPointer& fluid,
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -280,10 +280,10 @@ WCSPH_BI< Particles, ModelConfig >::updateSolidBoundary(
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename OpenBoundaryPointer, typename BoudaryPointer >
+template< typename OpenBoundaryPointer, typename BoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::updateSolidBoundaryOpenBoundary(
-   BoudaryPointer& boundary,
+   BoundaryPointer& boundary,
    OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
@@ -366,11 +366,11 @@ WCSPH_BI< Particles, ModelConfig >::filterDensity( FluidPointer& fluid, ModelPar
 }
 
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
@@ -463,11 +463,11 @@ WCSPH_BI< Particles, ModelConfig >::interactionWithOpenBoundary(
 
 //FIXME: WTF is this function
 template< typename Particles, typename ModelConfig >
-template< typename FluidPointer, typename OpenBoudaryPointer >
+template< typename FluidPointer, typename OpenBoundaryPointer >
 void
 WCSPH_BI< Particles, ModelConfig >::interactionWithBoundaryPatches(
    FluidPointer& fluid,
-   OpenBoudaryPointer& openBoundary,
+   OpenBoundaryPointer& openBoundary,
    ModelParams& modelParams )
 {
    /* PARTICLES AND NEIGHBOR SEARCH ARRAYS */
