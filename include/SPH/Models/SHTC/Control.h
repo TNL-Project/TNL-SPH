@@ -13,7 +13,6 @@
 
 #include <SPH/ParseConfigFile.h>
 //// FIXME: Not necessary
-//#include <SPH/OpenBoundaryConfig.h>
 
 namespace TNL::SPH {
 

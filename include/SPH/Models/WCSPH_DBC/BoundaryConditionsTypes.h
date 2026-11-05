@@ -63,5 +63,5 @@ enum class OpenBoundaryConditionsType : std::uint8_t
    Outlet = 2
 };
 
-}  //namespace WCSPH_BCTypes
+}  // namespace WCSPH_BCTypes
 }  // namespace TNL::SPH

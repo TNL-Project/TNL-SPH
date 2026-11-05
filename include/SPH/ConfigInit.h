@@ -40,29 +40,23 @@ initialize(
 
    if( ! TNL::Config::parseCommandLine( argc, argv, cliConfig, cliParams ) )
       std::cerr << "Failed to parse the command line arguments." << std::endl;
-   //return EXIT_FAILURE;
 
    // set SPH parameters
    TNL::SPH::configSetup( config );
 
    // set model parameters
-   //Model::configSetup( config );
-   //TNL::SPH::template configSetupModel< SPHConfig< Device > >( config );
-   //TNL::SPH::configSetupModel( config );
    Simulation::ModelType::ModelParams::configSetupModel( config );
 
    if( cliParams.getParameter< bool >( "config-help" ) ) {
       // TODO: re-format the message for the config (drop the program name and "--")
       std::cout << "Priting usage." << std::endl;
       TNL::Config::printUsage( config, argv[ 0 ] );
-      //return EXIT_SUCCESS;
       std::exit( EXIT_SUCCESS );
    }
    if( cliParams.getParameter< bool >( "print-static-configuration" ) ) {
       const int logWidth = cliParams.getParameter< int >( "log-width" );
       TNL::Logger consoleLogger( logWidth, std::cout );
       TNL::SPH::writeProlog< Simulation >( consoleLogger, false );
-      //return EXIT_SUCCESS;
       std::exit( EXIT_SUCCESS );
    }
 
@@ -73,7 +67,6 @@ initialize(
    catch( const std::exception& e ) {
       std::cerr << "Failed to parse the configuration file " << configPath << " due to the following error:\n"
                 << e.what() << std::endl;
-      //return EXIT_FAILURE;
    }
    catch( ... ) {
       std::cerr << "Failed to parse the configuration file " << configPath << " due to an unknown C++ exception." << std::endl;
@@ -87,7 +80,6 @@ initialize(
       std::cerr << "The outputDirectory parameter was not found in the config and "
                    "--output-directory was not given on the command line."
                 << std::endl;
-      //return EXIT_FAILURE;
    }
 }
 

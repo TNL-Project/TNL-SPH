@@ -33,7 +33,7 @@ public:
       using RealType = typename SPHTraitsType::RealType;
       using VectorType = typename SPHTraitsType::VectorType;
 
-      config.addDelimiter( "WCSPH-DBC model parameters" );
+      config.addDelimiter( "RSPH model parameters" );
       config.addEntry< double >( "dp", "Initial particle distance.", 0 );
       config.addEntry< double >( "h", "SPH method smoothing lentgh.", 0 );
       config.addEntry< double >( "mass", "Mass of particle, constant for all particles.", 0 );

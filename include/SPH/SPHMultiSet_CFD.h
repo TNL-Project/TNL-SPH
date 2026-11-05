@@ -62,10 +62,6 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
-   //SPHMultiSet_CFD() = default;
-
-   //SPHMultiSet_CFD() : logger( 100, std::cout ) {};
-
    SPHMultiSet_CFD( std::ostream& out = std::cout )
    : logger( 100, out )
    {}
@@ -121,9 +117,6 @@ public:
    void
    performNeighborSearch( bool performBoundarySearch = false );
 
-   /**
-    *
-    */
    void
    removeParticlesOutOfDomain();
 
@@ -132,10 +125,6 @@ public:
     */
    void
    removeParticlesOutOfDensityLimits();
-   //requires ( requires { &Model::action; std::is_member_function_pointer_v< decltype( &Model::action ) >; } )
-
-   //void
-   //performNeighborSearch( TNL::Logger& log, bool performBoundarySearch = false );
 
    //TODO: Should we have log in this functions?
    template< typename ParticleSetPointer >
@@ -187,15 +176,9 @@ public:
    void
    interact();
 
-   /**
-    *
-    */
    void
    computeTimeStep();
 
-   /**
-    *
-    */
    void
    updateTime();
 
@@ -215,9 +198,6 @@ public:
    /**
     * \brief General integrator wrapper
     */
-   //template< typename IntegrationStage >
-   //void
-   //integrate( IntegrationStage stage );
 
    /**
     * \brief Perform integration setp - wrapper for Verlet integration scheme step.
@@ -362,16 +342,5 @@ public:
 };
 
 }  // namespace TNL::SPH
-
-template< typename Model >
-std::ostream&
-operator<<( std::ostream& str, const TNL::SPH::SPHMultiSet_CFD< Model >& sphSimulation )
-{
-   TNL::Logger logger( 100, str );
-
-   sphSimulation.writeProlog( logger );
-
-   return str;
-}
 
 #include <SPH/SPHMultiSet_CFD.hpp>
