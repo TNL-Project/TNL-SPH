@@ -41,7 +41,7 @@ requires std::is_same_v<
     typename Simulation::ModelParams::IntegrationScheme,
     TNL::SPH::IntegrationSchemes::VerletScheme< typename SPHDefs::SPHConfig >
 >
-void execLocalTimestepping( Simulation& sph )
+void execLocalTimeStepping( Simulation& sph )
 {
    MassMonitor massMonitor;
    massMonitor.init( sph.fluidSets, sph.modelParams );
@@ -119,7 +119,7 @@ int main( int argc, char* argv[] )
    sph.init( argc, argv );
 
    sph.writeProlog();
-   execLocalTimestepping( sph );
+   execLocalTimeStepping( sph );
    sph.writeEpilog();
 }
 

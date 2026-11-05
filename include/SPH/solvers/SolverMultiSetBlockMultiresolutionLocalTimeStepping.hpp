@@ -5,14 +5,14 @@
 
 #include <cmath>
 
-#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.h>
+#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.h>
 #include <SPH/tempFunctionsToConfigMultiresolution.h>
 
 namespace TNL::SPH {
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::init( int argc, char* argv[] )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::init( int argc, char* argv[] )
 {
    auto& params = this->parameters;
    auto& log = this->logger;
@@ -41,7 +41,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::init( int argc, ch
 
 template< typename Model >
 float
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getLevelRefinementFactor( int idx ) const
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::getLevelRefinementFactor( int idx ) const
 {
    const std::string subdomainKey = "subdomain-" + std::to_string( idx ) + "-";
    return this->parametersSubdomains.template getParameter< float >( subdomainKey + "refinement-factor" );
@@ -49,7 +49,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getLevelRefinement
 
 template< typename Model >
 int
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getLevelOverlapWidth( int idx ) const
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::getLevelOverlapWidth( int idx ) const
 {
    const float rfOwn = getLevelRefinementFactor( idx );
    for( const auto& iface : this->topology.getInterfacesOfSubdomain( idx ) )
@@ -60,7 +60,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getLevelOverlapWid
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBasedMultiResolutionSimulation()
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::initializeBlockBasedMultiResolutionSimulation()
 {
    auto& params = this->parameters;
    auto& log = this->logger;
@@ -190,7 +190,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initializeBlockBas
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initParticleSets()
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::initParticleSets()
 {
    const int nSubsets = this->topology.getNumberOfSubdomains();
    this->numberOfSubsets = nSubsets;
@@ -225,7 +225,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initParticleSets()
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initMultiResolutionBoundaryPatches()
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::initMultiResolutionBoundaryPatches()
 {
    const int mrbCount = this->topology.getNumberOfSubdomainInterfaces();
    multiresolutionBoundaryPatchesLTS.resize( mrbCount );
@@ -262,7 +262,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::initMultiResolutio
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interact( int subdomainIdx )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::interact( int subdomainIdx )
 {
    this->timeMeasurement.start( "interact" );
 
@@ -282,7 +282,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::interact( int subd
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateLevel( int idx )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::integrateLevel( int idx )
 {
    this->timeMeasurement.start( "integrate" );
    /* One Euler rebase per 20 steps of THIS level = one per 20*dt_L of physical
@@ -305,7 +305,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::integrateLevel( in
 
 template< typename Model >
 int
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getNumberOfSubsteps( int level ) const
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::getNumberOfSubsteps( int level ) const
 {
    return levelSubsteps[ level ];
 }
@@ -313,7 +313,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::getNumberOfSubstep
 template< typename Model >
 template< typename SubstepUpdate >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::recursiveSubdomainsLoop( SubstepUpdate&& subdomainSubstep )
 {
    const int nLevels = this->numberOfSubsets;
    const RealType theta = this->modelParams.ltsTheta;
@@ -354,7 +354,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::recursiveSubdomain
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::updateLevelTimeSteps()
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::updateLevelTimeSteps()
 {
    if constexpr( std::is_same_v< TimeStepping, ConstantTimeStep< SPHConfig > > ) {
       return;
@@ -389,7 +389,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::updateLevelTimeSte
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffers( RealType dt, int fineLevelIdx )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::advectSubstepBuffers( RealType dt, int fineLevelIdx )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
@@ -404,7 +404,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::advectSubstepBuffe
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshBuffersFromNeighbor( RealType theta, int fineLevelIdx )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::refreshBuffersFromNeighbor( RealType theta, int fineLevelIdx )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
@@ -421,7 +421,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshBuffersFrom
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::stampBuffersAnchor( int fineLevelIdx )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::stampBuffersAnchor( int fineLevelIdx )
 {
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchesLTS.size(); p++ ) {
       const auto& iface = this->multiresolutionBoundaryPatchInterfaces[ p ];
@@ -436,7 +436,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::stampBuffersAnchor
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::accumulateInterfaceMassesFromNeighbor(
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::accumulateInterfaceMassesFromNeighbor(
    int neighborIdx,
    RealType dt )
 {
@@ -447,7 +447,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::accumulateInterfac
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshSubstepSearches( int fineIdx )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::refreshSubstepSearches( int fineIdx )
 {
    // positions of the fine fluid and of all buffer bands changed during the last substep
    if( ! multiresolutionBoundaryPatchesLTS.empty() )
@@ -473,7 +473,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::refreshSubstepSear
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::syncMultiresolutionUpdate()
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::syncMultiresolutionUpdate()
 {
    this->timeMeasurement.start( "multiresolution-update" );
 
@@ -492,7 +492,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::syncMultiresolutio
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::save( bool writeParticleCellIndex )
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::save( bool writeParticleCellIndex )
 {
    if( ( this->verbose == "with-snapshot" ) || ( this->verbose == "full" ) )
       this->writeInfo();
@@ -552,7 +552,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::save( bool writePa
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::writeProlog( bool writeSystemInformation ) noexcept
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::writeProlog( bool writeSystemInformation ) noexcept
 {
    BaseType::writeProlog( writeSystemInformation );
 
@@ -581,7 +581,7 @@ SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::writeProlog( bool 
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >::writeInfo() noexcept
+SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >::writeInfo() noexcept
 {
    BaseType::writeInfo();
 

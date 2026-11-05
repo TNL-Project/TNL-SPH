@@ -5,7 +5,7 @@
  * Local-timestepping driver (schedule v2). The Berger-Colella recursion over the
  * levels, the search refreshes and the band state refreshes (exact at level-clock
  * coincidences, theta-blended at level midpoints) are driven by the solver - see
- * SolverMultiSetBlockMultiresolutionLocalTimestepping::recursiveSubdomainsLoop. The
+ * SolverMultiSetBlockMultiresolutionLocalTimeStepping::recursiveSubdomainsLoop. The
  * case supplies only the per-substep physics via the lambda below; band membership
  * (creation, conversion, removal) is re-evaluated only at the sync point.
  */
@@ -15,7 +15,7 @@ requires std::is_same_v<
     typename Simulation::ModelParams::IntegrationScheme,
     TNL::SPH::IntegrationSchemes::VerletScheme< typename SPHDefs::SPHConfig >
 >
-void execLocalTimestepping( Simulation& sph )
+void execLocalTimeStepping( Simulation& sph )
 {
    MassMonitor massMonitor;
    massMonitor.init( sph.fluidSets, sph.modelParams );
@@ -63,7 +63,7 @@ int main( int argc, char* argv[] )
    sph.writeProlog();
    sph.logger.writeParameter( "LTS schedule:", "v2 (unified)" );
 
-   execLocalTimestepping( sph );
+   execLocalTimeStepping( sph );
 
    sph.writeEpilog();
 }

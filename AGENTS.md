@@ -86,7 +86,7 @@ postpro.py                 # post-processing
 | Add a boundary condition type (BI) | `include/SPH/Models/WCSPH_BI/BoundaryConditionsTypes.h` | Numerical variants: `BI_*`, `BIConsistent_*`, `BIConservative_numeric` |
 | Add an integration scheme | `include/SPH/Models/<model>/IntegrationSchemes/` | Verlet, SymplecticVerlet, RK4, Midpoint (BI), ExplicitEuler (SHTC); each file defines scheme + scheme-variables classes |
 | Change time stepping | `include/SPH/TimeStep.h` | `ConstantTimeStep`, `VariableTimeStep`, `VariableTimeStepWithReduction`; selected via `SPHParams::TimeStepping` |
-| Change solver strategy (MR / remeshing / LTS) | `include/SPH/solvers/SolverMultiSet*.h/.hpp` | `SolverMultiSet` (single-resolution), `SolverMultiSetRemeshed`, `SolverMultiSetBlockMultiresolution`, `SolverMultiSetBlockMultiresolutionLocalTimestepping` |
+| Change solver strategy (MR / remeshing / LTS) | `include/SPH/solvers/SolverMultiSet*.h/.hpp` | `SolverMultiSet` (single-resolution), `SolverMultiSetRemeshed`, `SolverMultiSetBlockMultiresolution`, `SolverMultiSetBlockMultiresolutionLocalTimeStepping` |
 | Multiresolution buffers / level overlays | `include/SPH/MultiresolutionRectangleBuffer{,LocalTimeStepping}.h`, `GhostZone.h`, `BoundaryGhostParticles.h` | Design docs: `Documentation/multiresolution-*.md` — read before touching |
 | Open boundaries (inlet/outlet) | `include/SPH/OpenBoundary*.h` + per-model `OpenBoundaryConditions*` / `OpenBoundaryConfig.h` | Buffers store free-zone/buffer-zone particles; per-model extrapolation in `OpenBoundaryConditionsDataExtrapolation.h` |
 | Periodic boundaries | `include/SPH/PeriodicBoundaryBuffers.h`, `include/SPH/shared/PeriodicBoundaryConditions.h` | `SPHConfig::numberOfPeriodicBuffers` selects copies per side |
@@ -108,7 +108,7 @@ postpro.py                 # post-processing
 | `SolverMultiSetBase<Model>` | class | `include/SPH/solvers/SolverMultiSetBase.h/.hpp` | Base of the modular solver hierarchy |
 | `SolverMultiSet` / `SolverMultiSetRemeshed` | class | `include/SPH/solvers/SolverMultiSet{,Remeshed}.h/.hpp` | Single-resolution and remeshed solver variants |
 | `SolverMultiSetBlockMultiresolution` | class | `include/SPH/solvers/SolverMultiSetBlockMultiresolution.h/.hpp` | Block-based multiresolution solver (level overlays, coarse→fine interaction) |
-| `SolverMultiSetBlockMultiresolutionLocalTimestepping` | class | `include/SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.h/.hpp` | MR solver with per-level local time stepping — focus of the current branch |
+| `SolverMultiSetBlockMultiresolutionLocalTimeStepping` | class | `include/SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.h/.hpp` | MR solver with per-level local time stepping — focus of the current branch |
 | `ParticleSet<...>` | class | `include/SPH/ParticleSet.h` | Base class for every particle collection (fluid, boundary, open-boundary, MR buffers) |
 | `Fluid` / `Boundary` / `OpenBoundary` | class | `include/SPH/{Fluid,Boundary,OpenBoundaryBuffers}.h` | Particle sets for fluid / boundary / open-boundary zones |
 | `VariablesBase<Derived>` | class | `include/SPH/VariablesBase.h` | CRTP base for per-model variable sets (pairs with `VariablesGhostInit.h`) |
@@ -258,7 +258,7 @@ Current state (expected on this branch):
   `multiresolution-ghost-boundaries-design.md`, and `multiresolution-local-timestepping.md`
   are the of-record documents — consult them before touching MR buffers, ghosts, or LTS.
 - Solvers: `SolverMultiSetBlockMultiresolution` (uniform step across levels) and
-  `SolverMultiSetBlockMultiresolutionLocalTimestepping` (per-level steps), both in the
+  `SolverMultiSetBlockMultiresolutionLocalTimeStepping` (per-level steps), both in the
   `SolverMultiSetBase` hierarchy.
 - Buffers: `MultiresolutionBoundary` provides per-level boundary particle overlays
   (with `MassNodes` for density/mass redistribution across levels);

@@ -87,5 +87,5 @@ using Model = TNL::SPH::WCSPH_BI< ParticlesSys, SPHParams< Device > >;
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.h>
-using Simulation = TNL::SPH::SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >;
+#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.h>
+using Simulation = TNL::SPH::SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >;

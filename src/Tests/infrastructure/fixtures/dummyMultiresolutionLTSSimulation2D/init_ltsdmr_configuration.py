@@ -5,7 +5,7 @@ Local-timestepping multiresolution test configuration initializer.
 Mirrors init_2dmr_configuration.py for configurations tagged with
 "timestepping": "local" in configurations.py: builds the same rectangular
 subdomain geometry and emits the dummyConfigLTS2D.jsonc configuration for the
-SolverMultiSetBlockMultiresolutionLocalTimestepping dummy driver.
+SolverMultiSetBlockMultiresolutionLocalTimeStepping dummy driver.
 """
 
 import os

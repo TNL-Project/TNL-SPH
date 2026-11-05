@@ -93,8 +93,8 @@ using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHCo
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.h>
-using Simulation = TNL::SPH::SolverMultiSetBlockMultiresolutionLocalTimestepping< Model >;
+#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.h>
+using Simulation = TNL::SPH::SolverMultiSetBlockMultiresolutionLocalTimeStepping< Model >;
 
 // Custom post processing tools
 #include <SPH/shared/massConservationMonitor.h>

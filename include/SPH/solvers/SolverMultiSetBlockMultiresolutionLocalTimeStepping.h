@@ -26,7 +26,7 @@ namespace TNL::SPH {
  * at sync points, when all level clocks coincide again.
  */
 template< typename Model >
-class SolverMultiSetBlockMultiresolutionLocalTimestepping : public SolverMultiSetBlockMultiresolution< Model >
+class SolverMultiSetBlockMultiresolutionLocalTimeStepping : public SolverMultiSetBlockMultiresolution< Model >
 {
 public:
    using BaseType = SolverMultiSetBlockMultiresolution< Model >;
@@ -56,7 +56,7 @@ public:
       ModelParams >;
    using MultiresolutionBoundaryLTSPointer = Pointers::SharedPointer< MultiresolutionBoundaryLTS, DeviceType >;
 
-   SolverMultiSetBlockMultiresolutionLocalTimestepping( std::ostream& out = std::cout )
+   SolverMultiSetBlockMultiresolutionLocalTimeStepping( std::ostream& out = std::cout )
    : BaseType( out )
    {}
 
@@ -170,4 +170,4 @@ public:
 
 }  // namespace TNL::SPH
 
-#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimestepping.hpp>
+#include <SPH/solvers/SolverMultiSetBlockMultiresolutionLocalTimeStepping.hpp>
