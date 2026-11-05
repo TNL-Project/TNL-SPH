@@ -24,7 +24,12 @@ struct MDBC
    }
 };
 
-struct MDBCVelocity  //not implement yet
+/**
+ * \todo DRAFT - TNL-SPH draft boundary condition, still unimplemented.
+ * Kept intentionally as a documented placeholder (user decision); tracked as follow-up
+ * work in Documentation/refactor-followups.md (refactor-followups registry).
+ */
+struct MDBCVelocity
 {
    static constexpr bool
    integrateInTime()
@@ -33,7 +38,12 @@ struct MDBCVelocity  //not implement yet
    }
 };
 
-struct GWBC  //not implemented
+/**
+ * \todo DRAFT - TNL-SPH draft boundary condition, still unimplemented.
+ * Kept intentionally as a documented placeholder (user decision); tracked as follow-up
+ * work in Documentation/refactor-followups.md (refactor-followups registry).
+ */
+struct GWBC
 {
    static constexpr bool
    integrateInTime()
