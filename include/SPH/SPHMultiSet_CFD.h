@@ -23,10 +23,10 @@
 namespace TNL::SPH {
 
 template< typename Model >
-class SPHMultiset_CFD
+class SPHMultiSet_CFD
 {
 public:
-   using SimulationType = SPHMultiset_CFD< Model >;
+   using SimulationType = SPHMultiSet_CFD< Model >;
    using DeviceType = typename Model::DeviceType;
    using ModelType = Model;
    using ModelParams = typename ModelType::ModelParams;
@@ -62,11 +62,11 @@ public:
    using ComputationTimeMeasurement = TNL::SPH::TimerMeasurement;
    using SimulationMonitor = SimulationMonitor< SimulationType >;
 
-   //SPHMultiset_CFD() = default;
+   //SPHMultiSet_CFD() = default;
 
-   //SPHMultiset_CFD() : logger( 100, std::cout ) {};
+   //SPHMultiSet_CFD() : logger( 100, std::cout ) {};
 
-   SPHMultiset_CFD( std::ostream& out = std::cout )
+   SPHMultiSet_CFD( std::ostream& out = std::cout )
    : logger( 100, out )
    {}
 
@@ -365,7 +365,7 @@ public:
 
 template< typename Model >
 std::ostream&
-operator<<( std::ostream& str, const TNL::SPH::SPHMultiset_CFD< Model >& sphSimulation )
+operator<<( std::ostream& str, const TNL::SPH::SPHMultiSet_CFD< Model >& sphSimulation )
 {
    TNL::Logger logger( 100, str );
 
@@ -374,4 +374,4 @@ operator<<( std::ostream& str, const TNL::SPH::SPHMultiset_CFD< Model >& sphSimu
    return str;
 }
 
-#include <SPH/SPHMultiset_CFD.hpp>
+#include <SPH/SPHMultiSet_CFD.hpp>

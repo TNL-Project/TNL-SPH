@@ -11,12 +11,12 @@
 #include <SPH/Models/RSPH/control.h>
 // placeholder for empty open boundary conditions
 #include <SPH/Models/emptyOpenBCPlaceholder.h>
-#include <SPH/Models/SPHMultisetSolverTemplate.h>
+#include <SPH/Models/SPHMultiSetSolverTemplate.h>
 
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-class RSPH : public SPHMultisetSolverTemplate< Particles, ModelConfig >
+class RSPH : public SPHMultiSetSolverTemplate< Particles, ModelConfig >
 {
 public:
    using Model = RSPH< Particles, ModelConfig >;

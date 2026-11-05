@@ -22,13 +22,13 @@ and distributed multi-GPU execution through CUDA-aware MPI with 1D domain decomp
 │       │   ├── RSPH/                   # Riemann SPH
 │       │   ├── SHTC/                   # SHTC formulation
 │       │   ├── WCSPH_MFD/              # archived/incomplete (only Interactions.hpp)
-│       │   ├── SPHMultisetSolverTemplate.h   # base class for models
+│       │   ├── SPHMultiSetSolverTemplate.h   # base class for models
 │       │   └── DiffusiveTerms.h, ViscousTerms.h, EquationOfState.h,
 │       │       DensityFilters.h, VelocityFilters.h, RiemannSolvers.h,
 │       │       PressureGradient.h, BoundaryViscousTerms.h   # interchangeable policy terms
 │       ├── solvers/                    # SolverMultiSet* family (single-res, remeshed, MR, MR+LTS)
 │       ├── shared/                     # Cross-model utilities (Measuretool, PST, interpolation, energy, ...)
-│       ├── SPHMultiset_CFD.h/.hpp      # Main simulation orchestrator
+│       ├── SPHMultiSet_CFD.h/.hpp      # Main simulation orchestrator
 │       ├── ParticleSet.h, Fluid.h, Boundary.h   # particle-set base + fluid/boundary sets
 │       ├── OpenBoundaryBuffers.h, OpenBoundaryConfig.h, PeriodicBoundaryBuffers.h
 │       ├── MultiresolutionBuffer.h, MultiresolutionRectangleBuffer.h,
@@ -77,7 +77,7 @@ postpro.py                 # post-processing
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add a new SPH formulation | `include/SPH/Models/<NewModel>/` | Mirror `WCSPH_DBC/` layout: `control.h` (config class), `Interactions.h/.hpp` (model class deriving from `SPHMultisetSolverTemplate`), `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/` |
+| Add a new SPH formulation | `include/SPH/Models/<NewModel>/` | Mirror `WCSPH_DBC/` layout: `control.h` (config class), `Interactions.h/.hpp` (model class deriving from `SPHMultiSetSolverTemplate`), `Variables.h`, `BoundaryConditionsTypes.h`, `IntegrationSchemes/` |
 | Add a diffusive term | `include/SPH/Models/DiffusiveTerms.h` | Existing: `None`, `MolteniDiffusiveTerm`, `FourtakasDiffusiveTerm`; select in the example's `SPHParams` |
 | Add a viscous term | `include/SPH/Models/ViscousTerms.h` (fluid), `BoundaryViscousTerms.h` (boundary) | Existing: `ArtificialViscosity`, `PhysicalViscosity`, `PhysicalViscosity_MVT/_MGVT`, `CombinedViscosity` |
 | Add an equation of state | `include/SPH/Models/EquationOfState.h` | Existing: `TaitWeaklyCompressibleEOS` (+ linearized) |
@@ -104,7 +104,7 @@ postpro.py                 # post-processing
 
 | Symbol | Type | Location | Role |
 |--------|------|----------|------|
-| `SPHMultiset_CFD<Model>` | class | `include/SPH/SPHMultiset_CFD.h/.hpp` | Top-level simulation: owns `Fluid`, `Boundary`, `OpenBoundary` particle sets, time stepping, VTK reader/writer, `SimulationMonitor`; API used by `case.h` (`init`, `performNeighborSearch`, `interact`, `computeTimeStep`, `integrateVerletStep`, `makeSnapshot`, `measure`, `updateTime`) |
+| `SPHMultiSet_CFD<Model>` | class | `include/SPH/SPHMultiSet_CFD.h/.hpp` | Top-level simulation: owns `Fluid`, `Boundary`, `OpenBoundary` particle sets, time stepping, VTK reader/writer, `SimulationMonitor`; API used by `case.h` (`init`, `performNeighborSearch`, `interact`, `computeTimeStep`, `integrateVerletStep`, `makeSnapshot`, `measure`, `updateTime`) |
 | `SolverMultiSetBase<Model>` | class | `include/SPH/solvers/SolverMultiSetBase.h/.hpp` | Base of the modular solver hierarchy |
 | `SolverMultiSet` / `SolverMultiSetRemeshed` | class | `include/SPH/solvers/SolverMultiSet{,Remeshed}.h/.hpp` | Single-resolution and remeshed solver variants |
 | `SolverMultiSetBlockMultiresolution` | class | `include/SPH/solvers/SolverMultiSetBlockMultiresolution.h/.hpp` | Block-based multiresolution solver (level overlays, coarse→fine interaction) |
@@ -114,7 +114,7 @@ postpro.py                 # post-processing
 | `VariablesBase<Derived>` | class | `include/SPH/VariablesBase.h` | CRTP base for per-model variable sets (pairs with `VariablesGhostInit.h`) |
 | `SPHFluidTraits<SPHConfig>` | class | `include/SPH/SPHTraits.h` | Type-traits bundle (index, real, vector, array types) |
 | `WCSPH_DBC` / `WCSPH_BI` / `RSPH` / `SHTC` | class | `include/SPH/Models/*/Interactions.h(.hpp)`, `SHTC.h` | SPH model implementations, composed of the policy terms below |
-| `SPHMultisetSolverTemplate<Particles,ModelConfig>` | class | `include/SPH/Models/SPHMultisetSolverTemplate.h` | Base class shared by models (RSPH, SHTC derive publicly) |
+| `SPHMultiSetSolverTemplate<Particles,ModelConfig>` | class | `include/SPH/Models/SPHMultiSetSolverTemplate.h` | Base class shared by models (RSPH, SHTC derive publicly) |
 | `WendlandKernel` | class | `include/SPH/Kernels.h` | Wendland C2 kernel, 2D/3D specializations |
 | `DiffusiveTerms::*`, `ViscousTerms::*`, `EquationsOfState::*` | classes | `include/SPH/Models/{DiffusiveTerms,ViscousTerms,EquationOfState}.h` | Interchangeable compile-time policy terms |
 | `ConstantTimeStep` / `VariableTimeStep` / `VariableTimeStepWithReduction` | class | `include/SPH/TimeStep.h` | Time-step computation; variable variants from CFL-type conditions |
@@ -164,7 +164,7 @@ postpro.py                 # post-processing
 
 ## UNIQUE STYLES
 
-- **Compile-time policy bundle per simulation**: every case defines `ParticleSystemConfig`, `SPHConfig`, and `SPHParams` (aliased to `SPHDefs`) in `template/config.h` — kernel, EOS, diffusive/viscous terms, BC type, time stepping, and integration scheme are all `using` typedefs swapped per case; `Model = <Formulation><ParticlesSys, SPHParams>` and `Simulation = SPHMultiset_CFD<Model>` complete the assembly.
+- **Compile-time policy bundle per simulation**: every case defines `ParticleSystemConfig`, `SPHConfig`, and `SPHParams` (aliased to `SPHDefs`) in `template/config.h` — kernel, EOS, diffusive/viscous terms, BC type, time stepping, and integration scheme are all `using` typedefs swapped per case; `Model = <Formulation><ParticlesSys, SPHParams>` and `Simulation = SPHMultiSet_CFD<Model>` complete the assembly.
 - **Uniform `case.h` driver loop**: every example's `case.h` is the same thin `main()`: `init → while(runTheSimulation()){ performNeighborSearch; interact; computeTimeStep; integrate{Scheme}Step(BCType::integrateInTime()); makeSnapshot; measure; updateTime; }` — model differences live in the headers, not the loop.
 - **Everything is a `ParticleSet`**: `Fluid`, `Boundary`, `OpenBoundary`, and the multiresolution buffers all derive `ParticleSet` with their own variable sets, so ghost/boundary logic shares the particle-machinery API.
 - **CRTP variable sets**: `VariablesBase<Derived>` + per-model `FluidVariables`/`BoundaryVariables`/`OpenBoundaryVariables` (two layers: `FluidVariablesBase` + final class); ghost initialization via `VariablesGhostInit.h`.

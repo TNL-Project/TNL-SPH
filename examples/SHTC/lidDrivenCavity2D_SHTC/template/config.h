@@ -72,6 +72,6 @@ using ParticleSystemType = TNL::Particles::ParticlesCellList< ParticlesConfig, D
 using Model = TNL::SPH::SHTC< ParticleSystemType, SPHDefs >;
 
 // SPH simulation type
-#include <SPH/SPHMultiset_CFD.h>
-using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
+#include <SPH/SPHMultiSet_CFD.h>
+using Simulation = TNL::SPH::SPHMultiSet_CFD< Model >;
 

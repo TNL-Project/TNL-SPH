@@ -93,8 +93,8 @@ using BoundaryCorrection = TNL::SPH::ElasticBounceLight< ParticlesSys, SPHDefs::
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/SPHMultiset_CFD.h>
-using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
+#include <SPH/SPHMultiSet_CFD.h>
+using Simulation = TNL::SPH::SPHMultiSet_CFD< Model >;
 
 // Custom post processing tools
 #include <SPH/shared/energyEvaluation/energyFields.h>

@@ -630,7 +630,7 @@ SolverMultiSet< Model >::integrate( const Stage integrationStage, const bool int
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
+SPHMultiSet_CFD< Model >::synchronizeDistributedSimulation()
 {
    writeLog( "Starting synchronization.", "" );
    timeMeasurement.start( "synchronize" );
@@ -642,7 +642,7 @@ SPHMultiset_CFD< Model >::synchronizeDistributedSimulation()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::resetOverlaps()
+SPHMultiSet_CFD< Model >::resetOverlaps()
 {
    //TODO: This should be paritcles method
    fluid->getParticles()->removeParticlesOutOfDomain();
@@ -651,7 +651,7 @@ SPHMultiset_CFD< Model >::resetOverlaps()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::performLoadBalancing()
+SPHMultiSet_CFD< Model >::performLoadBalancing()
 {
    //synchronize comp. time
    fluid->getDistributedParticles()->setNumberOfParticlesForLoadBalancing(
@@ -710,7 +710,7 @@ SPHMultiset_CFD< Model >::performLoadBalancing()
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
+SPHMultiSet_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
 {
    const std::string outputPath =
       outputDirectory + "/loadBalancingMetrics_rank" + std::to_string( TNL::MPI::GetRank() ) + ".dat";
@@ -724,7 +724,7 @@ SPHMultiset_CFD< Model >::writeLoadBalancingInfo( const int gridResize )
 
 template< typename Model >
 void
-SPHMultiset_CFD< Model >::balanceSubdomains()
+SPHMultiSet_CFD< Model >::balanceSubdomains()
 {
    if( ( timeStepping.getStep() % loadBalancingStepInterval == 0 ) && ( timeStepping.getStep() > 1 ) ) {
       performNeighborSearch( true );

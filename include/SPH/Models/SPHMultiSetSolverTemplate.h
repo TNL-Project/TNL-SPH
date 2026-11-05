@@ -6,13 +6,13 @@
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-class SPHMultisetSolverTemplate
+class SPHMultiSetSolverTemplate
 {
 public:
    /**
     * Constructor.
     */
-   SPHMultisetSolverTemplate() = default;
+   SPHMultiSetSolverTemplate() = default;
 
    /**
     * Print model identifier.

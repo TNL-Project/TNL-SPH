@@ -93,6 +93,6 @@ using BoundaryCorrection = TNL::SPH::ElasticBounce< ParticlesSys, SPHDefs::SPHCo
 /**
  * Include type of SPH simulation.
  */
-#include <SPH/SPHMultiset_CFD.h>
-using Simulation = TNL::SPH::SPHMultiset_CFD< Model >;
+#include <SPH/SPHMultiSet_CFD.h>
+using Simulation = TNL::SPH::SPHMultiSet_CFD< Model >;
 

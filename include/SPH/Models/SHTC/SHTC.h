@@ -11,12 +11,12 @@
 #include <SPH/Models/SHTC/control.h>
 // placeholder for empty open boundary conditions
 #include <SPH/Models/emptyOpenBCPlaceholder.h>
-#include <SPH/Models/SPHMultisetSolverTemplate.h>
+#include <SPH/Models/SPHMultiSetSolverTemplate.h>
 
 namespace TNL::SPH {
 
 template< typename Particles, typename ModelConfig >
-class SHTC : public SPHMultisetSolverTemplate< Particles, ModelConfig >
+class SHTC : public SPHMultiSetSolverTemplate< Particles, ModelConfig >
 {
 public:
    using Model = SHTC< Particles, ModelConfig >;
