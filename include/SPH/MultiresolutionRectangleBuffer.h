@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <climits>
 #include <functional>
 #include <string>
@@ -80,6 +81,19 @@ template<
    typename OpenBoundaryConfig,
    typename SPHDefs >
 // TODO: Derive from ParticleSet or OpenBoundaryBuffer?
+/**
+ * \brief Overlap-aware multiresolution buffer patch for uniform and local time stepping.
+ *
+ * The band width follows the patch's own ParticleSet overlap width: an intermediate
+ * frame frameMid splits the band into layer 1 (frameMid XOR frameFront) and layer 2
+ * (frameBack XOR frameMid - passive BC). With overlap width 1, layer 1 is empty and the
+ * patch reduces to the single-timestep behavior. The LTS update is staged:
+ * accumulateMasses() per substep, advectBufferParticles() per substep (both layers
+ * drift ballistically), refreshVariablesFromNeighbor() to re-ground the band state
+ * from the coarser neighbor at level-clock coincidences/midpoints, and
+ * syncUpdateInterfaceBuffer() at sync points only (no advection, no accumulation,
+ * no membership change elsewhere in the window).
+ */
 class MultiresolutionBoundary : public ParticleSet< ParticlesType, SPHCaseConfig, Variables, IntegratorVariables >
 {
 public:
@@ -168,7 +182,7 @@ public:
 
       assert( ! ( inner_overlap && outer_overlap ) && "inner_overlap and outer_overlap cannot both be true!" );
 
-      bufferWidth = bufferWidthFactorConst * own_sr;
+      bufferWidth = this->getParticles()->getOverlapWidth() * own_sr;
       // if zone is inner - compute from neighbors params
       if( inner_overlap ) {
          frameOriginGlobalCoordinates = nbParticles->getGlobalOriginCoordinates() * resolutionFactor;
@@ -191,11 +205,16 @@ public:
       //TODO: I dont like the "overOffset"
       //NOTE: We increase the zone by one additional layers
       if( inner_overlap ) {
-         zoneOrigin = getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates() + 2;
+         // with-overlap shift (own fluid overlap width) + one-cell inset into the frame,
+         // so the capture ring covers one cell inside the frame on every face for any
+         // overlap width (base's literal +2 is the special case for overlap width 1)
+         zoneOrigin = getFrameFrontOriginGlobalCoordinates() - ownParticles->getGlobalOriginCoordinates()
+                    + ownParticles->getOverlapWidth() + 1;
          zoneDimensions = getFrameFrontDimensions() - 2;
       }
       if( outer_overlap ) {
-         zoneOrigin = 3;
+         // zone box in with-overlap cell coords: shift by the own-fluid overlap width
+         zoneOrigin = 2 + ownParticles->getOverlapWidth();
          zoneDimensions = getFrameFrontDimensions() - 4;
       }
       zone.assignCellsFrame( zoneOrigin, zoneDimensions, frameWidth + 1, ownDimsWithOverlap );
@@ -640,7 +659,7 @@ public:
          RealType div_r_x = 0.f;
          RealType drs_min = FLT_MAX;
 
-         ParticlesType::NeighborsLoop::exec(
+         ParticlesType::NeighborsLoopAnotherSet::exec(
             i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x, &div_r_x, &drs_min );
 
          RealType rho_x = 0.f;
@@ -741,7 +760,7 @@ public:
          for( int d = 0; d < VectorType::getSize(); d++ )
             bv_x[ d ] = 0.f;
 
-         ParticlesType::NeighborsLoop::exec( i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x );
+         ParticlesType::NeighborsLoopAnotherSet::exec( i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x );
 
          RealType rho_x;
          VectorType v_x;
@@ -779,6 +798,103 @@ public:
       (void) numberOfDryBufferParticles;
    }
 
+   /* Band state refresh from the coarser neighbor (LTS schedule v2). Interpolates rho
+      and v from the neighbor fluid - which has already advanced - and blends them with
+      the past-endpoint anchors stored in rho_old/v_old (sync-time state, or the state
+      re-stamped at the last clock coincidence):
+         q <- theta * q_interp( now ) + ( 1 - theta ) * q_anchor.
+      theta = 1 is the exact coincidence refresh. Positions are not changed - the band
+      particles have advected to their current positions with the fine level. No
+      particle is created, converted or removed here (membership changes happen only at
+      sync points): particles without interpolation support keep their current values. */
+   template< typename FluidPointer, typename ModelParams >
+   void
+   refreshVariablesFromNeighbor( FluidPointer& fluid_neihgbor, ModelParams& modelParams, const RealType theta )
+   {
+      auto searchInFluid = this->getParticles()->getSearchToken( fluid_neihgbor->getParticles() );
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+
+      auto view_points_overlap = this->getParticles()->getPoints().getView();
+      auto view_rho_overlap = this->getVariables()->rho.getView();
+      auto view_v_overlap = this->getVariables()->v.getView();
+      const auto view_rho_anchor = this->getIntegratorVariables()->rho_old.getConstView();
+      const auto view_v_anchor = this->getIntegratorVariables()->v_old.getConstView();
+      const auto view_points_fluid = fluid_neihgbor->getParticles()->getPoints().getConstView();
+      const auto view_rho_fluid = fluid_neihgbor->getVariables()->rho.getConstView();
+      const auto view_v_fluid = fluid_neihgbor->getVariables()->v.getConstView();
+
+      const unsigned int dim = SPHCaseConfig::spaceDimension;
+      const RealType searchRadius = fluid_neihgbor->getParticles()->getSearchRadius();
+      const RealType refinementFactor = searchRadius / ( 2.f * modelParams.h );
+      const RealType h = refinementFactor * modelParams.h;
+      const RealType m = std::pow( refinementFactor, dim ) * modelParams.mass;
+      const RealType blend = theta;
+      const RealType keep = 1.f - theta;
+
+      auto interpolateFluid = [ = ] __cuda_callable__(
+                                 IndexType i,
+                                 IndexType j,
+                                 VectorType & r_x,
+                                 MfdMatrixType * M_x,
+                                 MfdVectorType * brho_x,
+                                 MfdVectorPackType * bv_x ) mutable
+      {
+         const VectorType r_j = view_points_fluid[ j ];
+         const VectorType r_xj = r_x - r_j;
+         const RealType drs = l2Norm( r_xj );
+         if( drs <= searchRadius ) {
+            const RealType rho_j = view_rho_fluid[ j ];
+            const VectorType v_j = view_v_fluid[ j ];
+            const RealType V_j = m / rho_j;
+
+            *M_x += MFD::getPairCorrectionMatrix( r_xj, h ) * V_j;
+            const MfdVectorType b_x = MFD::getPairVariableAndDerivatives( r_xj, h ) * V_j;
+            *brho_x += rho_j * b_x;
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               ( *bv_x )[ d ] += v_j[ d ] * b_x;
+         }
+      };
+
+      auto particleLoop = [ = ] __cuda_callable__( IndexType i ) mutable
+      {
+         const VectorType r_x = view_points_overlap[ i ];
+         MfdMatrixType M_x = 0.f;
+         MfdVectorType brho_x = 0.f;
+         MfdVectorPackType bv_x;
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            bv_x[ d ] = 0.f;
+
+         ParticlesType::NeighborsLoopAnotherSet::exec( i, r_x, searchInFluid, interpolateFluid, &M_x, &brho_x, &bv_x );
+
+         RealType rho_x;
+         VectorType v_x;
+
+         //TODO: Use LU Decomposition so we can just reuse it different RHS
+         //TODO: Proper condition should be if( std::fabs( Matrices::determinant( M_x ) ) > extrapolationDetTreshold )
+         const RealType detM = Matrices::determinant( M_x );
+         if( M_x( 0, 0 ) > 0.05 && detM > 0.001f ) {
+            rho_x = Matrices::solve( M_x, brho_x )[ 0 ];
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               v_x[ d ] = Matrices::solve( M_x, bv_x[ d ] )[ 0 ];
+
+            view_rho_overlap[ i ] = blend * rho_x + keep * view_rho_anchor[ i ];
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               view_v_overlap[ i ][ d ] = blend * v_x[ d ] + keep * view_v_anchor[ i ][ d ];
+         }
+         else if( M_x( 0, 0 ) > 0.05f ) {
+            rho_x = brho_x[ 0 ] / M_x( 0, 0 );
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               v_x[ d ] = bv_x[ d ][ 0 ] / M_x( 0, 0 );
+
+            view_rho_overlap[ i ] = blend * rho_x + keep * view_rho_anchor[ i ];
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               view_v_overlap[ i ][ d ] = blend * v_x[ d ] + keep * view_v_anchor[ i ][ d ];
+         }
+         // else: no interpolation support - keep the current state until the next sync
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfBufferParticles, particleLoop );
+   }
+
    /*
       template< typename FluidPointer, typename ModelParams >
       void
@@ -811,20 +927,34 @@ public:
       }
    */
 
-   //TODO: Should I use static cast for the floors?
    void
    moveBufferParticles( const RealType dt )
+   {
+      advectBufferParticles( dt );
+      classifyParticlesByFrames();
+   }
+
+   /* Ballistic advection of the whole band (both layers drift with their current velocity). */
+   void
+   advectBufferParticles( const RealType dt )
    {
       auto view_r_buffer = this->getParticles()->getPoints().getView();
       const auto view_v_buffer = this->getVariables()->v.getConstView();
       const IndexType n_buffer = this->getParticles()->getNumberOfParticles();
 
-      // move buffer particles
-      auto moveBufferParticles = [ = ] __cuda_callable__( int i ) mutable
+      auto advectBufferParticles = [ = ] __cuda_callable__( int i ) mutable
       {
          view_r_buffer[ i ] += view_v_buffer[ i ] * dt;
       };
-      Algorithms::parallelFor< DeviceType >( 0, n_buffer, moveBufferParticles );
+      Algorithms::parallelFor< DeviceType >( 0, n_buffer, advectBufferParticles );
+   }
+
+   /* Frame-based retype/remove classification on the overlap-width-aware frameBack box. */
+   void
+   classifyParticlesByFrames()
+   {
+      const IndexType n_buffer = this->getParticles()->getNumberOfParticles();
+      auto view_r_buffer = this->getParticles()->getPoints().getView();
 
       // reset retype marker
       auto retypeMarker_view = retypeMarker.getView();
@@ -832,24 +962,13 @@ public:
 
       const RealType sr = this->getParticles()->getSearchRadius();
       const RealType inv_sr = 1.f / sr;
-      //const VectorType frameFrontOrigin = this->frameFrontOrigin;
-      //const VectorType frameBackOrigin = this->frameBackOrigin;
       const VectorType refOrig = this->getParticles()->getReferentialOrigin();
-      //const CoordinatesType gridOriginGlobCoords = this->getParticles()->getGlobalOriginCoordinates();
       const CoordinatesType frameFrontOriginGlobalCoords = getFrameFrontOriginGlobalCoordinates();
+      const CoordinatesType frameBackGlobCoords = getFrameBackOriginGlobalCoordinates();
       const CoordinatesType frameBackDims = getFrameBackDimensions();
       const CoordinatesType frameFrontDims = getFrameFrontDimensions();
       const bool inner_overlap = this->inner_overlap;
       const bool outer_overlap = this->outer_overlap;
-
-      //frame back glob coords
-      //- outer: extend (to gridOrigiGlobCoordsWithOverlap)
-      //- inner: truncate
-      CoordinatesType frameBackGlobCoords = frameFrontOriginGlobalCoords;
-      if( outer_overlap )
-         frameBackGlobCoords -= 1;
-      if( inner_overlap )
-         frameBackGlobCoords += 1;
 
       // Retype to fluid if:
       // - outer zone + is inside
@@ -902,6 +1021,12 @@ public:
       auto r_view = this->getParticles()->getPoints().getView();
       auto v_view = this->getVariables()->v.getView();
       auto rho_view = this->getVariables()->rho.getView();
+      auto drho_view = this->getVariables()->drho.getView();
+      auto p_view = this->getVariables()->p.getView();
+      auto a_view = this->getVariables()->a.getView();
+      auto gamma_view = this->getVariables()->gamma.getView();
+      auto marker_view = this->getVariables()->marker.getView();
+      auto referentialIdx_view = this->getVariables()->referentialIdx.getView();
       auto retypeMarker_view = this->retypeMarker.getView();
 
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
@@ -911,44 +1036,30 @@ public:
          thrustDevice,
          retypeMarker_view.getArrayData(),
          retypeMarker_view.getArrayData() + numberOfBufferParticles,
-         thrust::make_zip_iterator(
-            cuda::std::make_tuple( r_view.getArrayData(), v_view.getArrayData(), rho_view.getArrayData() ) ) );
+         thrust::make_zip_iterator( cuda::std::make_tuple(
+            r_view.getArrayData(),
+            v_view.getArrayData(),
+            rho_view.getArrayData(),
+            drho_view.getArrayData(),
+            p_view.getArrayData(),
+            a_view.getArrayData(),
+            gamma_view.getArrayData(),
+            marker_view.getArrayData(),
+            referentialIdx_view.getArrayData() ) ) );
    }
 
    template< typename FluidPointer >
    void
    convertBufferToFluid( FluidPointer& fluid )
    {
-      const IndexType numberOfFluidParticles = fluid->getParticles()->getNumberOfParticles();
+      convertBufferToFluidImpl( fluid, false, 0.f );
+   }
 
-      auto view_r_fluid = fluid->getParticles()->getPoints().getView();
-      auto view_v_fluid = fluid->getVariables()->v.getView();
-      auto view_rho_fluid = fluid->getVariables()->rho.getView();
-      auto view_rho_old = fluid->getIntegratorVariables()->rho_old.getView();
-      auto view_v_old = fluid->getIntegratorVariables()->v_old.getView();
-
-      auto view_r_buffer = this->getParticles()->getPoints().getView();
-      auto view_v_buffer = this->getVariables()->v.getView();
-      auto view_rho_buffer = this->getVariables()->rho.getView();
-
-      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
-      const IndexType toFluidOffset = numberOfBufferParticles - this->numberOfParticlesToRetype;
-
-      auto createNewFluidParticles = [ = ] __cuda_callable__( int i ) mutable
-      {
-         view_r_fluid[ numberOfFluidParticles + i ] = view_r_buffer[ toFluidOffset + i ];
-         view_rho_fluid[ numberOfFluidParticles + i ] = view_rho_buffer[ toFluidOffset + i ];
-         view_v_fluid[ numberOfFluidParticles + i ] = view_v_buffer[ toFluidOffset + i ];
-
-         view_rho_old[ numberOfFluidParticles + i ] = view_rho_buffer[ toFluidOffset + i ];
-         view_v_old[ numberOfFluidParticles + i ] = view_v_buffer[ toFluidOffset + i ];
-
-         //TODO: I need to remove the used particles, not sure if this is the right way
-         view_r_buffer[ toFluidOffset + i ] = FLT_MAX;
-      };
-      Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticlesToRetype, createNewFluidParticles );
-      fluid->getParticles()->setNumberOfParticles( numberOfFluidParticles + this->numberOfParticlesToRetype );
-      this->getParticles()->setNumberOfParticles( numberOfBufferParticles - this->numberOfParticlesToRetype );
+   template< typename FluidPointer, typename ModelParams >
+   void
+   convertBufferToFluid( FluidPointer& fluid, ModelParams& modelParams )
+   {
+      convertBufferToFluidImpl( fluid, true, modelParams.rho0 );
    }
 
    void
@@ -994,27 +1105,47 @@ public:
    void
    createBufferParticles( ModelParams& modelParams )
    {
+      (void) ensureBufferCapacity( this->getNumberOfParticles() + this->numberOfParticlesToCreate );
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+
       auto r_buffer_view = this->getParticles()->getPoints().getView();
       auto v_buffer_view = this->getVariables()->v.getView();
       auto rho_buffer_view = this->getVariables()->rho.getView();
+      auto drho_buffer_view = this->getVariables()->drho.getView();
+      auto p_buffer_view = this->getVariables()->p.getView();
+      auto a_buffer_view = this->getVariables()->a.getView();
+      auto gamma_buffer_view = this->getVariables()->gamma.getView();
+      auto marker_buffer_view = this->getVariables()->marker.getView();
+      auto referentialIdx_buffer_view = this->getVariables()->referentialIdx.getView();
+      auto rho_old_buffer_view = this->getIntegratorVariables()->rho_old.getView();
+      auto v_old_buffer_view = this->getIntegratorVariables()->v_old.getView();
       const auto r_massNodes_view = this->massNodes.points.getConstView();
       const auto normal_massNodes_view = this->massNodes.normal.getConstView();
-
-      const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
       const RealType refinementFactor = this->getParticles()->getSearchRadius() / ( 2.f * modelParams.h );
       const RealType dp = refinementFactor * modelParams.dp;
       const RealType rho0 = modelParams.rho0;
+      const IndexType firstReferentialIdx = this->getVariables()->highestReferentialIdx;
 
       auto createNewBufferParticles = [ = ] __cuda_callable__( int i ) mutable
       {
+         const IndexType target = numberOfBufferParticles + i;
          const VectorType r_new = r_massNodes_view[ i ] + ( 0.5f * dp ) * normal_massNodes_view[ i ];
-         r_buffer_view[ numberOfBufferParticles + i ] = r_new;
+         r_buffer_view[ target ] = r_new;
          // initialize values so a failed first interpolation keeps sane
          // last values instead of uninitialized memory
-         rho_buffer_view[ numberOfBufferParticles + i ] = rho0;
-         v_buffer_view[ numberOfBufferParticles + i ] = 0.f;
+         rho_buffer_view[ target ] = rho0;
+         v_buffer_view[ target ] = 0.f;
+         drho_buffer_view[ target ] = 0.f;
+         p_buffer_view[ target ] = 0.f;
+         a_buffer_view[ target ] = 0.f;
+         gamma_buffer_view[ target ] = 0.f;
+         marker_buffer_view[ target ] = 0;
+         referentialIdx_buffer_view[ target ] = firstReferentialIdx + i;
+         rho_old_buffer_view[ target ] = rho0;
+         v_old_buffer_view[ target ] = 0.f;
       };
       Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticlesToCreate, createNewBufferParticles );
+      this->getVariables()->highestReferentialIdx = firstReferentialIdx + this->numberOfParticlesToCreate;
       this->getParticles()->setNumberOfParticles( numberOfBufferParticles + this->numberOfParticlesToCreate );
    }
 
@@ -1030,7 +1161,6 @@ public:
       const auto zoneParticleIndices_view = this->zone.getParticlesInZone().getConstView();
       const IndexType numberOfZoneParticles = this->zone.getNumberOfParticles();
 
-      const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
       const CoordinatesType frameFrontDims = getFrameFrontDimensions();
       //const VectorType frameFrontOrigin = this->frameFrontOrigin;
       const bool inner_overlap = this->inner_overlap;
@@ -1049,6 +1179,16 @@ public:
       {
          const IndexType p = zoneParticleIndices_view[ i ];
          const VectorType r = r_view[ p ];
+         // A degenerate (NaN/Inf) position must never be captured into the band:
+         // its cell index is undefined and the raw copy would seed the buffer
+         // with NaN, which conversions then recycle back into the fluid forever.
+         // Skip the capture - removeParticlesOutOfGrid kills such particles.
+         bool finite = true;
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            if( ! ( fabsf( r[ d ] ) < 1e30f ) )
+               finite = false;
+         if( ! finite )
+            return 0;
          const CoordinatesType giGlobCoords = TNL::floor( ( r - refOrig ) * inv_sr );
          const CoordinatesType gc = giGlobCoords - frameFrontOriginGlobCoords;
          const bool inside = isInsideBox( gc, frameFrontDims );
@@ -1067,44 +1207,24 @@ public:
          Algorithms::reduce< DeviceType >( 0, numberOfZoneParticles, checkFluidParticles, TNL::Plus() );
 
       // sort the indices
-      const IndexType rangeToSort =
-         ( numberOfZoneParticles > numberOfBufferParticles ) ? numberOfZoneParticles : numberOfBufferParticles;
-
       using ThrustDeviceType = TNL::Thrust::ThrustExecutionPolicy< DeviceType >;
       ThrustDeviceType thrustDevice;
-      thrust::sort( thrustDevice, particlesToBuffer_view.getArrayData(), particlesToBuffer_view.getArrayData() + rangeToSort );
+      thrust::sort(
+         thrustDevice, particlesToBuffer_view.getArrayData(), particlesToBuffer_view.getArrayData() + numberOfZoneParticles );
    }
 
    template< typename FluidPointer >
    void
    convertFluidToBuffer( FluidPointer& fluid )
    {
-      const IndexType numberOfBufferParticles = this->getParticles()->getNumberOfParticles();
+      convertFluidToBufferImpl( fluid, false, 0.f );
+   }
 
-      //TODO: I'm sure that it is enough to copy the positioin.
-      auto r_fluid_view = fluid->getParticles()->getPoints().getView();
-      const auto v_fluid_view = fluid->getVariables()->v.getConstView();
-      const auto rho_fluid_view = fluid->getVariables()->rho.getConstView();
-
-      auto r_buffer_view = this->getParticles()->getPoints().getView();
-      auto v_buffer_view = this->getVariables()->v.getView();
-      auto rho_buffer_view = this->getVariables()->rho.getView();
-      const auto particlesToBuffer_view = this->particlesToBuffer.getConstView();
-      const RealType sr = this->getParticles()->getSearchRadius();
-
-      auto retypeFluidToBuffer = [ = ] __cuda_callable__( int i ) mutable
-      {
-         const IndexType p = particlesToBuffer_view[ i ];
-
-         r_buffer_view[ numberOfBufferParticles + i ] = r_fluid_view[ p ];
-         v_buffer_view[ numberOfBufferParticles + i ] = v_fluid_view[ p ];
-         rho_buffer_view[ numberOfBufferParticles + i ] = rho_fluid_view[ p ];
-         r_fluid_view[ p ] = FLT_MAX;
-      };
-      Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToBuffer, retypeFluidToBuffer );
-      this->getParticles()->setNumberOfParticles( numberOfBufferParticles + numberOfParticlesToBuffer );
-      fluid->getParticles()->setNumberOfParticlesToRemove(
-         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToBuffer );
+   template< typename FluidPointer, typename ModelParams >
+   void
+   convertFluidToBuffer( FluidPointer& fluid, ModelParams& modelParams )
+   {
+      convertFluidToBufferImpl( fluid, true, modelParams.rho0 );
    }
 
    // Marks particles whose cell lies outside the own grid including overlap, so the
@@ -1113,29 +1233,64 @@ public:
    IndexType
    removeParticlesOutOfGrid( ParticlesPointer& particles )
    {
-      const VectorType refOrig = particles->getReferentialOrigin();
-      const RealType sr = particles->getSearchRadius();
-      const CoordinatesType go = particles->getGlobalOriginCoordinatesWithOverlap();
-      const CoordinatesType dimsOv = particles->getDimensionsWithOverlap();
-      auto r_view = particles->getPoints().getView();
+      return BaseType::removeParticlesOutOfGrid( particles );
+   }
 
-      auto markOutOfGrid = [ = ] __cuda_callable__( IndexType i ) mutable
+   /* New buffer particles (spawned or captured) inherit consistent old-state for the
+      Verlet kick of the next cycle, same convention as convertBufferToFluid. */
+   void
+   initializeIntegratorVariables()
+   {
+      auto view_v = this->getVariables()->v.getView();
+      auto view_rho = this->getVariables()->rho.getView();
+      auto view_v_old = this->getIntegratorVariables()->v_old.getView();
+      auto view_rho_old = this->getIntegratorVariables()->rho_old.getView();
+
+      const IndexType n_buffer = this->getParticles()->getNumberOfParticles();
+      auto initialize = [ = ] __cuda_callable__( IndexType i ) mutable
       {
-         const VectorType r = r_view[ i ];
-         if( r[ 0 ] == FLT_MAX )
-            return 0;
-         const CoordinatesType gc = TNL::floor( ( r - refOrig ) / sr ) - go;
-         for( int d = 0; d < CoordinatesType::getSize(); d++ )
-            if( gc[ d ] < 0 || gc[ d ] >= dimsOv[ d ] ) {
-               r_view[ i ] = FLT_MAX;
-               return 1;
-            }
-         return 0;
+         view_rho_old[ i ] = view_rho[ i ];
+         view_v_old[ i ] = view_v[ i ];
       };
-      const IndexType nOutOfGrid = Algorithms::reduce< DeviceType >( 0, particles->getNumberOfParticles(), markOutOfGrid );
-      if( nOutOfGrid )
-         particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove() + nOutOfGrid );
-      return nOutOfGrid;
+      Algorithms::parallelFor< DeviceType >( 0, n_buffer, initialize );
+   }
+
+   /* Sync-point lifecycle. Unlike the monolithic single-step update, no mass accumulation
+      and no particle advection happens here: accumulateMasses is scheduled by the solver
+      per substep (with the substep dt) and positions are already at the new sync time. */
+   template< typename FluidPointer, typename ModelParams >
+   void
+   syncUpdateInterfaceBuffer(
+      FluidPointer& fluid_own,
+      FluidPointer& fluid_neihgbor,
+      ModelParams& modelParams,
+      const RealType dt )
+   {
+      removeParticlesOutOfGrid( fluid_neihgbor->getParticles() );
+      fluid_neihgbor->searchForNeighbors();
+
+      classifyParticlesByFrames();
+      sortBufferParticles();
+      removeBufferParticles();
+      convertBufferToFluid( fluid_own, modelParams );
+      removeParticlesOutOfGrid( fluid_own->getParticles() );
+      fluid_own->searchForNeighbors();
+      zone.updateParticlesInZone( fluid_own->getParticles() );
+      getFluidParticlesEneringTheBuffer( fluid_own );
+      convertFluidToBuffer( fluid_own, modelParams );
+      updateMassNodes( modelParams, dt );
+      massNodes.massFlux = 0;
+      massNodes.sort();
+      createBufferParticles( modelParams );
+      interpolateVariables( fluid_neihgbor, modelParams );
+      removeParticlesOutOfGrid( this->getParticles() );
+      this->searchForNeighbors();
+      initializeIntegratorVariables();
+
+      numberOfParticlesToRemove = 0;
+      numberOfParticlesToRetype = 0;
+      numberOfParticlesToCreate = 0;
+      numberOfParticlesToBuffer = 0;
    }
 
    template< typename FluidPointer, typename ModelParams >
@@ -1147,8 +1302,10 @@ public:
       const RealType dt,
       const int subdomainIdx )
    {
-      massNodes.massFlux = 0;
+      removeParticlesOutOfGrid( fluid_neihgbor->getParticles() );
+      fluid_neihgbor->searchForNeighbors();
 
+      massNodes.massFlux = 0;
       accumulateMasses( fluid_neihgbor, modelParams, dt );
       moveBufferParticles( dt );
       sortBufferParticles();
@@ -1197,6 +1354,20 @@ public:
       return frameDimensions + 2 * this->getParticles()->getOverlapWidth() * frameOrientation;
    }
 
+   /* Intermediate frame splitting the band into layer 1 (frameMid XOR frameFront) and
+      layer 2 (frameBack XOR frameMid). Coincides with frameFront for overlap width 1. */
+   [[nodiscard]] const CoordinatesType
+   getFrameMidOriginGlobalCoordinates() const
+   {
+      return frameOriginGlobalCoordinates + ( -1 ) * ( this->getParticles()->getOverlapWidth() - 1 ) * frameOrientation;
+   }
+
+   [[nodiscard]] const CoordinatesType
+   getFrameMidDimensions() const
+   {
+      return frameDimensions + 2 * ( this->getParticles()->getOverlapWidth() - 1 ) * frameOrientation;
+   }
+
    void
    writeProlog( TNL::Logger& logger, const int subdomainIdx )
    {
@@ -1240,6 +1411,11 @@ public:
       logger.writeParameter( "Frame back dims:", getFrameBackDimensions() );
       logger.writeSeparator();
 
+      // Frame mid configuration (LTS band split between layer 1 and layer 2)
+      logger.writeParameter( "Frame mid origin global coords:", getFrameMidOriginGlobalCoordinates() );
+      logger.writeParameter( "Frame mid dims:", getFrameMidDimensions() );
+      logger.writeSeparator();
+
       // Zone information
       zone.writeProlog( logger );
    }
@@ -1260,8 +1436,9 @@ public:
     *          \e nb_global_origin_coordinates,
     *          \e frame_front_origin_global_coordinates,
     *          \e frame_back_origin_global_coordinates,
+    *          \e frame_mid_origin_global_coordinates,
     *          \e frame_front_dimensions, \e frame_back_dimensions,
-    *          \e frame_width, \e zone_dimensions, \e zone_cell_count
+    *          \e frame_mid_dimensions, \e frame_width, \e zone_dimensions, \e zone_cell_count
     *          and \e number_of_mass_nodes.
     */
    [[nodiscard]] nlohmann::json
@@ -1277,8 +1454,10 @@ public:
       report[ "frame_front_origin_global_coordinates" ] =
          this->vectorToInitReportArray( getFrameFrontOriginGlobalCoordinates() );
       report[ "frame_back_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameBackOriginGlobalCoordinates() );
+      report[ "frame_mid_origin_global_coordinates" ] = this->vectorToInitReportArray( getFrameMidOriginGlobalCoordinates() );
       report[ "frame_front_dimensions" ] = this->vectorToInitReportArray( getFrameFrontDimensions() );
       report[ "frame_back_dimensions" ] = this->vectorToInitReportArray( getFrameBackDimensions() );
+      report[ "frame_mid_dimensions" ] = this->vectorToInitReportArray( getFrameMidDimensions() );
       report[ "frame_width" ] = frameWidth;
       report[ "zone_dimensions" ] = this->vectorToInitReportArray( zoneDimensions );
       report[ "zone_cell_count" ] = zone.getNumberOfCells();
@@ -1300,6 +1479,162 @@ public:
       WriterType writer( outputFileFluid );
       writer.writeParticles( nodes );
       writer.template writePointData< typename MassNodes::VectorArrayType >( massNodes.normal, "Normal", n_mn );
+   }
+
+   [[nodiscard]] const MassNodes&
+   getMassNodes() const
+   {
+      return massNodes;
+   }
+
+public:
+   // public: nvcc rejects extended __cuda_callable__ lambdas in private member functions
+   template< typename FluidPointer >
+   void
+   convertBufferToFluidImpl( FluidPointer& fluid, const bool sanitizeVelocity, const RealType rho0 )
+   {
+      (void) fluid->ensureCapacity( fluid->getNumberOfParticles() + this->numberOfParticlesToRetype );
+      const IndexType numberOfFluidParticles = fluid->getNumberOfParticles();
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+      const IndexType toFluidOffset = numberOfBufferParticles - this->numberOfParticlesToRetype;
+
+      auto view_r_fluid = fluid->getParticles()->getPoints().getView();
+      auto view_v_fluid = fluid->getVariables()->v.getView();
+      auto view_rho_fluid = fluid->getVariables()->rho.getView();
+      auto view_drho_fluid = fluid->getVariables()->drho.getView();
+      auto view_p_fluid = fluid->getVariables()->p.getView();
+      auto view_a_fluid = fluid->getVariables()->a.getView();
+      auto view_gamma_fluid = fluid->getVariables()->gamma.getView();
+      auto view_marker_fluid = fluid->getVariables()->marker.getView();
+      auto view_referentialIdx_fluid = fluid->getVariables()->referentialIdx.getView();
+      auto view_rho_old = fluid->getIntegratorVariables()->rho_old.getView();
+      auto view_v_old = fluid->getIntegratorVariables()->v_old.getView();
+
+      auto view_r_buffer = this->getParticles()->getPoints().getView();
+      const auto view_v_buffer = this->getVariables()->v.getConstView();
+      const auto view_rho_buffer = this->getVariables()->rho.getConstView();
+      const auto view_marker_buffer = this->getVariables()->marker.getConstView();
+      const auto view_referentialIdx_buffer = this->getVariables()->referentialIdx.getConstView();
+
+      auto createNewFluidParticles = [ = ] __cuda_callable__( int i ) mutable
+      {
+         const IndexType source = toFluidOffset + i;
+         const IndexType target = numberOfFluidParticles + i;
+         RealType rho = view_rho_buffer[ source ];
+         VectorType v = view_v_buffer[ source ];
+         if( sanitizeVelocity ) {
+            // Only the ModelParams wrapper repairs NaN band velocity at hand-off.
+            bool bad = false;
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               if( v[ d ] != v[ d ] )
+                  bad = true;
+            if( bad ) {
+               rho = rho0;
+               v = 0.f;
+            }
+         }
+
+         view_r_fluid[ target ] = view_r_buffer[ source ];
+         view_rho_fluid[ target ] = rho;
+         view_v_fluid[ target ] = v;
+         view_drho_fluid[ target ] = 0.f;
+         view_p_fluid[ target ] = 0.f;
+         view_a_fluid[ target ] = 0.f;
+         view_gamma_fluid[ target ] = 0.f;
+         view_marker_fluid[ target ] = view_marker_buffer[ source ];
+         view_referentialIdx_fluid[ target ] = view_referentialIdx_buffer[ source ];
+
+         // A resolution hand-off restarts Verlet from the transferred current state.
+         view_rho_old[ target ] = rho;
+         view_v_old[ target ] = v;
+
+         //TODO: I need to remove the used particles, not sure if this is the right way
+         view_r_buffer[ source ] = FLT_MAX;
+      };
+      Algorithms::parallelFor< DeviceType >( 0, this->numberOfParticlesToRetype, createNewFluidParticles );
+      fluid->getVariables()->highestReferentialIdx = std::max(
+         fluid->getVariables()->highestReferentialIdx, this->getVariables()->highestReferentialIdx );
+      fluid->getParticles()->setNumberOfParticles( numberOfFluidParticles + this->numberOfParticlesToRetype );
+      this->getParticles()->setNumberOfParticles( numberOfBufferParticles - this->numberOfParticlesToRetype );
+   }
+
+   template< typename FluidPointer >
+   void
+   convertFluidToBufferImpl( FluidPointer& fluid, const bool sanitizeVelocity, const RealType rho0 )
+   {
+      (void) ensureBufferCapacity( this->getNumberOfParticles() + this->numberOfParticlesToBuffer );
+      const IndexType numberOfBufferParticles = this->getNumberOfParticles();
+
+      auto r_fluid_view = fluid->getParticles()->getPoints().getView();
+      const auto v_fluid_view = fluid->getVariables()->v.getConstView();
+      const auto rho_fluid_view = fluid->getVariables()->rho.getConstView();
+      const auto marker_fluid_view = fluid->getVariables()->marker.getConstView();
+      const auto referentialIdx_fluid_view = fluid->getVariables()->referentialIdx.getConstView();
+
+      auto r_buffer_view = this->getParticles()->getPoints().getView();
+      auto v_buffer_view = this->getVariables()->v.getView();
+      auto rho_buffer_view = this->getVariables()->rho.getView();
+      auto drho_buffer_view = this->getVariables()->drho.getView();
+      auto p_buffer_view = this->getVariables()->p.getView();
+      auto a_buffer_view = this->getVariables()->a.getView();
+      auto gamma_buffer_view = this->getVariables()->gamma.getView();
+      auto marker_buffer_view = this->getVariables()->marker.getView();
+      auto referentialIdx_buffer_view = this->getVariables()->referentialIdx.getView();
+      auto rho_old_buffer_view = this->getIntegratorVariables()->rho_old.getView();
+      auto v_old_buffer_view = this->getIntegratorVariables()->v_old.getView();
+      const auto particlesToBuffer_view = this->particlesToBuffer.getConstView();
+
+      auto retypeFluidToBuffer = [ = ] __cuda_callable__( int i ) mutable
+      {
+         const IndexType p = particlesToBuffer_view[ i ];
+         const IndexType target = numberOfBufferParticles + i;
+         RealType rho = rho_fluid_view[ p ];
+         VectorType v = v_fluid_view[ p ];
+         if( sanitizeVelocity ) {
+            // Only the ModelParams wrapper repairs NaN fluid velocity at capture.
+            bool bad = false;
+            for( int d = 0; d < VectorType::getSize(); d++ )
+               if( v[ d ] != v[ d ] )
+                  bad = true;
+            if( bad ) {
+               rho = rho0;
+               v = 0.f;
+            }
+         }
+
+         r_buffer_view[ target ] = r_fluid_view[ p ];
+         v_buffer_view[ target ] = v;
+         rho_buffer_view[ target ] = rho;
+         drho_buffer_view[ target ] = 0.f;
+         p_buffer_view[ target ] = 0.f;
+         a_buffer_view[ target ] = 0.f;
+         gamma_buffer_view[ target ] = 0.f;
+         marker_buffer_view[ target ] = marker_fluid_view[ p ];
+         referentialIdx_buffer_view[ target ] = referentialIdx_fluid_view[ p ];
+         rho_old_buffer_view[ target ] = rho;
+         v_old_buffer_view[ target ] = v;
+         r_fluid_view[ p ] = FLT_MAX;
+      };
+      Algorithms::parallelFor< DeviceType >( 0, numberOfParticlesToBuffer, retypeFluidToBuffer );
+      this->getVariables()->highestReferentialIdx = std::max(
+         this->getVariables()->highestReferentialIdx, fluid->getVariables()->highestReferentialIdx );
+      this->getParticles()->setNumberOfParticles( numberOfBufferParticles + numberOfParticlesToBuffer );
+      fluid->getParticles()->setNumberOfParticlesToRemove(
+         fluid->getParticles()->getNumberOfParticlesToRemove() + numberOfParticlesToBuffer );
+   }
+
+private:
+   void
+   ensureBufferCapacity( const IndexType required )
+   {
+      if( BaseType::ensureCapacity( required ) ) {
+         const IndexType capacity = this->getNumberOfAllocatedParticles();
+         particlesToFluid.resize( capacity );
+         particlesToRemove.resize( capacity );
+         // The growth search does not reorder MR scratch. The next classification
+         // reinitializes retypeMarker before it is used again.
+         retypeMarker.resize( capacity );
+      }
    }
 
 protected:
@@ -1338,5 +1673,20 @@ protected:
 
    ParticleZone zone;
 };
+
+template<
+   typename ParticlesType,
+   typename SPHCaseConfig,
+   typename Variables,
+   typename IntegratorVariables,
+   typename OpenBoundaryConfig,
+   typename SPHDefs >
+using MultiresolutionBoundaryLTS = MultiresolutionBoundary<
+   ParticlesType,
+   SPHCaseConfig,
+   Variables,
+   IntegratorVariables,
+   OpenBoundaryConfig,
+   SPHDefs >;
 
 }  // namespace TNL::SPH

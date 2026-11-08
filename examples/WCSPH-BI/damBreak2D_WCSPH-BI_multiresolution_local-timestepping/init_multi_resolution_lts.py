@@ -92,9 +92,13 @@ def _wall_lattice(g: dec.SubdomainGrid, setup: dict, keep_fn) -> tuple:
     box_rx, box_ry     = [], []
     ghost_rx, ghost_ry = [], []
     normal_x, normal_y = [], []
+    occupied_sites = set()
 
     def add(bx, by, gx, gy, nx, ny):
+        if (bx, by) in occupied_sites:
+            return
         if keep_fn(bx, by):
+            occupied_sites.add((bx, by))
             box_rx.append(bx);   box_ry.append(by)
             ghost_rx.append(gx); ghost_ry.append(gy)
             normal_x.append(nx); normal_y.append(ny)
@@ -111,8 +115,7 @@ def _wall_lattice(g: dec.SubdomainGrid, setup: dict, keep_fn) -> tuple:
             rx = (i + 1) * dp
             add(rx, -layer * dp, rx, (layer + 1) * dp, 0.0, 1.0)
 
-    #x_last = box_rx[-1] + dp if box_rx else dp * box_length_n
-    x_last = rx + dp if box_rx else dp * box_length_n
+    x_last = box_length_n * dp
 
     # Right wall
     for layer in range(nl):
@@ -269,21 +272,26 @@ def _fine_box(fine_grid: SubdomainGrid) -> dict:
         "y_min": fine_grid.phys_y_min, "y_max": fine_grid.phys_y_max,
     }
 
-def generate_fluid_particles_rectangular(
-        coarse_grid: SubdomainGrid,
-        fine_grid:   SubdomainGrid,
-        setup:       dict
+def generate_fluid_particles_nested(
+        grids: List[SubdomainGrid],
+        setup: dict
 ) -> None:
-    generate_fluid_particles(1, fine_grid,   setup)
-    generate_fluid_particles(0, coarse_grid, setup, exclude_box=_fine_box(fine_grid))
+    """Fluid for every level of a nested refinement chain: each level covers
+    its own zone minus the box of the next finer level, so the levels tile
+    the refined region without overlap."""
+    for lvl, grid in enumerate(grids):
+        exclude = _fine_box(grids[lvl + 1]) if lvl + 1 < len(grids) else None
+        generate_fluid_particles(lvl, grid, setup, exclude_box=exclude)
 
-def generate_boundary_particles_rectangular(
-        coarse_grid: SubdomainGrid,
-        fine_grid:   SubdomainGrid,
-        setup:       dict
+def generate_boundary_particles_nested(
+        grids: List[SubdomainGrid],
+        setup: dict
 ) -> None:
-    generate_boundary_particles(0, coarse_grid, setup, exclude_box=_fine_box(fine_grid))
-    generate_boundary_particles(1, fine_grid, setup)
+    """Wall particles for every level of a nested refinement chain, tiled the
+    same way as the fluid (own zone minus the next finer zone)."""
+    for lvl, grid in enumerate(grids):
+        exclude = _fine_box(grids[lvl + 1]) if lvl + 1 < len(grids) else None
+        generate_boundary_particles(lvl, grid, setup, exclude_box=exclude)
 
 def save_grid(grids: List[SubdomainGrid], setup: dict) -> None:
     import domainGrid
@@ -367,13 +375,13 @@ def build_setup(args) -> dict:
 
 def define_problem_bounding_box(setup):
     sr = setup["search_radius"]
-    domain = {
+    domain_corner_limits = {
         "domain_origin_x" : -2.5 * sr,
         "domain_origin_y" : -2.5 * sr,
-        "domain_size_x" : setup["box_length"] + 5.5 * sr,
-        "domain_size_y" : setup["box_height"] + 5.5 * sr,
+        "domain_size_x" : setup["box_length"] + 3.0 * sr,
+        "domain_size_y" : setup["box_height"] + 3.0 * sr,
     }
-    setup.update( domain )
+    setup.update( domain_corner_limits )
 
 if __name__ == "__main__":
     args  = parse_args()
@@ -389,7 +397,7 @@ if __name__ == "__main__":
     #   L0: whole tank (base resolution, dt)
     #   L1: right-bottom zone, factor 0.5, touches right and bottom tank walls (dt/2)
     #   L2 (--levels 3): right-bottom corner inside L1, factor 0.25 (dt/4)
-    domain_far_x = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"]
+    domain_far_x = setup["domain_size_x"]
     subdomain_defs = [
         dec.SubdomainDef(factor=1.0),
         dec.SubdomainDef(
@@ -418,17 +426,9 @@ if __name__ == "__main__":
     for lvl, grid in enumerate(grids):
         print(f"\nL{lvl} grid:"); pprint(grid)
 
-    # Step 4: Generate particles
-    for lvl in range(1, len(grids)):
-        generate_fluid_particles(lvl, grids[lvl], setup)
-    generate_fluid_particles(0, grids[0], setup, exclude_box=_fine_box(grids[1]))
-
-    for lvl, grid in enumerate(grids):
-        if lvl + 1 < len(grids):
-            generate_boundary_particles(lvl, grid, setup, exclude_box=_fine_box(grids[lvl + 1]))
-        else:
-            generate_boundary_particles(lvl, grid, setup)
-
+    # Step 4: Generate particles (each level tiles its zone minus the next finer zone)
+    generate_fluid_particles_nested(grids, setup)
+    generate_boundary_particles_nested(grids, setup)
     generate_ghost_band_boundaries(grids, setup)
 
     # Step 5: Global counts and timestep driven by the finest resolution

@@ -75,6 +75,13 @@ public:
       highestReferentialIdx = size;
    }
 
+   void
+   resizeReferential( const GlobalIndexType& size )
+   {
+      referentialIdx.resize( size );
+      referentialIdx_swap.resize( size );
+   }
+
    template< typename ParticlesPointer >
    void
    sortReferential( ParticlesPointer& particles )
@@ -108,6 +115,13 @@ public:
    {
       VariablesBase< FluidVariables >::setSize( size );
       this->setReferentialSize( size );
+   }
+
+   void
+   resize( const GlobalIndexType& size )
+   {
+      VariablesBase< FluidVariables >::resize( size );
+      this->resizeReferential( size );
    }
 
    template< typename ParticlesPointer >
@@ -165,6 +179,13 @@ public:
       this->setReferentialSize( size );
    }
 
+   void
+   resize( const GlobalIndexType& size )
+   {
+      VariablesBase< BoundaryVariables >::resize( size );
+      this->resizeReferential( size );
+   }
+
    template< typename ParticlesPointer >
    void
    sortVariables( ParticlesPointer& particles )
@@ -210,6 +231,13 @@ public:
    {
       VariablesBase< OpenBoundaryVariables >::setSize( size );
       this->setReferentialSize( size );
+   }
+
+   void
+   resize( const GlobalIndexType& size )
+   {
+      VariablesBase< OpenBoundaryVariables >::resize( size );
+      this->resizeReferential( size );
    }
 
    template< typename ParticlesPointer >

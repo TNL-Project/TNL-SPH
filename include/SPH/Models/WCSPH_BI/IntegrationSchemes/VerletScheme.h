@@ -42,6 +42,15 @@ public:
       v_old_swap.setSize( size );
    }
 
+   void
+   resize( const GlobalIndexType& size )
+   {
+      rho_old.resize( size );
+      v_old.resize( size );
+      rho_old_swap.resize( size );
+      v_old_swap.resize( size );
+   }
+
    template< typename ParticlesPointer >
    void
    sortVariables( ParticlesPointer& particles )

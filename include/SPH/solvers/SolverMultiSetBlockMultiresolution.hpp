@@ -387,7 +387,18 @@ template< typename Model >
 void
 SolverMultiSetBlockMultiresolution< Model >::refreshBoundaryGhostValues()
 {
+   // A negative owner preserves the uniform-stepping all-level refresh.
+   refreshBoundaryGhostValues( -1 );
+}
+
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolution< Model >::refreshBoundaryGhostValues( int ownIdx )
+{
    for( auto& interface : boundaryGhostInterfaces ) {
+      if( ownIdx >= 0 && interface.ownIdx != ownIdx )
+         continue;
+
       BoundaryPointer& ownBoundary = this->boundarySets[ interface.ownIdx ];
       BoundaryPointer& srcBoundary = this->boundarySets[ interface.neighborIdx ];
 
@@ -531,6 +542,9 @@ SolverMultiSetBlockMultiresolution< Model >::multiresolutionUpdate()
          iface.ownIdx );
    }
 
+   for( auto& fluid : this->fluidSets )
+      fluid->searchForNeighbors();
+
    this->timeMeasurement.stop( "multiresolution-update" );
    this->writeLog( "Update multiresolution BC...", "Done." );
 }
@@ -611,6 +625,7 @@ SolverMultiSetBlockMultiresolution< Model >::save( bool writeParticleCellIndex )
    }
 
    for( long unsigned int p = 0; p < multiresolutionBoundaryPatchInterfaces.size(); p++ ) {
+      this->model.computePressureFromDensity( multiresolutionBoundaryPatches[ p ], this->modelParams );
       const auto& iface = multiresolutionBoundaryPatchInterfaces[ p ];
       std::string outputFileNameMultiresolutionBound =
          this->outputDirectory + "/multiresolutionBoundaryPatch_subdomain" + std::to_string( iface.ownIdx ) + "_to_"
@@ -623,7 +638,9 @@ SolverMultiSetBlockMultiresolution< Model >::save( bool writeParticleCellIndex )
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolution< Model >::writeProlog( bool writeSystemInformation ) noexcept
+SolverMultiSetBlockMultiresolution< Model >::writeProlog(
+   bool writeSystemInformation,
+   bool writeMultiresolutionBuffers ) noexcept
 {
    auto& log = this->logger;
 
@@ -668,12 +685,8 @@ SolverMultiSetBlockMultiresolution< Model >::writeProlog( bool writeSystemInform
       }
    }
 
-   if( multiresolutionBoundaryPatches.size() > 0 ) {
-      for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ ) {
-         log.writeHeader( "Multiresolution boundary buffer" + std::to_string( i ) + "." );
-         multiresolutionBoundaryPatches[ i ]->writeProlog( log, i );
-      }
-   }
+   if( writeMultiresolutionBuffers )
+      writeMultiresolutionBoundaryPatchesProlog( "Multiresolution boundary buffer" );
 
    // Structured initialization report (JSON) - core solver-family sections plus
    // the multiresolution buffer bands and the decomposition topology.
@@ -694,7 +707,17 @@ SolverMultiSetBlockMultiresolution< Model >::writeProlog( bool writeSystemInform
 
 template< typename Model >
 void
-SolverMultiSetBlockMultiresolution< Model >::writeInfo() noexcept
+SolverMultiSetBlockMultiresolution< Model >::writeMultiresolutionBoundaryPatchesProlog( const std::string& title ) noexcept
+{
+   for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ ) {
+      this->logger.writeHeader( title + std::to_string( i ) + "." );
+      multiresolutionBoundaryPatches[ i ]->writeProlog( this->logger, i );
+   }
+}
+
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolution< Model >::writeInfo( bool writeMultiresolutionBuffers ) noexcept
 {
    auto& log = this->logger;
 
@@ -716,13 +739,18 @@ SolverMultiSetBlockMultiresolution< Model >::writeInfo() noexcept
             "Number of buffer" + std::to_string( i + 1 ) + " particles:",
             this->openBoundaryPatches[ i ]->getNumberOfParticles() );
    }
-   if( multiresolutionBoundaryPatches.size() > 0 ) {
-      for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
-         log.writeParameter(
-            "Number of mr-buffer " + std::to_string( i ) + " particles:",
-            multiresolutionBoundaryPatches[ i ]->getNumberOfParticles() );
-   }
+   if( writeMultiresolutionBuffers )
+      writeMultiresolutionBoundaryPatchesInfo( "Number of mr-buffer " );
    log.writeSeparator();
+}
+
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolution< Model >::writeMultiresolutionBoundaryPatchesInfo( const std::string& label ) noexcept
+{
+   for( long unsigned int i = 0; i < multiresolutionBoundaryPatches.size(); i++ )
+      this->logger.writeParameter(
+         label + std::to_string( i ) + " particles:", multiresolutionBoundaryPatches[ i ]->getNumberOfParticles() );
 }
 
 }  // namespace TNL::SPH

@@ -96,9 +96,13 @@ def _wall_lattice(g: dec.SubdomainGrid, setup: dict, keep_fn) -> tuple:
     box_rx, box_ry     = [], []
     ghost_rx, ghost_ry = [], []
     normal_x, normal_y = [], []
+    occupied_sites = set()
 
     def add(bx, by, gx, gy, nx, ny):
+        if (bx, by) in occupied_sites:
+            return
         if keep_fn(bx, by):
+            occupied_sites.add((bx, by))
             box_rx.append(bx);   box_ry.append(by)
             ghost_rx.append(gx); ghost_ry.append(gy)
             normal_x.append(nx); normal_y.append(ny)
@@ -115,8 +119,7 @@ def _wall_lattice(g: dec.SubdomainGrid, setup: dict, keep_fn) -> tuple:
             rx = (i + 1) * dp
             add(rx, -layer * dp, rx, (layer + 1) * dp, 0.0, 1.0)
 
-    #x_last = box_rx[-1] + dp if box_rx else dp * box_length_n
-    x_last = rx + dp if box_rx else dp * box_length_n
+    x_last = box_length_n * dp
 
     # Right wall
     for layer in range(nl):
@@ -372,13 +375,13 @@ def build_setup(args) -> dict:
 
 def define_problem_bounding_box(setup):
     sr = setup["search_radius"]
-    domain = {
+    domain_corner_limits = {
         "domain_origin_x" : -2.5 * sr,
         "domain_origin_y" : -2.5 * sr,
-        "domain_size_x" : setup["box_length"] + 5.5 * sr,
-        "domain_size_y" : setup["box_height"] + 5.5 * sr,
+        "domain_size_x" : setup["box_length"] + 3.0 * sr,
+        "domain_size_y" : setup["box_height"] + 3.0 * sr,
     }
-    setup.update( domain )
+    setup.update( domain_corner_limits )
 
 def define_refinement_zones(setup) -> tuple:
     """Refinement zones imposed directly in the script, ordered from coarsest
@@ -391,13 +394,13 @@ def define_refinement_zones(setup) -> tuple:
       - 4+ levels: append more entries, each strictly inside the previous one
 
     Each zone must be strictly nested inside the previous one and its factor
-    must be 1/k with integer k (e.g. 0.5, 0.25, 0.125).  Zones default to
-    touching the right and bottom tank walls (x extends to the far domain
+    must be half its parent's factor (an ordered 1:2 interface). Zones default
+    to touching the right and bottom tank walls (x extends to the far domain
     boundary, y starts at the domain bottom); x_max and y_min can be imposed
     per zone to override this.  alloc_fact optionally enlarges the fluid
     allocation of a zone that gets fully submerged by the impacting slosh.
     """
-    domain_far_x = setup["domain_origin_x"] + setup["domain_size_x"] + 5.5 * setup["search_radius"]
+    domain_far_x = setup["domain_size_x"]
     return [
         {
             "factor": 0.5,
@@ -428,9 +431,6 @@ if __name__ == "__main__":
     refinement_zones, domain_far_x = define_refinement_zones(setup)
     subdomain_defs = [dec.SubdomainDef(factor=1.0)]
     for zone in refinement_zones:
-        fl = 1.0 / zone["factor"]
-        if abs(fl - round(fl)) > 1e-9:
-            raise ValueError(f"refinement factor {zone['factor']} is not of the form 1/k")
         subdomain_defs.append(dec.SubdomainDef(
             factor = zone["factor"],
             x_min  = zone["x_min"],

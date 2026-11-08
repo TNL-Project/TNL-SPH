@@ -9,11 +9,11 @@ refinement region bounds, particle spacing).
 Fine-region bounds set to None in a configuration are resolved to the
 corresponding domain boundary after the bounding box is computed:
   fine_x_min=None -> domain_origin_x
-  fine_x_max=None -> domain_origin_x + domain_size_x
+  fine_x_max=None -> domain_size_x (the maximum corner, not an extent)
   fine_y_min=None -> domain_origin_y
-  fine_y_max=None -> domain_origin_y + domain_size_y
+  fine_y_max=None -> domain_size_y (the maximum corner, not an extent)
   fine_z_min=None -> domain_origin_z
-  fine_z_max=None -> domain_origin_z + domain_size_z
+  fine_z_max=None -> domain_size_z (the maximum corner, not an extent)
 """
 
 import os
@@ -41,19 +41,15 @@ def resolve_refinement_bounds(config: dict, setup: dict) -> dict:
     resolved = dict(config)
     boundary_map = {
         "fine_x_min": "domain_origin_x",
-        "fine_x_max": ("domain_origin_x", "domain_size_x"),
+        "fine_x_max": "domain_size_x",
         "fine_y_min": "domain_origin_y",
-        "fine_y_max": ("domain_origin_y", "domain_size_y"),
+        "fine_y_max": "domain_size_y",
         "fine_z_min": "domain_origin_z",
-        "fine_z_max": ("domain_origin_z", "domain_size_z"),
+        "fine_z_max": "domain_size_z",
     }
     for fine_key, domain_key in boundary_map.items():
         if resolved.get(fine_key) is None:
-            if isinstance(domain_key, tuple):
-                origin_key, size_key = domain_key
-                resolved[fine_key] = setup[origin_key] + setup[size_key]
-            else:
-                resolved[fine_key] = setup[domain_key]
+            resolved[fine_key] = setup[domain_key]
     return resolved
 
 
@@ -143,9 +139,9 @@ def define_problem_bounding_box(setup: dict):
         "domain_origin_x": -2.5 * sr,
         "domain_origin_y": -2.5 * sr,
         "domain_origin_z": -2.5 * sr,
-        "domain_size_x":   setup["box_x"] + 2.5 * sr,
-        "domain_size_y":   setup["box_y"] + 2.5 * sr,
-        "domain_size_z":   setup["box_z"] + 2.5 * sr,
+        "domain_size_x":   setup["box_x"],
+        "domain_size_y":   setup["box_y"],
+        "domain_size_z":   setup["box_z"],
     }
     setup.update(domain)
 

@@ -4,7 +4,6 @@
 #pragma once
 
 #include <SPH/solvers/SolverMultiSetBlockMultiresolution.h>
-#include <SPH/MultiresolutionRectangleBufferLocalTimeStepping.h>
 #include <SPH/MultiresolutionBufferHelpers.h>
 #include <SPH/TimeStep.h>
 
@@ -15,7 +14,7 @@ namespace TNL::SPH {
  *
  * Levels advance with per-level time steps derived from the refinement-factor ratios
  * (finest level uses the configured time step). The fine side of an interface gets a
- * two-layer buffer band (MultiresolutionBoundaryLTS patches), the coarse side keeps
+ * two-layer canonical buffer band, the coarse side keeps
  * one layer. The global clock advances with the coarse step and fine substeps are
  * driven from the case exec loop as a Berger-Colella recursion over the levels with
  * the coarsest level included (see the damBreak2D multiresolution local-timestepping
@@ -47,14 +46,8 @@ public:
    using typename BaseType::FluidVariables;
    using typename BaseType::OpenBoundaryConfigType;
 
-   using MultiresolutionBoundaryLTS = MultiresolutionBoundaryLTS<
-      ParticlesType,
-      SPHConfig,
-      FluidVariables,
-      typename BaseType::IntegrationSchemeVariablesType,
-      OpenBoundaryConfigType,
-      ModelParams >;
-   using MultiresolutionBoundaryLTSPointer = Pointers::SharedPointer< MultiresolutionBoundaryLTS, DeviceType >;
+   using MultiresolutionBoundaryLTS = typename BaseType::MultiresolutionBoundary;
+   using MultiresolutionBoundaryLTSPointer = typename BaseType::MultiresolutionBoundaryPointer;
 
    SolverMultiSetBlockMultiresolutionLocalTimeStepping( std::ostream& out = std::cout )
    : BaseType( out )
@@ -154,15 +147,12 @@ public:
    syncMultiresolutionUpdate();
 
    void
-   save( bool writeParticleCellIndex = false );
-
-   void
    writeProlog( bool writeSystemInformation = true ) noexcept;
 
    void
-   writeInfo() noexcept;
+   writeInfo( bool writeMultiresolutionBuffers = true ) noexcept override;
 
-   std::vector< MultiresolutionBoundaryLTSPointer > multiresolutionBoundaryPatchesLTS;
+   std::vector< MultiresolutionBoundaryLTSPointer >& multiresolutionBoundaryPatchesLTS = this->multiresolutionBoundaryPatches;
 
    std::vector< TimeStepping > levelTimeStepping;
    std::vector< int > levelSubsteps;

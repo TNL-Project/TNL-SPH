@@ -247,9 +247,9 @@ def define_problem_bounding_box(setup: dict) -> None:
         "domain_origin_x": -2.5 * sr,
         "domain_origin_y": -2.5 * sr,
         "domain_origin_z": -2.5 * sr,
-        "domain_size_x":   setup["box_length"] + 5.0 * sr,
-        "domain_size_y":   setup["box_height"] + 5.0 * sr,
-        "domain_size_z":   setup["box_width"]  + 5.0 * sr,
+        "domain_size_x":   setup["box_length"] + 3.0 * sr,
+        "domain_size_y":   setup["box_height"] + 3.0 * sr,
+        "domain_size_z":   setup["box_width"]  + 3.0 * sr,
     })
 
 

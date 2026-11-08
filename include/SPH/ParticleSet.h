@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cfloat>
+#include <cmath>
 #include <memory>
 
 #include <thrust/sort.h>
@@ -10,6 +12,7 @@
 #include <thrust/gather.h>
 #include <nlohmann/json.hpp>
 
+#include <TNL/Algorithms/copy.h>
 #include <TNL/Logger.h>
 #include <TNL/Particles/DistributedParticles.h>
 #include <TNL/Particles/DistributedParticlesSynchronizer.h>
@@ -242,6 +245,82 @@ public:
    getNumberOfAllocatedParticles() const
    {
       return this->getParticles()->getNumberOfAllocatedParticles();
+   }
+
+   // Mark positions whose cell lies outside the own grid including overlap, so the
+   // unchecked cell-list cell-index write cannot access out-of-bounds memory.
+   template< typename ParticlesPointer >
+   GlobalIndexType
+   removeParticlesOutOfGrid( ParticlesPointer& particles )
+   {
+      const VectorType refOrig = particles->getReferentialOrigin();
+      const RealType sr = particles->getSearchRadius();
+      const CoordinatesType go = particles->getGlobalOriginCoordinatesWithOverlap();
+      const CoordinatesType dimsOv = particles->getDimensionsWithOverlap();
+      auto r_view = particles->getPoints().getView();
+
+      auto markOutOfGrid = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+      {
+         const VectorType r = r_view[ i ];
+         if( r[ 0 ] == FLT_MAX )
+            return 0;
+         bool finite = true;
+         for( int d = 0; d < VectorType::getSize(); d++ )
+            if( ! ( fabsf( r[ d ] ) < 1e30f ) )
+               finite = false;
+         if( ! finite ) {
+            r_view[ i ] = FLT_MAX;
+            return 1;
+         }
+         const CoordinatesType gc = TNL::floor( ( r - refOrig ) / sr ) - go;
+         for( int d = 0; d < CoordinatesType::getSize(); d++ )
+            if( gc[ d ] < 0 || gc[ d ] >= dimsOv[ d ] ) {
+               r_view[ i ] = FLT_MAX;
+               return 1;
+            }
+         return 0;
+      };
+      const GlobalIndexType nOutOfGrid = Algorithms::reduce< DeviceType >( 0, particles->getNumberOfParticles(), markOutOfGrid );
+      if( nOutOfGrid )
+         particles->setNumberOfParticlesToRemove( particles->getNumberOfParticlesToRemove() + nOutOfGrid );
+      return nOutOfGrid;
+   }
+
+   /**
+    * \brief Grow allocated storage to exactly `required` while preserving particles.
+    *
+    * Returns false without changing the set when the current allocation is
+    * already sufficient. Otherwise, valid active points, all variable fields,
+    * integration history and referential IDs are preserved. Invalid active positions
+    * are quarantined before the growth search; appended slots are inactive.
+    *
+    * This host-only method must be called before the caller acquires any array
+    * views or search tokens. Actual growth rebuilds neighbor-search structures
+    * and can reorder particles and compact marked removals. Consequently, all
+    * previously acquired views and search tokens are invalidated, and callers
+    * must re-read getNumberOfParticles() after this method returns true.
+    */
+   [[nodiscard]] bool
+   ensureCapacity( const GlobalIndexType required )
+   {
+      const GlobalIndexType previousCapacity = this->getNumberOfAllocatedParticles();
+      if( required <= previousCapacity )
+         return false;
+
+      // TNL's cell-list build accepts only the FLT_MAX removal sentinel. Quarantine
+      // every other invalid position before taking the backup used by that build.
+      this->removeParticlesOutOfGrid( this->particles );
+
+      using PointArrayType = typename ParticleSystem::PointArrayType;
+      const PointArrayType pointBackup( this->particles->getPoints() );
+      this->particles->setSize( required );
+      TNL::Algorithms::copy< DeviceType >(
+         this->particles->getPoints().getData(), pointBackup.getData(), previousCapacity );
+      this->variables->resize( required );
+      this->integratorVariables->resize( required );
+      this->searchForNeighbors();
+      this->variables->reorderUnswappedVariables( this->particles );
+      return true;
    }
 
    typename ParticleSystem::PointArrayType&

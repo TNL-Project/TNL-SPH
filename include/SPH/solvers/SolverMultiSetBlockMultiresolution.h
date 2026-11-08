@@ -81,10 +81,16 @@ public:
    save( bool writeParticleCellIndex = false );
 
    void
-   writeProlog( bool writeSystemInformation = true ) noexcept;
+   writeProlog( bool writeSystemInformation = true, bool writeMultiresolutionBuffers = true ) noexcept;
 
    void
-   writeInfo() noexcept;
+   writeMultiresolutionBoundaryPatchesProlog( const std::string& title ) noexcept;
+
+   virtual void
+   writeInfo( bool writeMultiresolutionBuffers = true ) noexcept;
+
+   void
+   writeMultiresolutionBoundaryPatchesInfo( const std::string& label ) noexcept;
 
 #ifdef HAVE_MPI
    void
@@ -109,6 +115,9 @@ public:
 
    void
    refreshBoundaryGhostValues();
+
+   void
+   refreshBoundaryGhostValues( int ownIdx );
 
    Topology topology;
    std::vector< MultiresolutionBoundaryPointer > multiresolutionBoundaryPatches;

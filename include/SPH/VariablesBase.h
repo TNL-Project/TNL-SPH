@@ -10,7 +10,7 @@
 namespace TNL::SPH {
 
 /**
- * \brief CRTP base providing the five lifecycle methods (setSize,
+ * \brief CRTP base providing the six lifecycle methods (setSize, resize,
  *        sortVariables, readVariables, writeVariables, synchronizeVariables)
  *        by iterating over Derived::allFields() — a tuple of references to
  *        the Derived's ParticleField members.
@@ -30,6 +30,17 @@ public:
          } );
    }
 
+   template< typename Index >
+   void
+   resize( const Index& size )
+   {
+      for_each_field(
+         [ & ]( auto& field )
+         {
+            field.resize( size );
+         } );
+   }
+
    template< typename ParticlesPointer >
    void
    sortVariables( ParticlesPointer& particles )
@@ -38,6 +49,17 @@ public:
          [ & ]( auto& field )
          {
             field.reorder( particles );
+         } );
+   }
+
+   template< typename ParticlesPointer >
+   void
+   reorderUnswappedVariables( ParticlesPointer& particles )
+   {
+      for_each_field(
+         [ & ]( auto& field )
+         {
+            field.reorderUnswapped( particles );
          } );
    }
 

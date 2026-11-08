@@ -56,9 +56,22 @@ def build_subdomain_grids(defs: List[SubdomainDef], setup: dict) -> List[Subdoma
    is_3d  = "domain_size_z" in setup
    axes   = ["x", "y", "z"] if is_3d else ["x", "y"]
 
+   for level, (coarse, fine) in enumerate(zip(defs, defs[1:]), start=1):
+      same_resolution = math.isclose(fine.factor, coarse.factor, rel_tol=1e-12, abs_tol=1e-12)
+      one_to_two = math.isclose(fine.factor, 0.5 * coarse.factor, rel_tol=1e-12, abs_tol=1e-12)
+      if not (same_resolution or one_to_two):
+         raise ValueError(
+            f"unsupported refinement ratio at interface {level - 1}->{level}: "
+            f"{coarse.factor}->{fine.factor}; expected same resolution or ordered 1:2 refinement"
+         )
+
    domain_origin = {ax: setup[f"domain_origin_{ax}"] for ax in axes}
-   domain_size   = {ax: setup[f"domain_size_{ax}"]   for ax in axes}
-   n_cells_glob  = {ax: int(math.ceil(domain_size[ax] / h0)) for ax in axes}
+   # In this MR builder, the solver's domainSize values are maximum/far
+   # corners, not extents. Keep their existing setup keys for serialization.
+   domain_max_corner = {ax: setup[f"domain_size_{ax}"] for ax in axes}
+   n_cells_glob  = {
+      ax: int(math.ceil((domain_max_corner[ax] - domain_origin[ax]) / h0)) for ax in axes
+   }
 
    def resolve_axis(sd: SubdomainDef, ax: str, f: float) -> tuple:
       fl   = int(round(1.0 / f))
@@ -326,12 +339,12 @@ def build_subdomain_data(
       origin_glob = getattr(g, f"origin_glob_{ax}")
       dims        = getattr(g, f"dims_{ax}")
       origin_phys = domain_origin[ax] + g.search_radius * (origin_glob - overlap)
-      size_phys   = g.search_radius * dims
+      extent_phys = g.search_radius * dims
 
       sd[f"originGlobalCoords{ax.upper()}"] = origin_glob
       sd[f"gridDimensions{ax.upper()}"]      = dims
       sd[f"origin{ax.upper()}"]               = round(origin_phys, 7)
-      sd[f"size{ax.upper()}"]                 = round(size_phys, 7)
+      sd[f"size{ax.upper()}"]                 = round(extent_phys, 7)
 
    return sd
 

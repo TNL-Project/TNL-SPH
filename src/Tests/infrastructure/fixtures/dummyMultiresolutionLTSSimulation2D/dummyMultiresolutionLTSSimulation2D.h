@@ -10,9 +10,9 @@
  * frames, mass-node placement). Assertion results are piped into the same log for the
  * log-compare harness; the exit code is nonzero on any failure. */
 
-using VectorType = typename Simulation::MultiresolutionBoundaryLTS::VectorType;
-using CoordinatesType = typename Simulation::MultiresolutionBoundaryLTS::CoordinatesType;
-using RealType = typename Simulation::MultiresolutionBoundaryLTS::RealType;
+using VectorType = typename Simulation::MultiresolutionBoundary::VectorType;
+using CoordinatesType = typename Simulation::MultiresolutionBoundary::CoordinatesType;
+using RealType = typename Simulation::MultiresolutionBoundary::RealType;
 
 static bool
 coordsEq( const CoordinatesType& a, const CoordinatesType& b )
@@ -31,7 +31,7 @@ int main( int argc, char* argv[] )
    sph.writeProlog();
 
    TNL::Logger log( 100, logFile );
-   using Patch = typename Simulation::MultiresolutionBoundaryLTS;
+   using Patch = typename Simulation::MultiresolutionBoundary;
 
    int failures = 0;
    auto expect = [ & ]( const std::string& name, bool ok )
@@ -41,8 +41,8 @@ int main( int argc, char* argv[] )
       log.writeParameter( name, ok ? "PASSED" : "FAILED" );
    };
 
-   for( std::size_t p = 0; p < sph.multiresolutionBoundaryPatchesLTS.size(); p++ ) {
-      auto& patch = *sph.multiresolutionBoundaryPatchesLTS[ p ];
+   for( std::size_t p = 0; p < sph.multiresolutionBoundaryPatches.size(); p++ ) {
+      auto& patch = *sph.multiresolutionBoundaryPatches[ p ];
       const auto& iface = sph.multiresolutionBoundaryPatchInterfaces[ p ];
       const std::string tag =
          "patch " + std::to_string( iface.ownIdx ) + "->" + std::to_string( iface.neighborIdx );

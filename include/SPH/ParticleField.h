@@ -74,6 +74,14 @@ public:
          field_swap_.setSize( n );
    }
 
+   void
+   resize( GlobalIndexType n )
+   {
+      field_.resize( n );
+      if constexpr( has_swap )
+         field_swap_.resize( n );
+   }
+
    auto
    getView()
    {
@@ -137,6 +145,17 @@ public:
    {
       if constexpr( has_swap )
          particles->reorderArray( field_, field_swap_ );
+   }
+
+   template< typename ParticlesPointer >
+   void
+   reorderUnswapped( ParticlesPointer& particles )
+   {
+      if constexpr( ! has_swap ) {
+         ArrayType fieldSwap;
+         fieldSwap.setSize( field_.getSize() );
+         particles->reorderArray( field_, fieldSwap );
+      }
    }
 
    template< typename Synchronizer, typename DistributedParticlesPointer >

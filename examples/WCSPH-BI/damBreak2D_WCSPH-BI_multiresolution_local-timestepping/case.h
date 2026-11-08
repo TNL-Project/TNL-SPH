@@ -28,9 +28,6 @@ void execLocalTimeStepping( Simulation& sph )
       sph.removeParticlesOutOfDomain();
       sph.performNeighborSearch();
 
-      // boundary ghosts are part of the sync-time boundary state, frozen for the whole window
-      sph.refreshBoundaryGhostValues();
-
       // substep physics of one level - the local-timestepping schedule drives it
       sph.recursiveSubdomainsLoop(
          [ & ]( int level, int /*substep*/, int /*globalSubstep*/, typename Simulation::RealType dt )

@@ -55,6 +55,20 @@ particles (currently the 3D example, whose init script does not emit ghost files
   topology chain links); the init script mirrors the same order when numbering the
   `boundary-ghost-buffer-<p>` files.
 
+### Static wall band versus moving LTS fluid layers
+
+The one-cell band above defines only the **static boundary-ghost wall lattice** generated
+at initialization. Those wall ghost positions and their membership do not move or change
+width during local time stepping.
+
+The LTS **fluid buffer** is a separate construct. On the fine side its overlap width is two;
+`frameMid` splits it into layer 1 (`frameMid XOR frameFront`) and layer 2
+(`frameBack XOR frameMid`), and both layers advect with their current velocities during
+substeps. Buffer membership changes only at sync points. The coarse side has one layer.
+The moving two-layer fluid band must therefore not be conflated with the static one-cell
+wall ghost band: `ltsTheta` and substep advection affect the former's state, not the
+latter's geometry.
+
 ## 4. Agreed data flow
 
 1. **Init (once, solver side):**
@@ -111,7 +125,7 @@ particles (currently the 3D example, whose init script does not emit ghost files
 | `include/SPH/Models/WCSPH_BI/Variables.h` | variables migrated to the `ParticleField` + `VariablesBase` field lists (`allFields()`); the flags encode read/write/sort and thereby the ghost-init policy |
 | `include/SPH/ParticleField.h` | `readable`/`writable` constexpr flags exposed for the generic ghost init |
 | `include/SPH/ConfigSetup.h` | `boundary-ghost-method` entry; `configBoundaryGhostBuffer` (`boundary-ghost-buffer-<p>-{particles,n}`) |
-| `src/tools/decomposition.py` | `boundary-ghost-buffers` section plumbing into the distributed-domain config |
+| `src/tools/decomposition.py` | `boundaryGhostBuffers` section plumbing into the distributed-domain config |
 | `examples/WCSPH-BI/damBreak2D_WCSPH-BI_multiresolution/init_multi_resolution.py` | `_wall_lattice` / `_frame_and_band` / `generate_ghost_band_boundaries` |
 | model kernels (`WCSPH_BI/*`) | none |
 | `include/SPH/MultiresolutionRectangleBuffer.h` | none |
