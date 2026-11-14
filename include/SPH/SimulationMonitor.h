@@ -405,6 +405,43 @@ public:
       }
    }
 
+   template< typename KernelFunction, typename EOS, typename LevelView >
+   void
+   measure(
+      const std::vector< LevelView >& measurementLevels,
+      ModelParams& modelParams,
+      TimeStepping& timeStepping,
+      TNL::Logger& logger,
+      const std::string& verbose )
+   {
+      if( timeStepping.checkOutputTimer( "interpolate" ) ) {
+         for( auto& [ key, val ] : this->interpolations ) {
+            val.template interpolate< KernelFunction >( measurementLevels, modelParams );
+            std::string outputFileNameInterpolation =
+               outputDirecotry + "/" + key + "_" + std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
+            val.save( outputFileNameInterpolation );
+            logger.writeParameter( "Saved:", outputFileNameInterpolation );
+            if( verbose == "full" )
+               logger.writeParameter( "Interpolation -" + key + ":", "Done." );
+         }
+      }
+      if( timeStepping.checkOutputTimer( "sensor_pressure" ) ) {
+         if( this->numberOfPressureSensors > 0 ) {
+            pressureSensors.template interpolate< KernelFunction, EOS >( measurementLevels, modelParams );
+            if( verbose == "full" )
+               logger.writeParameter( "Pressure sensor measurement:", "Done." );
+         }
+      }
+
+      if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) ) {
+         if( this->numberOfWaterLevelSensors > 0 ) {
+            waterLevelSensors.template interpolate< KernelFunction, EOS >( measurementLevels, modelParams );
+            if( verbose == "full" )
+               logger.writeParameter( "Water level measurement:", "Done." );
+         }
+      }
+   }
+
    void
    save( TNL::Logger& logger )
    {

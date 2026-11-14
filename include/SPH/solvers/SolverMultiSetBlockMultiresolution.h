@@ -10,6 +10,7 @@
 #include <SPH/DecompositionTopology.h>
 #include <SPH/MultiresolutionRectangleBuffer.h>
 #include <SPH/VariablesGhostInit.h>
+#include <SPH/shared/measurement/MeasurementLevelView.h>
 
 namespace TNL::SPH {
 
@@ -48,6 +49,8 @@ public:
       OpenBoundaryConfigType,
       ModelParams >;
    using MultiresolutionBoundaryPointer = Pointers::SharedPointer< MultiresolutionBoundary, DeviceType >;
+   using MeasurementLevel = MeasurementLevelView< SPHConfig, BaseType, MultiresolutionBoundaryPointer >;
+   using MeasurementLevels = std::vector< MeasurementLevel >;
 
    using GridType = TNL::Meshes::Grid< SPHConfig::spaceDimension, RealType >;
    using Topology = DecompositionTopologyFlat< GridType >;
@@ -73,6 +76,12 @@ public:
 
    void
    multiresolutionUpdate();
+
+   MeasurementLevels
+   buildMeasurementLevels() const;
+
+   void
+   measure();
 
    void
    interact();

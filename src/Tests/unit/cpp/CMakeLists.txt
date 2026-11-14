@@ -31,3 +31,8 @@ add_executable( MultiresolutionGrowthSafetyTest MultiresolutionGrowthSafetyTest.
 target_link_libraries( MultiresolutionGrowthSafetyTest PUBLIC TNL::TNL )
 add_test( NAME MultiresolutionGrowthSafetyTest COMMAND MultiresolutionGrowthSafetyTest )
 set_tests_properties( MultiresolutionGrowthSafetyTest PROPERTIES LABELS "unit" )
+
+add_executable( MultiresolutionMeasurementTest MultiresolutionMeasurementTest.cu )
+target_link_libraries( MultiresolutionMeasurementTest PUBLIC TNL::TNL )
+add_test( NAME MultiresolutionMeasurementTest COMMAND MultiresolutionMeasurementTest )
+set_tests_properties( MultiresolutionMeasurementTest PROPERTIES LABELS "unit" )

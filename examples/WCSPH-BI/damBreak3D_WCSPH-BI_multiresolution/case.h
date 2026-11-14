@@ -44,7 +44,7 @@ void exec( Simulation& sph )
       sph.multiresolutionUpdate();
 
       //// check timers and if measurement or interpolation should be performed, is performed
-      //sph.measure();
+      sph.measure();
 
       // update time step
       sph.timeStepping.updateTimeStep();

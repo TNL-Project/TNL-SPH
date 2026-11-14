@@ -10,6 +10,7 @@
 #include <TNL/Particles/CellIndexer.h>
 
 #include <SPH/SPHTraits.h>
+#include <SPH/shared/measurement/MeasurementLevelView.h>
 
 namespace TNL::SPH {
 
@@ -30,6 +31,7 @@ public:
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
    using Variables = typename SPHSimulation::FluidVariables;
    using VariablesPointer = typename Pointers::SharedPointer< Variables, DeviceType >;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
    //There should be dimension only 2
    using GridType = Meshes::Grid< SPHConfig::spaceDimension, RealType, DeviceType, GlobalIndexType >;
@@ -78,6 +80,10 @@ public:
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
+   template< typename SPHKernelFunction, typename ModelParams, typename LevelView >
+   void
+   interpolate( const std::vector< LevelView >& levels, ModelParams& modelParams );
+
    template< typename SPHKernelFunction, typename SPHState >
    void
    interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
@@ -98,6 +104,18 @@ protected:
    ScalarArrayType gamma;
 
    VectorType gridStep;
+
+public:
+   template< typename SPHKernelFunction, typename SourcePointer >
+   void
+   accumulateGridSource(
+      const SourcePointer& source,
+      const IndexArrayType& owners,
+      GlobalIndexType levelId,
+      RealType h,
+      RealType mass,
+      const VectorType& gridOrigin,
+      const VectorType& gridSpaceSteps );
 };
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -113,6 +131,8 @@ public:
    using RealType = typename SPHTraitsType::RealType;
    using VectorType = typename SPHTraitsType::VectorType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
+   using IndexArrayType = typename SPHTraitsType::IndexArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -161,6 +181,10 @@ public:
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
+   template< typename SPHKernelFunction, typename EOS, typename ModelParams, typename LevelView >
+   void
+   interpolate( const std::vector< LevelView >& levels, ModelParams& modelParams );
+
    void
    save( const std::string outputFileName );
 
@@ -172,6 +196,19 @@ protected:
 
    GlobalIndexType numberOfSavedSteps;
    GlobalIndexType sensorIndexer = 0;
+
+public:
+   template< typename SPHKernelFunction, typename EOS, typename SourcePointer >
+   void
+   accumulatePressureSource(
+      const SourcePointer& source,
+      const IndexArrayType& owners,
+      ScalarArrayType& pressure,
+      ScalarArrayType& gamma,
+      GlobalIndexType levelId,
+      RealType h,
+      RealType mass,
+      const typename EOS::ParamsType& eosParams );
 };
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -188,6 +225,7 @@ public:
    using VectorType = typename SPHTraitsType::VectorType;
    using VectorArrayType = typename SPHTraitsType::VectorArrayType;
    using IndexArrayType = typename SPHTraitsType::IndexArrayType;
+   using ScalarArrayType = typename SPHTraitsType::ScalarArrayType;
 
    using FluidPointer = typename SPHSimulation::FluidPointer;
    using BoundaryPointer = typename SPHSimulation::BoundaryPointer;
@@ -264,6 +302,10 @@ public:
    void
    interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
 
+   template< typename SPHKernelFunction, typename EOS, typename ModelParams, typename LevelView >
+   void
+   interpolate( const std::vector< LevelView >& levels, ModelParams& modelParams );
+
    void
    save( const std::string outputFileName );
 
@@ -281,6 +323,18 @@ protected:
    VectorType direction;
    RealType startLevel;
    RealType endLevel;
+
+public:
+   template< typename SPHKernelFunction, typename SourcePointer >
+   void
+   accumulateWaterSource(
+      const SourcePointer& source,
+      const VectorArrayType& samplePositions,
+      const IndexArrayType& sampleOwners,
+      ScalarArrayType& sampleGamma,
+      GlobalIndexType levelId,
+      RealType h,
+      RealType mass );
 };
 
 }  // namespace TNL::SPH

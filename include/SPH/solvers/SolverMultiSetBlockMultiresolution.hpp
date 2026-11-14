@@ -550,6 +550,50 @@ SolverMultiSetBlockMultiresolution< Model >::multiresolutionUpdate()
 }
 
 template< typename Model >
+typename SolverMultiSetBlockMultiresolution< Model >::MeasurementLevels
+SolverMultiSetBlockMultiresolution< Model >::buildMeasurementLevels() const
+{
+   MeasurementLevels levels;
+   const int numberOfLevels = topology.getNumberOfSubdomains();
+   levels.reserve( numberOfLevels );
+   for( int i = 0; i < numberOfLevels; ++i ) {
+      const auto& localGrid = topology.getLocalGrid( i );
+      const auto localCellSize = localGrid.getSpaceSteps();
+      const auto localDimensions = localGrid.getDimensions();
+
+      typename MeasurementLevel::OwnerBox ownerBox;
+      ownerBox.minimum = localGrid.getOrigin();
+      ownerBox.maximum = ownerBox.minimum + localDimensions * localCellSize;
+      ownerBox.refinementFactor = this->fluidSets[ i ]->getParticles()->getSearchRadius() / ( 2.f * this->modelParams.h );
+      levels.emplace_back(
+         this->fluidSets[ i ],
+         this->boundarySets[ i ],
+         multiresolutionBoundaryPatches,
+         multiresolutionBoundaryPatchInterfaces,
+         i,
+         ownerBox,
+         this->modelParams );
+   }
+   return levels;
+}
+
+template< typename Model >
+void
+SolverMultiSetBlockMultiresolution< Model >::measure()
+{
+#ifdef HAVE_MPI
+   if( topology.getNumberOfSubdomains() == 0 ) {
+      BaseType::measure();
+      return;
+   }
+#endif
+
+   const MeasurementLevels levels = buildMeasurementLevels();
+   this->simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
+      levels, this->modelParams, this->timeStepping, this->logger, this->verbose );
+}
+
+template< typename Model >
 void
 SolverMultiSetBlockMultiresolution< Model >::interact()
 {

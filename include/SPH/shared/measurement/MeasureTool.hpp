@@ -186,6 +186,150 @@ InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate(
 }
 
 template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename SourcePointer >
+void
+InterpolateToGrid< SPHConfig, SPHSimulation >::accumulateGridSource(
+   const SourcePointer& source,
+   const IndexArrayType& owners,
+   const GlobalIndexType levelId,
+   const RealType h,
+   const RealType m,
+   const VectorType& gridOrigin,
+   const VectorType& gridSpaceSteps )
+{
+   typename ParticlesType::NeighborsLoopParams searchInSource( source->getParticles() );
+   const auto view_points = source->getParticles()->getPoints().getConstView();
+   const auto view_rho = source->getVariables()->rho.getConstView();
+   const auto view_v = source->getVariables()->v.getConstView();
+   const RealType searchRadius = source->getParticles()->getSearchRadius();
+   const auto ownersView = owners.getConstView();
+   auto view_rho_interpolation = this->variables->rho.getView();
+   auto view_v_interpolation = this->variables->v.getView();
+   auto view_gamma_interpolation = this->gamma.getView();
+
+   auto interpolate =
+      [ = ] __cuda_callable__(
+         LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* rho, VectorType* v, RealType* gamma ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const RealType drs = l2Norm( r_i - r_j );
+      if( drs <= searchRadius ) {
+         const RealType rho_j = view_rho[ j ];
+         const RealType W = SPHKernelFunction::W( drs, h );
+         const RealType V = m / rho_j;
+         *v += view_v[ j ] * W * V;
+         *rho += W * m;
+         *gamma += W * V;
+      }
+   };
+
+   auto processPoint = [ = ] __cuda_callable__( const VectorType r, const GlobalIndexType idx ) mutable
+   {
+      if( ownersView[ idx ] != levelId )
+         return;
+      VectorType v = view_v_interpolation[ idx ];
+      RealType rho = view_rho_interpolation[ idx ];
+      RealType gamma = view_gamma_interpolation[ idx ];
+      ParticlesType::NeighborsLoopAnotherSet::exec( idx, r, searchInSource, interpolate, &rho, &v, &gamma );
+      view_v_interpolation[ idx ] = v;
+      view_rho_interpolation[ idx ] = rho;
+      view_gamma_interpolation[ idx ] = gamma;
+   };
+
+   if( this->interpolatedGridEntity == 0 )
+      this->interpolationGrid.template forAllEntities< 0 >(
+         [ = ] __cuda_callable__( const GridVertex& gridEntity ) mutable
+         {
+            const CoordinatesType coords = gridEntity.getCoordinates();
+            processPoint( coords * gridSpaceSteps + gridOrigin, gridEntity.getIndex() );
+         } );
+   else
+      this->interpolationGrid.template forAllEntities< SPHConfig::spaceDimension >(
+         [ = ] __cuda_callable__( const GridCell& gridEntity ) mutable
+         {
+            const CoordinatesType coords = gridEntity.getCoordinates();
+            processPoint( coords * gridSpaceSteps + gridOrigin, gridEntity.getIndex() );
+         } );
+}
+
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename ModelParams, typename LevelView >
+void
+InterpolateToGrid< SPHConfig, SPHSimulation >::interpolate(
+   const std::vector< LevelView >& levelViews,
+   ModelParams& modelParams )
+{
+   (void) modelParams;
+   if( ! validateMeasurementLevels( levelViews ) )
+      throw std::invalid_argument( "Invalid multiresolution measurement levels" );
+
+   const GlobalIndexType entitiesCount = this->interpolationGrid.getEntitiesCount( this->interpolatedGridEntity );
+   this->variables->rho = 0.f;
+   this->variables->v = VectorType( 0.f );
+   this->gamma = 0.f;
+
+   auto ownerBoxes = makeMeasurementOwnerBoxArray< SPHConfig >( levelViews );
+   IndexArrayType owners;
+   owners.setSize( entitiesCount );
+   const auto ownerBoxesView = ownerBoxes.getConstView();
+   auto ownersView = owners.getView();
+
+   const VectorType gridSpaceSteps = this->interpolationGrid.getSpaceSteps();
+   const VectorType gridOriginOffsetFactor = ( this->interpolatedGridEntity ) ? ( 0.f ) : ( 0.5f );
+   const VectorType gridOrigin = this->interpolationGrid.getOrigin() + gridOriginOffsetFactor * gridSpaceSteps;
+
+   auto assignOwner = [ = ] __cuda_callable__( const VectorType& r, const GlobalIndexType idx ) mutable
+   {
+      ownersView[ idx ] = findOwningMeasurementLevel( r, ownerBoxesView );
+   };
+   if( this->interpolatedGridEntity == 0 )
+      this->interpolationGrid.template forAllEntities< 0 >(
+         [ = ] __cuda_callable__( const GridVertex& gridEntity ) mutable
+         {
+            const CoordinatesType coords = gridEntity.getCoordinates();
+            assignOwner( coords * gridSpaceSteps + gridOrigin, gridEntity.getIndex() );
+         } );
+   else
+      this->interpolationGrid.template forAllEntities< SPHConfig::spaceDimension >(
+         [ = ] __cuda_callable__( const GridCell& gridEntity ) mutable
+         {
+            const CoordinatesType coords = gridEntity.getCoordinates();
+            assignOwner( coords * gridSpaceSteps + gridOrigin, gridEntity.getIndex() );
+         } );
+
+   auto view_rho_interpolation = this->variables->rho.getView();
+   auto view_v_interpolation = this->variables->v.getView();
+   auto view_gamma_interpolation = this->gamma.getView();
+
+   for( std::size_t level = 0; level < levelViews.size(); ++level ) {
+      const int levelId = static_cast< int >( level );
+      const RealType h = levelViews[ level ].h;
+      const RealType m = levelViews[ level ].mass;
+
+      accumulateGridSource< SPHKernelFunction >(
+         *levelViews[ level ].fluid, owners, levelId, h, m, gridOrigin, gridSpaceSteps );
+      for( const auto* patch : levelViews[ level ].ownPatches )
+         accumulateGridSource< SPHKernelFunction >( *patch, owners, levelId, h, m, gridOrigin, gridSpaceSteps );
+
+      auto normalize = [ = ] __cuda_callable__( GlobalIndexType idx ) mutable
+      {
+         if( ownersView[ idx ] != levelId )
+            return;
+         const RealType gamma = view_gamma_interpolation[ idx ];
+         if( gamma > 0.5f ) {
+            view_v_interpolation[ idx ] /= gamma;
+            view_rho_interpolation[ idx ] /= gamma;
+         }
+         else {
+            view_v_interpolation[ idx ] = 0.f;
+            view_rho_interpolation[ idx ] = 0.f;
+         }
+      };
+      Algorithms::parallelFor< DeviceType >( 0, entitiesCount, normalize );
+   }
+}
+
+template< typename SPHConfig, typename SPHSimulation >
 void
 InterpolateToGrid< SPHConfig, SPHSimulation >::save( const std::string outputFileName )
 {
@@ -315,6 +459,119 @@ SensorInterpolation< SPHConfig, SPHSimulation >::interpolate(
    Algorithms::parallelFor< DeviceType >( 0, numberOfSensors, sensorsLoop, this->sensorIndexer );
 
    sensorIndexer++;
+}
+
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename EOS, typename SourcePointer >
+void
+SensorInterpolation< SPHConfig, SPHSimulation >::accumulatePressureSource(
+   const SourcePointer& source,
+   const IndexArrayType& owners,
+   ScalarArrayType& pressure,
+   ScalarArrayType& gamma,
+   const GlobalIndexType levelId,
+   const RealType h,
+   const RealType m,
+   const typename EOS::ParamsType& eosParams )
+{
+   typename ParticlesType::NeighborsLoopParams searchInSource( source->getParticles() );
+   const auto view_points = source->getParticles()->getPoints().getConstView();
+   const auto view_rho = source->getVariables()->rho.getConstView();
+   const RealType searchRadius = source->getParticles()->getSearchRadius();
+   const auto ownersView = owners.getConstView();
+   const auto sensorPositionsView = sensorPositions.getConstView();
+   auto pressureView = pressure.getView();
+   auto gammaView = gamma.getView();
+
+   auto interpolate =
+      [ = ] __cuda_callable__( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* p, RealType* g ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const RealType drs = l2Norm( r_i - r_j );
+      if( drs <= searchRadius ) {
+         const RealType rho_j = view_rho[ j ];
+         const RealType p_j = EOS::DensityToPressure( rho_j, eosParams );
+         const RealType W = SPHKernelFunction::W( drs, h );
+         const RealType V = m / rho_j;
+         *p += p_j * W * V;
+         *g += W * V;
+      }
+   };
+
+   auto sensorsLoop = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      if( ownersView[ i ] != levelId )
+         return;
+      VectorType r = sensorPositionsView[ i ];
+      RealType p = pressureView[ i ];
+      RealType g = gammaView[ i ];
+      ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInSource, interpolate, &p, &g );
+      pressureView[ i ] = p;
+      gammaView[ i ] = g;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, this->numberOfSensors, sensorsLoop );
+}
+
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename EOS, typename ModelParams, typename LevelView >
+void
+SensorInterpolation< SPHConfig, SPHSimulation >::interpolate(
+   const std::vector< LevelView >& levelViews,
+   ModelParams& modelParams )
+{
+   if( ! validateMeasurementLevels( levelViews ) )
+      throw std::invalid_argument( "Invalid multiresolution measurement levels" );
+
+   IndexArrayType owners;
+   auto ownerBoxes = makeMeasurementOwnerBoxArray< SPHConfig >( levelViews );
+   computeMeasurementOwners( sensorPositions, ownerBoxes, owners );
+   auto ownersView = owners.getView();
+
+   ScalarArrayType pressure;
+   ScalarArrayType gamma;
+   pressure.setSize( this->numberOfSensors );
+   gamma.setSize( this->numberOfSensors );
+   pressure = 0.f;
+   gamma = 0.f;
+   auto pressureView = pressure.getView();
+   auto gammaView = gamma.getView();
+   auto sensorsView = sensors.getView();
+   const GlobalIndexType outputRow = this->sensorIndexer;
+
+   auto resetRow = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      sensorsView( outputRow, i ) = 0.f;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, this->numberOfSensors, resetRow );
+
+   typename EOS::ParamsType eosParams( modelParams );
+   const bool includeBoundary = this->includeBoundary;
+   for( std::size_t level = 0; level < levelViews.size(); ++level ) {
+      const int levelId = static_cast< int >( level );
+      const RealType h = levelViews[ level ].h;
+      const RealType m = levelViews[ level ].mass;
+
+      accumulatePressureSource< SPHKernelFunction, EOS >(
+         *levelViews[ level ].fluid, owners, pressure, gamma, levelId, h, m, eosParams );
+      for( const auto* patch : levelViews[ level ].ownPatches )
+         accumulatePressureSource< SPHKernelFunction, EOS >( *patch, owners, pressure, gamma, levelId, h, m, eosParams );
+      if( includeBoundary )
+         accumulatePressureSource< SPHKernelFunction, EOS >(
+            *levelViews[ level ].boundary, owners, pressure, gamma, levelId, h, m, eosParams );
+
+      auto normalize = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+      {
+         if( ownersView[ i ] != levelId )
+            return;
+         if( gammaView[ i ] > 0.5f )
+            sensorsView( outputRow, i ) = pressureView[ i ] / gammaView[ i ];
+         else
+            sensorsView( outputRow, i ) = 0.f;
+      };
+      Algorithms::parallelFor< DeviceType >( 0, this->numberOfSensors, normalize );
+   }
+
+   ++this->sensorIndexer;
 }
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -528,6 +785,128 @@ SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate(
    }
 
    sensorIndexer++;
+}
+
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename SourcePointer >
+void
+SensorWaterLevel< SPHConfig, SPHSimulation >::accumulateWaterSource(
+   const SourcePointer& source,
+   const VectorArrayType& samplePositions,
+   const IndexArrayType& sampleOwners,
+   ScalarArrayType& sampleGamma,
+   const GlobalIndexType levelId,
+   const RealType h,
+   const RealType m )
+{
+   typename ParticlesType::NeighborsLoopParams searchInSource( source->getParticles() );
+   const auto view_points = source->getParticles()->getPoints().getConstView();
+   const auto view_rho = source->getVariables()->rho.getConstView();
+   const RealType searchRadius = source->getParticles()->getSearchRadius();
+   const auto samplePositionsView = samplePositions.getConstView();
+   const auto sampleOwnersView = sampleOwners.getConstView();
+   auto sampleGammaView = sampleGamma.getView();
+
+   auto interpolateWaterLevel =
+      [ = ] __cuda_callable__( LocalIndexType i, LocalIndexType j, VectorType& r_i, RealType* gamma ) mutable
+   {
+      const VectorType r_j = view_points[ j ];
+      const RealType drs = l2Norm( r_i - r_j );
+      if( drs <= searchRadius ) {
+         const RealType rho_j = view_rho[ j ];
+         const RealType W = SPHKernelFunction::W( drs, h );
+         const RealType V = m / rho_j;
+         *gamma += W * V;
+      }
+   };
+
+   auto samplesLoop = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+   {
+      if( sampleOwnersView[ i ] != levelId )
+         return;
+      VectorType r = samplePositionsView[ i ];
+      RealType gamma = sampleGammaView[ i ];
+      ParticlesType::NeighborsLoopAnotherSet::exec( i, r, searchInSource, interpolateWaterLevel, &gamma );
+      sampleGammaView[ i ] = gamma;
+   };
+   Algorithms::parallelFor< DeviceType >( 0, this->numberOfLevels, samplesLoop );
+}
+
+template< typename SPHConfig, typename SPHSimulation >
+template< typename SPHKernelFunction, typename EOS, typename ModelParams, typename LevelView >
+void
+SensorWaterLevel< SPHConfig, SPHSimulation >::interpolate(
+   const std::vector< LevelView >& levelViews,
+   ModelParams& modelParams )
+{
+   (void) modelParams;
+   if( ! validateMeasurementLevels( levelViews ) )
+      throw std::invalid_argument( "Invalid multiresolution measurement levels" );
+
+   auto ownerBoxes = makeMeasurementOwnerBoxArray< SPHConfig >( levelViews );
+   VectorArrayType samplePositions;
+   IndexArrayType sampleOwners;
+   ScalarArrayType sampleGamma;
+   samplePositions.setSize( this->numberOfLevels );
+   sampleOwners.setSize( this->numberOfLevels );
+   sampleGamma.setSize( this->numberOfLevels );
+   if( this->levels.getSize() != this->numberOfLevels )
+      this->levels.setSize( this->numberOfLevels );
+
+   auto samplePositionsView = samplePositions.getView();
+   auto sampleOwnersView = sampleOwners.getView();
+   auto sampleGammaView = sampleGamma.getView();
+   auto wetLevelsView = this->levels.getView();
+   auto sensorsView = sensors.getView();
+   const RealType levelIncrement = this->levelIncrement;
+   const VectorType direction = this->direction;
+   const GlobalIndexType outputRow = this->sensorIndexer;
+
+   for( GlobalIndexType sensor = 0; sensor < this->numberOfSensors; ++sensor ) {
+      const VectorType sensorLocation = sensorPositions.getElement( sensor );
+      auto setSamplePosition = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+      {
+         samplePositionsView[ i ] = sensorLocation + i * levelIncrement * direction;
+      };
+      Algorithms::parallelFor< DeviceType >( 0, this->numberOfLevels, setSamplePosition );
+      computeMeasurementOwners( samplePositions, ownerBoxes, sampleOwners );
+      sampleGamma = 0.f;
+      this->levels = 0;
+
+      for( std::size_t level = 0; level < levelViews.size(); ++level ) {
+         const int levelId = static_cast< int >( level );
+         const RealType h = levelViews[ level ].h;
+         const RealType m = levelViews[ level ].mass;
+
+         accumulateWaterSource< SPHKernelFunction >(
+            *levelViews[ level ].fluid, samplePositions, sampleOwners, sampleGamma, levelId, h, m );
+         for( const auto* patch : levelViews[ level ].ownPatches )
+            accumulateWaterSource< SPHKernelFunction >(
+               *patch, samplePositions, sampleOwners, sampleGamma, levelId, h, m );
+
+         auto classifySample = [ = ] __cuda_callable__( GlobalIndexType i ) mutable
+         {
+            if( sampleOwnersView[ i ] == levelId )
+               wetLevelsView[ i ] = sampleGammaView[ i ] > 0.5f ? 1 : 0;
+         };
+         Algorithms::parallelFor< DeviceType >( 0, this->numberOfLevels, classifySample );
+      }
+
+      auto fetch = [ = ] __cuda_callable__( GlobalIndexType i ) -> GlobalIndexType
+      {
+         return wetLevelsView[ i ];
+      };
+      auto reduction = [] __cuda_callable__( const GlobalIndexType& a, const GlobalIndexType& b )
+      {
+         return a + b;
+      };
+      const GlobalIndexType numberOfFilledLevels =
+         Algorithms::reduce< DeviceType >( 0, wetLevelsView.getSize(), fetch, reduction, 0 );
+      const RealType waterLevel = levelIncrement * numberOfFilledLevels + ( sensorLocation, direction );
+      sensorsView( outputRow, sensor ) = waterLevel;
+   }
+
+   ++this->sensorIndexer;
 }
 
 template< typename SPHConfig, typename SPHSimulation >
