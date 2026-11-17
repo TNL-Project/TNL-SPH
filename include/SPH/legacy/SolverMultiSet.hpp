@@ -610,8 +610,7 @@ LegacySolverMultiSet< Model >::measure()
    //   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
    //         fluidSets[ i ], boundarySets[ i ], modelParams, timeStepping, logger, verbose );
 
-   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-      fluidSets[ 1 ], boundarySets[ 1 ], modelParams, timeStepping, logger, verbose );
+   simulationMonitor.measure( fluidSets[ 1 ], boundarySets[ 1 ], modelParams, timeStepping, logger, verbose );
 }
 
 template< typename Model >

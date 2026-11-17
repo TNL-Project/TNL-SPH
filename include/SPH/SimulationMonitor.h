@@ -367,7 +367,6 @@ public:
       updateAndOutputVolumetricFlowRates( timeStepping );
    }
 
-   template< typename KernelFunction, typename EOS >
    void
    measure(
       FluidPointer& fluid,
@@ -379,7 +378,7 @@ public:
    {
       if( timeStepping.checkOutputTimer( "interpolate" ) ) {
          for( auto& [ key, val ] : this->interpolations ) {
-            val.template interpolate< KernelFunction >( fluid, boundary, modelParams );
+            val.interpolate( fluid, boundary, modelParams );
             std::string outputFileNameInterpolation =
                outputDirecotry + "/" + key + "_" + std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
             val.save( outputFileNameInterpolation );
@@ -390,7 +389,7 @@ public:
       }
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) ) {
          if( this->numberOfPressureSensors > 0 ) {
-            pressureSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
+            pressureSensors.interpolate( fluid, boundary, modelParams );
             if( verbose == "full" )
                logger.writeParameter( "Pressure sensor measurement:", "Done." );
          }
@@ -398,14 +397,14 @@ public:
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) ) {
          if( this->numberOfWaterLevelSensors > 0 ) {
-            waterLevelSensors.template interpolate< KernelFunction, EOS >( fluid, boundary, modelParams );
+            waterLevelSensors.interpolate( fluid, boundary, modelParams );
             if( verbose == "full" )
                logger.writeParameter( "Water level measurement:", "Done." );
          }
       }
    }
 
-   template< typename KernelFunction, typename EOS, typename LevelView >
+   template< typename LevelView >
    void
    measure(
       const std::vector< LevelView >& measurementLevels,
@@ -416,7 +415,7 @@ public:
    {
       if( timeStepping.checkOutputTimer( "interpolate" ) ) {
          for( auto& [ key, val ] : this->interpolations ) {
-            val.template interpolate< KernelFunction >( measurementLevels, modelParams );
+            val.interpolate( measurementLevels, modelParams );
             std::string outputFileNameInterpolation =
                outputDirecotry + "/" + key + "_" + std::to_string( timeStepping.getTime() ) + "s_interpolation.vtk";
             val.save( outputFileNameInterpolation );
@@ -427,7 +426,7 @@ public:
       }
       if( timeStepping.checkOutputTimer( "sensor_pressure" ) ) {
          if( this->numberOfPressureSensors > 0 ) {
-            pressureSensors.template interpolate< KernelFunction, EOS >( measurementLevels, modelParams );
+            pressureSensors.interpolate( measurementLevels, modelParams );
             if( verbose == "full" )
                logger.writeParameter( "Pressure sensor measurement:", "Done." );
          }
@@ -435,7 +434,7 @@ public:
 
       if( timeStepping.checkOutputTimer( "sensor_waterLevel" ) ) {
          if( this->numberOfWaterLevelSensors > 0 ) {
-            waterLevelSensors.template interpolate< KernelFunction, EOS >( measurementLevels, modelParams );
+            waterLevelSensors.interpolate( measurementLevels, modelParams );
             if( verbose == "full" )
                logger.writeParameter( "Water level measurement:", "Done." );
          }

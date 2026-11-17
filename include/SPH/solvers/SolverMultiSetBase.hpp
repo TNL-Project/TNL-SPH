@@ -255,8 +255,7 @@ void
 SolverMultiSetBase< Model >::measure()
 {
    //FIXME: Needs generalization for multi-set simulations
-   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-      fluidSets[ 0 ], boundarySets[ 0 ], modelParams, timeStepping, logger, verbose );
+   simulationMonitor.measure( fluidSets[ 0 ], boundarySets[ 0 ], modelParams, timeStepping, logger, verbose );
 }
 
 template< typename Model >

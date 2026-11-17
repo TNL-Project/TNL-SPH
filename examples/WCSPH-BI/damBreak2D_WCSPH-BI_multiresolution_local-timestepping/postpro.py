@@ -46,14 +46,15 @@ def plot_pressure_sensors():
         experimental_data = np.genfromtxt( experimental_data_file )
 
         ax.plot( experimental_data[ :, 0 ], experimental_data[ :, 1 ], label='Lobovsky 2014', linewidth=2, color='b'  )
-        ax.plot( nondim_time_coef * simulation_data[ :, 0 ],
-                 nondim_pressure_coef * simulation_data[ :, i + 1 ],
+        mask = (nondim_time_coef * simulation_data[:, 0]) < 7.5
+        ax.plot( nondim_time_coef * simulation_data[ mask, 0 ],
+                 nondim_pressure_coef * simulation_data[ mask, i + 1 ],
                  label='WCSPH-BI', linewidth=1, color='k' )
 
         ax.set_ylabel( r'$ t( ||\mathbf{g}|| /H)^{1/2} $ ')
         ax.set_xlabel( r'$ p/(\rho ||\mathbf{g}|| H)^{1/2}$')
         ax.grid( color='black', linestyle='--', linewidth=0.5 )
-        if i == 0:
+        if i == 3:
             leg = ax.legend()
             leg.get_frame().set_edgecolor('k')
         title = f'Pressure sensor P{ i + 1 }'

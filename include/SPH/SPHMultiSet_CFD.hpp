@@ -608,8 +608,7 @@ template< typename Model >
 void
 SPHMultiSet_CFD< Model >::measure()
 {
-   simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-      fluid, boundary, modelParams, timeStepping, logger, verbose );
+   simulationMonitor.measure( fluid, boundary, modelParams, timeStepping, logger, verbose );
 }
 
 template< typename Model >

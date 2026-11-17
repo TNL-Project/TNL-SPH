@@ -52,8 +52,7 @@ updateOpenBCHydrostaticProfile(
    SensorWaterLevel waterLevelSensor;
    std::vector< VectorType > pointsToMeasureWaterLevel = { referentialPoint };
    waterLevelSensor.init( pointsToMeasureWaterLevel, 1, modelParams.dp, direction, ( referentialPoint, direction ), 0.5 );
-   waterLevelSensor.template interpolate< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-      fluid, boundary, modelParams );
+   waterLevelSensor.interpolate( fluid, boundary, modelParams );
    const RealType waterLevel = waterLevelSensor.getSensorData().getElement( 0, 0 );
 
    //update inlet profile

@@ -76,21 +76,21 @@ public:
       gamma.setSize( interpolationGrid.getEntitiesCount( interpolatedGridEntity ) );
    }
 
-   template< typename SPHKernelFunction, typename SPHState >
+   template< typename ModelParams >
    void
-   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, const ModelParams& modelParams );
 
-   template< typename SPHKernelFunction, typename ModelParams, typename LevelView >
+   template< typename ModelParams, typename LevelView >
    void
-   interpolate( const std::vector< LevelView >& levels, ModelParams& modelParams );
+   interpolate( const std::vector< LevelView >& levels, const ModelParams& modelParams );
 
-   template< typename SPHKernelFunction, typename SPHState >
+   template< typename ModelParams >
    void
-   interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+   interpolateUsingGrid( FluidPointer& fluid, BoundaryPointer& boundary, const ModelParams& modelParams );
 
-   template< typename SPHKernelFunction, typename SPHState >
+   template< typename ModelParams >
    void
-   interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+   interpolateUsingParallelFor( FluidPointer& fluid, BoundaryPointer& boundary, const ModelParams& modelParams );
 
    void
    save( const std::string outputFileName );
@@ -105,17 +105,18 @@ protected:
 
    VectorType gridStep;
 
+// NVCC extended lambdas cannot be defined in protected member functions.
 public:
-   template< typename SPHKernelFunction, typename SourcePointer >
+   template< typename NeighborLoop, typename ModelParams, typename SourcePointer >
    void
-   accumulateGridSource(
+   accumulateGrid(
       const SourcePointer& source,
-      const IndexArrayType& owners,
-      GlobalIndexType levelId,
-      RealType h,
-      RealType mass,
-      const VectorType& gridOrigin,
-      const VectorType& gridSpaceSteps );
+      const ModelParams& modelParams,
+      const IndexArrayType& owners = {},
+      GlobalIndexType levelSlot = -1 );
+
+   void
+   normalizeGrid( const IndexArrayType& owners = {}, GlobalIndexType levelSlot = -1 );
 };
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -177,13 +178,13 @@ public:
       this->includeBoundary = includeBoundary;
    }
 
-   template< typename SPHKernelFunction, typename EOS, typename SPHState >
+   template< typename ModelParams >
    void
-   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, const ModelParams& modelParams );
 
-   template< typename SPHKernelFunction, typename EOS, typename ModelParams, typename LevelView >
+   template< typename ModelParams, typename LevelView >
    void
-   interpolate( const std::vector< LevelView >& levels, ModelParams& modelParams );
+   interpolate( const std::vector< LevelView >& levels, const ModelParams& modelParams );
 
    void
    save( const std::string outputFileName );
@@ -197,18 +198,28 @@ protected:
    GlobalIndexType numberOfSavedSteps;
    GlobalIndexType sensorIndexer = 0;
 
+   ScalarArrayType pressure;
+   ScalarArrayType gamma;
+
+// NVCC extended lambdas cannot be defined in protected member functions.
 public:
-   template< typename SPHKernelFunction, typename EOS, typename SourcePointer >
+   template< typename ModelParams, typename SourcePointer >
    void
-   accumulatePressureSource(
+   accumulatePressure(
       const SourcePointer& source,
-      const IndexArrayType& owners,
-      ScalarArrayType& pressure,
-      ScalarArrayType& gamma,
-      GlobalIndexType levelId,
-      RealType h,
-      RealType mass,
-      const typename EOS::ParamsType& eosParams );
+      const ModelParams& modelParams,
+      RealType searchRadius,
+      const IndexArrayType& owners = {},
+      GlobalIndexType levelSlot = -1 );
+
+   void
+   resetPressure( GlobalIndexType outputRow );
+
+   void
+   normalizePressure(
+      GlobalIndexType outputRow,
+      const IndexArrayType& owners = {},
+      GlobalIndexType levelSlot = -1 );
 };
 
 template< typename SPHConfig, typename SPHSimulation >
@@ -298,13 +309,13 @@ public:
    [[nodiscard]] const SensorsDataArray&
    getSensorData() const;
 
-   template< typename SPHKernelFunction, typename EOS, typename SPHState >
+   template< typename ModelParams >
    void
-   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, SPHState& sphState );
+   interpolate( FluidPointer& fluid, BoundaryPointer& boundary, const ModelParams& modelParams );
 
-   template< typename SPHKernelFunction, typename EOS, typename ModelParams, typename LevelView >
+   template< typename ModelParams, typename LevelView >
    void
-   interpolate( const std::vector< LevelView >& levels, ModelParams& modelParams );
+   interpolate( const std::vector< LevelView >& levels, const ModelParams& modelParams );
 
    void
    save( const std::string outputFileName );
@@ -317,6 +328,8 @@ protected:
    GlobalIndexType numberOfSavedSteps;
    GlobalIndexType sensorIndexer = 0;
 
+   VectorArrayType samplePositions;
+   ScalarArrayType sampleGamma;
    IndexArrayType levels;
    GlobalIndexType numberOfLevels;
    RealType levelIncrement;
@@ -324,17 +337,24 @@ protected:
    RealType startLevel;
    RealType endLevel;
 
+// NVCC extended lambdas cannot be defined in protected member functions.
 public:
-   template< typename SPHKernelFunction, typename SourcePointer >
+   template< typename ModelParams, typename SourcePointer >
    void
-   accumulateWaterSource(
+   accumulateWater(
       const SourcePointer& source,
-      const VectorArrayType& samplePositions,
-      const IndexArrayType& sampleOwners,
-      ScalarArrayType& sampleGamma,
-      GlobalIndexType levelId,
-      RealType h,
-      RealType mass );
+      const ModelParams& modelParams,
+      const IndexArrayType& owners = {},
+      GlobalIndexType levelSlot = -1 );
+
+   void
+   resetWaterSamples( const VectorType& sensorLocation );
+
+   void
+   classifyWaterSamples( const IndexArrayType& owners = {}, GlobalIndexType levelSlot = -1 );
+
+   RealType
+   reduceWaterLevel( const VectorType& sensorLocation );
 };
 
 }  // namespace TNL::SPH

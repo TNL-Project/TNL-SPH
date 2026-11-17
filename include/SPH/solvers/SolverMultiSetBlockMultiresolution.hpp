@@ -589,8 +589,7 @@ SolverMultiSetBlockMultiresolution< Model >::measure()
 #endif
 
    const MeasurementLevels levels = buildMeasurementLevels();
-   this->simulationMonitor.template measure< typename ModelParams::KernelFunction, typename ModelParams::EOS >(
-      levels, this->modelParams, this->timeStepping, this->logger, this->verbose );
+   this->simulationMonitor.measure( levels, this->modelParams, this->timeStepping, this->logger, this->verbose );
 }
 
 template< typename Model >
