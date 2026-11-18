@@ -5,10 +5,9 @@ Multiresolution SPH dam-break initializer.
 Subdomains are defined as axis-aligned parts in physical coordinates.
 Each subdomain carries its own refinement factor (dp_subdomain = factor * dx_L0).
 
-The setup supports an arbitrary number of refinement levels organized as a
-nested chain: level 0 is the whole tank and every entry of the refinement
-zone list in define_refinement_zones() adds one finer level inside the
-previous one.  Edit that list to switch between 2, 3 or more levels.
+The setup supports two or three refinement levels organized as a nested
+chain: level 0 is the whole tank and each refinement zone adds one finer
+level inside the previous one.  Select the chain with --levels {2,3}.
 """
 
 import math
@@ -16,7 +15,6 @@ import os
 import sys
 import argparse
 import numpy as np
-from dataclasses import dataclass
 from typing import List, Optional
 from pprint import pprint
 
@@ -345,6 +343,10 @@ def parse_args():
     g.add_argument("--diffusive-term", type=str, default="MolteniDiffusiveTerm")
     g.add_argument("--viscous-term", type=str, default="ArtificialViscosity")
 
+    g = ap.add_argument_group("refinement")
+    g.add_argument("--levels", type=int, choices=(2, 3), default=2,
+                   help="number of multiresolution levels: 2 zones (factor 0.5 corner) or 3 zones (0.5 zone with 0.25 corner inside)")
+
     return ap.parse_args()
 
 def build_setup(args) -> dict:
@@ -383,35 +385,31 @@ def define_problem_bounding_box(setup):
     }
     setup.update( domain_corner_limits )
 
-def define_refinement_zones(setup) -> tuple:
-    """Refinement zones imposed directly in the script, ordered from coarsest
-    to finest.  Level 0 is always the whole tank at base resolution; every
-    entry here adds one refinement level on top.  The number of levels is
-    therefore 1 + number of entries:
+def define_refinement_zones(setup, levels: int = 2) -> tuple:
+    """Return the nested refinement zones for the selected level count.
 
-      - 2 levels: keep a single entry (e.g. the 0.5 zone)
-      - 3 levels: keep both entries below (default)
-      - 4+ levels: append more entries, each strictly inside the previous one
-
-    Each zone must be strictly nested inside the previous one and its factor
-    must be half its parent's factor (an ordered 1:2 interface). Zones default
-    to touching the right and bottom tank walls (x extends to the far domain
-    boundary, y starts at the domain bottom); x_max and y_min can be imposed
-    per zone to override this.  alloc_fact optionally enlarges the fluid
-    allocation of a zone that gets fully submerged by the impacting slosh.
+    Level 0 is always the whole tank at base resolution.  Two levels use only
+    the 0.5-factor zone; three levels additionally use the nested 0.25-factor
+    corner.  Every zone must lie inside its parent and halve its resolution
+    factor.  Zones default to touching the right and bottom tank walls;
+    x_max and y_min can override that default.  alloc_fact optionally enlarges
+    the fluid allocation of a zone submerged by the impacting slosh.
     """
     domain_far_x = setup["domain_size_x"]
-    return [
+    zones = [
         {
             "factor": 0.5,
             "x_min": 1.2,
             "y_max": 0.3,
         },
-        # 3th level, nested inside the 0.5 corner:
-        # { "factor": 0.25, "x_min": 1.4, "y_max": 0.15, "alloc_fact": 4 },
-        # 4th level, nested inside the 0.25 corner:
-        # { "factor": 0.125, "x_min": 1.5, "y_max": 0.075, "alloc_fact": 4 },
-    ], domain_far_x
+        {
+            "factor": 0.25,
+            "x_min": 1.4,
+            "y_max": 0.15,
+            "alloc_fact": 4,
+        },
+    ]
+    return zones[:levels - 1], domain_far_x
 
 if __name__ == "__main__":
     args  = parse_args()
@@ -428,7 +426,7 @@ if __name__ == "__main__":
     #   L1..LN: refinement zones imposed in define_refinement_zones, each
     #           strictly nested inside the previous level; every zone halves
     #           the resolution factor of its parent
-    refinement_zones, domain_far_x = define_refinement_zones(setup)
+    refinement_zones, domain_far_x = define_refinement_zones(setup, args.levels)
     subdomain_defs = [dec.SubdomainDef(factor=1.0)]
     for zone in refinement_zones:
         subdomain_defs.append(dec.SubdomainDef(
