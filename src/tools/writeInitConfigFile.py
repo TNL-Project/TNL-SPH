@@ -38,6 +38,7 @@ ini_replacements = [
 header_replacements = [
    # (placeholder,                          setup key,               format spec)
    ("#placeholderBoundaryConditionsType",   "bc_type",               ""),
+   ("#placeholderBoundaryCorrection",       "bc_correction",         ""),
    ("#placeholderDiffusiveTerm",            "diffusive_term",        ""),
    ("#placeholderViscosTerm",               "viscous_term",          ""),
    ("#placeholderTimeIntegration",          "time_integration",      ""),
