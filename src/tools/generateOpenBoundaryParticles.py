@@ -250,3 +250,133 @@ def generate_open_boundary_particles(
       pprint(openbc_parameters)
 
    return np_patch
+
+def plot_open_boundary_velocity_profile(
+   setup,
+   prefix,
+   velocity_profile=None,
+   coord_mode="absolute",
+   component="normal",
+   output_filename=None,
+   show=False,
+):
+   """
+   Plot the velocity profile prescribed on an open boundary patch.
+
+   The surface is read from ``setup[prefix + "_filename"]`` and the profile is
+   evaluated on the first buffer layer (the one at the interface), using the
+   same resolution logic as ``generate_open_boundary_particles``.
+
+   Parameters
+   ----------
+   setup : dict
+      Simulation setup dictionary (needs ``dp`` and ``prefix + "_filename"``).
+   prefix : str
+      Patch identifier, e.g. ``"inlet"`` or ``"outlet"``.
+   velocity_profile : None | callable | tuple
+      Same meaning as in ``generate_open_boundary_particles``.
+   coord_mode : str
+      ``"absolute"`` or ``"relative"``; must match the generation call.
+   component : str
+      What to plot as the scalar field: ``"normal"`` (velocity component along
+      the patch normal), ``"magnitude"`` (|v|), or ``"x"``, ``"y"``, ``"z"``.
+   output_filename : str, optional
+      If given, the figure is saved to this path.
+   show : bool
+      Call ``plt.show()`` at the end.
+
+   Returns
+   -------
+   (fig, axes)
+   """
+   dp = setup["dp"]
+
+   # --- read the surface (same as the generator) ----------------------------
+   reader = vtk.vtkPolyDataReader()
+   reader.SetFileName(setup[prefix + "_filename"])
+   reader.ReadAllScalarsOn()
+   reader.ReadAllVectorsOn()
+   reader.Update()
+   wrapped = dsa.WrapDataObject(reader.GetOutput())
+
+   r = np.array(wrapped.Points)
+   normal = np.array(wrapped.PointData["Normals"][0], dtype=float)
+   normal /= np.linalg.norm(normal)
+
+   # first layer only, shifted half a particle into the buffer
+   r = r - 0.5 * dp * normal
+   np_patch = len(r)
+
+   # --- resolve the profile exactly like the generator ----------------------
+   if coord_mode == "relative":
+      r_profile = r - np.min(r, axis=0)
+   elif coord_mode == "absolute":
+      r_profile = r
+   else:
+      raise ValueError(
+         f"coord_mode must be 'absolute' or 'relative', got '{coord_mode}'"
+      )
+
+   v = np.asarray(
+      _resolve_velocity(velocity_profile, r, r_profile, setup, prefix, np_patch)
+   )
+
+   # --- scalar field to display ---------------------------------------------
+   if component == "normal":
+      field = v @ normal
+      label = r"$v \cdot \hat{n}$"
+   elif component == "magnitude":
+      field = np.linalg.norm(v, axis=1)
+      label = r"$|v|$"
+   elif component in ("x", "y", "z"):
+      field = v[:, "xyz".index(component)]
+      label = f"$v_{component}$"
+   else:
+      raise ValueError(
+         "component must be 'normal', 'magnitude', 'x', 'y' or 'z', "
+         f"got '{component}'"
+      )
+
+   # --- in-plane orthonormal basis (u, w) perpendicular to the normal -------
+   helper = np.array([1.0, 0.0, 0.0])
+   if abs(normal @ helper) > 0.9:
+      helper = np.array([0.0, 1.0, 0.0])
+   u = np.cross(normal, helper)
+   u /= np.linalg.norm(u)
+   w = np.cross(normal, u)
+
+   rel = r - r.mean(axis=0)
+   pu, pw = rel @ u, rel @ w
+
+   # --- figure ---------------------------------------------------------------
+   fig = plt.figure(figsize=(10, 5))
+
+   # (1) the patch seen along its normal, coloured by the field
+   ax1 = fig.add_subplot(1, 2, 1)
+   sc = ax1.scatter(pu, pw, c=field, s=12, cmap="viridis")
+   ax1.set_aspect("equal")
+   ax1.set_xlabel("in-plane u")
+   ax1.set_ylabel("in-plane w")
+   ax1.set_title(f"{prefix}: {label} on the patch")
+   fig.colorbar(sc, ax=ax1, label=label)
+
+   # (2) 3D view: field as height above the patch plane
+   ax2 = fig.add_subplot(1, 2, 2, projection="3d")
+   ax2.scatter(pu, pw, field, c=field, s=8, cmap="viridis")
+   ax2.set_xlabel("u")
+   ax2.set_ylabel("w")
+   ax2.set_zlabel(label)
+   ax2.set_title("3D profile")
+
+   fig.suptitle(
+      f"{prefix} velocity profile  "
+      f"(n={np_patch}, normal=({normal[0]:.2f}, {normal[1]:.2f}, {normal[2]:.2f}))"
+   )
+   fig.tight_layout()
+
+   if output_filename is not None:
+      fig.savefig(output_filename, dpi=200)
+   if show:
+      plt.show()
+
+   return fig, (ax1, ax2)

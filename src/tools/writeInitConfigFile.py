@@ -248,6 +248,8 @@ def save_params_to_json(data: dict, filename: str):
          return obj.item()             # Convert to native Python type
       if isinstance(obj, np.ndarray):
          return obj.tolist()           # Convert arrays to lists
+      if callable(obj):
+         return None                   # Skip functions (velocity profiles, ...)
       raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
    with open(filename, "w") as f:
