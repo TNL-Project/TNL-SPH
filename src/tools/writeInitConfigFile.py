@@ -25,7 +25,7 @@ ini_replacements = [
    ("placeholderNumberOfSubdomains",        "number_of_subdomains",  ""),
    ("placeholderCFL",                       "cfl",                   ""),
    ("placeholderAlpha",                     "alpha",                 ""),
-   ("placeholderDynamicViscosity",           "dynamic_viscosity",     ""),
+   ("placeholderDynamicViscosity",          "dynamic_viscosity",     ""),
    ("placeholderFluidParticles",            "fluid_n",               ""),
    ("placeholderAllocatedFluidParticles",   "allocated_fluid_n",     ""),
    ("placeholderBoundaryParticles",         "boundary_n",            ""),
@@ -33,6 +33,9 @@ ini_replacements = [
    ("placeholderSubdomains-x",              "subdomains_x",          ""),
    ("placeholderSubdomains-y",              "subdomains_y",          ""),
    ("placeholderSubdomains-z",              "subdomains_z",          ""),
+   ("placeholderBccElasticFact",            "bcc_elastic_fact",      ""),
+   ("placeholderBccRboxFact",               "bcc_rbox_fact",         ""),
+   ("placeholderBccMindistFact",            "bcc_mindist_fact",      ""),
 ]
 
 header_replacements = [
