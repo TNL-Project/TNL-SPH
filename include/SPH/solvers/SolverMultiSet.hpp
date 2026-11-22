@@ -244,12 +244,12 @@ SolverMultiSet< Model >::readParticlesFiles( TNL::Config::ParameterContainer& pa
    if( numberOfBoundaryPatches > 0 ) {
       for( int i = 0; i < numberOfBoundaryPatches; i++ ) {
          std::string prefix = "buffer" + std::to_string( i + 1 );
-         if( this->parametersOpenBoundary.getParameter< int >( prefix + "NumberOfParticles" ) != 0 ) {
+         if( this->parametersOpenBoundary.template getParameter< int >( prefix + "NumberOfParticles" ) != 0 ) {
             logger.writeParameter(
                "Reading open boundary particles:",
-               this->parametersOpenBoundary.getParameter< std::string >( prefix + "Particles" ) );
+               this->parametersOpenBoundary.template getParameter< std::string >( prefix + "Particles" ) );
             this->openBoundaryPatches[ i ]->template readParticlesAndVariables< typename BaseType::Reader >(
-               this->parametersOpenBoundary.getParameter< std::string >( prefix + "Particles" ) );
+               this->parametersOpenBoundary.template getParameter< std::string >( prefix + "Particles" ) );
          }
          else {
             logger.writeParameter( "Reading open boundary particles:", "NO PARTICLES TO READ" );
