@@ -101,7 +101,7 @@ def write_simulation_params( setup ):
     config_file = config_file.replace( 'placeholderTimeStep', f'{ setup[ "time_step" ] }' )
     config_file = config_file.replace( 'placeholderCFL', f'{ setup[ "cfl" ] }' )
     config_file = config_file.replace( 'placeholderAlpha', f'{ setup[ "alpha" ] }' )
-    config_file = config_file.replace( 'placeholderDynamicVicosity', f'{ setup[ "dynamic_viscosity" ] }' )
+    config_file = config_file.replace( 'placeholderDynamicViscosity', f'{ setup[ "dynamic_viscosity" ] }' )
 
     config_file = config_file.replace( 'placeholderFluidParticles', f'{ setup[ "fluid_n" ] }' )
     config_file = config_file.replace( 'placeholderAllocatedFluidParticles', f'{ setup[ "fluid_n" ] }' )
@@ -131,7 +131,7 @@ def write_simulation_params( setup ):
     config_filebased = config_filebased.replace( 'placeholderTimeStep', f'{ setup[ "time_step" ] }' )
     config_filebased = config_filebased.replace( 'placeholderCFL', f'{ setup[ "cfl" ] }' )
     config_filebased = config_filebased.replace( 'placeholderAlpha', f'{ setup[ "alpha" ] }' )
-    config_filebased = config_filebased.replace( 'placeholderDynamicVicosity', f'{ setup[ "dynamic_viscosity" ] }' )
+    config_filebased = config_filebased.replace( 'placeholderDynamicViscosity', f'{ setup[ "dynamic_viscosity" ] }' )
     config_filebased = config_filebased.replace( 'placeholderFluidParticles', f'{ setup[ "fluid_n" ] }' )
     config_filebased = config_filebased.replace( 'placeholderAllocatedFluidParticles', f'{ setup[ "fluid_n" ] }' )
     config_filebased = config_filebased.replace( 'placeholderBoundaryParticles', f'{ setup[ "boundary_n" ] }' )

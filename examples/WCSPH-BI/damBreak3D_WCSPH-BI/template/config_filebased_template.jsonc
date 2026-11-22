@@ -53,7 +53,7 @@
         // artificial vicosity coefficient - alpha [-]
         "alpha": placeholderAlpha,
         // dynamic vicosity coefficient - dynamicViscosity [Pa*s]
-        "dynamicViscosity": placeholderDynamicVicosity,
+        "dynamicViscosity": placeholderDynamicViscosity,
 
         // Elastic bounce parameters
         // amount of kinetic energy conserved during the interaction - elasticFactor [-]

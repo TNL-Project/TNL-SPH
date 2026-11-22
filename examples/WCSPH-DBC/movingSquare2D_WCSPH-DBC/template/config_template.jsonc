@@ -49,7 +49,7 @@
         // artificial vicosity coefficient - alpha [-]
         "alpha": placeholderAlpha,
         // dynamic vicosity coefficient - dynamicViscosity [Pa*s]
-        "dynamicViscosity": placeholderDynamicVicosity,
+        "dynamicViscosity": placeholderDynamicViscosity,
 
         // EOS parameters - numerical speed of sound - c0 [m/s]
         "speedOfSound": placeholderSpeedOfSound,

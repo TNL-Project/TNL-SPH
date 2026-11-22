@@ -25,7 +25,7 @@ ini_replacements = [
    ("placeholderNumberOfSubdomains",        "number_of_subdomains",  ""),
    ("placeholderCFL",                       "cfl",                   ""),
    ("placeholderAlpha",                     "alpha",                 ""),
-   ("placeholderDynamicVicosity",           "dynamic_viscosity",     ""),
+   ("placeholderDynamicViscosity",           "dynamic_viscosity",     ""),
    ("placeholderFluidParticles",            "fluid_n",               ""),
    ("placeholderAllocatedFluidParticles",   "allocated_fluid_n",     ""),
    ("placeholderBoundaryParticles",         "boundary_n",            ""),
