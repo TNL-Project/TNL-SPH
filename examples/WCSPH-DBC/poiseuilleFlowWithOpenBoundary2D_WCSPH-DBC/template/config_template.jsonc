@@ -41,45 +41,51 @@
 
     // Inline open boundary config (alternative to "openBoundaryConfig" file path).
     "openBoundary": {
-        // === Buffer 1 - inlet ===
-        "buffer1Particles": "sources/openchannel_inlet.vtk",
-        "buffer1NumberOfParticles": placeholderInletParticles,
-        "buffer1NumberOfAllocatedParticles": placeholderAllocatedInletParticles,
-        "buffer1Type": "inlet",
-        "buffer1Identifier": "inlet",
-        "buffer1Orientation-x": 1.0,
-        "buffer1Orientation-y": 0.0,
-        "buffer1Position1-x": placeholderInletPosition1_x,
-        "buffer1Position1-y": placeholderInletPosition1_y,
-        "buffer1Position2-x": placeholderInletPosition2_x,
-        "buffer1Position2-y": placeholderInletPosition2_y,
-        "buffer1BufferWidth-x": placeholderInletWidth_x,
-        "buffer1BufferWidth-y": 0.0,
-        "buffer1Rho_bc": "fixed",
-        "buffer1Density": placeholderInletDensity,
-        "buffer1V_bc": "fixed",
-        "buffer1Velocity-x": placeholderInletVelocity_x,
-        "buffer1Velocity-y": placeholderInletVelocity_y,
+        "buffers": {
+            "buffer1": {
+                // === Buffer 1 - inlet ===
+                "particles": "sources/openchannel_inlet.vtk",
+                "numberOfParticles": placeholderInletParticles,
+                "numberOfAllocatedParticles": placeholderAllocatedInletParticles,
+                "type": "inlet",
+                "identifier": "inlet",
+                "orientation-x": 1.0,
+                "orientation-y": 0.0,
+                "position1-x": placeholderInletPosition1_x,
+                "position1-y": placeholderInletPosition1_y,
+                "position2-x": placeholderInletPosition2_x,
+                "position2-y": placeholderInletPosition2_y,
+                "bufferWidth-x": placeholderInletWidth_x,
+                "bufferWidth-y": 0.0,
+                "rho_bc": "fixed",
+                "density": placeholderInletDensity,
+                "v_bc": "fixed",
+                "velocity-x": placeholderInletVelocity_x,
+                "velocity-y": placeholderInletVelocity_y
+            },
 
-        // === Buffer 2 - outlet ===
-        "buffer2Particles": "sources/openchannel_outlet.vtk",
-        "buffer2NumberOfParticles": placeholderOutletParticles,
-        "buffer2NumberOfAllocatedParticles": placeholderAllocatedOutletParticles,
-        "buffer2Type": "outlet",
-        "buffer2Identifier": "outlet",
-        "buffer2Orientation-x": -1.0,
-        "buffer2Orientation-y": 0.0,
-        "buffer2Position1-x": placeholderOutletPosition1_x,
-        "buffer2Position1-y": placeholderOutletPosition1_y,
-        "buffer2Position2-x": placeholderOutletPosition2_x,
-        "buffer2Position2-y": placeholderOutletPosition2_y,
-        "buffer2BufferWidth-x": placeholderOutletWidth_x,
-        "buffer2BufferWidth-y": 0.0,
-        "buffer2Rho_bc": "extrapolated",
-        "buffer2Density": placeholderOutletDensity,
-        "buffer2V_bc": "extrapolated",
-        "buffer2Velocity-x": placeholderOutletVelocity_x,
-        "buffer2Velocity-y": placeholderOutletVelocity_y,
-        "buffer2ExtrapolationDetTreshold": 1e3
+            "buffer2": {
+                // === Buffer 2 - outlet ===
+                "particles": "sources/openchannel_outlet.vtk",
+                "numberOfParticles": placeholderOutletParticles,
+                "numberOfAllocatedParticles": placeholderAllocatedOutletParticles,
+                "type": "outlet",
+                "identifier": "outlet",
+                "orientation-x": -1.0,
+                "orientation-y": 0.0,
+                "position1-x": placeholderOutletPosition1_x,
+                "position1-y": placeholderOutletPosition1_y,
+                "position2-x": placeholderOutletPosition2_x,
+                "position2-y": placeholderOutletPosition2_y,
+                "bufferWidth-x": placeholderOutletWidth_x,
+                "bufferWidth-y": 0.0,
+                "rho_bc": "extrapolated",
+                "density": placeholderOutletDensity,
+                "v_bc": "extrapolated",
+                "velocity-x": placeholderOutletVelocity_x,
+                "velocity-y": placeholderOutletVelocity_y,
+                "extrapolationDetTreshold": 1e3
+            }
+        }
     }
 }

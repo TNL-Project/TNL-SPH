@@ -16,37 +16,37 @@
     "sensorPOutputTime": 2e-3,
     "sensorPIncludeBoundary": false,
     // Point 1
-    "sensorPPoint1-x": 0.8245,
-    "sensorPPoint1-y": 0.471,
-    "sensorPPoint1-z": 0.021,
+    "sensorPressurePoint1-x": 0.8245,
+    "sensorPressurePoint1-y": 0.471,
+    "sensorPressurePoint1-z": 0.021,
     // Point 2
-    "sensorPPoint2-x": 0.8245,
-    "sensorPPoint2-y": 0.471,
-    "sensorPPoint2-z": 0.061,
+    "sensorPressurePoint2-x": 0.8245,
+    "sensorPressurePoint2-y": 0.471,
+    "sensorPressurePoint2-z": 0.061,
     // Point 3
-    "sensorPPoint3-x": 0.8245,
-    "sensorPPoint3-y": 0.471,
-    "sensorPPoint3-z": 0.101,
+    "sensorPressurePoint3-x": 0.8245,
+    "sensorPressurePoint3-y": 0.471,
+    "sensorPressurePoint3-z": 0.101,
     // Point 4
-    "sensorPPoint4-x": 0.8245,
-    "sensorPPoint4-y": 0.471,
-    "sensorPPoint4-z": 0.141,
+    "sensorPressurePoint4-x": 0.8245,
+    "sensorPressurePoint4-y": 0.471,
+    "sensorPressurePoint4-z": 0.141,
     // Point 5
-    "sensorPPoint5-x": 0.8035,
-    "sensorPPoint5-y": 0.471,
-    "sensorPPoint5-z": 0.161,
+    "sensorPressurePoint5-x": 0.8035,
+    "sensorPressurePoint5-y": 0.471,
+    "sensorPressurePoint5-z": 0.161,
     // Point 6
-    "sensorPPoint6-x": 0.7635,
-    "sensorPPoint6-y": 0.471,
-    "sensorPPoint6-z": 0.161,
+    "sensorPressurePoint6-x": 0.7635,
+    "sensorPressurePoint6-y": 0.471,
+    "sensorPressurePoint6-z": 0.161,
     // Point 7
-    "sensorPPoint7-x": 0.7235,
-    "sensorPPoint7-y": 0.471,
-    "sensorPPoint7-z": 0.161,
+    "sensorPressurePoint7-x": 0.7235,
+    "sensorPressurePoint7-y": 0.471,
+    "sensorPressurePoint7-z": 0.161,
     // Point 8
-    "sensorPPoint8-x": 0.6835,
-    "sensorPPoint8-y": 0.471,
-    "sensorPPoint8-z": 0.161,
+    "sensorPressurePoint8-x": 0.6835,
+    "sensorPressurePoint8-y": 0.471,
+    "sensorPressurePoint8-z": 0.161,
 
     // === Measure water level - points ===
     "sensorWlOutputTime": 2e-3,
@@ -57,19 +57,19 @@
     "sensorWlDirection-y": 0,
     "sensorWlDirection-z": 1,
     // Point 1
-    "sensorWlPoint1-x": 0.496,
-    "sensorWlPoint1-y": 0.5,
-    "sensorWlPoint1-z": 0.0028284,
+    "sensorWaterLevelPoint1-x": 0.496,
+    "sensorWaterLevelPoint1-y": 0.5,
+    "sensorWaterLevelPoint1-z": 0.0028284,
     // Point 2
-    "sensorWlPoint2-x": 0.992,
-    "sensorWlPoint2-y": 0.5,
-    "sensorWlPoint2-z": 0.0028284,
+    "sensorWaterLevelPoint2-x": 0.992,
+    "sensorWaterLevelPoint2-y": 0.5,
+    "sensorWaterLevelPoint2-z": 0.0028284,
     // Point 3
-    "sensorWlPoint3-x": 1.488,
-    "sensorWlPoint3-y": 0.5,
-    "sensorWlPoint3-z": 0.0028284,
+    "sensorWaterLevelPoint3-x": 1.488,
+    "sensorWaterLevelPoint3-y": 0.5,
+    "sensorWaterLevelPoint3-z": 0.0028284,
     // Point 4
-    "sensorWlPoint4-x": 2.638,
-    "sensorWlPoint4-y": 0.5,
-    "sensorWlPoint4-z": 0.0028284
+    "sensorWaterLevelPoint4-x": 2.638,
+    "sensorWaterLevelPoint4-y": 0.5,
+    "sensorWaterLevelPoint4-z": 0.0028284
 }

@@ -136,7 +136,7 @@ public:
          parameters.getParameter< RealType >( "snapshotPeriod" ) );
       measuretoolConfig.addEntry< bool >( "sensorPIncludeBoundary", "Include boundary data to sensor measurement. ", false );
       for( int i = 0; i < this->numberOfPressureSensors; i++ ) {
-         std::string prefix = "sensorPPoint" + std::to_string( i + 1 );
+         std::string prefix = "sensorPressurePoint" + std::to_string( i + 1 );
          measuretoolConfig.addRequiredEntry< RealType >(
             prefix + "-x", "Define pressure sensor point " + std::to_string( i + 1 ) + " x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
@@ -168,7 +168,7 @@ public:
          measuretoolConfig.addEntry< RealType >(
             "sensorWlDirection-z", "Dirction in which the water level measurement is performed, y component. ", 0 );
       for( int i = 0; i < this->numberOfWaterLevelSensors; i++ ) {
-         std::string prefix = "sensorWlPoint" + std::to_string( i + 1 );
+         std::string prefix = "sensorWaterLevelPoint" + std::to_string( i + 1 );
          measuretoolConfig.addRequiredEntry< RealType >(
             prefix + "-x", "Define water level sensor point " + std::to_string( i + 1 ) + " x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
@@ -267,7 +267,7 @@ public:
       const float numberOfSavedStepsPressure = simulationEndTime / pressureSensorPeriod;
       std::vector< VectorType > sensorsPoints( this->numberOfPressureSensors );
       for( int i = 0; i < this->numberOfPressureSensors; i++ ) {
-         std::string prefix = "sensorPPoint" + std::to_string( i + 1 );
+         std::string prefix = "sensorPressurePoint" + std::to_string( i + 1 );
          sensorsPoints[ i ] = getXyzCamelCase< VectorType >( measuretoolParameters, prefix );
       }
       const bool includeBoundary = measuretoolParameters.getParameter< bool >( "sensorPIncludeBoundary" );
@@ -293,7 +293,7 @@ public:
       const VectorType measureInDirection = getXyzCamelCase< VectorType >( measuretoolParameters, "sensorWlDirection" );
       std::vector< VectorType > waterLevelSensorPoints( this->numberOfWaterLevelSensors );
       for( int i = 0; i < this->numberOfWaterLevelSensors; i++ ) {
-         std::string prefix = "sensorWlPoint" + std::to_string( i + 1 );
+         std::string prefix = "sensorWaterLevelPoint" + std::to_string( i + 1 );
          waterLevelSensorPoints[ i ] = getXyzCamelCase< VectorType >( measuretoolParameters, prefix );
       }
       waterLevelSensors.init(

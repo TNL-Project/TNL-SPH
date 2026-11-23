@@ -183,6 +183,7 @@ def write_open_boundary_params_inline(
       return
 
    lines = ["{"]
+   lines.append('    "buffers": {')
    for i, patch in enumerate(patches, start=1):
       n = int(setup.get(f"{patch}_n", 0))
       allocated_n = int(setup.get(f"allocated_{patch}_n", 2 * n))
@@ -203,30 +204,37 @@ def write_open_boundary_params_inline(
       rho_bc = setup.get(f"{patch}_rho_bc", default_rho_bc)
       v_bc = setup.get(f"{patch}_v_bc", default_v_bc)
 
-      lines.append(f"    // Buffer {i} - {patch}")
-      lines.append(f'    "buffer{i}Particles": "{particles_filename_pattern.format(patch=patch)}",')
-      lines.append(f'    "buffer{i}NumberOfParticles": {n},')
-      lines.append(f'    "buffer{i}NumberOfAllocatedParticles": {allocated_n},')
-      lines.append(f'    "buffer{i}Type": "{patch}",')
-      lines.append(f'    "buffer{i}Identifier": "{patch}",')
+      buffer_lines = []
+      buffer_lines.append(f"            // Buffer {i} - {patch}")
+      buffer_lines.append(f'            "particles": "{particles_filename_pattern.format(patch=patch)}",')
+      buffer_lines.append(f'            "numberOfParticles": {n},')
+      buffer_lines.append(f'            "numberOfAllocatedParticles": {allocated_n},')
+      buffer_lines.append(f'            "type": "{patch}",')
+      buffer_lines.append(f'            "identifier": "{patch}",')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Orientation-{ax}": {orientation[ax]:.7f},')
+         buffer_lines.append(f'            "orientation-{ax}": {orientation[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Position1-{ax}": {position[ax]:.7f},')
+         buffer_lines.append(f'            "position1-{ax}": {position[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Position2-{ax}": {position[ax] + size[ax]:.7f},')
+         buffer_lines.append(f'            "position2-{ax}": {position[ax] + size[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}BufferWidth-{ax}": {buffer_width[ax]:.7f},')
-      lines.append(f'    "buffer{i}Rho_bc": "{rho_bc}",')
-      lines.append(f'    "buffer{i}Density": {density:.7f},')
-      lines.append(f'    "buffer{i}V_bc": "{v_bc}",')
+         buffer_lines.append(f'            "bufferWidth-{ax}": {buffer_width[ax]:.7f},')
+      buffer_lines.append(f'            "rho_bc": "{rho_bc}",')
+      buffer_lines.append(f'            "density": {density:.7f},')
+      buffer_lines.append(f'            "v_bc": "{v_bc}",')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Velocity-{ax}": {velocity[ax]:.7f},')
+         buffer_lines.append(f'            "velocity-{ax}": {velocity[ax]:.7f},')
       if patch == "outlet":
-         lines.append(f'    "buffer{i}ExtrapolationDetTreshold": 1e3,')
+         buffer_lines.append('            "extrapolationDetTreshold": 1e3,')
 
-   if lines[-1].endswith(","):
-      lines[-1] = lines[-1][:-1]
+      if buffer_lines[-1].endswith(","):
+         buffer_lines[-1] = buffer_lines[-1][:-1]
+      lines.append(f'        "buffer{i}": {{')
+      lines.extend(buffer_lines)
+      lines.append("        },")
+
+   lines[-1] = lines[-1][:-1]
+   lines.append("    }")
    lines.append("}")
 
    with open(output_path, "w") as f:
