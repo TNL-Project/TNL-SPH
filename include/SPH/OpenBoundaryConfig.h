@@ -22,28 +22,28 @@ conigSetupOpenBoundaryPatch( TNL::Config::ConfigDescription& config, std::string
    config.addEntry< int >( prefix + "NumberOfAllocatedParticles", "The allocated number of fluid particles.", 0. );
    config.addEntry< std::string >( prefix + "Particles", "Input fluid particles file path." );
    config.addEntry< std::string >( prefix + "Identifier", "Identifier of the open boundary patch.", "empty" );
-   config.addEntry< RealType >( prefix + "OrientationX", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "OrientationY", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "OrientationZ", "Orientation of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "Position1X", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "Position1Y", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "Position1Z", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "Position2X", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "Position2Y", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "Position2Z", "Position of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "BufferWidthX", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "BufferWidthY", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "BufferWidthZ", "Width of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "BufferHeightX", "Height of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "BufferHeightY", "Height of the open boundary buffer.", 0 );
-   config.addEntry< RealType >( prefix + "BufferHeightZ", "Height of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Orientation-x", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Orientation-y", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Orientation-z", "Orientation of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position1-x", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position1-y", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position1-z", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position2-x", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position2-y", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "Position2-z", "Position of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferWidth-x", "Width of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferWidth-y", "Width of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferWidth-z", "Width of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferHeight-x", "Height of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferHeight-y", "Height of the open boundary buffer.", 0 );
+   config.addEntry< RealType >( prefix + "BufferHeight-z", "Height of the open boundary buffer.", 0 );
    config.addEntry< int >( prefix + "NumberOfParticlesPerCell", "Maximum allowed number of particles per grid cell.", 0 );
 
    // parameters for periodic boundary conditions
    config.addEntry< int >( prefix + "PairedPeriodicBuffer", "Index of paired periodic boundary buffer.", -1 );
-   config.addEntry< RealType >( prefix + "ShiftVectorX", "Shift vector within the periodic boundary conditions.", 0 );
-   config.addEntry< RealType >( prefix + "ShiftVectorY", "Shift vector within the periodic boundary conditions.", 0 );
-   config.addEntry< RealType >( prefix + "ShiftVectorZ", "Shift vector within the periodic boundary conditions.", 0 );
+   config.addEntry< RealType >( prefix + "ShiftVector-x", "Shift vector within the periodic boundary conditions.", 0 );
+   config.addEntry< RealType >( prefix + "ShiftVector-y", "Shift vector within the periodic boundary conditions.", 0 );
+   config.addEntry< RealType >( prefix + "ShiftVector-z", "Shift vector within the periodic boundary conditions.", 0 );
 }
 
 template< typename SPHConfig >

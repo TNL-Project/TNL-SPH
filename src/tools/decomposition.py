@@ -341,10 +341,10 @@ def build_subdomain_data(
       origin_phys = domain_origin[ax] + g.search_radius * (origin_glob - overlap)
       extent_phys = g.search_radius * dims
 
-      sd[f"originGlobalCoords{ax.upper()}"] = origin_glob
-      sd[f"gridDimensions{ax.upper()}"]      = dims
-      sd[f"origin{ax.upper()}"]               = round(origin_phys, 7)
-      sd[f"size{ax.upper()}"]                 = round(extent_phys, 7)
+      sd[f"originGlobalCoords-{ax}"] = origin_glob
+      sd[f"gridDimensions-{ax}"]      = dims
+      sd[f"origin-{ax}"]               = round(origin_phys, 7)
+      sd[f"size-{ax}"]                 = round(extent_phys, 7)
 
    return sd
 

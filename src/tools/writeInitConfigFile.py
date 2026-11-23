@@ -210,18 +210,18 @@ def write_open_boundary_params_inline(
       lines.append(f'    "buffer{i}Type": "{patch}",')
       lines.append(f'    "buffer{i}Identifier": "{patch}",')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Orientation{ax.upper()}": {orientation[ax]:.7f},')
+         lines.append(f'    "buffer{i}Orientation-{ax}": {orientation[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Position1{ax.upper()}": {position[ax]:.7f},')
+         lines.append(f'    "buffer{i}Position1-{ax}": {position[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Position2{ax.upper()}": {position[ax] + size[ax]:.7f},')
+         lines.append(f'    "buffer{i}Position2-{ax}": {position[ax] + size[ax]:.7f},')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}BufferWidth{ax.upper()}": {buffer_width[ax]:.7f},')
+         lines.append(f'    "buffer{i}BufferWidth-{ax}": {buffer_width[ax]:.7f},')
       lines.append(f'    "buffer{i}Rho_bc": "{rho_bc}",')
       lines.append(f'    "buffer{i}Density": {density:.7f},')
       lines.append(f'    "buffer{i}V_bc": "{v_bc}",')
       for ax in "xyz":
-         lines.append(f'    "buffer{i}Velocity{ax.upper()}": {velocity[ax]:.7f},')
+         lines.append(f'    "buffer{i}Velocity-{ax}": {velocity[ax]:.7f},')
       if patch == "outlet":
          lines.append(f'    "buffer{i}ExtrapolationDetTreshold": 1e3,')
 

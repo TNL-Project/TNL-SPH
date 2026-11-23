@@ -23,22 +23,22 @@ configSubdomain( int subdomain, TNL::Config::ConfigDescription& config )
 
    config.addEntry< double >( subdomainKey + "RefinementFactor", "Refinement factor of current subdomain.", 0. );  //different
 
-   config.addEntry< double >( subdomainKey + "OriginX", "The origin of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "OriginY", "The origin of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "OriginZ", "The origin of domain in z direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Origin-x", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Origin-y", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Origin-z", "The origin of domain in z direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "OriginGlobalCoordsX", "The origin of domain in global cell coords. in x direction.", 0. );
+      subdomainKey + "OriginGlobalCoords-x", "The origin of domain in global cell coords. in x direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "OriginGlobalCoordsY", "The origin of domain in global cell coords. in y direction.", 0. );
+      subdomainKey + "OriginGlobalCoords-y", "The origin of domain in global cell coords. in y direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "OriginGlobalCoordsZ", "The origin of domain in global cell coords. in z direction.", 0. );
+      subdomainKey + "OriginGlobalCoords-z", "The origin of domain in global cell coords. in z direction.", 0. );
 
-   config.addEntry< double >( subdomainKey + "SizeX", "The size of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "SizeY", "The size of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "SizeZ", "The size of domain in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "GridDimensionsX", "The size of domain in cells in x direction.", 0. );
-   config.addEntry< int >( subdomainKey + "GridDimensionsY", "The size of domain in cells in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "GridDimensionsZ", "The size of domain in cells in z direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Size-x", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Size-y", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Size-z", "The size of domain in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensions-x", "The size of domain in cells in x direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensions-y", "The size of domain in cells in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensions-z", "The size of domain in cells in z direction.", 0. );
 }
 
 }  // namespace TNL::SPH

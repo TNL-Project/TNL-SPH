@@ -38,9 +38,9 @@ configSetupOpenBoundaryModelPatch( TNL::Config::ConfigDescription& config, std::
    config.addEntryEnum( "fixed" );
    config.addEntryEnum( "extrapolated" );
    config.addEntryEnum( "do-nothing" );
-   config.addEntry< RealType >( prefix + "VelocityX", "Open boundary value for density.", 0 );
-   config.addEntry< RealType >( prefix + "VelocityY", "Open boundary value for density.", 0 );
-   config.addEntry< RealType >( prefix + "VelocityZ", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( prefix + "Velocity-x", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( prefix + "Velocity-y", "Open boundary value for density.", 0 );
+   config.addEntry< RealType >( prefix + "Velocity-z", "Open boundary value for density.", 0 );
    config.addEntry< RealType >(
       prefix + "ExtrapolationDetTreshold", "Velocity treshold required in case of extrapolation.", 0 );
 }

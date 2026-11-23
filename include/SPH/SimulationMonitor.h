@@ -107,23 +107,23 @@ public:
             parameters.getParameter< RealType >( "snapshotPeriod" ) );
 
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "GridOriginX", "Define interpolation plane origin x componenet." );
+            prefix + "GridOrigin-x", "Define interpolation plane origin x componenet." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "GridOriginY", "Define interpolation plane origin y componenet." );
+            prefix + "GridOrigin-y", "Define interpolation plane origin y componenet." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
-               prefix + "GridOriginZ", "Define interpolation plane origin z componenet." );
+               prefix + "GridOrigin-z", "Define interpolation plane origin z componenet." );
 
-         measuretoolConfig.addRequiredEntry< int >( prefix + "GridSizeX", "Define interpolation plane size in x direction." );
-         measuretoolConfig.addRequiredEntry< int >( prefix + "GridSizeY", "Define interpolation plane size in y direction." );
+         measuretoolConfig.addRequiredEntry< int >( prefix + "GridSize-x", "Define interpolation plane size in x direction." );
+         measuretoolConfig.addRequiredEntry< int >( prefix + "GridSize-y", "Define interpolation plane size in y direction." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< int >(
-               prefix + "GridSizeZ", "Define interpolation plane size in z direction." );
+               prefix + "GridSize-z", "Define interpolation plane size in z direction." );
 
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "GridStepX", "Define grid step size in x direction." );
-         measuretoolConfig.addRequiredEntry< RealType >( prefix + "GridStepY", "Define grid step size in y direction." );
+         measuretoolConfig.addRequiredEntry< RealType >( prefix + "GridStep-x", "Define grid step size in x direction." );
+         measuretoolConfig.addRequiredEntry< RealType >( prefix + "GridStep-y", "Define grid step size in y direction." );
          if constexpr( SPHConfig::spaceDimension == 3 )
-            measuretoolConfig.addRequiredEntry< RealType >( prefix + "GridStepZ", "Define grid step size in z direction." );
+            measuretoolConfig.addRequiredEntry< RealType >( prefix + "GridStep-z", "Define grid step size in z direction." );
       }
    }
 
@@ -138,12 +138,12 @@ public:
       for( int i = 0; i < this->numberOfPressureSensors; i++ ) {
          std::string prefix = "sensorPPoint" + std::to_string( i + 1 );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "X", "Define pressure sensor point " + std::to_string( i + 1 ) + " x component." );
+            prefix + "-x", "Define pressure sensor point " + std::to_string( i + 1 ) + " x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "Y", "Define pressure sensor point " + std::to_string( i + 1 ) + " y component." );
+            prefix + "-y", "Define pressure sensor point " + std::to_string( i + 1 ) + " y component." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
-               prefix + "Z", "Define pressure sensor point " + std::to_string( i + 1 ) + " z component." );
+               prefix + "-z", "Define pressure sensor point " + std::to_string( i + 1 ) + " z component." );
       }
    }
 
@@ -161,21 +161,21 @@ public:
          "Define water level measurement increment. ",
          parameters.getParameter< RealType >( "snapshotPeriod" ) );
       measuretoolConfig.addEntry< RealType >(
-         "sensorWlDirectionX", "Dirction in which the water level measurement is performed, x component. ", 0 );
+         "sensorWlDirection-x", "Dirction in which the water level measurement is performed, x component. ", 0 );
       measuretoolConfig.addEntry< RealType >(
-         "sensorWlDirectionY", "Dirction in which the water level measurement is performed, y component. ", 0 );
+         "sensorWlDirection-y", "Dirction in which the water level measurement is performed, y component. ", 0 );
       if constexpr( SPHConfig::spaceDimension == 3 )
          measuretoolConfig.addEntry< RealType >(
-            "sensorWlDirectionZ", "Dirction in which the water level measurement is performed, y component. ", 0 );
+            "sensorWlDirection-z", "Dirction in which the water level measurement is performed, y component. ", 0 );
       for( int i = 0; i < this->numberOfWaterLevelSensors; i++ ) {
          std::string prefix = "sensorWlPoint" + std::to_string( i + 1 );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "X", "Define water level sensor point " + std::to_string( i + 1 ) + " x component." );
+            prefix + "-x", "Define water level sensor point " + std::to_string( i + 1 ) + " x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "Y", "Define water level sensor point " + std::to_string( i + 1 ) + " y component." );
+            prefix + "-y", "Define water level sensor point " + std::to_string( i + 1 ) + " y component." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
-               prefix + "Z", "Define water level sensor point " + std::to_string( i + 1 ) + " z component." );
+               prefix + "-z", "Define water level sensor point " + std::to_string( i + 1 ) + " z component." );
       }
    }
 
@@ -191,26 +191,26 @@ public:
          measuretoolConfig.addEntry< RealType >(
             prefix + "AveragingInterval", "Averaging interval for the volumetric flow rate.", 0.1 );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "PointMinX", "Define the first point of the measurement plane, x component." );
+            prefix + "PointMin-x", "Define the first point of the measurement plane, x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "PointMinY", "Define the first point of the measurement plane, y component." );
+            prefix + "PointMin-y", "Define the first point of the measurement plane, y component." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
-               prefix + "PointMinZ", "Define the first point of the measurement plane, z component." );
+               prefix + "PointMin-z", "Define the first point of the measurement plane, z component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "PointMaxX", "Define the second point of the measurement plane, x component." );
+            prefix + "PointMax-x", "Define the second point of the measurement plane, x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "PointMaxY", "Define the second point of the measurement plane, y component." );
+            prefix + "PointMax-y", "Define the second point of the measurement plane, y component." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
-               prefix + "PointMaxZ", "Define the second point of the measurement plane, z component." );
+               prefix + "PointMax-z", "Define the second point of the measurement plane, z component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "OrientationX", "Define the orientation of the measurement plane, x component." );
+            prefix + "Orientation-x", "Define the orientation of the measurement plane, x component." );
          measuretoolConfig.addRequiredEntry< RealType >(
-            prefix + "OrientationY", "Define the orientation of the measurement plane, y component." );
+            prefix + "Orientation-y", "Define the orientation of the measurement plane, y component." );
          if constexpr( SPHConfig::spaceDimension == 3 )
             measuretoolConfig.addRequiredEntry< RealType >(
-               prefix + "OrientationZ", "Define the orientation of the measurement plane, z component." );
+               prefix + "Orientation-z", "Define the orientation of the measurement plane, z component." );
       }
    }
 

@@ -45,9 +45,9 @@ public:
       config.addEntry< double >( "initialTimeStep", "Initial time step.", 0 );
       config.addEntry< double >( "CFL", "CFL number.", 0 );
       config.addEntry< double >( "minimalTimeStep", "Minimal allowed time step.", 0 );
-      config.addEntry< double >( "externalForceX", "External bulk forces.", 0 );
-      config.addEntry< double >( "externalForceY", "External bulk forces.", 0 );
-      config.addEntry< double >( "externalForceZ", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForce-x", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForce-y", "External bulk forces.", 0 );
+      config.addEntry< double >( "externalForce-z", "External bulk forces.", 0 );
       config.addEntry< double >( "eps", "Coefficient to prevent denominator from zero.", 0 );
    }
 

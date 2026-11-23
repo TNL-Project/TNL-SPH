@@ -24,12 +24,12 @@
     // Domain size and domain origin
     "domain": {
         "searchRadius": placeholderSearchRadius,
-        "domainOriginX": placeholderDomainOrigin-x,
-        "domainOriginY": placeholderDomainOrigin-y,
-        "domainOriginZ": placeholderDomainOrigin-z,
-        "domainSizeX": placeholderDomainSize-x,
-        "domainSizeY": placeholderDomainSize-y,
-        "domainSizeZ": placeholderDomainSize-z
+        "domainOrigin-x": placeholderDomainOrigin-x,
+        "domainOrigin-y": placeholderDomainOrigin-y,
+        "domainOrigin-z": placeholderDomainOrigin-z,
+        "domainSize-x": placeholderDomainSize-x,
+        "domainSize-y": placeholderDomainSize-y,
+        "domainSize-z": placeholderDomainSize-z
     },
 
     // SPH solver section - resolution parameters
@@ -68,9 +68,9 @@
         // prevent zero denominator constant
         "eps": 0.001,
         // external force [m/s^2]
-        "externalForceX": 0,
-        "externalForceY": 0,
-        "externalForceZ": -9.81
+        "externalForce-x": 0,
+        "externalForce-y": 0,
+        "externalForce-z": -9.81
     },
 
     // SPH solver section - integration parameters

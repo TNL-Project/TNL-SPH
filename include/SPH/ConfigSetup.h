@@ -47,12 +47,12 @@ configSetup( TNL::Config::ConfigDescription& config, std::string sectionPrefix =
    config.addEntry< int >( "numberOfBoundaryParticles", "The initial number of fluid particles.", 0. );
    config.addEntry< int >( "numberOfAllocatedBoundaryParticles", "The allocated number of fluid particles.", 0. );
 
-   config.addEntry< double >( "domainOriginX", "The origin of domain in x direction.", 0. );
-   config.addEntry< double >( "domainOriginY", "The origin of domain in y direction.", 0. );
-   config.addEntry< double >( "domainOriginZ", "The origin of domain in z direction.", 0. );
-   config.addEntry< double >( "domainSizeX", "The size of domain in x direction.", 0. );
-   config.addEntry< double >( "domainSizeY", "The size of domain in y direction.", 0. );
-   config.addEntry< double >( "domainSizeZ", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( "domainOrigin-x", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( "domainOrigin-y", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( "domainOrigin-z", "The origin of domain in z direction.", 0. );
+   config.addEntry< double >( "domainSize-x", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( "domainSize-y", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( "domainSize-z", "The size of domain in y direction.", 0. );
 
    config.addEntry< int >( "openBoundaryPatches", "Number of open boundary patches.", 0 );
    config.addEntry< std::string >( "openBoundaryConfig", "Configuration file for open boundary.", "" );
@@ -73,8 +73,8 @@ configSetup( TNL::Config::ConfigDescription& config, std::string sectionPrefix =
    config.addEntryEnum( "direct-from-source" );
 
    // distributed simulation parameters
-   config.addEntry< int >( "subdomainsX", "Number of subdomains in the x direstion.", 0 );
-   config.addEntry< int >( "subdomainsY", "Number of subdomains in the y direstion.", 0 );
+   config.addEntry< int >( "subdomains-x", "Number of subdomains in the x direstion.", 0 );
+   config.addEntry< int >( "subdomains-y", "Number of subdomains in the y direstion.", 0 );
    config.addEntry< std::string >( "distributedConfig", "Path to the config with distributed simulation data.", "" );
    config.addEntry< std::string >(
       "distributedDomain", "Inline distributed domain config as a JSON object. Used when distributed-config is empty.", "" );
@@ -117,22 +117,22 @@ configSetupDistributedSubdomain( int subdomain_x, int subdomain_y, TNL::Config::
 
    config.addEntry< double >( subdomainKey + "RefinementFactor", "Refinement factor of current subdomain.", 0. );
 
-   config.addEntry< double >( subdomainKey + "OriginX", "The origin of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "OriginY", "The origin of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "OriginZ", "The origin of domain in z direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Origin-x", "The origin of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Origin-y", "The origin of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Origin-z", "The origin of domain in z direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "OriginGlobalCoordsX", "The origin of domain in global cell coords. in x direction.", 0. );
+      subdomainKey + "OriginGlobalCoords-x", "The origin of domain in global cell coords. in x direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "OriginGlobalCoordsY", "The origin of domain in global cell coords. in y direction.", 0. );
+      subdomainKey + "OriginGlobalCoords-y", "The origin of domain in global cell coords. in y direction.", 0. );
    config.addEntry< int >(
-      subdomainKey + "OriginGlobalCoordsZ", "The origin of domain in global cell coords. in z direction.", 0. );
+      subdomainKey + "OriginGlobalCoords-z", "The origin of domain in global cell coords. in z direction.", 0. );
 
-   config.addEntry< double >( subdomainKey + "SizeX", "The size of domain in x direction.", 0. );
-   config.addEntry< double >( subdomainKey + "SizeY", "The size of domain in y direction.", 0. );
-   config.addEntry< double >( subdomainKey + "SizeZ", "The size of domain in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "GridDimensionsX", "The size of domain in cells in x direction.", 0. );
-   config.addEntry< int >( subdomainKey + "GridDimensionsY", "The size of domain in cells in y direction.", 0. );
-   config.addEntry< int >( subdomainKey + "GridDimensionsZ", "The size of domain in cells in z direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Size-x", "The size of domain in x direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Size-y", "The size of domain in y direction.", 0. );
+   config.addEntry< double >( subdomainKey + "Size-z", "The size of domain in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensions-x", "The size of domain in cells in x direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensions-y", "The size of domain in cells in y direction.", 0. );
+   config.addEntry< int >( subdomainKey + "GridDimensions-z", "The size of domain in cells in z direction.", 0. );
 }
 
 /**

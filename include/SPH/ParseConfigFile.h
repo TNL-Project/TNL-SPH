@@ -26,11 +26,11 @@ template< class StaticArray >
 getXyzCamelCase( const TNL::Config::ParameterContainer& parameters, const std::string& prefix )
 {
    StaticArray result;
-   result[ 0 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "X" );
+   result[ 0 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "-x" );
    if( StaticArray::getSize() >= 2 )
-      result[ 1 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "Y" );
+      result[ 1 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "-y" );
    if( StaticArray::getSize() >= 3 )
-      result[ 2 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "Z" );
+      result[ 2 ] = parameters.getParameter< typename StaticArray::ValueType >( prefix + "-z" );
    return result;
 }
 

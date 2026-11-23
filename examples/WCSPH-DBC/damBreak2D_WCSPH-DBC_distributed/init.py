@@ -390,23 +390,23 @@ def build_distributed_domain_json( setup ):
 
             subdomain_grid_origin_x = setup[ f"grid_origins_x" ][ subdomain_x ]
             subdomain_grid_origin_y = setup[ f"grid_origins_y" ][ subdomain_y ]
-            entry[ f"{config_key_prefix}OriginX" ] = float( round( subdomain_grid_origin_x, 7 ) )
-            entry[ f"{config_key_prefix}OriginY" ] = float( round( subdomain_grid_origin_y, 7 ) )
+            entry[ f"{config_key_prefix}Origin-x" ] = float( round( subdomain_grid_origin_x, 7 ) )
+            entry[ f"{config_key_prefix}Origin-y" ] = float( round( subdomain_grid_origin_y, 7 ) )
 
             subdomain_grid_origin_glob_coords_x = setup[ f"grid_index_origins_x" ][ subdomain_x ]
             subdomain_grid_origin_glob_coords_y = setup[ f"grid_index_origins_y" ][ subdomain_y ]
-            entry[ f"{config_key_prefix}OriginGlobalCoordsX" ] = int( subdomain_grid_origin_glob_coords_x )
-            entry[ f"{config_key_prefix}OriginGlobalCoordsY" ] = int( subdomain_grid_origin_glob_coords_y )
+            entry[ f"{config_key_prefix}OriginGlobalCoords-x" ] = int( subdomain_grid_origin_glob_coords_x )
+            entry[ f"{config_key_prefix}OriginGlobalCoords-y" ] = int( subdomain_grid_origin_glob_coords_y )
 
             subdomain_size_x = setup[ f"domain_sizes_x" ][ subdomain_x ]
             subdomain_size_y = setup[ f"domain_sizes_y" ][ subdomain_y ]
-            entry[ f"{config_key_prefix}SizeX" ] = float( round( subdomain_size_x, 7 ) )
-            entry[ f"{config_key_prefix}SizeY" ] = float( round( subdomain_size_y, 7 ) )
+            entry[ f"{config_key_prefix}Size-x" ] = float( round( subdomain_size_x, 7 ) )
+            entry[ f"{config_key_prefix}Size-y" ] = float( round( subdomain_size_y, 7 ) )
 
             subdomain_grid_dims_x = setup[ f"grid_sizes_x" ][ subdomain_x ]
             subdomain_grid_dims_y = setup[ f"grid_sizes_y" ][ subdomain_y ]
-            entry[ f"{config_key_prefix}GridDimensionsX" ] = int( subdomain_grid_dims_x )
-            entry[ f"{config_key_prefix}GridDimensionsY" ] = int( subdomain_grid_dims_y )
+            entry[ f"{config_key_prefix}GridDimensions-x" ] = int( subdomain_grid_dims_x )
+            entry[ f"{config_key_prefix}GridDimensions-y" ] = int( subdomain_grid_dims_y )
 
             data.update( entry )
     return data

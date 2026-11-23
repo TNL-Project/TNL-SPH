@@ -19,10 +19,10 @@
 
     // Domain size and domain origin
     "searchRadius": placeholderSearchRadius,
-    "domainOriginX": placeholderDomainOrigin-x,
-    "domainOriginY": placeholderDomainOrigin-y,
-    "domainSizeX": placeholderDomainSize-x,
-    "domainSizeY": placeholderDomainSize-y,
+    "domainOrigin-x": placeholderDomainOrigin-x,
+    "domainOrigin-y": placeholderDomainOrigin-y,
+    "domainSize-x": placeholderDomainSize-x,
+    "domainSize-y": placeholderDomainSize-y,
 
     // === SPH solver section - resolution parameters ===
     // initial particle distance - dp [m]
@@ -48,8 +48,8 @@
     // prevent zero denominator constant
     "eps": 0.001,
     // external force [m/s^2]
-    "externalForceX": 0,
-    "externalForceY": -9.81,
+    "externalForce-x": 0,
+    "externalForce-y": -9.81,
 
     // === SPH solver section - integration parameters ===
     // initial time step [s]
@@ -67,39 +67,39 @@
         // === Interpolation grid ===
         "plane1Identifier": "interpolation",
         "plane1OutputTime": 0.05,
-        "plane1GridOriginX": 0,
-        "plane1GridOriginY": 0,
-        "plane1GridSizeX": 150,
-        "plane1GridSizeY": 70,
-        "plane1GridStepX": 0.002,
-        "plane1GridStepY": 0.002,
+        "plane1GridOrigin-x": 0,
+        "plane1GridOrigin-y": 0,
+        "plane1GridSize-x": 150,
+        "plane1GridSize-y": 70,
+        "plane1GridStep-x": 0.002,
+        "plane1GridStep-y": 0.002,
 
         // === Measure pressure - points ===
         "sensorPOutputTime": 2e-3,
         "sensorPIncludeBoundary": false,
-        "sensorPPoint1X": 1.6043,
-        "sensorPPoint1Y": 0.003,
-        "sensorPPoint2X": 1.6043,
-        "sensorPPoint2Y": 0.015,
-        "sensorPPoint3X": 1.6043,
-        "sensorPPoint3Y": 0.03,
-        "sensorPPoint4X": 1.6043,
-        "sensorPPoint4Y": 0.08,
+        "sensorPPoint1-x": 1.6043,
+        "sensorPPoint1-y": 0.003,
+        "sensorPPoint2-x": 1.6043,
+        "sensorPPoint2-y": 0.015,
+        "sensorPPoint3-x": 1.6043,
+        "sensorPPoint3-y": 0.03,
+        "sensorPPoint4-x": 1.6043,
+        "sensorPPoint4-y": 0.08,
 
         // === Measure water level - points ===
         "sensorWlOutputTime": 2e-3,
         "sensorWlStartLevel": 0,
         "sensorWlEndLevel": 0.4,
         "sensorWlLevelIncrement": 0.002,
-        "sensorWlDirectionX": 0,
-        "sensorWlDirectionY": 1,
-        "sensorWlPoint1X": 0.3,
-        "sensorWlPoint1Y": 0.0028284,
-        "sensorWlPoint2X": 0.865,
-        "sensorWlPoint2Y": 0.0028284,
-        "sensorWlPoint3X": 1.114,
-        "sensorWlPoint3Y": 0.0028284,
-        "sensorWlPoint4X": 1.3625,
-        "sensorWlPoint4Y": 0.0028284
+        "sensorWlDirection-x": 0,
+        "sensorWlDirection-y": 1,
+        "sensorWlPoint1-x": 0.3,
+        "sensorWlPoint1-y": 0.0028284,
+        "sensorWlPoint2-x": 0.865,
+        "sensorWlPoint2-y": 0.0028284,
+        "sensorWlPoint3-x": 1.114,
+        "sensorWlPoint3-y": 0.0028284,
+        "sensorWlPoint4-x": 1.3625,
+        "sensorWlPoint4-y": 0.0028284
     }
 }

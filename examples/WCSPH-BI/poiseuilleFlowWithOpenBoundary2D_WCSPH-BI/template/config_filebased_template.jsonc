@@ -16,10 +16,10 @@
 
     // === Domain ===
     "searchRadius": placeholderSearchRadius,
-    "domainOriginX": placeholderDomainOrigin-x,
-    "domainOriginY": placeholderDomainOrigin-y,
-    "domainSizeX": placeholderDomainSize-x,
-    "domainSizeY": placeholderDomainSize-y,
+    "domainOrigin-x": placeholderDomainOrigin-x,
+    "domainOrigin-y": placeholderDomainOrigin-y,
+    "domainSize-x": placeholderDomainSize-x,
+    "domainSize-y": placeholderDomainSize-y,
 
     // === Model parameters ===
     "dp": placeholderInitParticleDistance,
@@ -31,8 +31,8 @@
     "dynamicViscosity": 0.001,
     "speedOfSound": placeholderSpeedOfSound,
     "eps": 0.001,
-    "externalForceX": 0,
-    "externalForceY": 0,
+    "externalForce-x": 0,
+    "externalForce-y": 0,
 
     // === Integration ===
     "initialTimeStep": placeholderTimeStep,
